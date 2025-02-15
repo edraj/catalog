@@ -18,10 +18,10 @@
     "@jridgewell/gen-mapping" "^0.3.5"
     "@jridgewell/trace-mapping" "^0.3.24"
 
-"@edraj/tsdmart@^1.0.8":
-  version "1.0.8"
-  resolved "https://registry.yarnpkg.com/@edraj/tsdmart/-/tsdmart-1.0.8.tgz#277b0d7b53864b565c65086b30a11950101f0afe"
-  integrity sha512-5opS2Uj9MZ3dKPcSyrSzugjqU6p/vSNg8uAsnBHuEujmQXl8lLhiMaftXCGkR6ByDWdxqZ1YONff2OfBrKXHkg==
+"@edraj/tsdmart@^1.0.9":
+  version "1.0.9"
+  resolved "https://registry.yarnpkg.com/@edraj/tsdmart/-/tsdmart-1.0.9.tgz#066eed3096950e9925e547fb7b798bbd4dd0a736"
+  integrity sha512-O6M3cntjnLYwK+rBM19uvAag1RUlYsgIGugC4rccSUfP8RgioHhXHW+KVWO1m/6rpmuOFpKW7Gpgjg3z7YthZA==
   dependencies:
     axios "^1.6.8"
 
@@ -606,6 +606,11 @@
   version "2.0.11"
   resolved "https://registry.yarnpkg.com/@types/unist/-/unist-2.0.11.tgz#11af57b127e32487774841f7a4e54eab166d03c4"
   integrity sha512-CmBKiL6NNo/OqgmMn95Fk9Whlp2mtvIv+KNpQKN2F4SjvrEesubTRWGYSg+BnWZOnlCaSTU1sMpsBOzgbYhnsA==
+
+"@zerodevx/svelte-toast@^0.9.6":
+  version "0.9.6"
+  resolved "https://registry.yarnpkg.com/@zerodevx/svelte-toast/-/svelte-toast-0.9.6.tgz#7445524743c2521dc865b123c180f5f37d942ff4"
+  integrity sha512-nHlTrCjverlPK9yukK6fqbG3e/R+f10ldrc4nJHOe2qNDScuPTuYVSFEk2dDDtzWAwTN5pmdEXgA3M2RbT8jiw==
 
 acorn-jsx@^5.3.2:
   version "5.3.2"
@@ -2134,6 +2139,11 @@ svelte-preprocess@^6.0.2:
   version "6.0.3"
   resolved "https://registry.yarnpkg.com/svelte-preprocess/-/svelte-preprocess-6.0.3.tgz#fdc1f9dc41b6f22bf8b1f059e9f21eaaae181eeb"
   integrity sha512-PLG2k05qHdhmRG7zR/dyo5qKvakhm8IJ+hD2eFRQmMLHp7X3eJnjeupUtvuRpbNiF31RjVw45W+abDwHEmP5OA==
+
+svelte-steps@^2.4.1:
+  version "2.4.1"
+  resolved "https://registry.yarnpkg.com/svelte-steps/-/svelte-steps-2.4.1.tgz#64e055735818e81454e1ca5be8b7b9fe23a8b239"
+  integrity sha512-2Xq2lLcGJf3PaEY46f1w5s+/O+tLl4U2V+Z+sCeoUm/kEPFXeZP/aFr2JVKwdzSlXCT+raz75xqXtnZrPWJ0zA==
 
 svelte@^5.2.10:
   version "5.20.0"
