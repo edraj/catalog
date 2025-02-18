@@ -4,8 +4,8 @@ export function successToastMessage(message: string){
     toast.push(message, {
         theme: {
             '--toastColor': 'mintcream',
-            '--toastBackground': 'rgba(72,187,120)',
-            '--toastBarBackground': 'rgb(0,255,0)'
+            '--toastBarBackground': 'rgba(72,187,120)',
+            '--toastBackground': 'rgb(0,150,0)'
         }
     })
 }
@@ -14,8 +14,8 @@ export function errorToastMessage(message: string, noClose: boolean = false){
     const option: any = {
         theme: {
             '--toastColor': 'mintcream',
-            '--toastBackground': 'rgba(187,72,72)',
-            '--toastBarBackground': 'rgb(255,0,0)'
+            '--toastBarBackground': 'rgba(187,72,72)',
+            '--toastBackground': 'rgb(150,0,0)'
         }
     }
     if (noClose){

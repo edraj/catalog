@@ -21,6 +21,7 @@
     import {onMount} from "svelte";
     import {errorToastMessage, successToastMessage} from "@/lib/toasts_messages";
     import {Steps} from "svelte-steps";
+    import {formatDate} from "@/lib/helpers";
 
 
     let projectIdeas: ProjectIdea[] = $state([]);
@@ -29,18 +30,6 @@
     let workflowSteps = $state([]);
     let workflowStepsSelected = $state([]);
 
-    function formatDate(dateString: string): string {
-        const date = new Date(dateString);
-
-        const yyyy = date.getFullYear();
-        const mm = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-based
-        const dd = String(date.getDate()).padStart(2, '0');
-        const hh = String(date.getHours()).padStart(2, '0');
-        const MM = String(date.getMinutes()).padStart(2, '0');
-
-        return `${yyyy}-${mm}-${dd} ${hh}:${MM}`;
-    }
-
     async function fetchProjectIdeas() {
         const _projectIdeas = await getProjectIdeas();
         if (_projectIdeas === null){
@@ -48,7 +37,6 @@
             projectIdeas = [];
         } else {
             projectIdeas = _projectIdeas.map((item)=>{
-                console.log(item)
                 return {
                     shortname: item.shortname,
                     state: item.attributes.state,
@@ -81,10 +69,9 @@
     async function openProgresProjectIdeaModal(event, idea: ProjectIdea) {
         event.preventDefault()
         event.stopPropagation();
-        console.log({idea})
-        console.log({workflow})
+
         workflowStepsSelected = workflow.states.filter(state => state.state === idea.state)[0].next;
-        console.log({workflowStepsSelected})
+
         selectedProjectIdea = {...idea};
         modalOpenProgress = true;
     }

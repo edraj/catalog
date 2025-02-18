@@ -1,1 +1,0 @@
-<h1>BACHELOR</h1>
