@@ -320,3 +320,42 @@ export async function createComment(shortname: string, comment: string){
     const response: ActionResponse = await Dmart.request(data);
     return response.status == "success" && response.records.length > 0;
 }
+
+export async function createReaction(shortname: string){
+    const data: ActionRequest = {
+            "space_name": "catalog",
+            "request_type": RequestType.create,
+            "records": [
+            {
+                "resource_type": ResourceType.reaction,
+                "shortname": "auto",
+                "subpath": `posts/${shortname}`,
+                "attributes": {
+                    "is_active": true,
+                    "type": "like",
+                }
+            }
+        ]
+    }
+    const response: ActionResponse = await Dmart.request(data);
+    return response.status == "success" && response.records.length > 0;
+}
+
+export async function deleteReactionComment(type: ResourceType, entry: string, shortname: string){
+    const data: ActionRequest = {
+        "space_name": "catalog",
+        "request_type": RequestType.delete,
+        "records": [
+            {
+                "resource_type": type,
+                "shortname": shortname,
+                "subpath": entry,
+                "attributes": {}
+            }
+        ]
+    }
+
+    const response: ActionResponse = await Dmart.request(data);
+    return response.status == "success" && response.records.length > 0;
+}
+

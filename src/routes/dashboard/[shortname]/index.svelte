@@ -1,6 +1,6 @@
 <script lang="ts">
     import {params} from "@roxi/routify"
-    import {createComment, getProjectIdea} from "@/lib/dmart_services";
+    import {createComment, deleteReactionComment, getIdeaAttachmentsCount, getProjectIdea} from "@/lib/dmart_services";
     import {formatDate} from "@/lib/helpers";
     import {
         Button,
@@ -67,10 +67,29 @@
         }
     }
 
+    let counts = $state({});
     onMount(async ()=>{
         projectIdea = await getProjectIdea($params.shortname)
         isOwner = $user.shortname === projectIdea.owner_shortname
+        const _counts = await getIdeaAttachmentsCount(projectIdea.shortname)
+        counts = _counts[0].attributes
+        console.log({counts})
     })
+
+    async function deleteComment(shortname: string){
+        const response = deleteReactionComment(
+            ResourceType.comment,
+            `posts/${projectIdea.shortname}`,
+            shortname
+        )
+
+        if(response){
+            projectIdea = await getProjectIdea($params.shortname);
+            successToastMessage("Comment deleted successfully");
+        } else {
+            errorToastMessage("Failed to delete the comment!");
+        }
+    }
 </script>
 
 
@@ -92,17 +111,14 @@
         {/if}
 
         <Row>
-            <Col class="mt-3" sm="1">
-                <h5>+250</h5>
-            </Col>
-            <Col sm="11">
+            <Col sm="12">
                 <h1>{projectIdea.payload.body.title}</h1>
                 <h6 class="text-secondary fw-bold">{formatDate(projectIdea.updated_at)}</h6>
                 <p class="text-secondary">{projectIdea.payload.body.long_description}</p>
 
 
                 <div class="my-4" style="font-size: 1.25rem">
-                    <i class="bi bi-chat-left-text-fill"></i> 250
+                    <i class="bi bi-chat-left-text-fill"></i> {projectIdea.comment ?? 0}
                     <i class="bi {projectIdea.is_active ? 'bi-check-lg text-success' : 'bi-x-lg text-danger' }"></i> {projectIdea.is_active ? 'Active' : 'Inactive'}
                 </div>
 
@@ -135,10 +151,17 @@
                                 <p class="text-center">No comments yet.</p>
                             {:else}
                                 {#each (projectIdea.attachments.comment ?? []) as comment}
-                                    <div style="font-size: 1.5rem">
-                                        <span>{comment.attributes.owner_shortname}</span>
-                                        •
-                                        <span>{formatDate(comment.attributes.created_at)}</span>
+                                    <div class="d-flex justify-content-between" style="font-size: 1.5rem">
+                                        <div>
+                                            <span>{comment.attributes.owner_shortname}</span>
+                                            •
+                                            <span>{formatDate(comment.attributes.created_at)}</span>
+                                        </div>
+                                        {#if isOwner}
+                                            <div style="cursor: pointer" onclick={()=>deleteComment(comment.shortname)}>
+                                                <i class="bi bi-trash-fill text-danger"></i>
+                                            </div>
+                                        {/if}
                                     </div>
                                     <p>{comment.attributes.body}</p>
                                 {/each}
@@ -152,7 +175,7 @@
                         <Row>
                             <Col sm="1">
                                 <Button color="light">
-                                    <i class="bi bi-heart-fill" style={"color: red"}></i> 250
+                                    <i class="bi bi-heart-fill" style={"color: red"}></i> {projectIdea.reaction ?? 0}
                                 </Button>
                             </Col>
                             <Col sm="11">
