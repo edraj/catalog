@@ -5,20 +5,16 @@
         Row,
         Col,
         Card,
-        CardBody,
+        CardBody
     } from "sveltestrap";
-    import {writable} from "svelte/store";
     import {
-        createProjectIdea,
-        deleteProjectIdea,
-        getCatalogWorkflow,
+        getIdeaAttachmentsCount,
         getProjectIdeas,
-        progressProjectIdea
     } from "@/lib/dmart_services";
     import {onMount} from "svelte";
-    import {errorToastMessage, successToastMessage} from "@/lib/toasts_messages";
+    import {errorToastMessage} from "@/lib/toasts_messages";
     import {goto} from "@roxi/routify";
-    import {formatDate, truncateString} from "@/lib/helpers";
+    import {formatDate, renderStateIcon, renderStateString, truncateString} from "@/lib/helpers";
     $goto
 
     let projectIdeas: any[] = $state([]);
@@ -29,17 +25,22 @@
             errorToastMessage("Failed to fetch project ideas.", true);
             projectIdeas = [];
         } else {
-            projectIdeas = _projectIdeas.map((item) => {
-                return {
-                    shortname: item.shortname,
-                    owner: item.attributes.owner_shortname,
-                    tags: item.attributes.tags,
-                    state: item.attributes.state,
-                    created_at: formatDate(item.attributes.created_at),
-                    updated_at: formatDate(item.attributes.updated_at),
-                    ...item.attributes.payload.body
-                }
-            });
+            projectIdeas = await Promise.all(
+                _projectIdeas.map(async(item) => {
+                    const counts = await getIdeaAttachmentsCount(item.shortname)
+                    return {
+                        is_active: item.attributes.is_active,
+                        shortname: item.shortname,
+                        owner: item.attributes.owner_shortname,
+                        tags: item.attributes.tags,
+                        state: item.attributes.state,
+                        created_at: formatDate(item.attributes.created_at),
+                        updated_at: formatDate(item.attributes.updated_at),
+                        ...item.attributes.payload.body,
+                        ...counts[0].attributes
+                    }
+                })
+            );
         }
     }
 
@@ -67,7 +68,7 @@
             <CardBody>
                 <Row>
                     <Col class="mt-3" sm="1">
-                        <h5>+250</h5>
+                        <h5 class="text-center">{projectIdea.reaction ?? 0}</h5>
                     </Col>
                     <Col sm="11">
                         <h1>{projectIdea.title}</h1>
@@ -76,8 +77,10 @@
 
 
                         <div class="my-4" style="font-size: 1.25rem">
-                            <i class="bi bi-chat-left-text-fill"></i> 250
-                            <i class="bi bi-check-lg text-success"></i> active
+                            <i id="idea_status" class={renderStateIcon(projectIdea)}
+                               data-toggle="tooltip" data-placement="top" title={renderStateString(projectIdea)}></i>
+
+                            <i class="bi bi-chat-left-text-fill mx-2"></i>{projectIdea.comment ?? 0}
                         </div>
 
 

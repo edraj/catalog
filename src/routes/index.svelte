@@ -10,6 +10,8 @@
          if(p === null){
              signout();
              $goto("/login");
+         } else {
+             $goto("/dashboard");
          }
     });
 </script>

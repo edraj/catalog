@@ -5,7 +5,7 @@
     import {Button} from "sveltestrap";
     import {errorToastMessage, successToastMessage} from "@/lib/toasts_messages";
     import Avatar from "@/routes/components/Avatar.svelte";
-    import {formatDate, truncateString} from "@/lib/helpers";
+    import {formatDate, renderStateString, truncateString} from "@/lib/helpers";
     import {goto} from "@roxi/routify";
     $goto
 
@@ -69,24 +69,6 @@
         $goto(`/dashboard/{shortname}`, {
             shortname: projectIdea.shortname
         });
-    }
-    function renderState(idea: any) {
-        if (idea.is_active === false) {
-            return "Inactive";
-        }
-        if(idea.state === "pending" ){
-            return "Active";
-        }
-        if(idea.state === "in_progress" ){
-            return "In Progress";
-        }
-        if(idea.state === "approved" ){
-            return "Approved";
-        }
-        if(idea.state === "rejected" ){
-            return "Rejected";
-        }
-        return "N/A";
     }
 
 </script>
@@ -156,7 +138,7 @@
                                     <span class="mx-2"><i class="bi bi-chat-left-text-fill text-primary"></i> {projectIdea.comment ?? 0}</span>
                                 </Col>
                                 <Col sm="4" class="d-flex justify-content-center align-items-center">
-                                    {renderState(projectIdea)}
+                                    {renderStateString(projectIdea)}
                                 </Col>
                             </Row>
                         </CardBody>
