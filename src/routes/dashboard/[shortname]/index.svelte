@@ -1,12 +1,18 @@
 <script lang="ts">
     import {params} from "@roxi/routify"
-    import {createComment, deleteReactionComment, getIdeaAttachmentsCount, getProjectIdea} from "@/lib/dmart_services";
+    import {
+        checkCurrentUserReactedIdea,
+        createComment,
+        createReaction,
+        deleteReactionComment, getAvatar,
+        getIdeaAttachmentsCount,
+        getProjectIdea
+    } from "@/lib/dmart_services";
     import {formatDate} from "@/lib/helpers";
     import {
         Button,
         Card,
         CardBody,
-        CardTitle,
         Col,
         Container,
         Input,
@@ -20,11 +26,20 @@
     import {errorToastMessage, successToastMessage} from "@/lib/toasts_messages";
     import {goto} from "@roxi/routify";
     import {onMount} from "svelte";
+    import Avatar from "@/routes/components/Avatar.svelte";
     $goto
 
     let projectIdea = $state(null);
     let isLoading = $state(false);
     let isOwner = $state(false);
+    let userReactionEntry = $state(null);
+
+    let counts: any = $state({});
+    onMount(async ()=>{
+        await refreshIdea();
+        isOwner = $user.shortname === projectIdea.owner_shortname
+        await refreshCounts();
+    })
 
     function handleEdit(projectIdea) {
         $goto(`/dashboard/{shortname}/edit`, {
@@ -53,6 +68,7 @@
             errorToastMessage(response.error.message);
         }
     }
+
     let comment = $state("");
     async function handleAddComment(){
         if(comment) {
@@ -60,21 +76,12 @@
               if(response){
                 successToastMessage("Comment added successfully");
                 comment = "";
-                projectIdea = await getProjectIdea($params.shortname)
+                await refreshIdea();
               } else {
                 errorToastMessage("Failed to add comment!");
               }
         }
     }
-
-    let counts = $state({});
-    onMount(async ()=>{
-        projectIdea = await getProjectIdea($params.shortname)
-        isOwner = $user.shortname === projectIdea.owner_shortname
-        const _counts = await getIdeaAttachmentsCount(projectIdea.shortname)
-        counts = _counts[0].attributes
-        console.log({counts})
-    })
 
     async function deleteComment(shortname: string){
         const response = deleteReactionComment(
@@ -84,17 +91,46 @@
         )
 
         if(response){
-            projectIdea = await getProjectIdea($params.shortname);
+            await refreshIdea();
             successToastMessage("Comment deleted successfully");
         } else {
             errorToastMessage("Failed to delete the comment!");
         }
     }
+
+    async function handleReaction(){
+        let response = null;
+        if(userReactionEntry === null){
+            response = await createReaction($params.shortname)
+        } else {
+            response = await deleteReactionComment(
+                ResourceType.reaction,
+                `posts/${projectIdea.shortname}`,
+                userReactionEntry
+            )
+        }
+        if(response){
+            await refreshCounts();
+        } else {
+            errorToastMessage("Failed to react!");
+        }
+    }
+    
+    async function refreshIdea(){
+        projectIdea = await getProjectIdea($params.shortname)
+        await refreshCounts();
+    }
+    async function refreshCounts() {
+        const _counts = await getIdeaAttachmentsCount(projectIdea.shortname)
+
+        userReactionEntry = await checkCurrentUserReactedIdea($user.shortname, projectIdea.shortname)
+        counts = _counts[0].attributes
+    }
 </script>
 
 
 {#if projectIdea}
-    <Container class="mt-5">
+    <Container class="my-5">
         <Button class="mb-5" onclick={()=>history.back()}>{isLoading ? "...." : "Back"}</Button>
 
         {#if isOwner}
@@ -118,7 +154,7 @@
 
 
                 <div class="my-4" style="font-size: 1.25rem">
-                    <i class="bi bi-chat-left-text-fill"></i> {projectIdea.comment ?? 0}
+                    <i class="bi bi-chat-left-text-fill"></i> {counts.comment ?? 0}
                     <i class="bi {projectIdea.is_active ? 'bi-check-lg text-success' : 'bi-x-lg text-danger' }"></i> {projectIdea.is_active ? 'Active' : 'Inactive'}
                 </div>
 
@@ -151,19 +187,29 @@
                                 <p class="text-center">No comments yet.</p>
                             {:else}
                                 {#each (projectIdea.attachments.comment ?? []) as comment}
-                                    <div class="d-flex justify-content-between" style="font-size: 1.5rem">
-                                        <div>
-                                            <span>{comment.attributes.owner_shortname}</span>
-                                            •
-                                            <span>{formatDate(comment.attributes.created_at)}</span>
-                                        </div>
+                                    <div class="d-flex justify-content-between my-2">
+                                        <Row class="justify-content-between">
+                                            <Col sm="1" class="px-3">
+                                                {#await getAvatar(comment.attributes.owner_shortname) then avatar}
+                                                    <Avatar src={avatar} size="32"/>
+                                                {/await}
+                                            </Col>
+                                            <Col sm="10">
+                                                <div style="font-size: 1.5rem">
+                                                    <span>{comment.attributes.owner_shortname}</span>
+                                                    •
+                                                    <span>{formatDate(comment.attributes.created_at)}</span>
+                                                </div>
+
+                                                {comment.attributes.payload.body.body}
+                                            </Col>
+                                        </Row>
                                         {#if isOwner}
                                             <div style="cursor: pointer" onclick={()=>deleteComment(comment.shortname)}>
                                                 <i class="bi bi-trash-fill text-danger"></i>
                                             </div>
                                         {/if}
                                     </div>
-                                    <p>{comment.attributes.body}</p>
                                 {/each}
                             {/if}
                         </div>
@@ -174,8 +220,8 @@
                     <CardBody>
                         <Row>
                             <Col sm="1">
-                                <Button color="light">
-                                    <i class="bi bi-heart-fill" style={"color: red"}></i> {projectIdea.reaction ?? 0}
+                                <Button color="light" onclick={handleReaction}>
+                                    <i class="bi bi-heart-fill" style={userReactionEntry ? "color: red" : ""}></i> {counts.reaction ?? 0}
                                 </Button>
                             </Col>
                             <Col sm="11">

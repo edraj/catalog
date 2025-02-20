@@ -5,7 +5,7 @@
     import {Button} from "sveltestrap";
     import {errorToastMessage, successToastMessage} from "@/lib/toasts_messages";
     import Avatar from "@/routes/components/Avatar.svelte";
-    import {formatDate, renderStateString, truncateString} from "@/lib/helpers";
+    import {formatDate, renderStateString} from "@/lib/helpers";
     import {goto} from "@roxi/routify";
     $goto
 

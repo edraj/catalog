@@ -311,8 +311,13 @@ export async function createComment(shortname: string, comment: string){
                 "subpath": `posts/${shortname}`,
                 "attributes": {
                     "is_active": true,
-                    "state": "commented",
-                    "body": comment
+                    "payload": {
+                        "content_type": ContentType.json,
+                        "body": {
+                            "state": "commented",
+                            "body": comment
+                        }
+                    }
                 }
             }
         ]
@@ -332,7 +337,13 @@ export async function createReaction(shortname: string){
                 "subpath": `posts/${shortname}`,
                 "attributes": {
                     "is_active": true,
-                    "type": "like",
+                    "payload": {
+                        "content_type": ContentType.json,
+                        "body": {
+                            "state": "commented",
+                            "body": {"type": "like"},
+                        }
+                    }
                 }
             }
         ]
@@ -359,3 +370,22 @@ export async function deleteReactionComment(type: ResourceType, entry: string, s
     return response.status == "success" && response.records.length > 0;
 }
 
+export async function checkCurrentUserReactedIdea(user_shortname: string, entry_shortname: string){
+    const data: QueryRequest = {
+        "filter_shortnames": [],
+        "type": QueryType.attachments,
+        "space_name": "catalog",
+        "subpath": `posts/${entry_shortname}`,
+        "limit": 100,
+        "sort_by": "shortname",
+        "sort_type": SortyType.ascending,
+        "offset": 0,
+        "search": `@owner_shortname:${user_shortname} @resource_type:reaction`,
+        "retrieve_json_payload": true
+    }
+    const response = await Dmart.query(data);
+    if(response.records.length === 0){
+        return null;
+    }
+    return response.records[0].shortname;
+}
