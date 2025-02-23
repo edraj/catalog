@@ -10,6 +10,13 @@ import Dmart, {
     SortyType
 } from "@edraj/tsdmart";
 
+export interface ProjectIdeasSearch {
+    limit: number;
+    offset: number;
+    shortname: string;
+    search: string;
+}
+
 function getFileType(file: File): { contentType: ContentType, resourceType: ResourceType } | null {
     const mimeType = file.type;
 
@@ -140,7 +147,11 @@ export async function createUser(user: User){
 
 }
 
-export async function getProjectIdeas(limit: number = 15, offset: number = 0, shortname: string = null){
+export async function getProjectIdeas(ideaSearch: ProjectIdeasSearch = null) {
+    const { limit, offset, shortname, search } = ideaSearch === null ? {
+        limit: 15, offset: 0, shortname: "", search: ""
+    } : ideaSearch;
+
     const queryRequest: QueryRequest = {
         filter_shortnames: [],
         type: QueryType.search,
@@ -151,7 +162,7 @@ export async function getProjectIdeas(limit: number = 15, offset: number = 0, sh
         sort_by: "shortname",
         sort_type: SortyType.ascending,
         offset: offset,
-        search: "",
+        search: search,
         retrieve_json_payload: true
     }
 

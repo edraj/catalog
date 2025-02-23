@@ -1,15 +1,13 @@
 <script>
-
     import {Nav, Navbar, NavbarBrand, NavItem, NavLink} from "sveltestrap";
+    import SearchBar from "@/routes/components/SearchBar.svelte";
 </script>
 
 <Navbar color="light" light expand="md">
     <NavbarBrand href="/">Catalog</NavbarBrand>
     <Nav class="ml-auto" navbar>
         <NavItem>
-            <NavLink href="#">
-                <i class="bi bi-search"></i>
-            </NavLink>
+            <SearchBar />
         </NavItem>
         <NavItem>
             <NavLink href="#">

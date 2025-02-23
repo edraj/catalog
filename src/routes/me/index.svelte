@@ -27,7 +27,7 @@
 
         avatar = await getAvatar(user.shortname);
 
-        const _ideas = await getProjectIdeas(15, 0, user.shortname);
+        const _ideas = await getProjectIdeas({limit: 15, offset: 0, shortname: user.shortname});
         if (_ideas === null) {
             errorToastMessage("Failed to fetch project ideas.", true);
             ideas = [];

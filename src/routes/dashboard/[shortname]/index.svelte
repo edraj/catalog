@@ -4,7 +4,8 @@
         checkCurrentUserReactedIdea,
         createComment,
         createReaction,
-        deleteReactionComment, getAvatar,
+        deleteReactionComment,
+        getAvatar,
         getIdeaAttachmentsCount,
         getProjectIdea
     } from "@/lib/dmart_services";
@@ -25,10 +26,10 @@
     import {user} from "@/stores/user";
     import {errorToastMessage, successToastMessage} from "@/lib/toasts_messages";
     import {goto} from "@roxi/routify";
+    $goto
     import {onMount} from "svelte";
     import Avatar from "@/routes/components/Avatar.svelte";
     import {Diamonds} from "svelte-loading-spinners";
-    $goto
 
     let projectIdea = $state(null);
     let isLoading = $state(false);
@@ -125,6 +126,7 @@
         projectIdea = await getProjectIdea($params.shortname)
         await refreshCounts();
     }
+
     async function refreshCounts() {
         const _counts = await getIdeaAttachmentsCount(projectIdea.shortname)
 
@@ -153,7 +155,6 @@
                 </div>
             </div>
         {/if}
-
         <Row>
             <Col sm="12">
                 <h1>{projectIdea.payload.body.title}</h1>
@@ -247,9 +248,6 @@
         </Row>
     {/if}
 </Container>
-
-
-
 
 <style>
     .comment-section {
