@@ -27,18 +27,22 @@
     import {goto} from "@roxi/routify";
     import {onMount} from "svelte";
     import Avatar from "@/routes/components/Avatar.svelte";
+    import {Diamonds} from "svelte-loading-spinners";
     $goto
 
     let projectIdea = $state(null);
     let isLoading = $state(false);
+    let isLoadingPage: boolean = $state(true);
     let isOwner = $state(false);
     let userReactionEntry = $state(null);
 
     let counts: any = $state({});
     onMount(async ()=>{
+        isLoadingPage = true;
         await refreshIdea();
         isOwner = $user.shortname === projectIdea.owner_shortname
         await refreshCounts();
+        isLoadingPage = false;
     })
 
     function handleEdit(projectIdea) {
@@ -115,8 +119,9 @@
             errorToastMessage("Failed to react!");
         }
     }
-    
+
     async function refreshIdea(){
+
         projectIdea = await getProjectIdea($params.shortname)
         await refreshCounts();
     }
@@ -129,10 +134,13 @@
 </script>
 
 
-{#if projectIdea}
-    <Container class="my-5">
-        <Button class="mb-5" onclick={()=>history.back()}>{isLoading ? "...." : "Back"}</Button>
-
+<Container class="my-5">
+    <Button class="mb-5" onclick={()=>history.back()}>{isLoading ? "...." : "Back"}</Button>
+    {#if isLoadingPage}
+        <div class="py-5 d-flex justify-content-center">
+            <Diamonds color="black" size="200" unit="px" />
+        </div>
+    {:else}
         {#if isOwner}
             <div class="alert alert-secondary d-flex justify-content-between align-items-center mb-5">
                 <p style="margin: 0!important;">
@@ -171,12 +179,12 @@
                 </div>
 
                 <Attachments
-                    resource_type={ResourceType.ticket}
-                    space_name={"catalog"}
-                    subpath={"posts"}
-                    parent_shortname={projectIdea.shortname}
-                    attachments={Object.values(projectIdea.attachments.media ?? [])}
-                    isOwner={isOwner}
+                        resource_type={ResourceType.ticket}
+                        space_name={"catalog"}
+                        subpath={"posts"}
+                        parent_shortname={projectIdea.shortname}
+                        attachments={Object.values(projectIdea.attachments.media ?? [])}
+                        isOwner={isOwner}
                 />
 
 
@@ -237,8 +245,11 @@
                 </Card>
             </Col>
         </Row>
-    </Container>
-{/if}
+    {/if}
+</Container>
+
+
+
 
 <style>
     .comment-section {

@@ -7,10 +7,12 @@
     import Avatar from "@/routes/components/Avatar.svelte";
     import {formatDate, renderStateString} from "@/lib/helpers";
     import {goto} from "@roxi/routify";
+    import {Diamonds} from "svelte-loading-spinners";
     $goto
 
     let profileSection : string  = $state("ME");
 
+    let isLoading = $state(true);
     let user = $state(null);
     let avatar = $state(null);
     let ideas = $state([]);
@@ -18,6 +20,7 @@
     let description = $state("");
 
     onMount(async () => {
+        isLoading = true;
         user = await getProfile();
         displayname = user.attributes.displayname.en ?? "";
         description = user.attributes?.description?.en ?? "";
@@ -46,6 +49,7 @@
                 })
             }
         }
+        isLoading = false;
     });
 
     async function handleSubmit(event) {
@@ -80,8 +84,12 @@
         |
         <span style="cursor: pointer" class={profileSection === "IDEAS" ? "fw-bold" : ""} onclick={handleIdeas}>My ideas</span>
     </div>
-    {#if user === null}
-        <h1>Loading...</h1>
+
+
+    {#if isLoading}
+        <div class="py-5 d-flex justify-content-center">
+            <Diamonds color="black" size="200" unit="px" />
+        </div>
     {:else}
         {#if profileSection === "ME"}
             <Row>

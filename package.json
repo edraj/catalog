@@ -27,6 +27,7 @@
     "svelte": "^5.2.10",
     "svelte-check": "^4.0.9",
     "svelte-i18n": "^4.0.1",
+    "svelte-loading-spinners": "^0.3.6",
     "svelte-preprocess": "^6.0.2",
     "sveltestrap": "edraj/sveltestrap#extending-UI",
     "tslib": "^2.6.2",
@@ -41,7 +42,7 @@
   "dependencies": {
     "@edraj/tsdmart": "^1.0.11",
     "@zerodevx/svelte-toast": "^0.9.6",
-    "svelte-steps": "^2.4.1",
-    "cl-editor": "edraj/cl-editor"
+    "cl-editor": "edraj/cl-editor",
+    "svelte-steps": "^2.4.1"
   }
 }
