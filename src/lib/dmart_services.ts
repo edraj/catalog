@@ -179,8 +179,7 @@ export async function getProjectIdeas(ideaSearch: ProjectIdeasSearch = null) {
 
 export async function getProjectIdea(shortname: string){
     try {
-        const response = await Dmart.retrieve_entry(ResourceType.ticket, "catalog", "posts", shortname, true, true);
-        return response
+        return Dmart.retrieve_entry(ResourceType.ticket, "catalog", "posts", shortname, true, true);
     } catch (e) {
         return null;
     }
@@ -399,4 +398,21 @@ export async function checkCurrentUserReactedIdea(user_shortname: string, entry_
         return null;
     }
     return response.records[0].shortname;
+}
+
+export async function fetchMyNotifications(shortname: string){
+    const data: QueryRequest = {
+        "filter_shortnames": [],
+        "type": QueryType.search,
+        "space_name": "personal",
+        "subpath": `people/${shortname}/notifications`,
+        "limit": 100,
+        "sort_by": "shortname",
+        "sort_type": SortyType.descending,
+        "offset": 0,
+        "search": "",
+        "retrieve_json_payload": true
+    }
+    const response = await Dmart.query(data);
+    return response.records;
 }

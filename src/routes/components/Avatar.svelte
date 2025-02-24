@@ -4,7 +4,7 @@
     export let size = "200px";
 </script>
 
-<img class="avatar" {src} {alt} height={size} width={size} />
+<img class="avatar" src={src ?? "https://avatar.iran.liara.run/public/37"} {alt} height={size} width={size} />
 
 <style>
     .avatar {

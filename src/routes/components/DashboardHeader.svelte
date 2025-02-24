@@ -10,7 +10,7 @@
             <SearchBar />
         </NavItem>
         <NavItem>
-            <NavLink href="#">
+            <NavLink href="/notifications">
                 <i class="bi bi-bell-fill"></i>
             </NavLink>
         </NavItem>
