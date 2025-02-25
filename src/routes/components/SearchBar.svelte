@@ -63,6 +63,7 @@
     }
 
     function handleProjectClick(shortname) {
+        searchString = "";
         $goto("/dashboard/{shortname}", {shortname: shortname});
         modalOpen = false;
     }

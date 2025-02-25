@@ -33,7 +33,6 @@
         ws.onmessage = (event) => {
             const data = JSON.parse(event?.data ?? "");
             if(data.type === "notification"){
-                console.log({data});
                 if (data?.message?.action_type === 'create') {
                     if(data?.message?.resource_type === 'reaction'){
                         $newNotificationType = 'create_reaction';

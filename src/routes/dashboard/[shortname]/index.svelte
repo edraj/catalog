@@ -6,8 +6,10 @@
         createReaction,
         deleteReactionComment,
         getAvatar,
+        getCatalogWorkflow,
         getIdeaAttachmentsCount,
-        getProjectIdea
+        getProjectIdea,
+        progressProjectIdea
     } from "@/lib/dmart_services";
     import {formatDate} from "@/lib/helpers";
     import {
@@ -37,12 +39,22 @@
     let isOwner = $state(false);
     let userReactionEntry = $state(null);
 
+    let workflows: any = $state({});
+    let workflowSteps = $state([]);
+
     let counts: any = $state({});
+    let isAdmin = JSON.parse(localStorage.getItem("roles") ?? '[]').includes("super_admin");
     onMount(async ()=>{
         isLoadingPage = true;
         await refreshIdea();
         isOwner = $user.shortname === projectIdea.owner_shortname
         await refreshCounts();
+        workflows = await getCatalogWorkflow();
+        if (workflows){
+            await refreshIdeaState();
+        } else {
+            errorToastMessage("Failed to fetch workflow.!", true);
+        }
         isLoadingPage = false;
     })
 
@@ -51,6 +63,7 @@
             shortname: projectIdea.shortname
         });
     }
+
     async function handlePublish(isActive) {
         const response = await Dmart.request({
             space_name: "catalog",
@@ -122,7 +135,6 @@
     }
 
     async function refreshIdea(){
-
         projectIdea = await getProjectIdea($params.shortname)
         await refreshCounts();
     }
@@ -133,6 +145,34 @@
         userReactionEntry = await checkCurrentUserReactedIdea($user.shortname, projectIdea.shortname)
         counts = _counts[0].attributes
     }
+
+    async function refreshIdeaState(){
+        const _workflow = workflows.states.filter((state: any) => state.state === projectIdea.state);
+        if(_workflow.length === 0) {
+            errorToastMessage("Idea is in invalid state!", true);
+        } else if(_workflow.length > 1) {
+            errorToastMessage("Idea has a corrupted workflow!", true);
+        } else {
+            workflowSteps = _workflow[0].next.map((state: any) => {
+                return {
+                    ...state,
+                    title: (workflows.states.filter((_state: any) => state.state === _state.state)??[{name:"N/A"}])[0].name
+                }
+            });
+        }
+    }
+
+    async function handleProgressTicket(state: string){
+        const response = await progressProjectIdea($params.shortname, state);
+        if(response){
+            successToastMessage("Ticket progressed successfully");
+            await refreshIdea();
+            await refreshIdeaState();
+        } else {
+            errorToastMessage("Failed to progress ticket!");
+        }
+    }
+
 </script>
 
 
@@ -143,16 +183,26 @@
             <Diamonds color="black" size="200" unit="px" />
         </div>
     {:else}
-        {#if isOwner}
+        {#if isOwner || isAdmin}
             <div class="alert alert-secondary d-flex justify-content-between align-items-center mb-5">
-                <p style="margin: 0!important;">
-                    {projectIdea.is_active ? `Last update: ${formatDate(projectIdea.updated_at)}` : "This is draft"}
-                </p>
-                <div>
+                {#if projectIdea.is_open}
+                    <p style="margin: 0!important;">
+                        {projectIdea.is_active ? `Last update: ${formatDate(projectIdea.updated_at)}` : "This is draft"}
+                    </p>
+                    <div>
                     <Button color="primary" onclick={()=>handleEdit(projectIdea)}>{isLoading ? "...." : "Edit"}</Button>
                     |
                     <Button color={projectIdea.is_active ? "danger" : "success"} onclick={()=>handlePublish(projectIdea.is_active)}>{isLoading ? "......." : (projectIdea.is_active ? "Unpublish" : "Publish")}</Button>
+                    |
+                    {#if isAdmin}
+                        {#each workflowSteps as workflowStep}
+                            <Button class="mx-1" color="warning" onclick={()=>handleProgressTicket(workflowStep.action)}>{workflowStep.title}</Button>
+                        {/each}
+                    {/if}
                 </div>
+                {:else}
+                    <p class="w-100 text-center " style="margin: 0!important;">This idea is closed</p>
+                {/if}
             </div>
         {/if}
         <Row>
