@@ -5,7 +5,7 @@
   import { SvelteToast } from '@zerodevx/svelte-toast'
   import {website} from "@/config";
 
-  // Dmart.baseURL = website.backend;
+  Dmart.baseURL = website.backend;
 
   const prefix = "";
 </script>

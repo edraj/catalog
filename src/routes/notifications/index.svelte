@@ -1,31 +1,42 @@
-<script>
+<script lang="ts">
     import {Container} from "sveltestrap";
-    import {fetchMyNotifications, getAvatar} from "@/lib/dmart_services";
+    import {fetchMyNotifications, getAvatar, getProjectIdea, markNotification} from "@/lib/dmart_services";
     import {user} from "@/stores/user";
     import {onMount} from "svelte";
     import {Card, CardBody, Col, Row} from "sveltestrap";
     import {formatDate} from "@/lib/helpers";
     import Avatar from "@/routes/components/Avatar.svelte";
     import {SyncLoader} from "svelte-loading-spinners";
+    import {newNotificationType} from "@/stores/newNotificationType";
+    import {ResourceType} from "@edraj/tsdmart";
+    import {goto} from "@roxi/routify";
+    $goto
+
 
     let notifications = $state([]);
     let isNotificationsLoading = $state(false)
+
     onMount(async ()=>{
+        $newNotificationType = '';
+
         isNotificationsLoading = true;
         const _notifications = await fetchMyNotifications($user.shortname)
-        notifications = _notifications.map(notification => {
-            const {action_by, entry_shortname, entry_subpath, resource_type, is_read} = notification.attributes.payload.body;
+        notifications = await Promise.all(_notifications.map(async notification => {
+            const {action_by, entry_shortname, parent_shortname, entry_subpath, resource_type, is_read} = notification.attributes.payload.body;
 
             const resourceTypeString = (function () {
                 switch (resource_type){
                     case "reaction":
-                        return "REACTED";
+                        return "reacted";
                     case "comment":
-                        return "COMMENTED"
+                        return "New comment"
                 }
              })();
 
-            return {
+            let idea = await getProjectIdea(parent_shortname)
+
+            let _notification: any = {
+                parent_shortname,
                 shortname: notification.shortname,
                 created_at: formatDate(notification.attributes.created_at),
                 action_by,
@@ -35,12 +46,29 @@
                 resourceTypeString: resourceTypeString,
                 is_read
             }
-        })
+
+            if(idea){
+                console.log({idea})
+                _notification.title = idea.payload.body.title
+                if(_notification.resource_type === ResourceType.comment){
+                    const r = (idea.attachments.comment ?? []).filter(c => {
+                        return c.shortname === notification.attributes.payload.body.entry_shortname
+                    })
+                    if(r.length){
+                        _notification.body = r[0].attributes.payload.body.body
+                    }
+                }
+
+            }
+
+            return _notification
+        }))
         isNotificationsLoading = false;
     })
 
     async function handleNotificationClick(notification){
-
+        await markNotification($user.shortname, notification.shortname)
+        $goto("/dashboard/{shortname}", {shortname: notification.parent_shortname});
     }
 </script>
 
@@ -57,7 +85,7 @@
     {/if}
 
     {#each notifications as notification}
-        <Card class="my-4" style="cursor: pointer"
+        <Card class="my-4 {notification.is_read === 'yes' ? '' : 'border-primary'}" style="cursor: pointer"
               onclick={(e)=>handleNotificationClick(notification)}>
             <CardBody>
                 <Row>
@@ -67,7 +95,13 @@
                         {/await}
                     </Col>
                     <Col sm="10">
-                        <h1>{notification.action_by} has {notification.resourceTypeString} to your post</h1>
+                        <h1>{notification.action_by}</h1>
+                        <h2>{notification.title}</h2>
+                        {#if notification.resource_type === ResourceType.reaction}
+                            <h3>Has {notification.resourceTypeString} to your post</h3>
+                            {:else if notification.resource_type === ResourceType.comment}
+                            <h3><span class="fw-bold">{notification.resourceTypeString}</span>: {notification.body}</h3>
+                        {/if}
                         <h6 class="text-secondary fw-bold">{notification.created_at}</h6>
                     </Col>
                 </Row>

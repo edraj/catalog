@@ -177,9 +177,11 @@ export async function getProjectIdeas(ideaSearch: ProjectIdeasSearch = null) {
     return response.records;
 }
 
-export async function getProjectIdea(shortname: string){
+export async function getProjectIdea(
+    shortname: string, retrieve_json_payload: boolean = true, retrieve_attachments: boolean = true
+){
     try {
-        return Dmart.retrieve_entry(ResourceType.ticket, "catalog", "posts", shortname, true, true);
+        return Dmart.retrieve_entry(ResourceType.ticket, "catalog", "posts", shortname, retrieve_json_payload, retrieve_attachments);
     } catch (e) {
         return null;
     }
@@ -415,4 +417,38 @@ export async function fetchMyNotifications(shortname: string){
     }
     const response = await Dmart.query(data);
     return response.records;
+}
+
+export async function markNotification(user_shortname: string, shortname: string, markRead: boolean = true){
+    const response = await Dmart.request({
+        space_name: "personal",
+        request_type: RequestType.update,
+        records: [
+            {
+                resource_type: ResourceType.content,
+                shortname: shortname,
+                subpath: `people/${user_shortname}/notifications`,
+                attributes: {
+                    payload: {
+                        schema_shortname: null,
+                        body: {
+                            is_read: markRead ? "yes" : "no"
+                        }
+                    }
+                }
+            }
+        ]
+    });
+    return response.status == "success";
+}
+
+export async function markAllNotification(user_shortname: string, shortnames: string[], markRead: boolean = true){
+
+}
+
+export async function deleteNotification(shortname: string){
+}
+
+export async function deleteAllNotification(shortnames: string[]){
+
 }
