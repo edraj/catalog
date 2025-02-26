@@ -1,6 +1,6 @@
 <script>
     import {InputGroup, Input, InputGroupText, Modal, ModalBody, ModalFooter, Button} from "sveltestrap";
-    import {getIdeaAttachmentsCount, getProjectIdeas} from "@/lib/dmart_services";
+    import {getEntityAttachmentsCount, getEntities} from "@/lib/dmart_services";
     import {formatDate, renderStateString} from "@/lib/helpers";
     import {goto} from "@roxi/routify";
     $goto
@@ -10,7 +10,7 @@
     let isProjectBeingFetched = $state(false);
     let modalOpen = $state(false);
     let searchString = $state("");
-    let projects = $state([]);
+    let entities = $state([]);
 
     function toggleModal() {
         modalOpen = !modalOpen;
@@ -31,17 +31,17 @@
             }
             timeout = setTimeout(async () => {
                 isProjectBeingFetched = true;
-                const _ideas = await getProjectIdeas({limit: 15, offset: 0, shortname: "", search: searchString});
+                const results = await getEntities({limit: 15, offset: 0, shortname: "", search: searchString});
 
-                if(_ideas === null) {
+                if(results === null) {
                     return;
                 }
 
-                const _projects = [];
-                for (const item of _ideas) {
-                    const counts = await getIdeaAttachmentsCount(item.shortname)
+                const _entities = [];
+                for (const item of results) {
+                    const counts = await getEntityAttachmentsCount(item.shortname)
 
-                    _projects.push({
+                    _entities.push({
                         shortname: item.shortname,
                         owner: item.attributes.owner_shortname,
                         tags: item.attributes.tags,
@@ -52,7 +52,7 @@
                         ...counts[0].attributes
                     })
                 }
-                projects = _projects;
+                entities = _entities;
 
                 isProjectBeingFetched = false;
             }, 500);
@@ -96,25 +96,25 @@
                 </div>
             {/if}
 
-            {#if projects.length === 0 && !isProjectBeingFetched}
-                No projects found
+            {#if entities.length === 0 && !isProjectBeingFetched}
+                No entities found
             {:else}
                 <ul>
-                    {#each projects as project}
+                    {#each entities as entity}
                         <Card class="my-4" style="cursor: pointer"
-                              onclick={(e)=>handleProjectClick(project.shortname)}>
+                              onclick={(e)=>handleProjectClick(entity.shortname)}>
                             <CardBody>
                                 <Row>
                                     <Col sm="4">
-                                        <h1>{project.title}</h1>
-                                        <h6 class="text-secondary fw-bold">{project.updated_at}</h6>
+                                        <h1>{entity.title}</h1>
+                                        <h6 class="text-secondary fw-bold">{entity.updated_at}</h6>
                                     </Col>
                                     <Col sm="4" class="d-flex justify-content-center align-items-center">
-                                        <span class="mx-2"><i class="bi bi-heart-fill text-danger"></i> {project.reaction ?? 0}</span>
-                                        <span class="mx-2"><i class="bi bi-chat-left-text-fill text-primary"></i> {project.comment ?? 0}</span>
+                                        <span class="mx-2"><i class="bi bi-heart-fill text-danger"></i> {entity.reaction ?? 0}</span>
+                                        <span class="mx-2"><i class="bi bi-chat-left-text-fill text-primary"></i> {entity.comment ?? 0}</span>
                                     </Col>
                                     <Col sm="4" class="d-flex justify-content-center align-items-center">
-                                        {renderStateString(project)}
+                                        {renderStateString(entity)}
                                     </Col>
                                 </Row>
                             </CardBody>

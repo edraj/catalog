@@ -8,8 +8,8 @@
         CardBody
     } from "sveltestrap";
     import {
-        getIdeaAttachmentsCount,
-        getProjectIdeas,
+        getEntityAttachmentsCount,
+        getEntities,
     } from "@/lib/dmart_services";
     import {onMount} from "svelte";
     import {errorToastMessage} from "@/lib/toasts_messages";
@@ -19,18 +19,18 @@
     $goto
 
     let isLoading: boolean = $state(true);
-    let projectIdeas: any[] = $state([]);
+    let entities: any[] = $state([]);
 
-    async function fetchProjectIdeas() {
+    async function fetchEntities() {
         isLoading = true;
-        const _projectIdeas = await getProjectIdeas();
-        if (_projectIdeas === null) {
-            errorToastMessage("Failed to fetch project ideas.", true);
-            projectIdeas = [];
+        const _entities = await getEntities();
+        if (_entities === null) {
+            errorToastMessage("Failed to fetch entities!", true);
+            entities = [];
         } else {
-            projectIdeas = await Promise.all(
-                _projectIdeas.map(async(item) => {
-                    const counts = await getIdeaAttachmentsCount(item.shortname)
+            entities = await Promise.all(
+                _entities.map(async(item) => {
+                    const counts = await getEntityAttachmentsCount(item.shortname)
                     return {
                         is_active: item.attributes.is_active,
                         shortname: item.shortname,
@@ -49,12 +49,12 @@
     }
 
     onMount(async () => {
-        await fetchProjectIdeas();
+        await fetchEntities();
     });
 
-    function gotoIdeaDetails(projectIdea: any){
+    function gotoEntityDetails(entity: any){
         $goto(`/dashboard/{shortname}`, {
-            shortname: projectIdea.shortname
+            shortname: entity.shortname
         });
     }
 </script>
@@ -67,39 +67,39 @@
     {:else}
         <div class="d-flex justify-content-end">
             <Button color="success"
-                    onclick={()=>$goto("/dashboard/create_idea")}>Create Idea</Button>
+                    onclick={()=>$goto("/dashboard/create_entity")}>Create Entity</Button>
         </div>
-        {#if projectIdeas.length === 0}
-            <h1 class="text-center mt-5">No project ideas found.</h1>
+        {#if entities.length === 0}
+            <h1 class="text-center mt-5">No entities found.</h1>
         {/if}
-        {#each projectIdeas as projectIdea}
-            <Card class="my-4" style="cursor: pointer" on:click={()=>gotoIdeaDetails(projectIdea)}>
+        {#each entities as entity}
+            <Card class="my-4" style="cursor: pointer" on:click={()=>gotoEntityDetails(entity)}>
                 <CardBody>
                     <Row>
                         <Col class="mt-3" sm="1">
-                            <h5 class="text-center">{projectIdea.reaction ?? 0}</h5>
+                            <h5 class="text-center">{entity.reaction ?? 0}</h5>
                         </Col>
                         <Col sm="11">
-                            <h1>{projectIdea.title}</h1>
-                            <h6 class="text-secondary fw-bold">{projectIdea.updated_at}</h6>
-                            <p class="text-secondary">{@html truncateString(projectIdea.content)}</p>
+                            <h1>{entity.title}</h1>
+                            <h6 class="text-secondary fw-bold">{entity.updated_at}</h6>
+                            <p class="text-secondary">{@html truncateString(entity.content)}</p>
 
 
                             <div class="my-4" style="font-size: 1.25rem">
-                                <i id="idea_status" class={renderStateIcon(projectIdea)}
-                                   data-toggle="tooltip" data-placement="top" title={renderStateString(projectIdea)}></i>
+                                <i class={renderStateIcon(entity)}
+                                   data-toggle="tooltip" data-placement="top" title={renderStateString(entity)}></i>
 
-                                <i class="bi bi-chat-left-text-fill mx-2"></i>{projectIdea.comment ?? 0}
+                                <i class="bi bi-chat-left-text-fill mx-2"></i>{entity.comment ?? 0}
                             </div>
 
 
                             <div class="d-flex justify-content-between">
                                 <div>
-                                    {#each projectIdea.tags as tag}
+                                    {#each entity.tags as tag}
                                         <span class="badge bg-secondary me-1" style="font-size: 1rem">{tag}</span>
                                     {/each}
                                 </div>
-                                <p style="font-size: 1.5rem">{projectIdea.owner}</p>
+                                <p style="font-size: 1.5rem">{entity.owner}</p>
                             </div>
                         </Col>
                     </Row>

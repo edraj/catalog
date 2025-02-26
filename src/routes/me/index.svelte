@@ -1,7 +1,7 @@
 <script lang="ts">
     import {Card, CardBody, CardHeader, Col, Container, Form, Input, Label, Row} from "sveltestrap";
     import {onMount} from "svelte";
-    import {getAvatar, getIdeaAttachmentsCount, getProfile, getProjectIdeas, updateProfile} from "@/lib/dmart_services";
+    import {getAvatar, getEntityAttachmentsCount, getProfile, getEntities, updateProfile} from "@/lib/dmart_services";
     import {Button} from "sveltestrap";
     import {errorToastMessage, successToastMessage} from "@/lib/toasts_messages";
     import Avatar from "@/routes/components/Avatar.svelte";
@@ -15,7 +15,7 @@
     let isLoading = $state(true);
     let user = $state(null);
     let avatar = $state(null);
-    let ideas = $state([]);
+    let entities = $state([]);
     let displayname = $state("");
     let description = $state("");
 
@@ -27,16 +27,16 @@
 
         avatar = await getAvatar(user.shortname);
 
-        const _ideas = await getProjectIdeas({limit: 15, offset: 0, shortname: user.shortname});
-        if (_ideas === null) {
-            errorToastMessage("Failed to fetch project ideas.", true);
-            ideas = [];
+        const _entities = await getEntities({limit: 15, offset: 0, shortname: user.shortname, search: ""});
+        if (_entities === null) {
+            errorToastMessage("Failed to fetch entities!", true);
+            entities = [];
         }
         else {
-            for (const item of _ideas) {
-                const counts = await getIdeaAttachmentsCount(item.shortname)
+            for (const item of _entities) {
+                const counts = await getEntityAttachmentsCount(item.shortname)
 
-                ideas.push({
+                entities.push({
                     shortname: item.shortname,
                     owner: item.attributes.owner_shortname,
                     tags: item.attributes.tags,
@@ -66,12 +66,12 @@
     function handleME() {
         profileSection = "ME";
     }
-    function handleIdeas() {
+    function handleEntities() {
         profileSection = "IDEAS";
     }
-    function gotoIdeaDetails(projectIdea: any){
+    function gotoEntityDetails(entity: any){
         $goto(`/dashboard/{shortname}`, {
-            shortname: projectIdea.shortname
+            shortname: entity.shortname
         });
     }
 
@@ -82,7 +82,7 @@
     <div style="font-size: 2rem">
         <span style="cursor: pointer" class={profileSection === "ME" ? "fw-bold" : ""} onclick={handleME}>My profile</span>
         |
-        <span style="cursor: pointer" class={profileSection === "IDEAS" ? "fw-bold" : ""} onclick={handleIdeas}>My ideas</span>
+        <span style="cursor: pointer" class={profileSection === "IDEAS" ? "fw-bold" : ""} onclick={handleEntities}>My entities</span>
     </div>
 
 
@@ -92,7 +92,7 @@
         </div>
     {:else}
         {#if profileSection === "ME"}
-            <Row>
+            <Row class="mt-5">
                 <Col class="d-flex justify-content-center align-items-center" sm="3">
                     <Avatar src={avatar}/>
                 </Col>
@@ -130,23 +130,23 @@
                 {/if}
             </Row>
         {:else}
-            {#if ideas.length === 0}
-                <h1 class="text-center mt-5">No project ideas found.</h1>
+            {#if entities.length === 0}
+                <h1 class="text-center mt-5">No entities found.</h1>
             {:else}
-                {#each ideas as projectIdea}
-                    <Card class="my-4" style="cursor: pointer" on:click={()=>gotoIdeaDetails(projectIdea)}>
+                {#each entities as entity}
+                    <Card class="my-4" style="cursor: pointer" on:click={()=>gotoEntityDetails(entity)}>
                         <CardBody>
                             <Row>
                                 <Col sm="4">
-                                    <h1>{projectIdea.title}</h1>
-                                    <h6 class="text-secondary fw-bold">{projectIdea.updated_at}</h6>
+                                    <h1>{entity.title}</h1>
+                                    <h6 class="text-secondary fw-bold">{entity.updated_at}</h6>
                                 </Col>
                                 <Col sm="4" class="d-flex justify-content-center align-items-center">
-                                    <span class="mx-2"><i class="bi bi-heart-fill text-danger"></i> {projectIdea.reaction ?? 0}</span>
-                                    <span class="mx-2"><i class="bi bi-chat-left-text-fill text-primary"></i> {projectIdea.comment ?? 0}</span>
+                                    <span class="mx-2"><i class="bi bi-heart-fill text-danger"></i> {entity.reaction ?? 0}</span>
+                                    <span class="mx-2"><i class="bi bi-chat-left-text-fill text-primary"></i> {entity.comment ?? 0}</span>
                                 </Col>
                                 <Col sm="4" class="d-flex justify-content-center align-items-center">
-                                    {renderStateString(projectIdea)}
+                                    {renderStateString(entity)}
                                 </Col>
                             </Row>
                         </CardBody>

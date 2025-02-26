@@ -7,9 +7,9 @@
         deleteReactionComment,
         getAvatar,
         getCatalogWorkflow,
-        getIdeaAttachmentsCount,
-        getProjectIdea,
-        progressProjectIdea
+        getEntityAttachmentsCount,
+        getEntity,
+        progressEntity
     } from "@/lib/dmart_services";
     import {formatDate} from "@/lib/helpers";
     import {
@@ -33,7 +33,7 @@
     import Avatar from "@/routes/components/Avatar.svelte";
     import {Diamonds} from "svelte-loading-spinners";
 
-    let projectIdea = $state(null);
+    let entity = $state(null);
     let isLoading = $state(false);
     let isLoadingPage: boolean = $state(true);
     let isOwner = $state(false);
@@ -47,20 +47,20 @@
     onMount(async ()=>{
         isLoadingPage = true;
         await refreshIdea();
-        isOwner = $user.shortname === projectIdea.owner_shortname
+        isOwner = $user.shortname === entity.owner_shortname
         await refreshCounts();
         workflows = await getCatalogWorkflow();
-        if (workflows){
+        if (Object.keys(workflows).length){
             await refreshIdeaState();
-        } else {
-            errorToastMessage("Failed to fetch workflow.!", true);
+        } else if (workflows === null) {
+            errorToastMessage("Failed to fetch workflow!", true);
         }
         isLoadingPage = false;
     })
 
-    function handleEdit(projectIdea) {
+    function handleEdit(entity) {
         $goto(`/dashboard/{shortname}/edit`, {
-            shortname: projectIdea.shortname
+            shortname: entity.shortname
         });
     }
 
@@ -104,7 +104,7 @@
     async function deleteComment(shortname: string){
         const response = deleteReactionComment(
             ResourceType.comment,
-            `posts/${projectIdea.shortname}`,
+            `posts/${entity.shortname}`,
             shortname
         )
 
@@ -123,7 +123,7 @@
         } else {
             response = await deleteReactionComment(
                 ResourceType.reaction,
-                `posts/${projectIdea.shortname}`,
+                `posts/${entity.shortname}`,
                 userReactionEntry
             )
         }
@@ -135,23 +135,23 @@
     }
 
     async function refreshIdea(){
-        projectIdea = await getProjectIdea($params.shortname)
+        entity = await getEntity($params.shortname)
         await refreshCounts();
     }
 
     async function refreshCounts() {
-        const _counts = await getIdeaAttachmentsCount(projectIdea.shortname)
+        const _counts = await getEntityAttachmentsCount(entity.shortname)
 
-        userReactionEntry = await checkCurrentUserReactedIdea($user.shortname, projectIdea.shortname)
+        userReactionEntry = await checkCurrentUserReactedIdea($user.shortname, entity.shortname)
         counts = _counts[0].attributes
     }
 
     async function refreshIdeaState(){
-        const _workflow = workflows.states.filter((state: any) => state.state === projectIdea.state);
+        const _workflow = workflows.states.filter((state: any) => state.state === entity.state);
         if(_workflow.length === 0) {
-            errorToastMessage("Idea is in invalid state!", true);
+            errorToastMessage("Entity is in invalid state!", true);
         } else if(_workflow.length > 1) {
-            errorToastMessage("Idea has a corrupted workflow!", true);
+            errorToastMessage("Entity has a corrupted workflow!", true);
         } else {
             workflowSteps = _workflow[0].next.map((state: any) => {
                 return {
@@ -163,7 +163,7 @@
     }
 
     async function handleProgressTicket(state: string){
-        const response = await progressProjectIdea($params.shortname, state);
+        const response = await progressEntity($params.shortname, state);
         if(response){
             successToastMessage("Ticket progressed successfully");
             await refreshIdea();
@@ -185,56 +185,57 @@
     {:else}
         {#if isOwner || isAdmin}
             <div class="alert alert-secondary d-flex justify-content-between align-items-center mb-5">
-                {#if projectIdea.is_open}
+                {#if entity.is_open}
                     <p style="margin: 0!important;">
-                        {projectIdea.is_active ? `Last update: ${formatDate(projectIdea.updated_at)}` : "This is draft"}
+                        {entity.is_active ? `Last update: ${formatDate(entity.updated_at)}` : "This is draft"}
                     </p>
                     <div>
-                    <Button color="primary" onclick={()=>handleEdit(projectIdea)}>{isLoading ? "...." : "Edit"}</Button>
+                    <Button color="primary" onclick={()=>handleEdit(entity)}>{isLoading ? "...." : "Edit"}</Button>
                     |
-                    <Button color={projectIdea.is_active ? "danger" : "success"} onclick={()=>handlePublish(projectIdea.is_active)}>{isLoading ? "......." : (projectIdea.is_active ? "Unpublish" : "Publish")}</Button>
-                    |
+                    <Button color={entity.is_active ? "danger" : "success"} onclick={()=>handlePublish(entity.is_active)}>{isLoading ? "......." : (entity.is_active ? "Unpublish" : "Publish")}</Button>
+
                     {#if isAdmin}
+                        |
                         {#each workflowSteps as workflowStep}
                             <Button class="mx-1" color="warning" onclick={()=>handleProgressTicket(workflowStep.action)}>{workflowStep.title}</Button>
                         {/each}
                     {/if}
                 </div>
                 {:else}
-                    <p class="w-100 text-center " style="margin: 0!important;">This idea is closed</p>
+                    <p class="w-100 text-center " style="margin: 0!important;">This entity is closed</p>
                 {/if}
             </div>
         {/if}
         <Row>
             <Col sm="12">
-                <h1>{projectIdea.payload.body.title}</h1>
-                <h6 class="text-secondary fw-bold">{formatDate(projectIdea.updated_at)}</h6>
-                <p class="text-secondary">{projectIdea.payload.body.long_description}</p>
+                <h1>{entity.payload.body.title}</h1>
+                <h6 class="text-secondary fw-bold">{formatDate(entity.updated_at)}</h6>
+                <p class="text-secondary">{entity.payload.body.long_description}</p>
 
 
                 <div class="my-4" style="font-size: 1.25rem">
                     <i class="bi bi-chat-left-text-fill"></i> {counts.comment ?? 0}
-                    <i class="bi {projectIdea.is_active ? 'bi-check-lg text-success' : 'bi-x-lg text-danger' }"></i> {projectIdea.is_active ? 'Active' : 'Inactive'}
+                    <i class="bi {entity.is_active ? 'bi-check-lg text-success' : 'bi-x-lg text-danger' }"></i> {entity.is_active ? 'Active' : 'Inactive'}
                 </div>
 
                 <div>
-                    {#each projectIdea.tags as tag}
+                    {#each entity.tags as tag}
                         <span class="badge bg-secondary me-1" style="font-size: 1rem">{tag}</span>
                     {/each}
                 </div>
 
-                <p class="mt-3" style="font-size: 1.5rem">{projectIdea.owner_shortname}</p>
+                <p class="mt-3" style="font-size: 1.5rem">{entity.owner_shortname}</p>
 
                 <div class="my-5">
-                    {@html projectIdea.payload.body.content}
+                    {@html entity.payload.body.content}
                 </div>
 
                 <Attachments
                         resource_type={ResourceType.ticket}
                         space_name={"catalog"}
                         subpath={"posts"}
-                        parent_shortname={projectIdea.shortname}
-                        attachments={Object.values(projectIdea.attachments.media ?? [])}
+                        parent_shortname={entity.shortname}
+                        attachments={Object.values(entity.attachments.media ?? [])}
                         isOwner={isOwner}
                 />
 
@@ -242,10 +243,10 @@
                 <Card>
                     <CardBody>
                         <div class="comment-section mt-3">
-                            {#if (projectIdea.attachments.comment ?? []).length === 0}
+                            {#if (entity.attachments.comment ?? []).length === 0}
                                 <p class="text-center">No comments yet.</p>
                             {:else}
-                                {#each (projectIdea.attachments.comment ?? []) as comment}
+                                {#each (entity.attachments.comment ?? []) as comment}
                                     <div class="d-flex justify-content-between my-2">
                                         <Row class="justify-content-between">
                                             <Col sm="1" class="px-3">

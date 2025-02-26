@@ -3,7 +3,7 @@
     import {goto} from "@roxi/routify";
     import HtmlEditor from "@/routes/components/HtmlEditor.svelte";
     import { Input } from "sveltestrap";
-    import {attachAttachmentsToIdeas, createProjectIdea} from "@/lib/dmart_services";
+    import {attachAttachmentsToEntity, createEntity} from "@/lib/dmart_services";
     import {errorToastMessage, successToastMessage} from "@/lib/toasts_messages";
     $goto
 
@@ -52,22 +52,22 @@
     async function handlePublish(isPublish) {
         isLoading = true;
 
-        const idea: ProjectIdea = {
+        const entity: Entity = {
             title: title,
             content: getContent(),
             tags: tags,
             is_active: isPublish,
         };
-        const response = await createProjectIdea(idea);
+        const response = await createEntity(entity);
         const msg = isPublish ? "published" : "saved";
         if(response){
-            successToastMessage(`Idea ${msg} successfully.`);
+            successToastMessage(`Entity ${msg} successfully.`);
             for (const attachment of attachments) {
 
-                const r = await attachAttachmentsToIdeas(response, attachment);
+                const r = await attachAttachmentsToEntity(response, attachment);
 
                 if(r === false){
-                    errorToastMessage(`Failed to attach ${attachment.name} to idea!`);
+                    errorToastMessage(`Failed to attach ${attachment.name} to entity!`);
                 }
             }
            setTimeout(() => {
@@ -76,7 +76,7 @@
                });
            }, 500);
         } else {
-            errorToastMessage(`Failed to ${msg} idea!`);
+            errorToastMessage(`Failed to ${msg} entity!`);
             isLoading = false;
         }
     }

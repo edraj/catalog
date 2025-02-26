@@ -11,7 +11,7 @@ interface User {
     password: string;
 }
 
-interface ProjectIdea {
+interface Entity {
     title: string
     tags: string[]
     content: string

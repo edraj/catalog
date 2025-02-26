@@ -4,7 +4,7 @@
     import HtmlEditor from "@/routes/components/HtmlEditor.svelte";
 
     import { Input } from "sveltestrap";
-    import {attachAttachmentsToIdeas, getProjectIdea, updateProjectIdea} from "@/lib/dmart_services";
+    import {attachAttachmentsToEntity, deleteEntity, getEntity, updateEntity} from "@/lib/dmart_services";
     import {errorToastMessage, successToastMessage} from "@/lib/toasts_messages";
     import {onMount} from "svelte";
     import Dmart, {RequestType, ResourceType} from "@edraj/tsdmart";
@@ -13,7 +13,7 @@
     import {user} from "@/stores/user";
     $goto
 
-    let idea = $state(null);
+    let entity = $state(null);
     let isLoading = $state(false);
     let content = $state("");
 
@@ -57,21 +57,21 @@
     }
 
     async function handleSave(event) {
-        const _idea: ProjectIdea = {
+        const _entity: Entity = {
             title: title,
             content: getContent(),
             tags: tags,
-            is_active: idea.is_active,
+            is_active: entity.is_active,
         };
-        const response = await updateProjectIdea(idea.shortname, _idea);
+        const response = await updateEntity(entity.shortname, _entity);
         if(response){
             successToastMessage("Saved successfully");
             for (const attachment of attachments) {
 
-                const r = await attachAttachmentsToIdeas(response, attachment);
+                const r = await attachAttachmentsToEntity(response, attachment);
 
                 if(r === false){
-                    errorToastMessage(`Failed to attach ${attachment.name} to idea!`);
+                    errorToastMessage(`Failed to attach ${attachment.name} to entity!`);
                 }
             }
         } else {
@@ -91,7 +91,7 @@
                     shortname: $params.shortname,
                     subpath: "posts",
                     attributes: {
-                        is_active: !idea.is_active
+                        is_active: !entity.is_active
                     }
                 }
             ]
@@ -110,39 +110,28 @@
     }
 
     onMount(async ()=>{
-        idea = await getProjectIdea($params.shortname)
-        title = idea.payload.body.title;
-        tags = idea.tags;
+        entity = await getEntity($params.shortname)
+        title = entity.payload.body.title;
+        tags = entity.tags;
     })
 
     $effect(() => {
-        if (idea && htmlEditor) {
-            htmlEditor.setHtml(idea.payload.body.content);
+        if (entity && htmlEditor) {
+            htmlEditor.setHtml(entity.payload.body.content);
         }
     });
 
     async function handleDelete(){
-        if (confirm(`Are you sure want to delete this idea`) === false) {
+        if (confirm(`Are you sure want to delete this entity`) === false) {
             return;
         }
 
-        const response = await Dmart.request({
-            space_name: "catalog",
-            request_type: RequestType.delete,
-            records: [
-                {
-                    resource_type: ResourceType.ticket,
-                    shortname: idea.shortname,
-                    subpath: "posts",
-                    attributes: {},
-                },
-            ],
-        });
-        if(response.status === "success"){
-            successToastMessage(`Idea deleted successfully.`);
+        const response = await deleteEntity(entity.shortname);
+        if(response){
+            successToastMessage(`Entity deleted successfully.`);
             $goto("/dashboard");
         } else {
-            errorToastMessage(`Failed to delete idea!`);
+            errorToastMessage(`Failed to delete entity!`);
         }
     }
 </script>
@@ -151,18 +140,18 @@
 <Container class="mt-5">
     <Button class="mb-5" onclick={()=>history.back()}>{isLoading ? "...." : "Back"}</Button>
 
-    {#if idea}
+    {#if entity}
 
         <div class="alert alert-secondary d-flex justify-content-between align-items-center mb-5">
             <p style="margin: 0!important;">
-                {idea.is_active ? `Last update: ${formatDate(idea.updated_at)}` : "This is draft"}
+                {entity.is_active ? `Last update: ${formatDate(entity.updated_at)}` : "This is draft"}
             </p>
             <div>
                 <Button color="primary" onclick={handleSave}>{isLoading ? "...." : "Save"}</Button>
                 |
-                <Button color={idea.is_active ? "danger" : "success"}
+                <Button color={entity.is_active ? "danger" : "success"}
                         onclick={handlePublish}>
-                    {isLoading ? "......." : (idea.is_active ? "Unpublish" : "Publish")}
+                    {isLoading ? "......." : (entity.is_active ? "Unpublish" : "Publish")}
                 </Button>
 
                 <button class="btn btn-danger" onclick={handleDelete} aria-label="Delete attachment">
@@ -207,9 +196,9 @@
                     resource_type={ResourceType.ticket}
                     space_name={"catalog"}
                     subpath={"posts"}
-                    parent_shortname={idea.shortname}
-                    attachments={Object.values(idea.attachments)}
-                    isOwner={idea.owner_shortname === $user.shortname}
+                    parent_shortname={entity.shortname}
+                    attachments={Object.values(entity.attachments)}
+                    isOwner={entity.owner_shortname === $user.shortname}
             />
 
             <input type="file" id="fileInput" multiple onchange={handleFileChange} style="display: none;" />

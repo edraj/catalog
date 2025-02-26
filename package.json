@@ -40,7 +40,7 @@
     "svelte": "^4.2.19"
   },
   "dependencies": {
-    "@edraj/tsdmart": "^1.0.13",
+    "@edraj/tsdmart": "^1.0.16",
     "@zerodevx/svelte-toast": "^0.9.6",
     "cl-editor": "edraj/cl-editor",
     "svelte-steps": "^2.4.1"

@@ -10,7 +10,7 @@ import Dmart, {
     SortyType
 } from "@edraj/tsdmart";
 
-export interface ProjectIdeasSearch {
+export interface EntitySearch {
     limit: number;
     offset: number;
     shortname: string;
@@ -147,10 +147,10 @@ export async function createUser(user: User){
 
 }
 
-export async function getProjectIdeas(ideaSearch: ProjectIdeasSearch = null) {
-    const { limit, offset, shortname, search } = ideaSearch === null ? {
+export async function getEntities(entitySearch: EntitySearch = null) {
+    const { limit, offset, shortname, search } = entitySearch === null ? {
         limit: 15, offset: 0, shortname: "", search: ""
-    } : ideaSearch;
+    } : entitySearch;
 
     const queryRequest: QueryRequest = {
         filter_shortnames: [],
@@ -177,7 +177,7 @@ export async function getProjectIdeas(ideaSearch: ProjectIdeasSearch = null) {
     return response.records;
 }
 
-export async function getProjectIdea(
+export async function getEntity(
     shortname: string, retrieve_json_payload: boolean = true, retrieve_attachments: boolean = true
 ){
     try {
@@ -187,7 +187,7 @@ export async function getProjectIdea(
     }
 }
 
-export async function createProjectIdea(data: ProjectIdea){
+export async function createEntity(data: Entity){
     const actionRequest: ActionRequest = {
         "space_name": "catalog",
         "request_type": RequestType.create,
@@ -198,7 +198,7 @@ export async function createProjectIdea(data: ProjectIdea){
                 "subpath": "posts",
                 "attributes": {
                     "is_active": data.is_active,
-                    "workflow_shortname": "catalog_idea_workflow",
+                    "workflow_shortname": "catalog_entity_workflow",
                     "relationships": [],
                     "tags": data.tags,
                     "payload": {
@@ -220,7 +220,7 @@ export async function createProjectIdea(data: ProjectIdea){
     return null;
 }
 
-export async function updateProjectIdea(shortname, data: ProjectIdea){
+export async function updateEntity(shortname, data: Entity){
     const actionRequest: ActionRequest = {
         "space_name": "catalog",
         "request_type": RequestType.update,
@@ -231,7 +231,7 @@ export async function updateProjectIdea(shortname, data: ProjectIdea){
                 "subpath": "posts",
                 "attributes": {
                     "is_active": data.is_active,
-                    "workflow_shortname": "catalog_idea_workflow",
+                    "workflow_shortname": "catalog_entity_workflow",
                     "relationships": [],
                     "tags": data.tags,
                     "payload": {
@@ -253,7 +253,7 @@ export async function updateProjectIdea(shortname, data: ProjectIdea){
     return null;
 }
 
-export async function attachAttachmentsToIdeas(shortname: string, attachment: File){
+export async function attachAttachmentsToEntity(shortname: string, attachment: File){
     const { contentType, resourceType } = getFileType(attachment);
     const response = await Dmart.upload_with_payload(
         "catalog", `posts/${shortname}`, "auto", resourceType, attachment, contentType
@@ -261,7 +261,7 @@ export async function attachAttachmentsToIdeas(shortname: string, attachment: Fi
     return response.status == "success" && response.records.length > 0
 }
 
-export async function getIdeaAttachmentsCount(shortname: string){
+export async function getEntityAttachmentsCount(shortname: string){
     const query: QueryRequest = {
         "filter_shortnames": [],
         "type": QueryType.attachments_aggregation,
@@ -278,7 +278,7 @@ export async function getIdeaAttachmentsCount(shortname: string){
     return response.records;
 }
 
-export async function progressProjectIdea(
+export async function progressEntity(
     shrotname: string, action: string,
     resolution?: string, comment?: string
 ){
@@ -286,7 +286,7 @@ export async function progressProjectIdea(
     return r.status == "success";
 }
 
-export async function deleteProjectIdea(shortname: string){
+export async function deleteEntity(shortname: string){
     const actionRequest: ActionRequest = {
         "space_name": "catalog",
         "request_type": RequestType.delete,
@@ -308,6 +308,9 @@ export async function getCatalogWorkflow(){
         const response = await Dmart.retrieve_entry(ResourceType.content, "catalog", "workflows", "catalog_idea_workflow", true, false);
         return response.payload.body
     } catch (e) {
+        if(e.error.code){
+            return {};
+        }
         return null;
     }
 }
