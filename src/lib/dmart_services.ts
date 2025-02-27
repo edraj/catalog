@@ -2,8 +2,8 @@ import Dmart, {
     type ActionRequest,
     type ActionResponse,
     type ApiQueryResponse,
-    ContentType,
     type QueryRequest,
+    ContentType,
     QueryType,
     RequestType,
     ResourceType,
@@ -55,15 +55,19 @@ function getFileType(file: File): { contentType: ContentType, resourceType: Reso
 }
 
 export async function getProfile(){
-    const profile = await Dmart.get_profile()
-    if (profile === null){
-        return null;
-    }
-    if (profile.status == "success" && profile.records.length > 0) {
-        return profile.records[0];
-    }
+    try {
+        const profile = await Dmart.get_profile()
+        if (profile === null){
+            return null;
+        }
+        if (profile.status == "success" && profile.records.length > 0) {
+            return profile.records[0];
+        }
 
-    return null;
+        return null;
+    } catch (e) {
+        return e;
+    }
 }
 
 export async function getAvatar(shortname: string){
@@ -198,7 +202,7 @@ export async function createEntity(data: Entity){
                 "subpath": "posts",
                 "attributes": {
                     "is_active": data.is_active,
-                    "workflow_shortname": "catalog_entity_workflow",
+                    "workflow_shortname": "catalog_idea_workflow",
                     "relationships": [],
                     "tags": data.tags,
                     "payload": {
@@ -231,7 +235,7 @@ export async function updateEntity(shortname, data: Entity){
                 "subpath": "posts",
                 "attributes": {
                     "is_active": data.is_active,
-                    "workflow_shortname": "catalog_entity_workflow",
+                    "workflow_shortname": "catalog_idea_workflow",
                     "relationships": [],
                     "tags": data.tags,
                     "payload": {

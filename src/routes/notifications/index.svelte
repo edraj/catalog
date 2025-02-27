@@ -56,7 +56,7 @@
                 is_read
             }
 
-            if(n.attributes.relationships.length){
+            if([ResourceType.comment, ResourceType.reaction].includes(_notification.resource_type) && n.attributes.relationships.length){
                 const parent_shortname = n.attributes.relationships[0].related_to.shortname
                 _notification.parent_shortname = parent_shortname
                 let entity = await getEntity(resource_type===ResourceType.ticket ? entry_shortname : parent_shortname)

@@ -111,6 +111,7 @@
 
     onMount(async ()=>{
         entity = await getEntity($params.shortname)
+        console.log({entity})
         title = entity.payload.body.title;
         tags = entity.tags;
     })
@@ -193,12 +194,12 @@
             <CardTitle>Attachments</CardTitle>
 
             <Attachments
-                    resource_type={ResourceType.ticket}
-                    space_name={"catalog"}
-                    subpath={"posts"}
-                    parent_shortname={entity.shortname}
-                    attachments={Object.values(entity.attachments)}
-                    isOwner={entity.owner_shortname === $user.shortname}
+                resource_type={ResourceType.ticket}
+                space_name={"catalog"}
+                subpath={"posts"}
+                parent_shortname={entity.shortname}
+                attachments={Object.values(entity.attachments.media ?? [])}
+                isOwner={entity.owner_shortname === $user.shortname}
             />
 
             <input type="file" id="fileInput" multiple onchange={handleFileChange} style="display: none;" />

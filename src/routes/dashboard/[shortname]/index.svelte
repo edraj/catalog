@@ -231,14 +231,13 @@
                 </div>
 
                 <Attachments
-                        resource_type={ResourceType.ticket}
-                        space_name={"catalog"}
-                        subpath={"posts"}
-                        parent_shortname={entity.shortname}
-                        attachments={Object.values(entity.attachments.media ?? [])}
-                        isOwner={isOwner}
+                    resource_type={ResourceType.ticket}
+                    space_name={"catalog"}
+                    subpath={"posts"}
+                    parent_shortname={entity.shortname}
+                    attachments={Object.values(entity.attachments.media ?? [])}
+                    isOwner={isOwner}
                 />
-
 
                 <Card>
                     <CardBody>

@@ -23,7 +23,12 @@
 
     async function fetchEntities() {
         isLoading = true;
-        const _entities = await getEntities();
+        const _entities = await getEntities({
+            search: "-@state:pending @is_active:true",
+            limit: 10,
+            offset: 0,
+            shortname: ""
+        });
         if (_entities === null) {
             errorToastMessage("Failed to fetch entities!", true);
             entities = [];
