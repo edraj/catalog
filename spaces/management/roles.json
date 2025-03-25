@@ -1,0 +1,11 @@
+{
+  "allow_view": true,
+  "allow_create": true,
+  "shortname_title": "role_shortname",
+  "index_attributes": [
+    {
+      "key": "shortname",
+      "name": "name"
+    }
+  ]
+}

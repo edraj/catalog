@@ -1,0 +1,10 @@
+{
+  "allow_view": true,
+  "shortname_title": "permission_shortname",
+  "index_attributes": [
+    {
+      "key": "shortname",
+      "name": "Permission Shortname"
+    }
+  ]
+}

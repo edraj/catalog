@@ -1,0 +1,15 @@
+{
+  "tags": [],
+  "shortname": "roles",
+  "created_at": "2022-08-23T07:44:36.399780",
+  "updated_at": "2023-04-10T03:47:00.345861",
+  "uuid": "a8f938e0-8dd6-428b-abfe-4d6f7187178b",
+  "owner_shortname": "dmart",
+  "is_active": true,
+  "payload": {
+    "body": "roles.json",
+    "checksum": "86b8c2a570e4756302409c78c7c6d67352daf0d6",
+    "content_type": "json",
+    "schema_shortname": "folder_rendering"
+  }
+}
