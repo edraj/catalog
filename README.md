@@ -1,3 +1,21 @@
+# Setup
+
+Installing all packages and dependencies.
+- `yarn`
+- `npm i`
+
+To run the project:
+- `yarn dev`
+- `npm run dev`
+
+To build the project:
+- `yarn build`
+- `npm run build`
+
+To preview the project as production:
+- `yarn preview`
+- `npm run preview`
+
 # Seeding
 
 ## Running from local
