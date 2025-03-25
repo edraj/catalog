@@ -1,3 +1,9 @@
+# Seeding
+
+- Point dmart service to the project spaces by updating the `SPACES_FOLDER` in `config.env`.
+- Run `json_to_db` script to seed the database with the json files in the project spaces.
+- Note: revert the `SPACES_FOLDER` to the original value after seeding.
+
 # Svelte + TS + Vite
 
 This template should help get you started developing with Svelte and TypeScript in Vite.
@@ -45,3 +51,4 @@ If you have state that's important to retain within a component, consider creati
 import { writable } from 'svelte/store'
 export default writable(0)
 ```
+
