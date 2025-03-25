@@ -1,0 +1,78 @@
+{
+  "name": "Ticket",
+  "states": [
+    {
+      "name": "Pending",
+      "next": [
+        {
+          "roles": [
+            "catalog_admin"
+          ],
+          "state": "in_progress",
+          "action": "start_review"
+        }
+      ],
+      "state": "pending"
+    },
+    {
+      "name": "In Progress",
+      "next": [
+        {
+          "roles": [
+            "catalog_admin"
+          ],
+          "state": "approved",
+          "action": "approve"
+        },
+        {
+          "roles": [
+            "catalog_admin"
+          ],
+          "state": "disapproved",
+          "action": "disapprove"
+        }
+      ],
+      "state": "in_progress"
+    },
+    {
+      "name": "Approved",
+      "state": "approved"
+    },
+    {
+      "name": "Disapproved",
+      "next": [
+        {
+          "roles": [
+            "catalog_admin"
+          ],
+          "state": "pending",
+          "action": "re_submit"
+        }
+      ],
+      "state": "disapproved",
+      "resolutions": [
+        {
+          "en": "Bad Idea",
+          "key": "bad_idea"
+        },
+        {
+          "en": "Poor Planning",
+          "key": "poor_planning"
+        },
+        {
+          "en": "Missing Details",
+          "key": "missing_details"
+        }
+      ]
+    }
+  ],
+  "illustration": "ticket",
+  "initial_state": [
+    {
+      "name": "pending",
+      "roles": [
+        "default"
+      ]
+    }
+  ]
+}

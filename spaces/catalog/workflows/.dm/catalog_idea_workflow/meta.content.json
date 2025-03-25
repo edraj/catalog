@@ -1,0 +1,14 @@
+{
+  "tags": [],
+  "shortname": "catalog_idea_workflow",
+  "created_at": "2025-02-15T12:28:28.992306",
+  "updated_at": "2025-02-23T22:30:58.157248",
+  "uuid": "6a590466-c644-4ee0-9fdc-4ccd16137fa6",
+  "owner_shortname": "dmart",
+  "is_active": true,
+  "payload": {
+    "body": "catalog_idea_workflow.json",
+    "checksum": "90b99515804be05176f1cb6bc34364aed88fe45b",
+    "content_type": "json"
+  }
+}

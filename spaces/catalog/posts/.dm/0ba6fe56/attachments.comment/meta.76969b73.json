@@ -1,0 +1,16 @@
+{
+  "space_name": "catalog",
+  "payload": {
+    "body": "76969b73.json",
+    "checksum": "b90e1065ae23d5f15f3643de3a33e5c3595836fb",
+    "content_type": "json"
+  },
+  "tags": [],
+  "shortname": "76969b73",
+  "created_at": "2025-02-25T20:16:55.026083",
+  "subpath": "/posts/0ba6fe56",
+  "updated_at": "2025-02-25T20:16:55.026091",
+  "uuid": "76969b73-a7cc-4d82-93c2-e2e29f44ec1b",
+  "owner_shortname": "dmart",
+  "is_active": true
+}
