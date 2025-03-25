@@ -1,0 +1,32 @@
+{
+  "query": {
+    "type": "search",
+    "sort_by": "created_at",
+    "sort_type": "descending",
+    "branch_name": "master",
+    "filter_types": [
+      "content"
+    ],
+    "filter_schema_names": [
+      "system_notification_request"
+    ]
+  },
+  "columns": [
+    {
+      "key": "shortname",
+      "name": "name"
+    },
+    {
+      "key": "priority",
+      "name": "Priority"
+    },
+    {
+      "key": "types",
+      "name": "Types"
+    }
+  ],
+  "shortname": "system",
+  "displayname": {
+    "en": "system"
+  }
+}

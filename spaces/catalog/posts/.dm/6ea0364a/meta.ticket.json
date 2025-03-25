@@ -1,0 +1,17 @@
+{
+  "tags": [],
+  "state": "pending",
+  "shortname": "6ea0364a",
+  "created_at": "2025-02-23T22:16:23.633350",
+  "is_open": true,
+  "updated_at": "2025-02-23T22:16:23.633356",
+  "uuid": "6ea0364a-e83f-4485-ae57-30b78170d6ad",
+  "owner_shortname": "dmart",
+  "workflow_shortname": "catalog_idea_workflow",
+  "payload": {
+    "body": "6ea0364a.json",
+    "checksum": "1288ba13ce0d347c2283ef0f087cca0c90b55b9b",
+    "content_type": "json",
+    "schema_shortname": "catelog_post"
+  }
+}

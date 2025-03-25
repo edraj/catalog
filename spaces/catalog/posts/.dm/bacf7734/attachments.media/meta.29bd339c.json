@@ -1,0 +1,16 @@
+{
+  "space_name": "catalog",
+  "payload": {
+    "body": "29bd339c.jpeg",
+    "checksum": "7ad3572cd47ff504e4624e1cd03fc6178566cffa",
+    "content_type": "image"
+  },
+  "tags": [],
+  "shortname": "29bd339c",
+  "created_at": "2025-02-26T21:31:19.010493",
+  "subpath": "/posts/bacf7734",
+  "updated_at": "2025-02-26T21:31:19.010495",
+  "uuid": "29bd339c-0491-47e9-adbd-970e6ac4fffe",
+  "owner_shortname": "user1",
+  "is_active": true
+}

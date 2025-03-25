@@ -1,0 +1,15 @@
+{
+  "tags": [],
+  "shortname": "catelog_post",
+  "created_at": "2025-02-23T18:11:08.209270",
+  "updated_at": "2025-02-23T18:11:08.209284",
+  "uuid": "6720b4a0-05c5-42e1-91d2-a09127b9b344",
+  "owner_shortname": "dmart",
+  "is_active": true,
+  "payload": {
+    "body": "catelog_post.json",
+    "checksum": "334c86ca8f20b3336b41c8698489776520f2039e",
+    "content_type": "json",
+    "schema_shortname": "meta_schema"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "is_active": true,
+  "tags": [],
+  "updated_at": "2025-02-23T23:14:06.861447",
+  "permissions": [
+    "catalog_permission",
+    "access_personal",
+    "access_protected",
+    "access_applications_world",
+    "access_public",
+    "access_messages"
+  ],
+  "shortname": "catalog_role",
+  "uuid": "37a2b90d-3490-4bf1-86a5-2860f774a5c5",
+  "created_at": "2025-02-23T22:43:16.244308",
+  "owner_shortname": "dmart"
+}

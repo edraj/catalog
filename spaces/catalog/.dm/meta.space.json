@@ -1,0 +1,21 @@
+{
+  "mirrors": [],
+  "shortname": "catalog",
+  "tags": [],
+  "created_at": "2025-02-15T12:25:57.007964",
+  "subpath": "/",
+  "updated_at": "2025-02-15T12:25:57.007966",
+  "indexing_enabled": true,
+  "uuid": "1d27b7ea-c38a-405e-8ac0-dbedb5d3f80b",
+  "owner_shortname": "dmart",
+  "active_plugins": [
+    "action_log",
+    "redis_db_update",
+    "resource_folders_creation",
+    "local_notification"
+  ],
+  "is_active": true,
+  "languages": [
+    "english"
+  ]
+}

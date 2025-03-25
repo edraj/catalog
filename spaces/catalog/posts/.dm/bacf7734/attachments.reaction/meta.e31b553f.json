@@ -1,0 +1,16 @@
+{
+  "space_name": "catalog",
+  "payload": {
+    "body": "e31b553f.json",
+    "checksum": "7b0a7aefcbf42d58cd6e8730b6c9e4a17dea3992",
+    "content_type": "json"
+  },
+  "tags": [],
+  "shortname": "e31b553f",
+  "created_at": "2025-02-26T21:32:21.257679",
+  "subpath": "/posts/bacf7734",
+  "updated_at": "2025-02-26T21:32:21.257687",
+  "uuid": "e31b553f-9846-462e-be4c-59f6fd8442ba",
+  "owner_shortname": "dmart",
+  "is_active": true
+}

@@ -3,8 +3,7 @@
   import routes from "../.routify/routes.default";
   import Dmart from "@edraj/tsdmart"
   import { SvelteToast } from '@zerodevx/svelte-toast'
-
-  Dmart.baseURL = "https://api.dmart.cc";
+  import {website} from "@/config";
 
   const prefix = "";
 </script>

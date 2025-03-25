@@ -1,0 +1,38 @@
+{
+  "query": {
+    "type": "search"
+  },
+  "filter": [
+    {}
+  ],
+  "stream": true,
+  "allow_csv": true,
+  "sort_type": "ascending",
+  "use_media": true,
+  "allow_view": true,
+  "csv_columns": [
+    {
+      "key": "",
+      "name": ""
+    }
+  ],
+  "allow_create": true,
+  "allow_delete": true,
+  "allow_update": true,
+  "disable_filter": true,
+  "search_columns": [
+    {
+      "key": "",
+      "name": ""
+    }
+  ],
+  "expand_children": true,
+  "allow_upload_csv": true,
+  "index_attributes": [
+    {
+      "key": "shortname",
+      "name": "Shortname"
+    }
+  ],
+  "allow_create_category": true
+}

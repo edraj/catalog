@@ -1,0 +1,16 @@
+{
+  "space_name": "catalog",
+  "payload": {
+    "body": "cf4fbc8b.pdf",
+    "checksum": "ff03d32c489745b8ae0f783de0a917d0ff5173b3",
+    "content_type": "pdf"
+  },
+  "tags": [],
+  "shortname": "cf4fbc8b",
+  "created_at": "2025-02-28T11:05:26.971606",
+  "subpath": "/posts/c9e4b9e4",
+  "updated_at": "2025-02-28T11:05:26.971609",
+  "uuid": "cf4fbc8b-ca32-42a6-9a85-b1059f4ec10c",
+  "owner_shortname": "user1",
+  "is_active": true
+}
