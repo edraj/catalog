@@ -1,0 +1,74 @@
+{
+  "oneOf": [
+    {
+      "$ref": "#/$defs/type_object"
+    },
+    {
+      "$ref": "#/$defs/type_leaf"
+    }
+  ],
+  "$defs": {
+    "type_object": {
+      "type": "object",
+      "properties": {
+        "prop_type": {
+          "type": "string",
+          "enum": [
+            "object"
+          ]
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "additionalProperties": {
+          "type": "boolean"
+        },
+        "properties": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/type_object"
+            },
+            {
+              "$ref": "#/$defs/type_leaf"
+            }
+          ]
+        }
+      },
+      "required": [
+        "title",
+        "additionalProperties",
+        "properties",
+        "type"
+      ]
+    },
+    "type_leaf": {
+      "type": "object",
+      "properties": {
+        "prop_type": {
+          "type": "string",
+          "enum": [
+            "string",
+            "number",
+            "integer",
+            "boolean",
+            "array",
+            "null"
+          ]
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "type"
+      ]
+    }
+  }
+}
