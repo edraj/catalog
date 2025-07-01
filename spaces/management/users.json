@@ -1,0 +1,6 @@
+{
+  "allow_view": true,
+  "allow_create": true,
+  "shortname_title": "user_shortname",
+  "index_attributes": []
+}
