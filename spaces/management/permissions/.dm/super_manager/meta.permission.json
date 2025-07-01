@@ -1,0 +1,52 @@
+{
+  "uuid": "6f515468-980c-4b2a-9203-b904ca376de9",
+  "shortname": "super_manager",
+  "is_active": true,
+  "tags": [],
+  "created_at": "2022-08-23T07:44:36.399780",
+  "updated_at": "2023-07-26T05:57:00.428356",
+  "owner_shortname": "dmart",
+  "subpaths": {
+    "__all_spaces__": [
+      "__all_subpaths__"
+    ]
+  },
+  "resource_types": [
+    "schema",
+    "comment",
+    "space",
+    "content",
+    "log",
+    "acl",
+    "history",
+    "json",
+    "group",
+    "media",
+    "permission",
+    "alteration",
+    "user",
+    "notification",
+    "relationship",
+    "locator",
+    "role",
+    "post",
+    "folder",
+    "ticket",
+    "jsonl",
+    "csv",
+    "sqlite",
+    "parquet",
+    "duckdb"
+  ],
+  "actions": [
+    "delete",
+    "update",
+    "query",
+    "create",
+    "view",
+    "attach"
+  ],
+  "conditions": [],
+  "restricted_fields": [],
+  "allowed_fields_values": {}
+}
