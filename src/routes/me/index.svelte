@@ -1,16 +1,15 @@
 <script lang="ts">
-    import {Card, CardBody, CardHeader, Col, Container, Form, Input, Label, Row} from "sveltestrap";
-    import {onMount} from "svelte";
-    import {getAvatar, getEntityAttachmentsCount, getProfile, getEntities, updateProfile} from "@/lib/dmart_services";
-    import {Button} from "sveltestrap";
-    import {errorToastMessage, successToastMessage} from "@/lib/toasts_messages";
+    import { Card, Button, Input, Label } from 'flowbite-svelte';
+    import { onMount } from "svelte";
+    import { getAvatar, getEntityAttachmentsCount, getProfile, getEntities, updateProfile } from "@/lib/dmart_services";
+    import { errorToastMessage, successToastMessage } from "@/lib/toasts_messages";
     import Avatar from "@/routes/components/Avatar.svelte";
-    import {formatDate, renderStateString} from "@/lib/helpers";
-    import {goto} from "@roxi/routify";
-    import {Diamonds} from "svelte-loading-spinners";
+    import { formatDate, renderStateString } from "@/lib/helpers";
+    import { goto } from "@roxi/routify";
+    import { Diamonds } from "svelte-loading-spinners";
     $goto
 
-    let profileSection : string  = $state("ME");
+    let profileSection: string = $state("ME");
 
     let isLoading = $state(true);
     let user = $state(null);
@@ -74,85 +73,114 @@
             shortname: entity.shortname
         });
     }
-
 </script>
 
-
-<Container class="mt-5">
-    <div style="font-size: 2rem">
-        <span style="cursor: pointer" class={profileSection === "ME" ? "fw-bold" : ""} onclick={handleME}>My profile</span>
-        |
-        <span style="cursor: pointer" class={profileSection === "IDEAS" ? "fw-bold" : ""} onclick={handleEntities}>My entities</span>
+<div class="container mx-auto px-4 py-8">
+    <div class="text-2xl mb-8 space-x-4">
+        <button 
+            class="cursor-pointer {profileSection === 'ME' ? 'font-bold text-primary' : 'text-gray-600 hover:text-gray-900'}" 
+            onclick={handleME}
+        >
+            My profile
+        </button>
+        <span class="text-gray-400">|</span>
+        <button 
+            class="cursor-pointer {profileSection === 'IDEAS' ? 'font-bold text-primary' : 'text-gray-600 hover:text-gray-900'}" 
+            onclick={handleEntities}
+        >
+            My entities
+        </button>
     </div>
 
-
     {#if isLoading}
-        <div class="py-5 d-flex justify-content-center">
+        <div class="py-12 flex justify-center">
             <Diamonds color="black" size="200" unit="px" />
         </div>
     {:else}
         {#if profileSection === "ME"}
-            <Row class="mt-5">
-                <Col class="d-flex justify-content-center align-items-center" sm="3">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+                <div class="flex justify-center items-center">
                     <Avatar src={avatar}/>
-                </Col>
-                <Col sm="9">
+                </div>
+                <div class="md:col-span-3">
                     <Card>
-                        <CardHeader>Preference</CardHeader>
-                        <CardBody>
-                            <Form on:submit={handleSubmit}>
-                                <Label>Display name</Label>
-                                <Input type="text" required bind:value={displayname} />
+                        <div class="p-6">
+                            <h3 class="text-lg font-semibold mb-4">Preference</h3>
+                            <form onsubmit={handleSubmit} class="space-y-4">
+                                <div>
+                                    <Label for="displayname" class="mb-2">Display name</Label>
+                                    <Input id="displayname" type="text" required bind:value={displayname} />
+                                </div>
 
-                                <Label class="mt-3">Description</Label>
-                                <Input type="textarea" required bind:value={description} />
+                                <div>
+                                    <Label for="description" class="mb-2">Description</Label>
+                                    <Input id="description" type="textarea" required bind:value={description} />
+                                </div>
 
-                                <Button type="submit" color="dark" class="w-100 mt-3">Save</Button>
-                            </Form>
-                        </CardBody>
+                                <Button type="submit" color="primary" class="w-full">Save</Button>
+                            </form>
+                        </div>
                     </Card>
-                </Col>
-            </Row>
-            <Row>
-                <Col sm="3">
-                </Col>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div></div>
                 {#if user}
-                    <Col sm="9">
-                        <Card class="mt-5">
-                            <CardHeader>Settings</CardHeader>
-                            <CardBody style="font-size: 1.5rem">
-                                <p><span class="fw-bold">Email </span><br>{user.attributes?.email ?? "N/A"}</p>
-                                <p><span class="fw-bold">Mobile number </span><br>{user.attributes?.msisdn ?? "N/A"}</p>
-                                <p class="text-center mt-5">To change these settings, contcat administrator</p>
-                            </CardBody>
+                    <div class="md:col-span-3">
+                        <Card>
+                            <div class="p-6">
+                                <h3 class="text-lg font-semibold mb-4">Settings</h3>
+                                <div class="space-y-4 text-lg">
+                                    <div>
+                                        <span class="font-semibold">Email</span>
+                                        <br>
+                                        <span class="text-gray-600">{user.attributes?.email ?? "N/A"}</span>
+                                    </div>
+                                    <div>
+                                        <span class="font-semibold">Mobile number</span>
+                                        <br>
+                                        <span class="text-gray-600">{user.attributes?.msisdn ?? "N/A"}</span>
+                                    </div>
+                                    <p class="text-center mt-8 text-gray-500">To change these settings, contact administrator</p>
+                                </div>
+                            </div>
                         </Card>
-                    </Col>
+                    </div>
                 {/if}
-            </Row>
+            </div>
         {:else}
             {#if entities.length === 0}
-                <h1 class="text-center mt-5">No entities found.</h1>
+                <h1 class="text-center text-2xl text-gray-500 mt-12">No entities found.</h1>
             {:else}
-                {#each entities as entity}
-                    <Card class="my-4" style="cursor: pointer" on:click={()=>gotoEntityDetails(entity)}>
-                        <CardBody>
-                            <Row>
-                                <Col sm="4">
-                                    <h1>{entity.title}</h1>
-                                    <h6 class="text-secondary fw-bold">{entity.updated_at}</h6>
-                                </Col>
-                                <Col sm="4" class="d-flex justify-content-center align-items-center">
-                                    <span class="mx-2"><i class="bi bi-heart-fill text-danger"></i> {entity.reaction ?? 0}</span>
-                                    <span class="mx-2"><i class="bi bi-chat-left-text-fill text-primary"></i> {entity.comment ?? 0}</span>
-                                </Col>
-                                <Col sm="4" class="d-flex justify-content-center align-items-center">
-                                    {renderStateString(entity)}
-                                </Col>
-                            </Row>
-                        </CardBody>
-                    </Card>
-                {/each}
+                <div class="space-y-6">
+                    {#each entities as entity}
+                        <Card class="cursor-pointer hover:bg-gray-50" onclick={() => gotoEntityDetails(entity)}>
+                            <div class="p-6">
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <h2 class="text-xl font-bold mb-2">{entity.title}</h2>
+                                        <p class="text-gray-500 font-semibold">{entity.updated_at}</p>
+                                    </div>
+                                    <div class="flex justify-center items-center space-x-4">
+                                        <span class="flex items-center">
+                                            <i class="bi bi-heart-fill text-red-500 mr-1"></i> 
+                                            {entity.reaction ?? 0}
+                                        </span>
+                                        <span class="flex items-center">
+                                            <i class="bi bi-chat-left-text-fill text-blue-500 mr-1"></i> 
+                                            {entity.comment ?? 0}
+                                        </span>
+                                    </div>
+                                    <div class="flex justify-center items-center">
+                                        <span class="text-gray-600">{renderStateString(entity)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </Card>
+                    {/each}
+                </div>
             {/if}
         {/if}
     {/if}
-</Container>
+</div>

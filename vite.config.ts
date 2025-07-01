@@ -1,11 +1,11 @@
 // import { VitePWA } from "vite-plugin-pwa";
 // <reference types="vitest" />
-import {defineConfig} from "vite";
-import {mdsvex} from "mdsvex";
+import { defineConfig } from "vite";
+import { mdsvex } from "mdsvex";
 import preprocess from "svelte-preprocess";
 import routify from "@roxi/routify/vite-plugin";
-import {svelte} from "@sveltejs/vite-plugin-svelte";
-import {viteStaticCopy} from "vite-plugin-static-copy";
+import { svelte } from "@sveltejs/vite-plugin-svelte";
+import { viteStaticCopy } from "vite-plugin-static-copy";
 import * as path from "path";
 import plantuml from "@akebifiky/remark-simple-plantuml";
 import svelteMd from "vite-plugin-svelte-md";
@@ -26,20 +26,21 @@ export default defineConfig({
     viteStaticCopy({
       targets: [
         {
-          src: path.resolve(__dirname, './assets') + '/[!.]*',
-          dest: 'assets'
+          src: path.resolve(__dirname, "./assets") + "/[!.]*",
+          dest: "assets",
         },
-      ]
+      ],
     }),
     routify({
-      "render.ssr": {enable: true /*production*/},
+      "render.ssr": { enable: true /*production*/ },
       routesDir: {
-        default: 'src/routes',
-        'lang-ar': 'src/routes',
+        default: "src/routes",
+        "lang-ar": "src/routes",
       },
       // ssr: { enable: false /*production*/ },
     }),
     svelte({
+      exclude: ["node_modules/flowbite-svelte"],
       compilerOptions: {
         dev: !production,
       },
@@ -49,18 +50,19 @@ export default defineConfig({
         mdsvex({
           extension: "md",
           remarkPlugins: [
-            plantuml, {
-              baseUrl: "https://www.plantuml.com/plantuml/svg"
-            }
+            plantuml,
+            {
+              baseUrl: "https://www.plantuml.com/plantuml/svg",
+            },
           ],
-        })
+        }),
       ],
       onwarn: (warning, defaultHandler) => {
         // Ignore a11y_click_events_have_key_events warning from sveltestrap
         if (
-            warning.code?.startsWith("a11y") ||
-            // warning.filename?.startsWith("/node_modules/svelte-jsoneditor")
-            warning.filename?.startsWith("/node_modules")
+          warning.code?.startsWith("a11y") ||
+          // warning.filename?.startsWith("/node_modules/svelte-jsoneditor")
+          warning.filename?.startsWith("/node_modules")
         )
           return;
         if (typeof defaultHandler != "undefined") defaultHandler(warning);
@@ -69,16 +71,20 @@ export default defineConfig({
   ],
   build: {
     chunkSizeWarningLimit: 512,
-    cssMinify: 'lightningcss',
+    cssMinify: "lightningcss",
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes('node_modules')) {
-            return id.toString().split('node_modules/')[1].split('/')[0].toString();
+          if (id.includes("node_modules")) {
+            return id
+              .toString()
+              .split("node_modules/")[1]
+              .split("/")[0]
+              .toString();
           }
         },
       },
-    }
+    },
   },
-  server: {port: 1337},
+  server: { port: 1337 },
 });

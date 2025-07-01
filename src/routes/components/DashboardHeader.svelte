@@ -1,9 +1,9 @@
 <script lang="ts">
-    import {Nav, Navbar, NavbarBrand, NavItem, NavLink} from "sveltestrap";
-    import SearchBar from "@/routes/components/SearchBar.svelte";
-    import {onDestroy, onMount} from "svelte";
-    import {website} from "@/config.js";
-    import {newNotificationType} from "@/stores/newNotificationType";
+    import { Navbar, NavBrand, NavLi, NavUl } from 'flowbite-svelte';
+    import SearchBar from "./SearchBar.svelte";
+    import { onDestroy, onMount } from "svelte";
+    import { website } from "@/config.js";
+    import { newNotificationType } from "@/stores/newNotificationType";
 
     let ws = $state(null);
 
@@ -77,21 +77,23 @@
     })
 </script>
 
-<Navbar color="light" light expand="md">
-    <NavbarBrand href="/">Catalog</NavbarBrand>
-    <Nav class="ml-auto" navbar>
-        <NavItem>
-            <SearchBar />
-        </NavItem>
-        <NavItem>
-            <NavLink href="/notifications">
-                <i class={renderNotificationIconColor()}></i>
-            </NavLink>
-        </NavItem>
-        <NavItem>
-            <NavLink href="/me">
-                <i class="bi bi-person-circle"></i>
-            </NavLink>
-        </NavItem>
-    </Nav>
-</Navbar>
+<Navbar class="bg-white border-b border-gray-200 expand-md" >
+    <NavBrand href="/">
+      <span class="self-center whitespace-nowrap text-xl font-semibold text-gray-900">Catalog</span>
+    </NavBrand>
+    <NavUl class="ml-auto flex gap-2 items-center">
+      <NavLi>
+        <SearchBar />
+      </NavLi>
+      <NavLi>
+        <a href="/notifications" class="block py-2 px-2 text-gray-900 hover:text-primary" aria-label="Notifications">
+          <i class={`${renderNotificationIconColor()} text-xl`}></i>
+        </a>
+      </NavLi>
+      <NavLi>
+        <a href="/me" class="block py-2 px-2 text-gray-900 hover:text-primary" aria-label="Profile">
+          <i class="bi bi-person-circle text-xl"></i>
+        </a>
+      </NavLi>
+    </NavUl>
+  </Navbar>

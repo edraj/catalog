@@ -1,5 +1,5 @@
 <script lang="ts">
-    import {params} from "@roxi/routify"
+    import { params } from "@roxi/routify"
     import {
         checkCurrentUserReactedIdea,
         createComment,
@@ -11,27 +11,17 @@
         getEntity,
         progressEntity
     } from "@/lib/dmart_services";
-    import {formatDate} from "@/lib/helpers";
-    import {
-        Button,
-        Card,
-        CardBody,
-        Col,
-        Container,
-        Input,
-        InputGroup,
-        InputGroupText,
-        Row
-    } from "sveltestrap";
+    import { formatDate } from "@/lib/helpers";
+    import { Button, Card, Input } from 'flowbite-svelte';
     import Attachments from "@/routes/components/Attachments.svelte";
-    import Dmart, {RequestType, ResourceType} from "@edraj/tsdmart";
-    import {user} from "@/stores/user";
-    import {errorToastMessage, successToastMessage} from "@/lib/toasts_messages";
-    import {goto} from "@roxi/routify";
+    import { Dmart, RequestType, ResourceType } from "@edraj/tsdmart";
+    import { user } from "@/stores/user";
+    import { errorToastMessage, successToastMessage } from "@/lib/toasts_messages";
+    import { goto } from "@roxi/routify";
     $goto
-    import {onMount} from "svelte";
+    import { onMount } from "svelte";
     import Avatar from "@/routes/components/Avatar.svelte";
-    import {Diamonds} from "svelte-loading-spinners";
+    import { Diamonds } from "svelte-loading-spinners";
 
     let entity = $state(null);
     let isLoading = $state(false);
@@ -44,6 +34,7 @@
 
     let counts: any = $state({});
     let isAdmin = JSON.parse(localStorage.getItem("roles") ?? '[]').includes("super_admin");
+    
     onMount(async ()=>{
         isLoadingPage = true;
         await refreshIdea();
@@ -141,7 +132,6 @@
 
     async function refreshCounts() {
         const _counts = await getEntityAttachmentsCount(entity.shortname)
-
         userReactionEntry = await checkCurrentUserReactedIdea($user.shortname, entity.shortname)
         counts = _counts[0].attributes
     }
@@ -172,136 +162,235 @@
             errorToastMessage("Failed to progress ticket!");
         }
     }
-
 </script>
 
-
-<Container class="my-5">
-    <Button class="mb-5" onclick={()=>history.back()}>{isLoading ? "...." : "Back"}</Button>
-    {#if isLoadingPage}
-        <div class="py-5 d-flex justify-content-center">
-            <Diamonds color="black" size="200" unit="px" />
+<div class="min-h-screen bg-gray-50">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <div class="mb-8">
+            <Button onclick={() => history.back()} class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 shadow-sm transition-all duration-200 px-4 py-2 rounded-lg font-medium">
+                <i class="bi bi-arrow-left mr-2"></i>
+                {isLoading ? "Loading..." : "Back"}
+            </Button>
         </div>
-    {:else}
-        {#if isOwner || isAdmin}
-            <div class="alert alert-secondary d-flex justify-content-between align-items-center mb-5">
-                {#if entity.is_open}
-                    <p style="margin: 0!important;">
-                        {entity.is_active ? `Last update: ${formatDate(entity.updated_at)}` : "This is draft"}
-                    </p>
-                    <div>
-                    <Button color="primary" onclick={()=>handleEdit(entity)}>{isLoading ? "...." : "Edit"}</Button>
-                    |
-                    <Button color={entity.is_active ? "danger" : "success"} onclick={()=>handlePublish(entity.is_active)}>{isLoading ? "......." : (entity.is_active ? "Unpublish" : "Publish")}</Button>
-
-                    {#if isAdmin}
-                        |
-                        {#each workflowSteps as workflowStep}
-                            <Button class="mx-1" color="warning" onclick={()=>handleProgressTicket(workflowStep.action)}>{workflowStep.title}</Button>
-                        {/each}
+        
+        {#if isLoadingPage}
+            <div class="py-16 flex justify-center">
+                <Diamonds color="black" size="200" unit="px" />
+            </div>
+        {:else}
+            {#if isOwner || isAdmin}
+                <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-6 mb-8">
+                    {#if entity.is_open}
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-3 h-3 bg-green-400 rounded-full"></div>
+                                <span class="text-gray-700 font-medium">
+                                    {entity.is_active ? `Last updated ${formatDate(entity.updated_at)}` : "Draft - Not published"}
+                                </span>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <Button color="primary" onclick={() => handleEdit(entity)} class="px-4 py-2 rounded-lg font-medium transition-all duration-200">
+                                    <i class="bi bi-pencil-square mr-2"></i>
+                                    {isLoading ? "Loading..." : "Edit"}
+                                </Button>
+                                <Button color={entity.is_active ? "red" : "green"} onclick={() => handlePublish(entity.is_active)} class="px-4 py-2 rounded-lg font-medium transition-all duration-200">
+                                    <i class="bi bi-{entity.is_active ? 'eye-slash' : 'eye'} mr-2"></i>
+                                    {isLoading ? "Loading..." : (entity.is_active ? "Unpublish" : "Publish")}
+                                </Button>
+                                {#if isAdmin}
+                                    {#each workflowSteps as workflowStep}
+                                        <Button color="yellow" onclick={() => handleProgressTicket(workflowStep.action)} class="px-4 py-2 rounded-lg font-medium transition-all duration-200">
+                                            <i class="bi bi-gear mr-2"></i>
+                                            {workflowStep.title}
+                                        </Button>
+                                    {/each}
+                                {/if}
+                            </div>
+                        </div>
+                    {:else}
+                        <div class="text-center py-4">
+                            <div class="flex items-center justify-center space-x-3 mb-2">
+                                <div class="w-3 h-3 bg-red-400 rounded-full"></div>
+                                <span class="text-gray-700 font-medium text-lg">This entity is closed</span>
+                            </div>
+                            <p class="text-gray-500 text-sm">No further actions can be performed</p>
+                        </div>
                     {/if}
                 </div>
-                {:else}
-                    <p class="w-100 text-center " style="margin: 0!important;">This entity is closed</p>
+            {/if}
+            
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="p-8 border-b border-gray-100">
+                    <div class="mb-6">
+                        <h1 class="text-3xl font-bold text-gray-900 mb-4 leading-tight">{entity.payload.body.title}</h1>
+                        
+                        <div class="flex flex-wrap items-center gap-6 text-sm text-gray-600 mb-6">
+                            <div class="flex items-center">
+                                <i class="bi bi-clock mr-2"></i>
+                                <span class="font-medium">{formatDate(entity.updated_at)}</span>
+                            </div>
+                            <div class="flex items-center">
+                                <i class="bi bi-person-circle mr-2"></i>
+                                <span class="font-medium">{entity.owner_shortname}</span>
+                            </div>
+                            <div class="flex items-center">
+                                <i class="bi {entity.is_active ? 'bi-check-circle-fill text-green-500' : 'bi-x-circle-fill text-red-500'} mr-2"></i>
+                                <span class="font-medium">{entity.is_active ? 'Active' : 'Inactive'}</span>
+                            </div>
+                        </div>
+
+                        {#if entity.payload.body.long_description}
+                            <p class="text-gray-700 text-lg leading-relaxed mb-6">{entity.payload.body.long_description}</p>
+                        {/if}
+
+                        <div class="flex items-center space-x-8 mb-6">
+                            <div class="flex items-center text-gray-600">
+                                <i class="bi bi-chat-left-text-fill mr-2 text-lg"></i>
+                                <span class="font-semibold">{counts.comment ?? 0}</span>
+                                <span class="ml-1 text-sm">comments</span>
+                            </div>
+                            <div class="flex items-center text-gray-600">
+                                <i class="bi bi-heart-fill mr-2 text-lg text-red-500"></i>
+                                <span class="font-semibold">{counts.reaction ?? 0}</span>
+                                <span class="ml-1 text-sm">reactions</span>
+                            </div>
+                        </div>
+
+                        {#if entity.tags && entity.tags.length > 0}
+                            <div class="flex flex-wrap gap-2">
+                                {#each entity.tags as tag}
+                                    <span class="inline-flex items-center px-3 py-1 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 rounded-full text-sm font-medium border border-blue-200">
+                                        <i class="bi bi-tag-fill mr-1.5 text-xs"></i>
+                                        {tag}
+                                    </span>
+                                {/each}
+                            </div>
+                        {/if}
+                    </div>
+                </div>
+
+                <div class="p-8">
+                    <div class="prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-blue-600 prose-strong:text-gray-900">
+                        {@html entity.payload.body.content}
+                    </div>
+                </div>
+
+                {#if entity.attachments.media && Object.keys(entity.attachments.media).length > 0}
+                    <div class="px-8 pb-8">
+                        <div class="border-t border-gray-100 pt-8">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Attachments</h3>
+                            <Attachments
+                                resource_type={ResourceType.ticket}
+                                space_name={"catalog"}
+                                subpath={"posts"}
+                                parent_shortname={entity.shortname}
+                                attachments={Object.values(entity.attachments.media ?? [])}
+                                isOwner={isOwner}
+                            />
+                        </div>
+                    </div>
                 {/if}
             </div>
-        {/if}
-        <Row>
-            <Col sm="12">
-                <h1>{entity.payload.body.title}</h1>
-                <h6 class="text-secondary fw-bold">{formatDate(entity.updated_at)}</h6>
-                <p class="text-secondary">{entity.payload.body.long_description}</p>
 
-
-                <div class="my-4" style="font-size: 1.25rem">
-                    <i class="bi bi-chat-left-text-fill"></i> {counts.comment ?? 0}
-                    <i class="bi {entity.is_active ? 'bi-check-lg text-success' : 'bi-x-lg text-danger' }"></i> {entity.is_active ? 'Active' : 'Inactive'}
+            <div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="p-6 border-b border-gray-100">
+                    <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                        <i class="bi bi-chat-left-text mr-2"></i>
+                        Comments ({(entity.attachments.comment ?? []).length})
+                    </h3>
                 </div>
-
-                <div>
-                    {#each entity.tags as tag}
-                        <span class="badge bg-secondary me-1" style="font-size: 1rem">{tag}</span>
-                    {/each}
-                </div>
-
-                <p class="mt-3" style="font-size: 1.5rem">{entity.owner_shortname}</p>
-
-                <div class="my-5">
-                    {@html entity.payload.body.content}
-                </div>
-
-                <Attachments
-                    resource_type={ResourceType.ticket}
-                    space_name={"catalog"}
-                    subpath={"posts"}
-                    parent_shortname={entity.shortname}
-                    attachments={Object.values(entity.attachments.media ?? [])}
-                    isOwner={isOwner}
-                />
-
-                <Card>
-                    <CardBody>
-                        <div class="comment-section mt-3">
-                            {#if (entity.attachments.comment ?? []).length === 0}
-                                <p class="text-center">No comments yet.</p>
-                            {:else}
-                                {#each (entity.attachments.comment ?? []) as comment}
-                                    <div class="d-flex justify-content-between my-2">
-                                        <Row class="justify-content-between">
-                                            <Col sm="1" class="px-3">
-                                                {#await getAvatar(comment.attributes.owner_shortname) then avatar}
-                                                    <Avatar src={avatar} size="32"/>
-                                                {/await}
-                                            </Col>
-                                            <Col sm="10">
-                                                <div style="font-size: 1.5rem">
-                                                    <span>{comment.attributes.owner_shortname}</span>
-                                                    •
-                                                    <span>{formatDate(comment.attributes.created_at)}</span>
-                                                </div>
-
-                                                {comment.attributes.payload.body.body}
-                                            </Col>
-                                        </Row>
-                                        {#if isOwner}
-                                            <div style="cursor: pointer" onclick={()=>deleteComment(comment.shortname)}>
-                                                <i class="bi bi-trash-fill text-danger"></i>
-                                            </div>
-                                        {/if}
-                                    </div>
-                                {/each}
-                            {/if}
+                
+                <div class="comment-section p-6">
+                    {#if (entity.attachments.comment ?? []).length === 0}
+                        <div class="text-center py-8">
+                            <div class="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                                <i class="bi bi-chat-left-text text-2xl text-gray-400"></i>
+                            </div>
+                            <p class="text-gray-500 text-lg">No comments yet</p>
+                            <p class="text-gray-400 text-sm mt-1">Be the first to share your thoughts!</p>
                         </div>
-                    </CardBody>
-                </Card>
+                    {:else}
+                        <div class="space-y-6">
+                            {#each (entity.attachments.comment ?? []) as comment}
+                                <div class="flex space-x-4 group">
+                                    <div class="flex-shrink-0">
+                                        {#await getAvatar(comment.attributes.owner_shortname) then avatar}
+                                            <Avatar src={avatar} size="40" />
+                                        {/await}
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="bg-gray-50 rounded-xl p-4 group-hover:bg-gray-100 transition-colors duration-200">
+                                            <div class="flex items-center justify-between mb-2">
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="font-semibold text-gray-900">{comment.attributes.owner_shortname}</span>
+                                                    <span class="text-gray-500 text-sm">{formatDate(comment.attributes.created_at)}</span>
+                                                </div>
+                                                {#if isOwner}
+                                                    <Button size="sm" color="red" onclick={() => deleteComment(comment.shortname)} class="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1">
+                                                        <i class="bi bi-trash text-sm"></i>
+                                                    </Button>
+                                                {/if}
+                                            </div>
+                                            <p class="text-gray-700 leading-relaxed">{comment.attributes.payload.body.body}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            {/each}
+                        </div>
+                    {/if}
+                </div>
+            </div>
 
-                <Card>
-                    <CardBody>
-                        <Row>
-                            <Col sm="1">
-                                <Button color="light" onclick={handleReaction}>
-                                    <i class="bi bi-heart-fill" style={userReactionEntry ? "color: red" : ""}></i> {counts.reaction ?? 0}
-                                </Button>
-                            </Col>
-                            <Col sm="11">
-                                <InputGroup>
-                                    <Input placeholder="Add a comment" bind:value={comment}/>
-                                    <InputGroupText onclick={handleAddComment}>
-                                        <i class="bi bi-send"></i>
-                                    </InputGroupText>
-                                </InputGroup>
-                            </Col>
-                        </Row>
-                    </CardBody>
-                </Card>
-            </Col>
-        </Row>
-    {/if}
-</Container>
+            <div class="mt-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="flex items-center space-x-4">
+                    <Button color="light" onclick={handleReaction} class="flex items-center mx-2 px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-all duration-200">
+                        <i class="bi bi-heart-fill  text-lg" style={userReactionEntry ? "color: red" : "color: #6b7280"}></i>
+                        <span class="font-medium">{counts.reaction ?? 0}</span>
+                    </Button>
+                    <div class="flex-1 flex space-x-2">
+                        <Input 
+                            placeholder="Add a comment..." 
+                            bind:value={comment}
+                            class="flex-1 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                        />
+                        <Button onclick={handleAddComment} class="px-4 py-2  rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-all duration-200">
+                            <i class="bi bi-send mr-2"></i>
+                            Send
+                        </Button>
+                    </div>
+                </div>
+            </div>
+        {/if}
+    </div>
+</div>
 
 <style>
     .comment-section {
-        max-height: 25vh;
+        max-height: 400px;
         overflow-y: auto;
     }
+    
+    .comment-section::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .comment-section::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 3px;
+    }
+    
+    .comment-section::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+    }
+    
+    .comment-section::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+    
+    .prose {
+        color: #374151;
+        line-height: 1.7;
+    }
+    
 </style>

@@ -1,5 +1,6 @@
 <script lang="ts">
-  import Dmart, {
+  import  {
+    Dmart,
     RequestType,
     ResourceType,
   } from "@edraj/tsdmart";

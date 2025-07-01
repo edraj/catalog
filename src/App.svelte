@@ -1,7 +1,6 @@
 <script module lang="ts">
   import {Router, createRouter} from "@roxi/routify";
   import routes from "../.routify/routes.default";
-  import Dmart from "@edraj/tsdmart"
   import { SvelteToast } from '@zerodevx/svelte-toast'
   import {website} from "@/config";
 
