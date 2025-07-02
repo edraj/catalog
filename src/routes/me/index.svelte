@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Card, Button, Input, Label } from 'flowbite-svelte';
+    import { Card, Button, Input, Label, Heart } from 'flowbite-svelte';
     import { onMount } from "svelte";
     import { getAvatar, getEntityAttachmentsCount, getProfile, getEntities, updateProfile } from "@/lib/dmart_services";
     import { errorToastMessage, successToastMessage } from "@/lib/toasts_messages";
@@ -7,6 +7,7 @@
     import { formatDate, renderStateString } from "@/lib/helpers";
     import { goto } from "@roxi/routify";
     import { Diamonds } from "svelte-loading-spinners";
+  import { HeartSolid, MessagesSolid } from 'flowbite-svelte-icons';
     $goto
 
     let profileSection: string = $state("ME");
@@ -164,11 +165,11 @@
                                     </div>
                                     <div class="flex justify-center items-center space-x-4">
                                         <span class="flex items-center">
-                                            <i class="bi bi-heart-fill text-red-500 mr-1"></i> 
+                                             <HeartSolid class="text-red-500 mr-1" />
                                             {entity.reaction ?? 0}
                                         </span>
                                         <span class="flex items-center">
-                                            <i class="bi bi-chat-left-text-fill text-blue-500 mr-1"></i> 
+                                            <MessagesSolid class="text-blue-500 mr-1" />
                                             {entity.comment ?? 0}
                                         </span>
                                     </div>

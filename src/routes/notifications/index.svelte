@@ -16,6 +16,7 @@
     import {newNotificationType} from "@/stores/newNotificationType";
     import {ResourceType} from "@edraj/tsdmart";
     import {goto} from "@roxi/routify";
+  import { EyeSlashSolid, EyeSolid, TrashBinSolid } from "flowbite-svelte-icons";
     $goto
 
 
@@ -63,7 +64,8 @@
                 if(entity){
                     _notification.title = entity.payload.body.title
                     if(_notification.resource_type === ResourceType.comment){
-                        const r = (entity.attachments.comment ?? []).filter(c => {
+                        const attachments = entity.attachments as { comment?: any[] };
+                        const r = (attachments.comment ?? []).filter(c => {
                             return c.shortname === n.attributes.payload.body.entry_shortname
                         })
                         if(r.length){
@@ -137,15 +139,15 @@
     <Row>
         <Col><h1>Notifications</h1></Col>
         <Col class="d-flex justify-content-end align-items-center" style="font-size: 1.5rem">
-            <div onclick={handleReadAll}>
-                <i style="cursor: pointer" class="text-primary bi bi-eye-fill mx-2"></i>
-            </div>
-            <div onclick={handleUnReadAll}>
-                <i style="cursor: pointer" class="text-secondary bi bi-eye-slash-fill mx-2"></i>
-            </div>
-            <div onclick={handleDeleteAll}>
-                <i style="cursor: pointer" class="text-danger bi bi-trash-fill"></i>
-            </div>
+            <button type="button" class="btn p-0 border-0 bg-transparent" onclick={handleReadAll} aria-label="Mark all as read">
+                <EyeSolid class="text-primary mx-2 w-6 h-6 cursor-pointer" />
+            </button>
+            <button type="button" class="btn p-0 border-0 bg-transparent" onclick={handleUnReadAll} aria-label="Mark all as unread">
+                <EyeSlashSolid class="text-secondary mx-2 w-6 h-6 cursor-pointer" />
+            </button>
+            <button type="button" class="btn p-0 border-0 bg-transparent" onclick={handleDeleteAll} aria-label="Delete all notifications">
+                 <TrashBinSolid class="text-danger mx-2 w-6 h-6 cursor-pointer" />
+            </button>
         </Col>
     </Row>
     {#if isNotificationsLoading}

@@ -5,6 +5,7 @@
     import { goto } from "@roxi/routify";
     $goto
     import { SyncLoader } from "svelte-loading-spinners";
+  import { HeartSolid, SearchOutline, MessagesSolid    } from 'flowbite-svelte-icons';
 
     let isProjectBeingFetched = $state(false);
     let modalOpen = $state(false);
@@ -70,8 +71,9 @@
 
 <div class="flex">
     <Button onclick={openModal} class="p-2 border-none shadow-none bg-transparent hover:bg-gray-100">
-        <i class="bi bi-search text-xl text-primary"></i>
+        <SearchOutline class="text-xl text-primary w-6 h-6" />
       </Button>
+      
 </div>
 
 <Modal bind:open={modalOpen} size="lg" class="w-full">
@@ -84,12 +86,10 @@
                 class="flex-1"
             />
             <Button class="ml-1" color="light">
-                <i class="bi bi-search text-md text-primary"></i>
-            </Button>
+                <SearchOutline class="text-md text-primary w-4 h-4" />
+              </Button>
         </div>
-        <Button onclick={toggleModal} class="ml-4" color="light" size="sm">
-            <i class="bi bi-x-lg text-primary"></i>
-        </Button>
+       
     </div>
     
     <div class="p-4">
@@ -115,14 +115,14 @@
                                 </div>
                                 <div class="flex justify-center items-center space-x-4">
                                     <span class="flex items-center">
-                                        <i class="bi bi-heart-fill text-red-500 mr-1"></i> 
-                                        {entity.reaction ?? 0}
+                                      <HeartSolid class="text-red-500 mr-1 w-4 h-4" /> 
+                                      {entity.reaction ?? 0}
                                     </span>
                                     <span class="flex items-center">
-                                        <i class="bi bi-chat-left-text-fill text-blue-500 mr-1"></i> 
-                                        {entity.comment ?? 0}
+                                      <MessagesSolid  class="text-blue-500 mr-1 w-4 h-4" /> 
+                                      {entity.comment ?? 0}
                                     </span>
-                                </div>
+                                  </div>
                                 <div class="flex justify-center items-center">
                                     {renderStateString(entity)}
                                 </div>

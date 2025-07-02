@@ -10,6 +10,7 @@
     import Attachments from "@/routes/components/Attachments.svelte";
     import { user } from "@/stores/user";
     import { setContext, getContext } from "svelte";
+  import { PlusOutline, TrashBinSolid } from 'flowbite-svelte-icons';
 
     let entity = $state(null);
     let isLoading = false;
@@ -150,7 +151,7 @@
                     {isLoading ? "......." : (entity.is_active ? "Unpublish" : "Publish")}
                 </Button>
                 <Button color="red" onclick={handleDelete}>
-                    <i class="bi bi-trash-fill"></i>
+                    <TrashBinSolid class="w-4 h-4" />
                 </Button>
             </div>
         </div>
@@ -176,7 +177,7 @@
             {#each tags as tag, index}
                 <span class="inline-block bg-gray-200 text-gray-800 px-3 py-1 rounded-full mr-2 mb-2 tag-badge" role="button" tabindex="0" onclick={() => removeTag(index)} onkeydown={(e) => e.key === 'Enter' && removeTag(index)} aria-label="Remove tag">
                     <span class="tag-text">{tag}</span>
-                    <i class="bi bi-trash tag-trash cursor-pointer ml-2" aria-hidden="true"></i>
+                    <TrashBinSolid class="w-4 h-4 tag-trash cursor-pointer ml-2" aria-hidden="true" />
                 </span>
             {/each}
         </div>
@@ -198,7 +199,7 @@
 
                 <input type="file" id="fileInput" multiple onchange={handleFileChange} style="display: none;" />
                 <Button color="primary" onclick={() => document.getElementById('fileInput').click()} class="mb-4">
-                    <i class="bi bi-plus mr-2"></i> Add Attachment
+                    <PlusOutline class=" tag-trash cursor-pointer ml-2" aria-hidden="true"/> Add Attachment
                 </Button>
                 
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -220,7 +221,7 @@
                                 </div>
                             {/if}
                             <Button size="xs" color="red" class="absolute top-1 right-1" onclick={() => removeAttachment(index)}>
-                                <i class="bi bi-trash"></i>
+                                <TrashBinSolid class="w-4 h-4" />
                             </Button>
                         </div>
                     {/each}

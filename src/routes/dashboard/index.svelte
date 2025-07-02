@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Button, Card } from 'flowbite-svelte';
+    import { Button, Card, P } from 'flowbite-svelte';
     import {
         getEntityAttachmentsCount,
         getEntities,
@@ -8,7 +8,8 @@
     import { errorToastMessage } from "@/lib/toasts_messages";
     import { goto } from "@roxi/routify";
     import { Diamonds } from 'svelte-loading-spinners';
-    import { formatDate, renderStateIcon, renderStateString, truncateString } from "@/lib/helpers";
+    import { formatDate, renderStateString, truncateString } from "@/lib/helpers";
+  import { CheckCircleSolid, ChevronRightOutline, ClockArrowOutline, ClockSolid, CloseCircleSolid, CloseOutline, MessagesSolid, PlusOutline, ReplyOutline } from 'flowbite-svelte-icons';
     $goto
 
     let isLoading: boolean = $state(true);
@@ -69,16 +70,13 @@
                 <p class="text-gray-600">Manage and explore your entities</p>
             </div>
             <Button color="green" onclick={() => $goto("/dashboard/create_entity")} class="shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-3 text-base font-medium">
-                <i class="bi bi-plus-circle mr-2"></i>
+                 <PlusOutline class="inline-block mr-2" />
                 Create Entity
             </Button>
         </div>
         
         {#if entities.length === 0}
-            <div class="text-center py-16">
-                <div class="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6">
-                    <i class="bi bi-collection text-3xl text-gray-400"></i>
-                </div>
+            <div class="text-center py-16">              
                 <h2 class="text-2xl font-semibold text-gray-900 mb-2">No entities found</h2>
                 <p class="text-gray-500 mb-6">Get started by creating your first entity</p>
                 <Button color="green" onclick={() => $goto("/dashboard/create_entity")} class="px-6 py-3">
@@ -103,7 +101,7 @@
                             <div class="flex-grow min-w-0">
                                 <h2 class="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-700 transition-colors duration-200 line-clamp-2">{entity.title}</h2>
                                 <div class="flex items-center text-xs text-gray-500">
-                                    <i class="bi bi-clock mr-1"></i>
+                                     <ClockArrowOutline class="inline-block mr-1" />
                                     <span class="font-medium">{entity.updated_at}</span>
                                 </div>
                             </div>
@@ -118,11 +116,23 @@
                         <div class="flex items-center justify-between mb-4">
                             <div class="flex items-center space-x-4">
                                 <div class="flex items-center text-gray-600" title={renderStateString(entity)}>
-                                    <i class="{renderStateIcon(entity)} mr-1 text-sm"></i>
+                                    {#if entity.is_active === false}
+                                      <CloseCircleSolid class="text-secondary mr-1 text-sm w-4 h-4" />
+                                    {:else if entity.state === "pending"}
+                                      <ClockSolid class="text-primary mr-1 text-sm w-4 h-4" />
+                                    {:else if entity.state === "in_progress"}
+                                      <ReplyOutline class="text-warning mr-1 text-sm w-4 h-4" />
+                                    {:else if entity.state === "approved"}
+                                      <CheckCircleSolid class="text-success mr-1 text-sm w-4 h-4" />
+                                    {:else if entity.state === "rejected"}
+                                      <CloseOutline class="text-danger mr-1 text-sm w-4 h-4" />
+                                    {:else}
+                                      <span class="mr-1 text-sm">N/A</span>
+                                    {/if}
                                     <span class="text-xs font-medium">{renderStateString(entity)}</span>
-                                </div>
+                                  </div>
                                 <div class="flex items-center text-gray-600">
-                                    <i class="bi bi-chat-left-text-fill mr-1 text-sm"></i>
+                                     <MessagesSolid class="inline-block mr-1 text-sm" />
                                     <span class="text-xs font-medium">{entity.comment ?? 0}</span>
                                 </div>
                             </div>
@@ -145,7 +155,7 @@
 
                         <div class="flex items-center justify-between pt-3 border-t border-gray-100">
                             <p class="text-xs font-medium text-gray-700">by {entity.owner}</p>
-                            <i class="bi bi-chevron-right text-gray-400 group-hover:text-gray-600 transition-colors duration-200"></i>
+                            <ChevronRightOutline class="w-6 h-6 text-gray-400 group-hover:text-gray-600 transition-colors duration-200" />
                         </div>
                     </div>
                 </Card>

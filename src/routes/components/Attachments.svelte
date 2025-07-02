@@ -6,6 +6,7 @@
   } from "@edraj/tsdmart";
   import Media from "./Media.svelte";
   import {successToastMessage} from "@/lib/toasts_messages";
+  import { TrashBinSolid } from "flowbite-svelte-icons";
 
   let {
     attachments = [],
@@ -78,7 +79,7 @@
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <button class="btn btn-danger" onclick={() => handleDelete(attachment)} aria-label="Delete attachment">
-          <i class="bi bi-trash-fill"></i>
+          <TrashBinSolid class="w-4 h-4" />
         </button>
       </div>
     {/if}

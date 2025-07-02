@@ -22,6 +22,7 @@
     import { onMount } from "svelte";
     import Avatar from "@/routes/components/Avatar.svelte";
     import { Diamonds } from "svelte-loading-spinners";
+  import { ArrowLeftOutline, CheckCircleSolid, ClockOutline, CloseCircleSolid, EditOutline, EyeSlashSolid, EyeSolid, HeartSolid, MessagesSolid, TagOutline, TrashBinSolid, UserCircleOutline, UserSettingsOutline } from "flowbite-svelte-icons";
 
     let entity = $state(null);
     let isLoading = $state(false);
@@ -168,7 +169,7 @@
     <div class="container mx-auto px-4 py-8 max-w-4xl">
         <div class="mb-8">
             <Button onclick={() => history.back()} class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 shadow-sm transition-all duration-200 px-4 py-2 rounded-lg font-medium">
-                <i class="bi bi-arrow-left mr-2"></i>
+                 <ArrowLeftOutline class="w-5 h-5 mr-2" />
                 {isLoading ? "Loading..." : "Back"}
             </Button>
         </div>
@@ -190,17 +191,21 @@
                             </div>
                             <div class="flex flex-wrap gap-2">
                                 <Button color="primary" onclick={() => handleEdit(entity)} class="px-4 py-2 rounded-lg font-medium transition-all duration-200">
-                                    <i class="bi bi-pencil-square mr-2"></i>
+                                     <EditOutline class="w-5 h-5 mr-2" />
                                     {isLoading ? "Loading..." : "Edit"}
                                 </Button>
                                 <Button color={entity.is_active ? "red" : "green"} onclick={() => handlePublish(entity.is_active)} class="px-4 py-2 rounded-lg font-medium transition-all duration-200">
-                                    <i class="bi bi-{entity.is_active ? 'eye-slash' : 'eye'} mr-2"></i>
+                                    {#if entity.is_active}
+                                      <EyeSlashSolid class="mr-2 w-4 h-4" />
+                                    {:else}
+                                      <EyeSolid class="mr-2 w-4 h-4" />
+                                    {/if}
                                     {isLoading ? "Loading..." : (entity.is_active ? "Unpublish" : "Publish")}
-                                </Button>
+                                  </Button>
                                 {#if isAdmin}
                                     {#each workflowSteps as workflowStep}
                                         <Button color="yellow" onclick={() => handleProgressTicket(workflowStep.action)} class="px-4 py-2 rounded-lg font-medium transition-all duration-200">
-                                            <i class="bi bi-gear mr-2"></i>
+                                             <UserSettingsOutline class="w-5 h-5 mr-2" />
                                             {workflowStep.title}
                                         </Button>
                                     {/each}
@@ -226,17 +231,21 @@
                         
                         <div class="flex flex-wrap items-center gap-6 text-sm text-gray-600 mb-6">
                             <div class="flex items-center">
-                                <i class="bi bi-clock mr-2"></i>
+                                 <ClockOutline class="w-4 h-4 mr-2" />
                                 <span class="font-medium">{formatDate(entity.updated_at)}</span>
                             </div>
                             <div class="flex items-center">
-                                <i class="bi bi-person-circle mr-2"></i>
+                                 <UserCircleOutline class="w-4 h-4 mr-2" />
                                 <span class="font-medium">{entity.owner_shortname}</span>
                             </div>
                             <div class="flex items-center">
-                                <i class="bi {entity.is_active ? 'bi-check-circle-fill text-green-500' : 'bi-x-circle-fill text-red-500'} mr-2"></i>
+                                {#if entity.is_active}
+                                  <CheckCircleSolid class="text-green-500 mr-2 w-5 h-5" />
+                                {:else}
+                                  <CloseCircleSolid class="text-red-500 mr-2 w-5 h-5" />
+                                {/if}
                                 <span class="font-medium">{entity.is_active ? 'Active' : 'Inactive'}</span>
-                            </div>
+                              </div>
                         </div>
 
                         {#if entity.payload.body.long_description}
@@ -245,12 +254,12 @@
 
                         <div class="flex items-center space-x-8 mb-6">
                             <div class="flex items-center text-gray-600">
-                                <i class="bi bi-chat-left-text-fill mr-2 text-lg"></i>
+                                    <MessagesSolid class="w-4 h-4 mr-2" />
                                 <span class="font-semibold">{counts.comment ?? 0}</span>
                                 <span class="ml-1 text-sm">comments</span>
                             </div>
                             <div class="flex items-center text-gray-600">
-                                <i class="bi bi-heart-fill mr-2 text-lg text-red-500"></i>
+                                 <HeartSolid class="w-4 h-4 mr-2 text-red-500 text-lg" />
                                 <span class="font-semibold">{counts.reaction ?? 0}</span>
                                 <span class="ml-1 text-sm">reactions</span>
                             </div>
@@ -260,7 +269,7 @@
                             <div class="flex flex-wrap gap-2">
                                 {#each entity.tags as tag}
                                     <span class="inline-flex items-center px-3 py-1 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 rounded-full text-sm font-medium border border-blue-200">
-                                        <i class="bi bi-tag-fill mr-1.5 text-xs"></i>
+                                         <TagOutline class="w-4 h-4 mr-1.5" />
                                         {tag}
                                     </span>
                                 {/each}
@@ -295,7 +304,7 @@
             <div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div class="p-6 border-b border-gray-100">
                     <h3 class="text-lg font-semibold text-gray-900 flex items-center">
-                        <i class="bi bi-chat-left-text mr-2"></i>
+                         <MessagesSolid class="w-7 h-7 mr-2" />
                         Comments ({(entity.attachments.comment ?? []).length})
                     </h3>
                 </div>
@@ -304,7 +313,7 @@
                     {#if (entity.attachments.comment ?? []).length === 0}
                         <div class="text-center py-8">
                             <div class="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                                <i class="bi bi-chat-left-text text-2xl text-gray-400"></i>
+                                <MessagesSolid class="w-8 h-8 text-gray-400" />
                             </div>
                             <p class="text-gray-500 text-lg">No comments yet</p>
                             <p class="text-gray-400 text-sm mt-1">Be the first to share your thoughts!</p>
@@ -327,7 +336,7 @@
                                                 </div>
                                                 {#if isOwner}
                                                     <Button size="sm" color="red" onclick={() => deleteComment(comment.shortname)} class="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1">
-                                                        <i class="bi bi-trash text-sm"></i>
+                                                         <TrashBinSolid class="w-4 h-4" />
                                                     </Button>
                                                 {/if}
                                             </div>
@@ -344,7 +353,11 @@
             <div class="mt-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <div class="flex items-center space-x-4">
                     <Button color="light" onclick={handleReaction} class="flex items-center mx-2 px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-all duration-200">
-                        <i class="bi bi-heart-fill  text-lg" style={userReactionEntry ? "color: red" : "color: #6b7280"}></i>
+                        {#if userReactionEntry}
+                            <HeartSolid class="text-red-500 w-5 h-5 mr-2" />
+                        {:else}
+                            <HeartSolid class="text-gray-400 w-5 h-5 mr-2" />
+                        {/if}
                         <span class="font-medium">{counts.reaction ?? 0}</span>
                     </Button>
                     <div class="flex-1 flex space-x-2">
@@ -354,7 +367,7 @@
                             class="flex-1 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                         />
                         <Button onclick={handleAddComment} class="px-4 py-2  rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-all duration-200">
-                            <i class="bi bi-send mr-2"></i>
+                            <MessagesSolid class="w-5 h-5 mr-2" />
                             Send
                         </Button>
                     </div>

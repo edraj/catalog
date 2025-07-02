@@ -1,9 +1,10 @@
 <script lang="ts">
-    import { Button, Card, Input } from 'flowbite-svelte';
+    import { Button, Card, Input, TextPlaceholder } from 'flowbite-svelte';
     import { goto } from "@roxi/routify";
     import HtmlEditor from "@/routes/components/HtmlEditor.svelte";
     import { attachAttachmentsToEntity, createEntity } from "@/lib/dmart_services";
     import { errorToastMessage, successToastMessage } from "@/lib/toasts_messages";
+  import { ArrowLeftOutline, CloseCircleOutline, CloudArrowUpOutline, EditOutline, FileCheckSolid, FileImportSolid, FilePdfOutline, FloppyDiskSolid, PaperClipOutline, PaperPlaneSolid, PlayOutline, PlusOutline, TagOutline, TextUnderlineOutline, TrashBinSolid, UploadOutline } from 'flowbite-svelte-icons';
     $goto
     let isLoading = $state(false);
     let content = "";
@@ -88,7 +89,7 @@
                 color="primary"
                 class="flex items-center gap-2 text-slate-600 hover:text-slate-800 hover:bg-slate-100 border border-slate-200 shadow-sm transition-all duration-200"
             >
-                <i class="bi bi-arrow-left text-lg"></i>
+                <ArrowLeftOutline class="w-4 h-4" />
                 {isLoading ? "Loading..." : "Back"}
             </Button>
             
@@ -103,7 +104,7 @@
             <div class="flex flex-col sm:flex-row justify-between items-center gap-4 p-6">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
-                        <i class="bi bi-file-earmark-text text-amber-600 text-lg"></i>
+                         <FileCheckSolid class="w-5 h-5 text-amber-600" />
                     </div>
                     <div>
                         <p class="text-slate-700 font-medium m-0">Ready to publish?</p>
@@ -112,12 +113,11 @@
                 </div>
                 <div class="flex gap-3">
                     <Button 
-                        
                         onclick={() => handlePublish(false)}
-                        class="bg-primary flex items-center gap-2  hover:bg-slate-50 transition-all duration-200"
+                        class="bg-primary flex items-center gap-2 hover:bg-slate-50 transition-all duration-200"
                         disabled={isLoading}
                     >
-                        <i class="bi bi-save text-slate-600"></i>
+                        <FloppyDiskSolid class="w-4 h-4 text-slate-600" />
                         {isLoading ? "Saving..." : "Save Draft"}
                     </Button>
                     <Button 
@@ -126,7 +126,7 @@
                         class="flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 shadow-lg hover:shadow-xl transition-all duration-200"
                         disabled={isLoading}
                     >
-                        <i class="bi bi-send text-white"></i>
+                        <PaperPlaneSolid class="w-4 h-4 text-white" />
                         {isLoading ? "Publishing..." : "Publish Now"}
                     </Button>
                 </div>
@@ -135,9 +135,11 @@
 
         <Card class=" max-w-full w-full mb-8 border-0 shadow-lg">
             <div class="p-8">
-                <label class="block text-sm font-semibold text-slate-700 mb-3">
-                    <i class="bi bi-type text-blue-500 mr-2"></i>
-                    Title
+                <label class="flex items-center text-sm font-semibold text-slate-700 mb-4">
+                    <div class="flex items-center text-lg">
+                        <TextUnderlineOutline class="w-5 h-5 text-purple-500 mr-2" />
+                       Title
+                    </div>
                 </label>
                 {#if isEditing}
                     <Input 
@@ -161,7 +163,6 @@
                         {:else} 
                             <span class="text-slate-400">Click to add title...</span>
                         {/if}
-                        <i class="bi bi-pencil edit-icon"></i>
                     </div>
                 {/if}
             </div>
@@ -169,9 +170,11 @@
 
         <Card class="max-w-full w-full mb-8 border-0 shadow-lg">
             <div class="p-8">
-                <label class="block text-sm font-semibold text-slate-700 mb-4">
-                    <i class="bi bi-tags text-purple-500 mr-2"></i>
-                    Tags
+                <label class="flex items-center text-sm font-semibold text-slate-700 mb-4">
+                    <div class="flex items-center text-lg">
+                        <TagOutline class="w-5 h-5 text-purple-500 mr-2" />
+                       Tags
+                    </div>
                 </label>
                 
                 <div class="flex gap-3 mb-4">
@@ -185,10 +188,10 @@
                     <Button 
                          
                         onclick={addTag}
-                        class="bg-primary  transition-all duration-200"
+                        class="bg-primary flex items-center gap-2 transition-all duration-200"
                         disabled={!newTag.trim()}
                     >
-                        <i class="bi bi-plus-lg mr-1"></i>
+                        <PlusOutline class="w-4 h-4" />
                         Add
                     </Button>
                 </div>
@@ -198,7 +201,7 @@
                         {#each tags as tag, index}
                             <span class="tag-badge group">
                                 <span class="tag-content">
-                                    <i class="bi bi-tag-fill text-xs mr-1"></i>
+                                    <TagOutline class="w-3 h-3 mr-1" />
                                     {tag}
                                 </span>
                                 <button 
@@ -207,14 +210,14 @@
                                     aria-label="Remove tag" 
                                     onclick={() => removeTag(index)}
                                 >
-                                    <i class="bi bi-x-lg"></i>
+                                     <CloseCircleOutline class="w-3 h-3" />
                                 </button>
                             </span>
                         {/each}
                     </div>
                 {:else}
                     <div class="text-center py-8 text-slate-400">
-                        <i class="bi bi-tags text-3xl mb-2 block"></i>
+                        <TagOutline class="w-12 h-12 mx-auto mb-2 text-slate-300" />
                         <p class="text-sm">No tags added yet</p>
                     </div>
                 {/if}
@@ -223,9 +226,11 @@
 
         <Card class="max-w-full w-full mb-8 border-0 shadow-lg">
             <div class="p-8 border-t-2 border-slate-200">
-                <label class="block text-sm font-semibold text-slate-700 mb-4">
-                    <i class="bi bi-file-richtext text-green-500 mr-2"></i>
+                <label class="flex items-center text-sm font-semibold text-slate-700 mb-4">
+                    <div class="flex items-center text-lg">
+                     <FileCheckSolid class="w-4 h-4 text-green-500 mr-2" />
                     Content
+                    </div>
                 </label>
                 <div class="border-none verflow-hidden h-[500px]">
                     <HtmlEditor bind:editor={htmlEditor} {content} />
@@ -236,17 +241,19 @@
         <Card class="max-w-full w-full border-0 shadow-lg">
             <div class="p-8">
                 <div class="flex items-center justify-between mb-6">
-                    <label class="text-sm font-semibold text-slate-700">
-                        <i class="bi bi-paperclip text-orange-500 mr-2"></i>
-                        Attachments ({attachments.length})
+                    <label class="flex items-center text-sm font-semibold text-slate-700">
+                        <div class="flex items-center text-lg">
+                            <PaperClipOutline class="w-4 h-4 text-orange-500 mr-2" />
+                            Attachments ({attachments.length})
+                        </div>
                     </label>
                     <input type="file" id="fileInput" multiple onchange={handleFileChange} style="display: none;" />
                     <Button 
                         
                         onclick={() => document.getElementById('fileInput').click()} 
-                        class="bg-primary flex items-center gap-2  transition-all duration-200"
+                        class="bg-primary flex items-center gap-2 transition-all duration-200"
                     >
-                        <i class="bi bi-cloud-upload text-lg"></i>
+                         <UploadOutline class="w-4 h-4" />
                         Add Files
                     </Button>
                 </div>
@@ -268,16 +275,16 @@
                                                 <track kind="captions" src="" srclang="en" label="English" />
                                             </video>
                                             <div class="attachment-overlay">
-                                                <i class="bi bi-play-circle text-white text-2xl"></i>
+                                                <PlayOutline class="w-8 h-8 text-white" />
                                             </div>
                                         {:else if attachment.type === "application/pdf"}
                                             <div class="attachment-file">
-                                                <i class="bi bi-file-pdf text-red-500 text-3xl"></i>
+                                                 <FilePdfOutline class="w-8 h-8 text-red-500" />
                                             </div>
                                         {/if}
                                     {:else}
                                         <div class="attachment-file">
-                                            <i class="bi bi-file-earmark text-slate-400 text-3xl"></i>
+                                            <FileImportSolid class="w-8 h-8 text-slate-400" />
                                         </div>
                                     {/if}
                                 </div>
@@ -291,14 +298,14 @@
                                     class="attachment-remove opacity-0 group-hover:opacity-100 transition-opacity duration-200" 
                                     onclick={() => removeAttachment(index)}
                                 >
-                                    <i class="bi bi-trash"></i>
+                                    <TrashBinSolid class="w-3 h-3" />
                                 </Button>
                             </div>
                         {/each}
                     </div>
                 {:else}
                     <div class="text-center py-12 border-2 border-dashed border-slate-200 rounded-lg bg-slate-50">
-                        <i class="bi bi-cloud-upload text-4xl text-slate-300 mb-4 block"></i>
+                        <CloudArrowUpOutline class="w-16 h-16 mx-auto mb-4 text-slate-300" />   
                         <p class="text-slate-500 mb-2">No attachments yet</p>
                         <p class="text-sm text-slate-400">Click "Add Files" to upload documents, images, or videos</p>
                     </div>

@@ -4,6 +4,7 @@
     import { onDestroy, onMount } from "svelte";
     import { website } from "@/config.js";
     import { newNotificationType } from "@/stores/newNotificationType";
+  import { BellSolid, UserCircleSolid } from 'flowbite-svelte-icons';
 
     let ws = $state(null);
 
@@ -58,19 +59,17 @@
     }
 
     function renderNotificationIconColor(){
-        const _icon = "bi bi-bell-fill";
-
-        switch ($newNotificationType) {
-            case 'create_comment':
-                return _icon + ' text-primary';
-            case 'create_reaction':
-                return _icon + ' text-danger';
-            case 'progress':
-                return _icon + ' text-warning';
-            default:
-                return _icon;
-        }
+    switch ($newNotificationType) {
+      case 'create_comment':
+        return 'text-primary';
+      case 'create_reaction':
+        return 'text-danger';
+      case 'progress':
+        return 'text-warning';
+      default:
+        return '';
     }
+  }
 
     $effect(()=>{
         renderNotificationIconColor()
@@ -87,12 +86,12 @@
       </NavLi>
       <NavLi>
         <a href="/notifications" class="block py-2 px-2 text-gray-900 hover:text-primary" aria-label="Notifications">
-          <i class={`${renderNotificationIconColor()} text-xl`}></i>
+          <BellSolid class={`w-6 h-6 ${renderNotificationIconColor()}`} />
         </a>
       </NavLi>
       <NavLi>
         <a href="/me" class="block py-2 px-2 text-gray-900 hover:text-primary" aria-label="Profile">
-          <i class="bi bi-person-circle text-xl"></i>
+          <UserCircleSolid class="w-6 h-6" />
         </a>
       </NavLi>
     </NavUl>
