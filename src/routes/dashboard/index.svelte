@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { Button, Card, P } from 'flowbite-svelte';
     import {
         getEntityAttachmentsCount,
         getEntities,
@@ -9,7 +8,6 @@
     import { goto } from "@roxi/routify";
     import { Diamonds } from 'svelte-loading-spinners';
     import { formatDate, renderStateString, truncateString } from "@/lib/helpers";
-  import { CheckCircleSolid, ChevronRightOutline, ClockArrowOutline, ClockSolid, CloseCircleSolid, CloseOutline, MessagesSolid, PlusOutline, ReplyOutline } from 'flowbite-svelte-icons';
     $goto
 
     let isLoading: boolean = $state(true);
@@ -56,128 +54,173 @@
             shortname: entity.shortname
         });
     }
+
+    function getStateIcon(entity: any) {
+        if (entity.is_active === false) {
+            return { icon: '❌', color: 'text-red-600', bg: 'bg-red-50' };
+        } else if (entity.state === "pending") {
+            return { icon: '⏳', color: 'text-blue-600', bg: 'bg-blue-50' };
+        } else if (entity.state === "in_progress") {
+            return { icon: '🔄', color: 'text-amber-600', bg: 'bg-amber-50' };
+        } else if (entity.state === "approved") {
+            return { icon: '✅', color: 'text-green-600', bg: 'bg-green-50' };
+        } else if (entity.state === "rejected") {
+            return { icon: '❌', color: 'text-red-600', bg: 'bg-red-50' };
+        } else {
+            return { icon: '❓', color: 'text-gray-600', bg: 'bg-gray-50' };
+        }
+    }
 </script>
 
-<div class="container mx-auto px-4 py-8 max-w-6xl">
-    {#if isLoading}
-        <div class="py-16 flex justify-center">
-            <Diamonds color="black" size="200" unit="px" />
-        </div>
-    {:else}
-        <div class="flex justify-between items-center mb-8">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900 mb-2">Entities</h1>
-                <p class="text-gray-600">Manage and explore your entities</p>
+<div class="min-h-screen bg-gray-50">
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+        {#if isLoading}
+            <div class="py-16 flex justify-center">
+                <Diamonds color="#3b82f6" size="60" unit="px" />
             </div>
-            <Button color="green" onclick={() => $goto("/dashboard/create_entity")} class="shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-3 text-base font-medium">
-                 <PlusOutline class="inline-block mr-2" />
-                Create Entity
-            </Button>
-        </div>
-        
-        {#if entities.length === 0}
-            <div class="text-center py-16">              
-                <h2 class="text-2xl font-semibold text-gray-900 mb-2">No entities found</h2>
-                <p class="text-gray-500 mb-6">Get started by creating your first entity</p>
-                <Button color="green" onclick={() => $goto("/dashboard/create_entity")} class="px-6 py-3">
-                    Create Your First Entity
-                </Button>
+        {:else}
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">Entities</h1>
+                    <p class="text-gray-600">Manage and explore your entities ({entities.length} total)</p>
+                </div>
+                <button 
+                    onclick={() => $goto("/dashboard/create_entity")} 
+                    class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-medium px-6 py-3 rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md"
+                >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Create Entity
+                </button>
             </div>
-        {/if}
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-3">
-            {#each entities as entity}
-                <Card class="group cursor-pointer bg-white border border-gray-200 hover:border-gray-300 hover:shadow-lg transition-all duration-200 rounded-xl overflow-hidden h-full flex flex-col" onclick={() => gotoEntityDetails(entity)}>
-                    <div class="p-6 flex flex-col h-full">
-                        <div class="flex items-start gap-4 mb-4">
-                            <div class="flex-shrink-0">
-                                <div class="w-12 h-12 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg flex items-center justify-center border border-blue-200 group-hover:from-blue-100 group-hover:to-indigo-200 transition-colors duration-200">
-                                    <div class="text-center">
-                                        <div class="text-lg font-bold text-blue-700">{entity.reaction ?? 0}</div>
+            
+            {#if entities.length === 0}
+                <div class="text-center py-16 bg-white rounded-xl border border-gray-200">
+                    <div class="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6">
+                        <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-semibold text-gray-900 mb-2">No entities found</h2>
+                    <p class="text-gray-500 mb-6">Get started by creating your first entity</p>
+                    <button 
+                        onclick={() => $goto("/dashboard/create_entity")} 
+                        class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-medium px-6 py-3 rounded-lg transition-colors duration-200"
+                    >
+                        Create Your First Entity
+                    </button>
+                </div>
+            {:else}
+                <div class="space-y-4">
+                    {#each entities as entity}
+                        <div 
+                            class="group bg-white rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-md cursor-pointer transition-all duration-200"
+                            role="button"
+                            tabindex="0"
+                            onclick={() => gotoEntityDetails(entity)}
+                            onkeydown={(e) => { if (e.key === 'Enter') gotoEntityDetails(entity); }}
+                        >
+                            <div class="p-6">
+                                <div class="flex flex-col lg:flex-row lg:items-center gap-6">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
+                                            <div class="flex-1 min-w-0">
+                                                <h2 class="text-xl font-semibold text-gray-900 group-hover:text-blue-700 transition-colors duration-200 mb-2 line-clamp-2">
+                                                    {entity.title}
+                                                </h2>
+                                                <div class="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-3">
+                                                    <span class="flex items-center gap-1.5">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                                        </svg>
+                                                        {entity.owner}
+                                                    </span>
+                                                    <span class="flex items-center gap-1.5">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                        </svg>
+                                                        {entity.updated_at}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            
+                                           
+                                        </div>
+                                        
+                                        {#if entity.content}
+                                            <div class="text-gray-600 mb-4 line-clamp-2">
+                                                {@html truncateString(entity.content)}
+                                            </div>
+                                        {/if}
+                                        
+                                        {#if entity.tags && entity.tags.length > 0}
+                                            <div class="flex flex-wrap gap-2 mb-4">
+                                                {#each entity.tags.slice(0, 4) as tag}
+                                                    <span class="inline-flex items-center px-2.5 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
+                                                        #{tag}
+                                                    </span>
+                                                {/each}
+                                                {#if entity.tags.length > 4}
+                                                    <span class="inline-flex items-center px-2.5 py-1 bg-gray-100 text-gray-500 rounded-full text-xs font-medium">
+                                                        +{entity.tags.length - 4} more
+                                                    </span>
+                                                {/if}
+                                            </div>
+                                        {/if}
+                                    </div>
+                                    
+                                    <div class="flex lg:flex-col items-center lg:items-end gap-4 lg:gap-3">
+                                         <div class="block ">
+                                         <div class="mb-8">
+                                            {#if getStateIcon(entity)}
+                                                <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium {getStateIcon(entity).color} {getStateIcon(entity).bg}">
+                                                    <span class="text-base">{getStateIcon(entity).icon}</span>
+                                                    {renderStateString(entity)}
+                                                </span>
+                                            {/if}
+                                        </div>
+                                        <div class="flex items-center gap-6 lg:gap-4">                                            
+                                            <div class="text-center">
+                                                <div class="flex items-center gap-1.5 text-red-600 mb-1">
+                                                    <span class="font-semibold text-lg mr-2 ">{entity.reaction ?? 0}</span>
+                                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                                                    </svg>
+                                                </div>
+                                                <span class="text-xs text-gray-500 font-medium">Reactions</span>
+                                            </div>
+                                            
+                                            <div class="text-center">
+                                                <div class="flex items-center gap-1.5 text-blue-600 mb-1">
+                                                    <span class="font-semibold text-lg mr-2">{entity.comment ?? 0}</span>
+                                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                                        <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+                                                    </svg>
+                                                </div>
+                                                <span class="text-xs text-gray-500 font-medium">Comments</span>
+                                            </div>
+                                        </div>
+                                        </div>
+                                        
+                                        <div class="flex-shrink-0">
+                                            <svg class="w-6 h-6 text-gray-400 group-hover:text-gray-600 group-hover:translate-x-1 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                            </svg>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            
-                            <div class="flex-grow min-w-0">
-                                <h2 class="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-700 transition-colors duration-200 line-clamp-2">{entity.title}</h2>
-                                <div class="flex items-center text-xs text-gray-500">
-                                     <ClockArrowOutline class="inline-block mr-1" />
-                                    <span class="font-medium">{entity.updated_at}</span>
-                                </div>
-                            </div>
                         </div>
-
-                        <div class="text-gray-600 mb-4 leading-relaxed flex-grow">
-                            <div class="line-clamp-4 text-sm">
-                                {@html truncateString(entity.content)}
-                            </div>
-                        </div>
-
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="flex items-center space-x-4">
-                                <div class="flex items-center text-gray-600" title={renderStateString(entity)}>
-                                    {#if entity.is_active === false}
-                                      <CloseCircleSolid class="text-secondary mr-1 text-sm w-4 h-4" />
-                                    {:else if entity.state === "pending"}
-                                      <ClockSolid class="text-primary mr-1 text-sm w-4 h-4" />
-                                    {:else if entity.state === "in_progress"}
-                                      <ReplyOutline class="text-warning mr-1 text-sm w-4 h-4" />
-                                    {:else if entity.state === "approved"}
-                                      <CheckCircleSolid class="text-success mr-1 text-sm w-4 h-4" />
-                                    {:else if entity.state === "rejected"}
-                                      <CloseOutline class="text-danger mr-1 text-sm w-4 h-4" />
-                                    {:else}
-                                      <span class="mr-1 text-sm">N/A</span>
-                                    {/if}
-                                    <span class="text-xs font-medium">{renderStateString(entity)}</span>
-                                  </div>
-                                <div class="flex items-center text-gray-600">
-                                     <MessagesSolid class="inline-block mr-1 text-sm" />
-                                    <span class="text-xs font-medium">{entity.comment ?? 0}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {#if entity.tags && entity.tags.length > 0}
-                            <div class="flex flex-wrap gap-1 mb-3">
-                                {#each entity.tags.slice(0, 3) as tag}
-                                    <span class="inline-flex items-center px-2 py-1 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded-full text-xs font-medium hover:from-gray-200 hover:to-gray-300 transition-colors duration-200">
-                                        {tag}
-                                    </span>
-                                {/each}
-                                {#if entity.tags.length > 3}
-                                    <span class="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-500 rounded-full text-xs font-medium">
-                                        +{entity.tags.length - 3}
-                                    </span>
-                                {/if}
-                            </div>
-                        {/if}
-
-                        <div class="flex items-center justify-between pt-3 border-t border-gray-100">
-                            <p class="text-xs font-medium text-gray-700">by {entity.owner}</p>
-                            <ChevronRightOutline class="w-6 h-6 text-gray-400 group-hover:text-gray-600 transition-colors duration-200" />
-                        </div>
-                    </div>
-                </Card>
-            {/each}
-        </div>
-    {/if}
+                    {/each}
+                </div>
+            {/if}
+        {/if}
+    </div>
 </div>
 
 <style>
     .line-clamp-2 {
-        display: -webkit-box;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-    
-    .line-clamp-3 {
-        display: -webkit-box;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-    
-    .line-clamp-4 {
         display: -webkit-box;
         -webkit-box-orient: vertical;
         overflow: hidden;

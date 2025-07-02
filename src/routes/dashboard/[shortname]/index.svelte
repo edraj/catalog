@@ -176,7 +176,7 @@
         
         {#if isLoadingPage}
             <div class="py-16 flex justify-center">
-                <Diamonds color="black" size="200" unit="px" />
+                <Diamonds color="#3b82f6" size="60" unit="px" />
             </div>
         {:else}
             {#if isOwner || isAdmin}
@@ -284,7 +284,7 @@
                     </div>
                 </div>
 
-                {#if entity.attachments.media && Object.keys(entity.attachments.media).length > 0}
+                {#if entity.attachments.media && Object.keys(entity.attachments.media).length > 0}                
                     <div class="px-8 pb-8">
                         <div class="border-t border-gray-100 pt-8">
                             <h3 class="text-lg font-semibold text-gray-900 mb-4">Attachments</h3>

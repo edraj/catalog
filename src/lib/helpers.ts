@@ -32,22 +32,3 @@ export function renderStateString(entity: any) {
   }
   return "N/A";
 }
-
-// export function renderStateIcon(entity: any): string {
-//     if (entity.is_active === false) {
-//         return "bi bi-x-circle text-secondary";
-//     }
-//     if(entity.state === "pending" ){
-//         return "bi bi-hourglass text-primary";
-//     }
-//     if(entity.state === "in_progress" ){
-//         return "bi bi-arrow-repeat text-warning";
-//     }
-//     if(entity.state === "approved" ){
-//         return "bi bi-check-lg text-success";
-//     }
-//     if(entity.state === "rejected" ){
-//         return "bi bi-x-lg text-danger";
-//     }
-//     return "N/A";
-// }

@@ -40,7 +40,7 @@
     onMount(async () => {
         const p = await getProfile();
 
-        if(p === null || p?.error?.type === 'jwtauth'){
+        if(p === null || p?.response.data.error?.type === 'jwtauth'){
             await signout();
             $goto("/login");
         } else {

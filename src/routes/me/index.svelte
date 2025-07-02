@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { Card, Button, Input, Label, Heart } from 'flowbite-svelte';
     import { onMount } from "svelte";
     import { getAvatar, getEntityAttachmentsCount, getProfile, getEntities, updateProfile } from "@/lib/dmart_services";
     import { errorToastMessage, successToastMessage } from "@/lib/toasts_messages";
@@ -7,7 +6,6 @@
     import { formatDate, renderStateString } from "@/lib/helpers";
     import { goto } from "@roxi/routify";
     import { Diamonds } from "svelte-loading-spinners";
-  import { HeartSolid, MessagesSolid } from 'flowbite-svelte-icons';
     $goto
 
     let profileSection: string = $state("ME");
@@ -76,112 +74,187 @@
     }
 </script>
 
-<div class="container mx-auto px-4 py-8">
-    <div class="text-2xl mb-8 space-x-4">
-        <button 
-            class="cursor-pointer {profileSection === 'ME' ? 'font-bold text-primary' : 'text-gray-600 hover:text-gray-900'}" 
-            onclick={handleME}
-        >
-            My profile
-        </button>
-        <span class="text-gray-400">|</span>
-        <button 
-            class="cursor-pointer {profileSection === 'IDEAS' ? 'font-bold text-primary' : 'text-gray-600 hover:text-gray-900'}" 
-            onclick={handleEntities}
-        >
-            My entities
-        </button>
-    </div>
-
-    {#if isLoading}
-        <div class="py-12 flex justify-center">
-            <Diamonds color="black" size="200" unit="px" />
+<div class="min-h-screen bg-gray-50">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <div class="mb-8">
+            <nav class="flex space-x-8 border-b border-gray-200">
+                <button 
+                    class="py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 {profileSection === 'ME' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}" 
+                    onclick={handleME}
+                >
+                    My Profile
+                </button>
+                <button 
+                    class="py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 {profileSection === 'IDEAS' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}" 
+                    onclick={handleEntities}
+                >
+                    My Entities ({entities.length})
+                </button>
+            </nav>
         </div>
-    {:else}
-        {#if profileSection === "ME"}
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-                <div class="flex justify-center items-center">
-                    <Avatar src={avatar}/>
-                </div>
-                <div class="md:col-span-3">
-                    <Card>
-                        <div class="p-6">
-                            <h3 class="text-lg font-semibold mb-4">Preference</h3>
-                            <form onsubmit={handleSubmit} class="space-y-4">
-                                <div>
-                                    <Label for="displayname" class="mb-2">Display name</Label>
-                                    <Input id="displayname" type="text" required bind:value={displayname} />
-                                </div>
 
-                                <div>
-                                    <Label for="description" class="mb-2">Description</Label>
-                                    <Input id="description" type="textarea" required bind:value={description} />
-                                </div>
-
-                                <Button type="submit" color="primary" class="w-full">Save</Button>
-                            </form>
-                        </div>
-                    </Card>
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-                <div></div>
-                {#if user}
-                    <div class="md:col-span-3">
-                        <Card>
-                            <div class="p-6">
-                                <h3 class="text-lg font-semibold mb-4">Settings</h3>
-                                <div class="space-y-4 text-lg">
-                                    <div>
-                                        <span class="font-semibold">Email</span>
-                                        <br>
-                                        <span class="text-gray-600">{user.attributes?.email ?? "N/A"}</span>
-                                    </div>
-                                    <div>
-                                        <span class="font-semibold">Mobile number</span>
-                                        <br>
-                                        <span class="text-gray-600">{user.attributes?.msisdn ?? "N/A"}</span>
-                                    </div>
-                                    <p class="text-center mt-8 text-gray-500">To change these settings, contact administrator</p>
-                                </div>
-                            </div>
-                        </Card>
-                    </div>
-                {/if}
+        {#if isLoading}
+            <div class="flex justify-center py-16">
+                <Diamonds color="#3b82f6" size="60" unit="px" />
             </div>
         {:else}
-            {#if entities.length === 0}
-                <h1 class="text-center text-2xl text-gray-500 mt-12">No entities found.</h1>
-            {:else}
-                <div class="space-y-6">
-                    {#each entities as entity}
-                        <Card class="cursor-pointer hover:bg-gray-50" onclick={() => gotoEntityDetails(entity)}>
-                            <div class="p-6">
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div>
-                                        <h2 class="text-xl font-bold mb-2">{entity.title}</h2>
-                                        <p class="text-gray-500 font-semibold">{entity.updated_at}</p>
-                                    </div>
-                                    <div class="flex justify-center items-center space-x-4">
-                                        <span class="flex items-center">
-                                             <HeartSolid class="text-red-500 mr-1" />
-                                            {entity.reaction ?? 0}
+            {#if profileSection === "ME"}
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-1">
+                        <div class="bg-white d-flex flex-col align-items-center rounded-xl border border-gray-200 p-6 text-center">
+                            <div class="mb-6">
+                                <Avatar src={avatar} size="120"/>
+                            </div>
+                            <h2 class="text-xl font-semibold text-gray-900 mb-2">{displayname || user.shortname}</h2>
+                            <p class="text-gray-600 text-sm">@{user.shortname}</p>
+                        </div>
+                    </div>                    
+                        <div class="bg-white rounded-xl border border-gray-200 p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-6">Profile Preferences</h3>
+                            <form onsubmit={handleSubmit} class="space-y-6">
+                                <div>
+                                    <label for="displayname" class="block text-sm font-medium text-gray-700 mb-2">
+                                        Display Name
+                                    </label>
+                                    <input 
+                                        id="displayname" 
+                                        type="text" 
+                                        required 
+                                        bind:value={displayname}
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
+                                        placeholder="Enter your display name"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
+                                        Description
+                                    </label>
+                                    <textarea 
+                                        id="description" 
+                                        required 
+                                        bind:value={description}
+                                        rows="4"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 resize-none"
+                                        placeholder="Tell us about yourself"
+                                    ></textarea>
+                                </div>
+
+                                <button 
+                                    type="submit" 
+                                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200"
+                                >
+                                    Save Changes
+                                </button>
+                            </form>
+                        </div>
+                        
+                        {#if user}
+                            <div class="bg-white rounded-xl border border-gray-200 p-6">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-6">Account Settings</h3>
+                                <div class="space-y-6">
+                                    <div class="flex justify-between items-start py-3 border-b border-gray-100">
+                                        <div>
+                                            <h4 class="font-medium text-gray-900">Email Address</h4>
+                                            <p class="text-gray-600 text-sm mt-1">{user.attributes?.email ?? "Not provided"}</p>
+                                        </div>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            Verified
                                         </span>
-                                        <span class="flex items-center">
-                                            <MessagesSolid class="text-blue-500 mr-1" />
-                                            {entity.comment ?? 0}
+                                    </div>
+                                    
+                                    <div class="flex justify-between items-start py-3 border-b border-gray-100">
+                                        <div>
+                                            <h4 class="font-medium text-gray-900">Mobile Number</h4>
+                                            <p class="text-gray-600 text-sm mt-1">{user.attributes?.msisdn ?? "Not provided"}</p>
+                                        </div>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            {user.attributes?.msisdn ? 'Verified' : 'Not set'}
                                         </span>
                                     </div>
-                                    <div class="flex justify-center items-center">
-                                        <span class="text-gray-600">{renderStateString(entity)}</span>
+                                    
+                                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                        <div class="flex">
+                                            <svg class="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                            <div class="ml-3">
+                                                <h4 class="text-sm font-medium text-blue-800">Need to update these settings?</h4>
+                                                <p class="text-sm text-blue-700 mt-1">Contact your administrator to modify email or mobile number settings.</p>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </Card>
-                    {/each}
+                        {/if}
                 </div>
+            {:else}
+                {#if entities.length === 0}
+                    <div class="text-center py-16">
+                        <div class="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6">
+                            <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-900 mb-2">No entities yet</h3>
+                        <p class="text-gray-600">Start creating your first entity to see it here.</p>
+                    </div>
+                {:else}
+                    <div class="grid gap-6">
+                        {#each entities as entity}
+                            <div 
+                                class="bg-white rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-md cursor-pointer transition-all duration-200"
+                                role="button"
+                                tabindex="0"
+                                onclick={() => gotoEntityDetails(entity)}
+                                onkeydown={(e) => { if (e.key === 'Enter') gotoEntityDetails(entity); }}
+                            >
+                                <div class="p-6">
+                                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                                        <div class="flex-1 min-w-0">
+                                            <h3 class="text-xl font-semibold text-gray-900 mb-2 line-clamp-2">
+                                                {entity.title}
+                                            </h3>
+                                            <div class="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                                                <span class="flex items-center gap-1">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                    </svg>
+                                                    Updated {entity.updated_at}
+                                                </span>
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                    {renderStateString(entity)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        
+                                       <div class="flex items-center gap-6">
+                                            <div class="flex items-center gap-4">
+                                                <span class="flex items-center gap-2 text-red-600">
+                                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                                                    </svg>
+                                                    <span class="font-medium">{entity.reaction ?? 0}</span>
+                                                </span>
+                                                <span class="flex items-center gap-2 text-blue-600">
+                                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                                        <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+                                                    </svg>
+                                                    <span class="font-medium">{entity.comment ?? 0}</span>
+                                                </span>
+                                            </div>
+                                            
+                                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {/each}
+                    </div>
+                {/if}
             {/if}
         {/if}
-    {/if}
+    </div>
 </div>
