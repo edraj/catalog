@@ -1,0 +1,1 @@
+{"uuid": "e9686746-96e6-4c47-9c45-b1310c7927f2", "shortname": "permissions", "is_active": true, "tags": [], "created_at": "2022-08-23T07:44:36.399780", "updated_at": "2023-04-10T03:46:45.715671", "owner_shortname": "dmart", "payload": {"content_type": "json", "schema_shortname": "folder_rendering", "body": "permissions.json"}}

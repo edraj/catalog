@@ -1,47 +1,33 @@
-# Svelte + TS + Vite
+# Setup
 
-This template should help get you started developing with Svelte and TypeScript in Vite.
+Installing all packages and dependencies.
+- `yarn`
+- `npm i`
 
-## Recommended IDE Setup
+To run the project:
+- `yarn dev`
+- `npm run dev`
 
-[VS Code](https://code.visualstudio.com/) + [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
+To build the project:
+- `yarn build`
+- `npm run build`
 
-## Need an official Svelte framework?
+To preview the project as production:
+- `yarn preview`
+- `npm run preview`
 
-Check out [SvelteKit](https://github.com/sveltejs/kit#readme), which is also powered by Vite. Deploy anywhere with its serverless-first approach and adapt to various platforms, with out of the box support for TypeScript, SCSS, and Less, and easily-added support for mdsvex, GraphQL, PostCSS, Tailwind CSS, and more.
+# Seeding
 
-## Technical considerations
+## Running from local
 
-**Why use this over SvelteKit?**
+- Point dmart service to the project spaces by updating the `SPACES_FOLDER` in `config.env`.
+- Run `json_to_db` script to seed the database with the json files in the project spaces.
+- Note: revert the `SPACES_FOLDER` to the original value after seeding.
 
-- It brings its own routing solution which might not be preferable for some users.
-- It is first and foremost a framework that just happens to use Vite under the hood, not a Vite app.
-
-This template contains as little as possible to get started with Vite + TypeScript + Svelte, while taking into account the developer experience with regards to HMR and intellisense. It demonstrates capabilities on par with the other `create-vite` templates and is a good starting point for beginners dipping their toes into a Vite + Svelte project.
-
-Should you later need the extended capabilities and extensibility provided by SvelteKit, the template has been structured similarly to SvelteKit so that it is easy to migrate.
-
-**Why `global.d.ts` instead of `compilerOptions.types` inside `jsconfig.json` or `tsconfig.json`?**
-
-Setting `compilerOptions.types` shuts out all other types not explicitly listed in the configuration. Using triple-slash references keeps the default TypeScript setting of accepting type information from the entire workspace, while also adding `svelte` and `vite/client` type information.
-
-**Why include `.vscode/extensions.json`?**
-
-Other templates indirectly recommend extensions via the README, but this file allows VS Code to prompt the user to install the recommended extension upon opening the project.
-
-**Why enable `allowJs` in the TS template?**
-
-While `allowJs: false` would indeed prevent the use of `.js` files in the project, it does not prevent the use of JavaScript syntax in `.svelte` files. In addition, it would force `checkJs: false`, bringing the worst of both worlds: not being able to guarantee the entire codebase is TypeScript, and also having worse typechecking for the existing JavaScript. In addition, there are valid use cases in which a mixed codebase may be relevant.
-
-**Why is HMR not preserving my local component state?**
-
-HMR state preservation comes with a number of gotchas! It has been disabled by default in both `svelte-hmr` and `@sveltejs/vite-plugin-svelte` due to its often surprising behavior. You can read the details [here](https://github.com/rixo/svelte-hmr#svelte-hmr).
-
-If you have state that's important to retain within a component, consider creating an external store which would not be replaced by HMR.
-
-```ts
-// store.ts
-// An extremely simple external store
-import { writable } from 'svelte/store'
-export default writable(0)
-```
+## Running from podman
+- Using podman copy command:
+- - `podman cp [options] [container:]src_path [container:]dest_path`
+- - `podman cp spaces dmart:/home/dmart/sample/`
+- `podman exec -it -w /home/dmart/backend dmart /home/venv/bin/python3 ./migrate.py json_to_db`
+- Run `json_to_db` script to seed the database with the json files in the project spaces.
+- Note: You can safely ignore the error messages that are related to duplicated entries.

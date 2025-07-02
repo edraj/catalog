@@ -1,0 +1,28 @@
+{
+  "shortname": "catalog_permission",
+  "tags": [],
+  "subpaths": {
+    "catalog": [
+      "__all_subpaths__"
+    ]
+  },
+  "created_at": "2025-02-23T22:42:40.066340",
+  "resource_types": [
+    "ticket",
+    "json",
+    "media",
+    "comment",
+    "reaction"
+  ],
+  "uuid": "b9b53168-7359-40ed-8d72-9b3100b8303b",
+  "updated_at": "2025-02-23T22:46:20.663643",
+  "actions": [
+    "create",
+    "update",
+    "progress_ticket",
+    "query",
+    "view"
+  ],
+  "is_active": true,
+  "owner_shortname": "dmart"
+}

@@ -11,13 +11,9 @@ interface User {
     password: string;
 }
 
-interface ProjectIdea {
-    title: string;
-    budget: string;
-    long_description: string;
-    short_description: string;
-    shortname?: string;
-    state?: string;
-    created_at?: string;
-    updated_at?: string;
+interface Entity {
+    title: string
+    tags: string[]
+    content: string
+    is_active: boolean
 }

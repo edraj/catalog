@@ -1,0 +1,15 @@
+{
+  "tags": [],
+  "shortname": "workflows",
+  "created_at": "2025-02-15T12:26:34.023144",
+  "updated_at": "2025-02-15T12:26:34.023153",
+  "uuid": "632fff06-3298-4ecf-8cb9-747475503851",
+  "owner_shortname": "dmart",
+  "is_active": true,
+  "payload": {
+    "body": "workflows.json",
+    "checksum": "07524e9974d1ae1b430b52e48a0bc34f9e243b98",
+    "content_type": "json",
+    "schema_shortname": "folder_rendering"
+  }
+}
