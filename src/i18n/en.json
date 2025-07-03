@@ -83,5 +83,14 @@
   "Publishing": "Publishing...",
   "PublishNow": "Publish Now",
   "SaveDraft": "Save Draft",
-  "Saving": "Saving..."
+  "Saving": "Saving...",
+  "WelcomeBack": "Welcome Back",
+  "PleaseSignInToContinue": "Please sign in to continue",
+  "SignIn": "Sign In",
+  "EnterYourCredentials": "Enter your credentials to access your account",
+  "Username": "Username",
+  "Password": "Password",
+  "InvalidCredentials": "Invalid credentials. Please try again.",
+  "SigningIn": "Signing in...",
+  "TermsAndConditions": "By signing in, you agree to our Terms of Service and Privacy Policy."
 }
