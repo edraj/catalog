@@ -40,13 +40,17 @@
 
 
 <div class="container-fluid d-flex flex-column justify-content-center align-items-center vh-100" id="login-container">
-    <h1 class="text-center">Catalogue</h1>
+    <h1 class="text-center">
+        {$_('Catalog')}
+    </h1>
     <Card class="w-25 p-4 mt-5">
         <CardBody>
             {#if setOTPScreen === false}
             <Form on:submit={handleSubmit}>
                 <FormGroup>
-                    <Label for="username">Email or Mobile phone</Label>
+                    <Label for="username">
+                        {$_('EmailOrMobile')}
+                    </Label>
                     <Input
                         class={isError ? "border-danger" : ""}
                         type="text"
@@ -55,7 +59,9 @@
                         required
                     />
                     <div class="mt-4">
-                        <Button type="submit" color="dark" class="w-100">Login</Button>
+                        <Button type="submit" color="dark" class="w-100">
+                            {$_('Login')}
+                        </Button>
                     </div>
                 </FormGroup>
             </Form>
@@ -63,7 +69,7 @@
                 <Form on:submit={handleOTPSubmit}>
                     <FormGroup>
                         <Label for="username">
-                            We have sent you a code to {username} Insert here
+                            {$_('CodeSentTo')}
                         </Label>
                         <Input
                             class={isError ? "border-danger" : ""}
@@ -73,10 +79,14 @@
                             required
                         />
                         {#if isError}
-                            <p class="text-danger">Wrong credentials!</p>
+                            <p class="text-danger">
+                                {$_('InvalidCredentials')}
+                            </p>
                         {/if}
                         <div class="mt-4">
-                            <Button type="submit" color="dark" class="w-100">Submit</Button>
+                            <Button type="submit" color="dark" class="w-100">
+                                {$_('Login')}
+                            </Button>
                         </div>
                     </FormGroup>
                 </Form>

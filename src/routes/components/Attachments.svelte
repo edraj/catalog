@@ -7,7 +7,7 @@
   import Media from "./Media.svelte";
   import {successToastMessage} from "@/lib/toasts_messages";
   import { TrashBinSolid } from "flowbite-svelte-icons";
-
+  import { _ } from '@/i18n';
   let {
     attachments = [],
     space_name,
@@ -203,7 +203,7 @@
 <div class="attachments-container" style="width: 100%;">
   {#if attachments.length === 0}
     <div class="text-center py-8 text-gray-500">
-      <p>No attachments available</p>
+      <p>{$_('NoAttachments')}</p>
     </div>
   {:else}
     <div class="attachments-grid">
@@ -239,7 +239,7 @@
               />
             {:else}
               <div class="flex items-center justify-center h-full text-gray-400">
-                <span>Unsupported format</span>
+                <span>{$_('Unsupportedformat')}</span>
               </div>
             {/if}
           </div>
