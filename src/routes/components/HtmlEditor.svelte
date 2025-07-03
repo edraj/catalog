@@ -76,6 +76,7 @@
 <style>
   :global(.cl) {
     height: 100%;
+    padding: 20px;
   }
   :global(.cl-content) {
     font-family: "uthmantn";

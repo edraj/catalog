@@ -1,32 +1,38 @@
 <script lang="ts">
-    import { Container, Row, Col, Nav, NavItem, Collapse, NavbarToggler } from 'sveltestrap';
-
-    let isOpen = $state(true);
-
-    function toggle() {
-        isOpen = !isOpen;
+    import { Sidebar, SidebarGroup, SidebarItem, SidebarWrapper } from 'flowbite-svelte';
+    import { ChartPieSolid, GridSolid, MailBoxSolid, UserSolid } from 'flowbite-svelte-icons';
+    interface Props {
+        children?: import('svelte').Snippet;
     }
+
+    let { children }: Props = $props();
+
+    let spanClass = 'pl-2 self-center text-sm text-gray-900 whitespace-nowrap dark:text-white';
 </script>
 
-<Container fluid={true} class=" h-100 position-relative p-0">
-    <Row class="h-100" noGutters>
-        <Col sm="2" class="h-100 bg-light border-end border-light px-1">
-            <div class="sidebar" class:collapsed={isOpen}>
-                <NavbarToggler on:click={toggle} />
-                <Collapse isOpen={isOpen}>
-                    <Nav vertical>
-                        <NavItem>
-                            <a href="/dashboard/admin/users" class="nav-link">Users</a>
-                        </NavItem>
-                        <NavItem>
-                            <a href="/dashboard/admin/posts" class="nav-link">Posts</a>
-                        </NavItem>
-                    </Nav>
-                </Collapse>
-            </div>
-        </Col>
-        <Col sm="10" class="border-end border-light px-1 overflow-auto">
-            <slot/>
-        </Col>
-    </Row>
-</Container>
+<div class="flex h-screen bg-gray-50">
+    <SidebarWrapper class="w-64 h-full">
+        <Sidebar class="w-full h-full">
+            <SidebarGroup>
+                <SidebarItem label="Users" href="/dashboard/admin/users">
+                    {#snippet icon()}
+                                    
+                            <UserSolid class="w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+                        
+                                    {/snippet}
+                </SidebarItem>
+                <SidebarItem label="Posts" href="/dashboard/admin/posts">
+                    {#snippet icon()}
+                                    
+                            <MailBoxSolid class="w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+                        
+                                    {/snippet}
+                </SidebarItem>
+            </SidebarGroup>
+        </Sidebar>
+    </SidebarWrapper>
+    
+    <div class="flex-1 overflow-auto p-4">
+        {@render children?.()}
+    </div>
+</div>
