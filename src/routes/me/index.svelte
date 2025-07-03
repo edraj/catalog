@@ -39,7 +39,7 @@
       limit: 15,
       offset: 0,
       shortname: user.shortname,
-      search: "",
+      search: `@owner_shortname:${user.shortname}`,
     });
     if (_entities === null) {
       errorToastMessage("Failed to fetch entities!", true);

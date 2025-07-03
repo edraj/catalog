@@ -5,46 +5,54 @@
   import { newNotificationType } from "@/stores/newNotificationType";
   import { _ } from "@/i18n";
   import { locale, switchLocale } from "@/i18n";
+  import { user, signout } from "@/stores/user";
+  import { goto } from "@roxi/routify";
+  $goto;
 
   let ws = $state(null);
 
   onMount(() => {
-    if (isWSOpen(ws)) {
-      ws.send(JSON.stringify({ type: "notification_unsubscribe" }));
-    }
-    if ("websocket" in website) {
-      try {
-        const authToken = localStorage.getItem("authToken") || "";
-        ws = new WebSocket(`${website.websocket}?token=${authToken}`);
-      } catch (e) {
-        console.error({ e });
+    // Only setup websocket if user is logged in
+    if ($user.signedin) {
+      if (isWSOpen(ws)) {
+        ws.send(JSON.stringify({ type: "notification_unsubscribe" }));
       }
-    }
-
-    ws.onopen = () => {
-      ws.send(
-        JSON.stringify({
-          type: "notification_subscription",
-          space_name: "catalog",
-          subpath: "__ALL__",
-        })
-      );
-    };
-
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event?.data ?? "");
-      if (data.type === "notification") {
-        if (data?.message?.action_type === "create") {
-          if (data?.message?.resource_type === "reaction") {
-            $newNotificationType = "create_reaction";
-          } else if (data?.message?.resource_type === "comment") {
-            $newNotificationType = "create_comment";
-          }
-        } else if (data?.message?.action_type === "progress_ticket") {
-          $newNotificationType = "progress";
+      if ("websocket" in website) {
+        try {
+          const authToken = localStorage.getItem("authToken") || "";
+          ws = new WebSocket(`${website.websocket}?token=${authToken}`);
+        } catch (e) {
+          console.error({ e });
         }
       }
-    };
+
+      if (ws) {
+        ws.onopen = () => {
+          ws.send(
+            JSON.stringify({
+              type: "notification_subscription",
+              space_name: "catalog",
+              subpath: "__ALL__",
+            })
+          );
+        };
+
+        ws.onmessage = (event) => {
+          const data = JSON.parse(event?.data ?? "");
+          if (data.type === "notification") {
+            if (data?.message?.action_type === "create") {
+              if (data?.message?.resource_type === "reaction") {
+                $newNotificationType = "create_reaction";
+              } else if (data?.message?.resource_type === "comment") {
+                $newNotificationType = "create_comment";
+              }
+            } else if (data?.message?.action_type === "progress_ticket") {
+              $newNotificationType = "progress";
+            }
+          }
+        };
+      }
+    }
   });
 
   onDestroy(() => {
@@ -54,21 +62,27 @@
   function isWSOpen(ws: any) {
     return ws != null && ws.readyState === ws.OPEN;
   }
-  function isWSClosed(ws: any) {
-    return ws == null || ws.readyState !== ws.OPEN;
-  }
 
   function renderNotificationIconColor() {
     switch ($newNotificationType) {
       case "create_comment":
-        return "text-blue-600";
+        return "text-blue-500";
       case "create_reaction":
-        return "text-red-600";
+        return "text-red-500";
       case "progress":
-        return "text-amber-600";
+        return "text-amber-500";
       default:
-        return "text-gray-600";
+        return "text-gray-500";
     }
+  }
+
+  function handleLogin() {
+    $goto("/login");
+  }
+
+  async function handleLogout() {
+    await signout();
+    $goto("/login");
   }
 
   $effect(() => {
@@ -77,17 +91,18 @@
 </script>
 
 <header
-  class="sticky top-0 z-40 w-full border-b border-gray-200 bg-white backdrop-blur supports-[backdrop-filter]:bg-white/60"
+  class="sticky top-0 z-40 w-full border-b border-gray-200 bg-white/95 backdrop-blur-md supports-[backdrop-filter]:bg-white/80"
 >
   <div class="container mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex h-16 items-center justify-between">
+      <!-- Logo/Brand -->
       <div class="flex items-center">
-        <a href="/" class="flex items-center space-x-2">
+        <a href="/home" class="flex items-center space-x-3 group">
           <div
-            class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600"
+            class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105"
           >
             <svg
-              class="h-5 w-5 text-white"
+              class="h-6 w-6 text-white"
               fill="currentColor"
               viewBox="0 0 24 24"
             >
@@ -96,104 +111,337 @@
               />
             </svg>
           </div>
-          <span class="font-bold text-xl text-gray-900 sm:inline-block"
+          <span
+            class="font-bold text-xl text-gray-900 sm:inline-block group-hover:text-blue-600 transition-colors duration-200"
             >{$_("Catalog")}</span
           >
         </a>
       </div>
 
-      <div class="flex items-center space-x-4">
-        <SearchBar />
+      <!-- Navigation Items -->
+      <div class="flex items-center space-x-2">
+        {#if $user.signedin}
+          <!-- Logged in user navigation -->
+          <SearchBar />
 
-        <a
-          href="/dashboard"
-          class="flex items-center mx-2 justify-center w-10 h-10 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors duration-200 border border-gray-200"
-          aria-label="Dashboard"
-        >
-          <svg
-            class="w-5 h-5"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            ><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g
-              id="SVGRepo_tracerCarrier"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            ></g><g id="SVGRepo_iconCarrier">
-              <rect width="5" height="5" fill="white"></rect>
-              <path
-                d="M15.024 22C16.2771 22 17.3524 21.9342 18.2508 21.7345C19.1607 21.5323 19.9494 21.1798 20.5646 20.5646C21.1798 19.9494 21.5323 19.1607 21.7345 18.2508C21.9342 17.3524 22 16.2771 22 15.024V12C22 10.8954 21.1046 10 20 10H12C10.8954 10 10 10.8954 10 12V20C10 21.1046 10.8954 22 12 22H15.024Z"
-                fill="#323232"
-              ></path>
-              <path
-                d="M2 15.024C2 16.2771 2.06584 17.3524 2.26552 18.2508C2.46772 19.1607 2.82021 19.9494 3.43543 20.5646C4.05065 21.1798 4.83933 21.5323 5.74915 21.7345C5.83628 21.7538 5.92385 21.772 6.01178 21.789C7.09629 21.9985 8 21.0806 8 19.976L8 12C8 10.8954 7.10457 10 6 10H4C2.89543 10 2 10.8954 2 12V15.024Z"
-                fill="#323232"
-              ></path>
-              <path
-                d="M8.97597 2C7.72284 2 6.64759 2.06584 5.74912 2.26552C4.8393 2.46772 4.05062 2.82021 3.4354 3.43543C2.82018 4.05065 2.46769 4.83933 2.26549 5.74915C2.24889 5.82386 2.23327 5.89881 2.2186 5.97398C2.00422 7.07267 2.9389 8 4.0583 8H19.976C21.0806 8 21.9985 7.09629 21.789 6.01178C21.772 5.92385 21.7538 5.83628 21.7345 5.74915C21.5322 4.83933 21.1798 4.05065 20.5645 3.43543C19.9493 2.82021 19.1606 2.46772 18.2508 2.26552C17.3523 2.06584 16.2771 2 15.024 2H8.97597Z"
-                fill="#323232"
-              ></path>
-            </g></svg
+          <!-- Dashboard -->
+          <a
+            href="/dashboard"
+            class="nav-icon-btn"
+            aria-label="Dashboard"
+            title="Dashboard"
           >
-        </a>
-        <a
-          href="/notifications"
-          class="relative flex items-center justify-center w-10 h-10 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors duration-200 border border-gray-200"
-          aria-label="Notifications"
-        >
-          <svg
-            class="w-5 h-5 {renderNotificationIconColor()}"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-            ></path>
-          </svg>
-          {#if $newNotificationType}
-            <span
-              class="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500 border-2 border-white"
-            ></span>
-          {/if}
-        </a>
+            <svg
+              class="nav-icon"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+              ></path>
+            </svg>
+          </a>
 
-        <a
-          href="/me"
-          class="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors duration-200 border border-gray-200"
-          aria-label="Profile"
-        >
-          <svg
-            class="w-5 h-5 text-gray-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+          <!-- Notifications -->
+          <a
+            href="/notifications"
+            class="nav-icon-btn relative"
+            aria-label="Notifications"
+            title="Notifications"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-            ></path>
-          </svg>
-        </a>
+            <svg
+              class="nav-icon {renderNotificationIconColor()}"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+              ></path>
+            </svg>
+            {#if $newNotificationType}
+              <span
+                class="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500 border-2 border-white animate-pulse"
+              ></span>
+            {/if}
+          </a>
 
-        <div class="relative">
-          <select
-            bind:value={$locale}
-            onchange={(e) =>
-              switchLocale((e.target as HTMLSelectElement).value)}
-            class="select-custom appearance-none bg-white border-2 border-gray-200 rounded-xl px-4 py-2.5 text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 hover:border-gray-300 cursor-pointer min-w-[80px]"
+          <!-- Profile -->
+          <a
+            href="/me"
+            class="nav-icon-btn"
+            aria-label="Profile"
+            title="My Profile"
           >
-            <option value="en">EN</option>
-            <option value="ar">AR</option>
-            <option value="ku">KU</option>
-          </select>
-        </div>
+            <svg
+              class="nav-icon"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+              ></path>
+            </svg>
+          </a>
+
+          <!-- Logout -->
+          <button
+            onclick={handleLogout}
+            class="nav-icon-btn logout-btn"
+            aria-label="Logout"
+            title="Sign Out"
+          >
+            <svg
+              class="nav-icon"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+              ></path>
+            </svg>
+          </button>
+
+          <!-- Language Selector -->
+          <div class="relative ml-2">
+            <select
+              bind:value={$locale}
+              onchange={(e) =>
+                switchLocale((e.target as HTMLSelectElement).value)}
+              class="language-select"
+            >
+              <option value="en">EN</option>
+              <option value="ar">AR</option>
+              <option value="ku">KU</option>
+            </select>
+          </div>
+        {:else}
+          <!-- Not logged in - show only login button and language selector -->
+          <div class="flex items-center space-x-3">
+            <div class="relative">
+              <select
+                bind:value={$locale}
+                onchange={(e) =>
+                  switchLocale((e.target as HTMLSelectElement).value)}
+                class="language-select"
+              >
+                <option value="en">EN</option>
+                <option value="ar">AR</option>
+                <option value="ku">KU</option>
+              </select>
+            </div>
+
+            <button onclick={handleLogin} class="login-btn">
+              <svg
+                class="w-4 h-4 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013 3v1"
+                ></path>
+              </svg>
+              {$_("Login")}
+            </button>
+          </div>
+        {/if}
       </div>
     </div>
   </div>
 </header>
+
+<style>
+  /* Navigation Icon Buttons */
+  .nav-icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 0.75rem;
+    background: rgba(249, 250, 251, 0.8);
+    border: 1px solid rgba(229, 231, 235, 0.6);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    backdrop-filter: blur(8px);
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  .nav-icon-btn:hover {
+    background: rgba(243, 244, 246, 0.9);
+    border-color: rgba(209, 213, 219, 0.8);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .nav-icon-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .nav-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: #6b7280;
+    transition: color 0.2s ease;
+  }
+
+  .nav-icon-btn:hover .nav-icon {
+    color: #374151;
+  }
+
+  /* Logout button specific styling */
+  .logout-btn:hover {
+    background: rgba(254, 242, 242, 0.9);
+    border-color: rgba(252, 165, 165, 0.6);
+  }
+
+  .logout-btn:hover .nav-icon {
+    color: #dc2626;
+  }
+
+  /* Login Button */
+  .login-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    color: white;
+    font-weight: 600;
+    font-size: 0.875rem;
+    border: none;
+    border-radius: 0.75rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 6px rgba(59, 130, 246, 0.25);
+  }
+
+  .login-btn:hover {
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.35);
+  }
+
+  .login-btn:active {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  }
+
+  /* Language Selector */
+  .language-select {
+    appearance: none;
+    background: rgba(249, 250, 251, 0.8);
+    border: 1px solid rgba(229, 231, 235, 0.6);
+    border-radius: 0.75rem;
+    padding: 0.5rem 2rem 0.5rem 0.75rem;
+    color: #374151;
+    font-weight: 500;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(8px);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1rem 1rem;
+    min-width: 4rem;
+  }
+
+  .language-select:hover {
+    background-color: rgba(243, 244, 246, 0.9);
+    border-color: rgba(209, 213, 219, 0.8);
+  }
+
+  .language-select:focus {
+    outline: none;
+    ring: 2px;
+    ring-color: rgba(59, 130, 246, 0.5);
+    border-color: #3b82f6;
+  }
+
+  /* Enhanced header backdrop */
+  header {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 640px) {
+    .nav-icon-btn {
+      width: 2.5rem;
+      height: 2.5rem;
+    }
+
+    .nav-icon {
+      width: 1.125rem;
+      height: 1.125rem;
+    }
+
+    .login-btn {
+      padding: 0.625rem 1.25rem;
+      font-size: 0.8rem;
+    }
+
+    .login-btn svg {
+      width: 1rem;
+      height: 1rem;
+      margin-right: 0.25rem;
+    }
+
+    .language-select {
+      padding: 0.5rem 1.75rem 0.5rem 0.625rem;
+      font-size: 0.8rem;
+      min-width: 3.5rem;
+    }
+  }
+
+  /* Animation for notification badge */
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* Improved focus states for accessibility */
+  .nav-icon-btn:focus {
+    outline: none;
+    ring: 2px;
+    ring-color: rgba(59, 130, 246, 0.5);
+    ring-offset: 2px;
+  }
+
+  .login-btn:focus {
+    outline: none;
+    ring: 2px;
+    ring-color: rgba(59, 130, 246, 0.5);
+    ring-offset: 2px;
+  }
+</style>
