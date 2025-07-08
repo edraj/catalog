@@ -1,6 +1,5 @@
 <script>
   import DashboardHeader from "@/routes/components/DashboardHeader.svelte";
-
   import { signout, user } from "@/stores/user";
   import { onMount } from "svelte";
   import { getProfile } from "@/lib/dmart_services";
@@ -8,17 +7,24 @@
   import { Dmart } from "@edraj/tsdmart";
   import { website } from "@/config";
   import axios from "axios";
+
   $goto;
 
-  // Dmart.baseURL = website.backend;
+  const publicRoutes = ["/home", { path: "/catalogs", wildcard: true }];
 
-  // axios.interceptors.response.use((config) => {
-  //     if(config.status === 401){
-  //         $goto("/login");
-  //     }
-  //     return config;
-  // });
-  // Setup axios instance
+  function isPublicRoute(path) {
+    return publicRoutes.some((route) => {
+      if (typeof route === "string") {
+        return path === route;
+      }
+
+      if (route.wildcard) {
+        return path.startsWith(route.path);
+      }
+      return path === route.path;
+    });
+  }
+
   const dmartAxios = axios.create({
     baseURL: website.backend,
     withCredentials: true,
@@ -31,6 +37,12 @@
       if (error.code === "ERR_NETWORK") {
         console.warn("Network error: Check connection or server.");
       }
+      if (
+        error.response?.status === 401 &&
+        !isPublicRoute(window.location.pathname)
+      ) {
+        $goto("/login");
+      }
       return Promise.reject(error);
     }
   );
@@ -38,17 +50,29 @@
   Dmart.setAxiosInstance(dmartAxios);
 
   onMount(async () => {
-    const p = await getProfile();
+    const currentPath = window.location.pathname;
 
-    if (p === null || p?.response.data.error?.type === "jwtauth") {
+    if (isPublicRoute(currentPath)) {
+      return;
+    }
+
+    try {
+      const p = await getProfile();
+      if (p === null || p?.response.data.error?.type === "jwtauth") {
+        await signout();
+        $goto("/login");
+      } else {
+        if (currentPath === "/" || currentPath === "/login") {
+          $goto("/dashboard");
+        }
+      }
+    } catch (error) {
+      console.error("Authentication check failed:", error);
       await signout();
       $goto("/login");
-    } else {
-      $goto("/dashboard");
     }
   });
 </script>
 
 <DashboardHeader />
-
 <slot />

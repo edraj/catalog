@@ -335,6 +335,54 @@ export async function deleteEntity(shortname: string) {
   return response.status == "success" && response.records.length > 0;
 }
 
+export async function getSpaces(
+  ignoreFilter = false
+): Promise<ApiQueryResponse> {
+  const _spaces: any = await Dmart.query({
+    type: QueryType.spaces,
+    space_name: "management",
+    subpath: "/",
+    search: "",
+    limit: 100,
+  });
+
+  if (ignoreFilter === false) {
+    _spaces.records = _spaces.records.filter((e) => !e.attributes.hide_space);
+  }
+
+  _spaces.records = _spaces.records.map((e) => {
+    if (e.attributes.ordinal === null) {
+      e.attributes.ordinal = 9999;
+    }
+    return e;
+  });
+
+  _spaces.records.sort((a, b) => a.attributes.ordinal - b.attributes.ordinal);
+
+  return _spaces;
+}
+
+export async function getSpaceContents(
+  spaceName: string,
+  subpath = "/"
+): Promise<ApiQueryResponse> {
+  const response = await Dmart.query({
+    type: QueryType.search,
+    space_name: spaceName,
+    subpath: subpath,
+    search: "",
+    limit: 100,
+    sort_by: "shortname",
+    sort_type: SortyType.ascending,
+    offset: 0,
+    retrieve_json_payload: true,
+    exact_subpath: true,
+  });
+
+  console.log(`Space contents for ${spaceName}${subpath}:`, response);
+  return response;
+}
+
 export async function getCatalogWorkflow() {
   try {
     const response = await Dmart.retrieve_entry(

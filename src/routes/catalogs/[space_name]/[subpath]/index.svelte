@@ -1,0 +1,629 @@
+<script lang="ts">
+  import { run } from "svelte/legacy";
+
+  import { onMount } from "svelte";
+  import { params, goto } from "@roxi/routify";
+  import { getSpaceContents } from "@/lib/dmart_services";
+  import { Diamonds } from "svelte-loading-spinners";
+  import { _ } from "@/i18n";
+  $goto;
+
+  let isLoading = $state(false);
+  let allContents = $state([]);
+  let paginatedContents = $state([]);
+  let error = null;
+  let spaceName = "";
+  let subpath = "";
+  let actualSubpath = "";
+  let breadcrumbs = [];
+
+  let currentPage = 1;
+  let itemsPerPage = 25;
+  let totalPages = 1;
+  let totalItems = 0;
+
+  const itemsPerPageOptions = [10, 25, 50, 100];
+
+  async function initializeContent() {
+    spaceName = $params.space_name;
+    subpath = $params.subpath;
+
+    actualSubpath = subpath.replace(/-/g, "/");
+
+    const pathParts = actualSubpath
+      .split("/")
+      .filter((part) => part.length > 0);
+    breadcrumbs = [
+      { name: "Catalogs", path: "/catalogs" },
+      { name: spaceName, path: `/catalog/${spaceName}` },
+    ];
+
+    let currentPath = "";
+    let currentUrlPath = "";
+    pathParts.forEach((part, index) => {
+      currentPath += `/${part}`;
+      currentUrlPath += (index === 0 ? "" : "-") + part;
+      breadcrumbs.push({
+        name: part,
+        path:
+          index === pathParts.length - 1
+            ? null
+            : `/catalog/${spaceName}/${currentUrlPath}`,
+      });
+    });
+
+    currentPage = 1;
+
+    await loadContents();
+  }
+
+  onMount(async () => {
+    await initializeContent();
+  });
+
+  $effect(() => {
+    if ($params.space_name && $params.subpath) {
+      initializeContent();
+    }
+  });
+
+  async function loadContents() {
+    isLoading = true;
+    error = null;
+
+    try {
+      const response = await getSpaceContents(spaceName, `/${actualSubpath}`);
+
+      console.log(
+        `Contents for space ${spaceName} at /${actualSubpath}:`,
+        response
+      );
+
+      if (response && response.records) {
+        allContents = response.records;
+        totalItems = allContents.length;
+        updatePagination();
+      } else {
+        allContents = [];
+        totalItems = 0;
+        updatePagination();
+      }
+    } catch (err) {
+      console.error("Error fetching space contents:", err);
+      error = "Failed to load space contents";
+      allContents = [];
+      totalItems = 0;
+      updatePagination();
+    } finally {
+      isLoading = false;
+    }
+  }
+
+  function updatePagination() {
+    totalPages = Math.ceil(totalItems / itemsPerPage);
+    if (currentPage > totalPages) {
+      currentPage = Math.max(1, totalPages);
+    }
+
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    paginatedContents = allContents.slice(startIndex, endIndex);
+  }
+
+  function handleItemsPerPageChange(newItemsPerPage) {
+    itemsPerPage = newItemsPerPage;
+    currentPage = 1;
+    updatePagination();
+  }
+
+  function goToPage(page) {
+    if (page >= 1 && page <= totalPages) {
+      currentPage = page;
+      updatePagination();
+    }
+  }
+
+  function handleItemClick(item) {
+    if (item.resource_type === "folder") {
+      const newSubpath = `${subpath}-${item.shortname}`;
+      $goto("/catalogs/{spaceName}/${newSubpath}", {
+        spaceName: spaceName,
+        subpath: newSubpath,
+      });
+    }
+  }
+
+  function getItemIcon(item) {
+    switch (item.resource_type) {
+      case "folder":
+        return "📁";
+      case "content":
+        return "📄";
+      case "ticket":
+        return "🎫";
+      case "user":
+        return "👤";
+      case "media":
+        return "🖼️";
+      default:
+        return "📋";
+    }
+  }
+
+  function getResourceTypeColor(resourceType) {
+    switch (resourceType) {
+      case "folder":
+        return "bg-blue-100 text-blue-800";
+      case "content":
+        return "bg-green-100 text-green-800";
+      case "ticket":
+        return "bg-purple-100 text-purple-800";
+      case "user":
+        return "bg-orange-100 text-orange-800";
+      case "media":
+        return "bg-pink-100 text-pink-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  }
+
+  function formatDate(dateString) {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString();
+  }
+
+  function navigateToBreadcrumb(path) {
+    if (path) {
+      $goto(path);
+    }
+  }
+
+  function getPageNumbers() {
+    const pages = [];
+    const maxVisiblePages = 7;
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1);
+
+      if (currentPage > 4) {
+        pages.push("...");
+      }
+
+      const start = Math.max(2, currentPage - 2);
+      const end = Math.min(totalPages - 1, currentPage + 2);
+
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+
+      if (currentPage < totalPages - 3) {
+        pages.push("...");
+      }
+
+      if (totalPages > 1) {
+        pages.push(totalPages);
+      }
+    }
+
+    return pages;
+  }
+
+  function updatePaginationEffect() {
+    updatePagination();
+  }
+
+  run(() => {
+    updatePaginationEffect();
+  });
+</script>
+
+<div class="min-h-screen bg-gray-50">
+  <div class="bg-white border-b border-gray-200">
+    <div class="container mx-auto px-4 py-6 max-w-7xl">
+      <nav class="flex mb-4" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center space-x-1 md:space-x-3">
+          {#each breadcrumbs as crumb, index}
+            <li class="inline-flex items-center">
+              {#if index > 0}
+                <svg
+                  class="w-4 h-4 text-gray-400 mx-1"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                    clip-rule="evenodd"
+                  ></path>
+                </svg>
+              {/if}
+              {#if crumb.path}
+                <button
+                  onclick={() => navigateToBreadcrumb(crumb.path)}
+                  class="text-gray-500 hover:text-gray-700 transition-colors duration-200 text-sm"
+                >
+                  {crumb.name}
+                </button>
+              {:else}
+                <span class="text-gray-900 font-medium text-sm"
+                  >{crumb.name}</span
+                >
+              {/if}
+            </li>
+          {/each}
+        </ol>
+      </nav>
+
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900">
+            {breadcrumbs[breadcrumbs.length - 1]?.name ||
+              actualSubpath.split("/").pop()}
+          </h1>
+          <p class="text-gray-600">
+            Browse contents in {spaceName}/{actualSubpath}
+          </p>
+        </div>
+
+        {#if !isLoading && totalItems > 0}
+          <div class="flex items-center space-x-2">
+            <span class="text-sm text-gray-700">Show:</span>
+            <select
+              bind:value={itemsPerPage}
+              onchange={(e) =>
+                handleItemsPerPageChange(
+                  parseInt((e.target as HTMLSelectElement).value)
+                )}
+              class="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              {#each itemsPerPageOptions as option}
+                <option value={option}>{option}</option>
+              {/each}
+            </select>
+            <span class="text-sm text-gray-700">per page</span>
+          </div>
+        {/if}
+      </div>
+    </div>
+  </div>
+
+  <div class="container mx-auto px-4 py-8 max-w-7xl">
+    {#if isLoading}
+      <div class="flex justify-center py-16">
+        <Diamonds color="#3b82f6" size="60" unit="px" />
+      </div>
+    {:else if error}
+      <div class="text-center py-16">
+        <div
+          class="mx-auto w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-6"
+        >
+          <svg
+            class="w-12 h-12 text-red-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            ></path>
+          </svg>
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">
+          Error Loading Contents
+        </h3>
+        <p class="text-gray-600">{error}</p>
+      </div>
+    {:else if totalItems === 0}
+      <div class="text-center py-16">
+        <div
+          class="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6"
+        >
+          <svg
+            class="w-12 h-12 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            ></path>
+          </svg>
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">
+          No Contents Found
+        </h3>
+        <p class="text-gray-600">
+          This folder appears to be empty or you don't have access to view its
+          contents.
+        </p>
+      </div>
+    {:else}
+      <div
+        class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+      >
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-gray-900">
+              Contents ({totalItems} items)
+            </h2>
+            <div class="text-sm text-gray-500">
+              Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(
+                currentPage * itemsPerPage,
+                totalItems
+              )} of {totalItems} items
+            </div>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Name
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Type
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Path
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Owner
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Created
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              {#each paginatedContents as item, index}
+                <tr
+                  class="hover:bg-gray-50 transition-colors duration-200 cursor-pointer"
+                  onclick={() => handleItemClick(item)}
+                  role="button"
+                  tabindex="0"
+                  onkeydown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      handleItemClick(item);
+                    }
+                  }}
+                >
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="flex items-center">
+                      <div class="flex-shrink-0 h-10 w-10">
+                        <div
+                          class="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center"
+                        >
+                          <span class="text-white text-lg">
+                            {getItemIcon(item)}
+                          </span>
+                        </div>
+                      </div>
+                      <div class="ml-4">
+                        <div class="text-sm font-medium text-gray-900">
+                          {item.shortname}
+                        </div>
+                        {#if item.attributes?.displayname}
+                          <div class="text-sm text-gray-500">
+                            {item.attributes.displayname.en ||
+                              item.attributes.displayname.ar ||
+                              ""}
+                          </div>
+                        {/if}
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <span
+                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {getResourceTypeColor(
+                        item.resource_type
+                      )}"
+                    >
+                      {item.resource_type}
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <code class="bg-gray-100 px-2 py-1 rounded text-xs">
+                      {item.subpath || "/"}
+                    </code>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <div class="flex items-center">
+                      <div
+                        class="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center mr-2"
+                      >
+                        <span class="text-xs font-medium text-gray-600">
+                          {item.attributes?.owner_shortname
+                            ? item.attributes.owner_shortname
+                                .charAt(0)
+                                .toUpperCase()
+                            : "U"}
+                        </span>
+                      </div>
+                      <span class="text-sm text-gray-900">
+                        {item.attributes?.owner_shortname || "Unknown"}
+                      </span>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {formatDate(item.attributes?.created_at)}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    {#if item.resource_type === "folder"}
+                      <button
+                        onclick={(e) => {
+                          e.stopPropagation();
+                          handleItemClick(item);
+                        }}
+                        class="text-blue-600 hover:text-blue-900 transition-colors duration-200"
+                      >
+                        Open
+                      </button>
+                    {:else}
+                      <span class="text-gray-400">View</span>
+                    {/if}
+                  </td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+
+        {#if totalPages > 1}
+          <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
+            <div class="flex items-center justify-between">
+              <div class="text-sm text-gray-700">
+                Page {currentPage} of {totalPages}
+              </div>
+
+              <nav class="flex items-center space-x-1">
+                <button
+                  onclick={() => goToPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                >
+                  Previous
+                </button>
+
+                {#each getPageNumbers() as page}
+                  {#if typeof page === "number"}
+                    <button
+                      onclick={() => goToPage(page)}
+                      class="px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200 {page ===
+                      currentPage
+                        ? 'bg-blue-600 text-white border border-blue-600'
+                        : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'}"
+                    >
+                      {page}
+                    </button>
+                  {:else}
+                    <span class="px-3 py-2 text-sm font-medium text-gray-500">
+                      {page}
+                    </span>
+                  {/if}
+                {/each}
+
+                <button
+                  onclick={() => goToPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                >
+                  Next
+                </button>
+              </nav>
+            </div>
+          </div>
+        {/if}
+      </div>
+
+      <div
+        class="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+      >
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Folder Summary</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="text-center">
+            <p class="text-2xl font-bold text-blue-600">{totalItems}</p>
+            <p class="text-sm text-gray-500">Total Items</p>
+          </div>
+          <div class="text-center">
+            <p class="text-2xl font-bold text-green-600">
+              {allContents.filter((item) => item.resource_type === "folder")
+                .length}
+            </p>
+            <p class="text-sm text-gray-500">Folders</p>
+          </div>
+          <div class="text-center">
+            <p class="text-2xl font-bold text-purple-600">
+              {allContents.filter((item) => item.resource_type === "content")
+                .length}
+            </p>
+            <p class="text-sm text-gray-500">Content</p>
+          </div>
+          <div class="text-center">
+            <p class="text-2xl font-bold text-orange-600">
+              {allContents.filter(
+                (item) => !["folder", "content"].includes(item.resource_type)
+              ).length}
+            </p>
+            <p class="text-sm text-gray-500">Other</p>
+          </div>
+        </div>
+      </div>
+    {/if}
+  </div>
+</div>
+
+<style>
+  /* Custom table styling */
+  table {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  /* Responsive table */
+  @media (max-width: 768px) {
+    .overflow-x-auto {
+      -webkit-overflow-scrolling: touch;
+    }
+
+    th,
+    td {
+      padding: 0.75rem 1rem;
+    }
+
+    th {
+      font-size: 0.75rem;
+    }
+
+    td {
+      font-size: 0.875rem;
+    }
+  }
+
+  /* Hover effects */
+  tbody tr:hover {
+    background-color: #f9fafb;
+  }
+
+  /* Focus styles for accessibility */
+  tbody tr:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: -2px;
+  }
+
+  /* Pagination button styles */
+  nav button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  nav button:not(:disabled):hover {
+    background-color: #f9fafb;
+  }
+</style>

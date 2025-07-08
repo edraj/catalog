@@ -18,7 +18,13 @@
   $goto;
   import { _ } from "@/i18n";
 
-  let profileSection: string = $state("ME");
+  // let profileSection: string = $state("ME");
+
+  const ProfileSection = {
+    ME: "ME",
+    IDEAS: "IDEAS",
+  };
+  let profileSection: string = $state(ProfileSection.ME);
 
   let isLoading = $state(true);
   let user = $state(null);
@@ -80,11 +86,12 @@
   }
 
   function handleME() {
-    profileSection = "ME";
+    profileSection = ProfileSection.ME;
   }
   function handleEntities() {
-    profileSection = "IDEAS";
+    profileSection = ProfileSection.IDEAS;
   }
+
   function gotoEntityDetails(entity: any) {
     $goto(`/dashboard/{shortname}`, {
       shortname: entity.shortname,
