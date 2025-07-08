@@ -17,7 +17,6 @@
       if (typeof route === "string") {
         return path === route;
       }
-
       if (route.wildcard) {
         return path.startsWith(route.path);
       }
@@ -58,7 +57,15 @@
 
     try {
       const p = await getProfile();
-      if (p === null || p?.response.data.error?.type === "jwtauth") {
+      const isAuthError =
+        !p ||
+        p === null ||
+        p?.error?.type === "jwtauth" ||
+        p?.response?.data?.error?.type === "jwtauth" ||
+        p?.data?.error?.type === "jwtauth";
+
+      if (isAuthError) {
+        console.log("Authentication failed, redirecting to login");
         await signout();
         $goto("/login");
       } else {
@@ -68,8 +75,16 @@
       }
     } catch (error) {
       console.error("Authentication check failed:", error);
-      await signout();
-      $goto("/login");
+
+      if (error.response?.status === 401 || error.status === 401) {
+        console.log("401 error - redirecting to login");
+        await signout();
+        $goto("/login");
+      } else {
+        console.warn("Non-auth error during profile check:", error);
+        await signout();
+        $goto("/login");
+      }
     }
   });
 </script>
