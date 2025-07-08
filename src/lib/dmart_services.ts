@@ -501,6 +501,32 @@ export async function markAllNotification(
   markRead: boolean = true
 ) {}
 
-export async function deleteNotification(shortname: string) {}
+export async function deleteNotification(shortname: string) {
+  const response = await Dmart.request({
+    space_name: "personal",
+    request_type: RequestType.delete,
+    records: [
+      {
+        resource_type: ResourceType.content,
+        shortname: shortname,
+        subpath: `people/${shortname}/notifications`,
+        attributes: {},
+      },
+    ],
+  });
+  return response.status == "success";
+}
 
-export async function deleteAllNotification(shortnames: string[]) {}
+export async function deleteAllNotification(shortnames: string[]) {
+  const response = await Dmart.request({
+    space_name: "personal",
+    request_type: RequestType.delete,
+    records: shortnames.map((shortname) => ({
+      resource_type: ResourceType.content,
+      shortname: shortname,
+      subpath: `people/${shortname}/notifications`,
+      attributes: {},
+    })),
+  });
+  return response.status == "success";
+}

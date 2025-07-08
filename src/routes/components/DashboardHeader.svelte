@@ -91,7 +91,7 @@
 </script>
 
 <header
-  class="sticky top-0 z-40 w-full border-b border-gray-200 bg-white/95 backdrop-blur-md supports-[backdrop-filter]:bg-white/80"
+  class="sticky top-0 z-40 w-full border-b border-gray-200 bg-white backdrop-blur-md supports-[backdrop-filter]:bg-white/80"
 >
   <div class="container mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex h-16 items-center justify-between">
