@@ -92,5 +92,7 @@
   "Password": "Password",
   "InvalidCredentials": "Invalid credentials. Please try again.",
   "SigningIn": "Signing in...",
-  "TermsAndConditions": "By signing in, you agree to our Terms of Service and Privacy Policy."
+  "TermsAndConditions": "By signing in, you agree to our Terms of Service and Privacy Policy.",
+  "EnterYourPassword": "Enter your password",
+  "EnterYourUsername": "Enter your username"
 }

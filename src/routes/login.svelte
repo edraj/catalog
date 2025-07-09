@@ -1,15 +1,15 @@
 <script lang="ts">
   import { signin } from "@/stores/user";
-  import { _ } from "@/i18n";
+  import { _, locale } from "@/i18n";
   import { goto } from "@roxi/routify";
   $goto;
+  const isRTL = $locale === "ar" || $locale === "ku";
 
   let username: string;
   let password: string;
   let isError: boolean;
   let showPassword: boolean = $state(false);
   let isLoading: boolean = $state(false);
-
   async function handleSubmit(event: Event) {
     event.preventDefault();
     isError = false;
@@ -28,6 +28,7 @@
 
 <div
   class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4"
+  dir={isRTL ? "rtl" : "ltr"}
 >
   <div class="w-full max-w-md">
     <div class="text-center mb-8">
@@ -55,13 +56,17 @@
         <div class="space-y-2">
           <label
             for="username"
-            class="block text-sm font-medium text-slate-700"
+            class="block text-sm font-medium text-slate-700 {isRTL
+              ? 'text-right'
+              : 'text-left'}"
           >
             {$_("Username")}
           </label>
           <div class="relative">
             <div
-              class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+              class="absolute inset-y-0 {isRTL
+                ? 'right-0 pe-3 mx-4'
+                : 'left-0 ps-3'} flex items-center pointer-events-none"
             >
               <svg
                 class="h-4 w-4 text-slate-400"
@@ -82,10 +87,13 @@
               type="text"
               name="username"
               bind:value={username}
-              placeholder="Enter your username"
-              class="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-400 focus:border-slate-400 transition-colors bg-white/50 {isError
+              placeholder={$_("EnterYourUsername")}
+              class="w-full {isRTL
+                ? 'mr-4 text-right'
+                : 'ps-10 pe-4 text-left'} py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-400 focus:border-slate-400 transition-colors bg-white/50 {isError
                 ? 'border-red-300 focus:ring-red-400 focus:border-red-400'
                 : ''}"
+              style="padding-right: 40px;"
               required
             />
           </div>
@@ -94,13 +102,17 @@
         <div class="space-y-2">
           <label
             for="password"
-            class="block text-sm font-medium text-slate-700"
+            class="block text-sm font-medium text-slate-700 {isRTL
+              ? 'text-right'
+              : 'text-left'}"
           >
             {$_("Password")}
           </label>
           <div class="relative">
             <div
-              class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+              class="absolute inset-y-0 {isRTL
+                ? 'right-0 pe-3 mx-4'
+                : 'left-0 ps-3'} flex items-center pointer-events-none"
             >
               <svg
                 class="h-4 w-4 text-slate-400"
@@ -112,7 +124,7 @@
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 01-8 0v4h8z"
                 ></path>
               </svg>
             </div>
@@ -121,16 +133,21 @@
               type={showPassword ? "text" : "password"}
               name="password"
               bind:value={password}
-              placeholder="Enter your password"
-              class="w-full pl-10 pr-12 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-400 focus:border-slate-400 transition-colors bg-white/50 {isError
+              placeholder={$_("EnterYourPassword")}
+              class="w-full {isRTL
+                ? 'pe-10 ps-12 text-right'
+                : 'ps-10 pe-12 text-left'} py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-400 focus:border-slate-400 transition-colors bg-white/50 {isError
                 ? 'border-red-300 focus:ring-red-400 focus:border-red-400'
                 : ''}"
+              style="padding-right: 40px;"
               required
             />
             <button
               type="button"
               onclick={togglePasswordVisibility}
-              class="absolute mx-4 inset-y-0 right-0 pr-3 flex items-center hover:text-slate-600 transition-colors"
+              class="absolute inset-y-0 {isRTL
+                ? 'left-0 ps-3 mx-4'
+                : 'right-0 pe-3'} flex items-center hover:text-slate-600 transition-colors"
             >
               {#if showPassword}
                 <svg
@@ -168,7 +185,7 @@
                 </svg>
               {/if}
               <span class="sr-only"
-                >{showPassword ? "Hide password" : "Show password"}</span
+                >{showPassword ? $_("HidePassword") : $_("ShowPassword")}</span
               >
             </button>
           </div>
@@ -177,7 +194,9 @@
         <!-- Error Message -->
         {#if isError}
           <div class="bg-red-50 border border-red-200 rounded-lg p-3">
-            <p class="text-red-800 text-sm">
+            <p
+              class="text-red-800 text-sm {isRTL ? 'text-right' : 'text-left'}"
+            >
               {$_("InvalidCredentials")}
             </p>
           </div>
@@ -192,7 +211,9 @@
           {#if isLoading}
             <div class="flex items-center">
               <div
-                class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
+                class="animate-spin rounded-full h-4 w-4 border-b-2 border-white {isRTL
+                  ? 'ms-2'
+                  : 'me-2'}"
               ></div>
               {$_("SigningIn")}
             </div>
@@ -238,5 +259,14 @@
   .login-btn:active {
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  }
+
+  /* RTL-specific styles */
+  [dir="rtl"] input::placeholder {
+    text-align: right;
+  }
+
+  [dir="ltr"] input::placeholder {
+    text-align: left;
   }
 </style>

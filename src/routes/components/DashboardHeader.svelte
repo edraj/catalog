@@ -121,10 +121,8 @@
       <!-- Navigation Items -->
       <div class="flex items-center space-x-2">
         {#if $user.signedin}
-          <!-- Logged in user navigation -->
           <SearchBar />
 
-          <!-- Dashboard -->
           <a
             href="/dashboard"
             class="nav-icon-btn"
@@ -145,8 +143,27 @@
               ></path>
             </svg>
           </a>
+          <a
+            href="/dashboard/admin"
+            class="nav-icon-btn"
+            aria-label="Admin Dashboard"
+            title="Admin Dashboard"
+          >
+            <svg
+              class="nav-icon"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1"
+                d="M12 14v2a6 6 0 0 0-6 6H4a8 8 0 0 1 8-8zm0-1c-3.315 0-6-2.685-6-6s2.685-6 6-6 6 2.685 6 6-2.685 6-6 6zm0-2c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm9 6h1v5h-8v-5h1v-1a3 3 0 0 1 6 0v1zm-2 0v-1a1 1 0 0 0-2 0v1h2z"
+              ></path>
+            </svg>
+          </a>
 
-          <!-- Notifications -->
           <a
             href="/notifications"
             class="nav-icon-btn relative"
@@ -173,7 +190,6 @@
             {/if}
           </a>
 
-          <!-- Profile -->
           <a
             href="/me"
             class="nav-icon-btn"
@@ -195,7 +211,6 @@
             </svg>
           </a>
 
-          <!-- Logout -->
           <button
             onclick={handleLogout}
             class="nav-icon-btn logout-btn"
@@ -217,7 +232,6 @@
             </svg>
           </button>
 
-          <!-- Language Selector -->
           <div class="relative ml-2">
             <select
               bind:value={$locale}
@@ -231,7 +245,6 @@
             </select>
           </div>
         {:else}
-          <!-- Not logged in - show only login button and language selector -->
           <div class="flex items-center space-x-3">
             <div class="relative">
               <select
@@ -247,19 +260,6 @@
             </div>
 
             <button onclick={handleLogin} class="login-btn">
-              <svg
-                class="w-4 h-4 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013 3v1"
-                ></path>
-              </svg>
               {$_("Login")}
             </button>
           </div>
