@@ -134,7 +134,6 @@
       console.log(
         `Navigating to item: /catalog/${spaceName}/${subpath}/${item.shortname}`
       );
-      // $goto(`/catalog/${spaceName}/${subpath}/${item.shortname}`);
       $goto("/catalogs/[space_name]/[subpath]/[shortname]", {
         space_name: spaceName,
         subpath: subpath,

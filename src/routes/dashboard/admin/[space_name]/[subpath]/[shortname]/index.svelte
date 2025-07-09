@@ -181,7 +181,10 @@
       });
 
       if (response.status === "success") {
-        $goto(`/dashboard/admin/${spaceNameValue}/${subpathValue}`);
+        $goto("/dashboard/admin/[space_name]/[subpath]", {
+          space_name: spaceNameValue,
+          subpath: subpathValue,
+        });
       }
     } catch (err) {
       console.error("Error deleting item:", err);
@@ -232,7 +235,10 @@
   }
 
   function goBack() {
-    $goto(`/dashboard/admin/${spaceNameValue}/${subpathValue}`);
+    $goto("/dashboard/admin/[space_name]/[subpath]", {
+      space_name: spaceNameValue,
+      subpath: subpathValue,
+    });
   }
 
   function setActiveTab(tab) {

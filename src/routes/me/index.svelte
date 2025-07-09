@@ -93,7 +93,7 @@
   }
 
   function gotoEntityDetails(entity: any) {
-    $goto(`/dashboard/{shortname}`, {
+    $goto("/dashboard/[shortname]", {
       shortname: entity.shortname,
     });
   }

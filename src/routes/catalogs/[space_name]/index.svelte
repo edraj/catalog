@@ -38,7 +38,7 @@
         item.subpath === "/"
           ? item.shortname
           : `${item.subpath}/${item.shortname}`;
-      $goto(`/catalogs/{space_name}/{subpath}`, {
+      $goto(`/catalogs/[space_name]/[subpath]`, {
         space_name: spaceName,
         subpath: subpath,
       });

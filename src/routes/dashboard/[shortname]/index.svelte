@@ -71,7 +71,7 @@
   });
 
   function handleEdit(entity) {
-    $goto(`/dashboard/{shortname}/edit`, {
+    $goto("/dashboard/[shortname]/edit", {
       shortname: entity.shortname,
     });
   }

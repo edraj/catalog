@@ -127,7 +127,7 @@
 
   async function handleNotificationClick(notification) {
     await markNotification($user.shortname, notification.shortname);
-    $goto("/dashboard/{shortname}", {
+    $goto("/dashboard/[shortname]", {
       shortname: notification.parent_shortname,
     });
   }

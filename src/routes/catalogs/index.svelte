@@ -33,7 +33,7 @@
   });
 
   function handleSpaceClick(space: any) {
-    $goto(`/catalogs/{space_name}`, {
+    $goto("/catalogs/[space_name]", {
       space_name: space.shortname,
     });
   }

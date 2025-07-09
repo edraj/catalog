@@ -97,7 +97,10 @@
   }
 
   function goBack() {
-    $goto(`/catalog/${spaceName}/${subpath}`);
+    $goto("/catalogs/[space_name]/[subpath]", {
+      space_name: spaceName,
+      subpath: actualSubpath,
+    });
   }
 
   function getDisplayName(item) {
