@@ -32,7 +32,11 @@ export default defineConfig({
       ],
     }),
     routify({
-      "render.ssr": { enable: true /*production*/ },
+      forceLogging: true,
+      render: {
+        ssg: true,
+        ssr: true,
+      },
       routesDir: {
         default: "src/routes",
         "lang-ar": "src/routes",
