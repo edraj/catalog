@@ -11,7 +11,7 @@
   },
   "devDependencies": {
     "@akebifiky/remark-simple-plantuml": "^1.0.2",
-    "@roxi/routify": "^3.0.0-next.242",
+    "@roxi/routify": "^3.0.0-next.288",
     "@sveltejs/vite-plugin-svelte": "^4.0.0",
     "autoprefixer": "^10.4.21",
     "axios": "^1.7.7",
@@ -49,6 +49,7 @@
     "flowbite": "^3.1.2",
     "flowbite-svelte": "^1.8.3",
     "flowbite-svelte-icons": "^2.2.1",
+    "spank": "^2.2.4",
     "svelte-steps": "^2.4.1",
     "tailwindcss-rtl": "^0.9.0"
   }
