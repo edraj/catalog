@@ -13,7 +13,7 @@
 
   onMount(async () => {
     try {
-      const response = await getSpaces();
+      const response = await getSpaces(false, "public");
 
       console.log("Full spaces response:", response);
       console.log("Spaces records:", response.records);

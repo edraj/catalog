@@ -112,7 +112,7 @@
 </script>
 
 <div class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-  <div class="container mx-auto px-4 py-8">
+  <div class="container mx-auto px-8 py-8">
     <div class="flex items-center justify-between mb-8">
       <Button
         onclick={() => history.back()}
@@ -162,7 +162,7 @@
           <div class="flex gap-3">
             <Button
               onclick={() => handlePublish(false)}
-              class="bg-primary flex items-center gap-2 hover:bg-slate-50 transition-all duration-200"
+              class="dark:bg-gray-800 flex items-center gap-2 hover:bg-slate-50 transition-all duration-200"
               disabled={isLoading}
             >
               <FloppyDiskSolid class="w-4 h-4 text-slate-600" />
@@ -181,7 +181,7 @@
         </div>
       </Card>
 
-      <Card class=" max-w-full w-full mb-8 border-0 shadow-lg">
+      <Card class="dark:bg-white max-w-full w-full mb-8 border-0 shadow-lg">
         <div class="p-8">
           <label
             class="flex items-center text-sm font-semibold text-slate-700 mb-4"
@@ -220,7 +220,7 @@
         </div>
       </Card>
 
-      <Card class="max-w-full w-full mb-8 border-0 shadow-lg">
+      <Card class="dark:bg-white max-w-full w-full mb-8 border-0 shadow-lg">
         <div class="p-8">
           <label
             class="flex items-center text-sm font-semibold text-slate-700 mb-4"
@@ -231,7 +231,7 @@
             </div>
           </label>
 
-          <div class="flex gap-3 mb-4">
+          <div class="flex gap-3 mb-4 dark:bg-red">
             <Input
               type="text"
               bind:value={newTag}
@@ -243,10 +243,10 @@
             />
             <Button
               onclick={addTag}
-              class="bg-primary flex items-center gap-2 transition-all duration-200"
+              class="dark:bg-gray-700 flex items-center gap-2 transition-all duration-200"
               disabled={!newTag.trim()}
             >
-              <PlusOutline class="w-4 h-4" />
+              <PlusOutline class="w-4 h-4 " />
               {$_("Add")}
             </Button>
           </div>
@@ -281,7 +281,7 @@
         </div>
       </Card>
 
-      <Card class="max-w-full w-full mb-8 border-0 shadow-lg">
+      <Card class=" dark:bg-white max-w-full w-full mb-8 border-0 shadow-lg">
         <div class="p-8 border-t-2 border-slate-200">
           <label
             class="flex items-center text-sm font-semibold text-slate-700 mb-4"
@@ -297,7 +297,7 @@
         </div>
       </Card>
 
-      <Card class="max-w-full w-full border-0 shadow-lg">
+      <Card class="dark:bg-white max-w-full w-full border-0 shadow-lg">
         <div class="p-8">
           <div class="flex items-center justify-between mb-6">
             <label
@@ -317,7 +317,7 @@
             />
             <Button
               onclick={() => document.getElementById("fileInput").click()}
-              class="bg-primary flex items-center gap-2 transition-all duration-200"
+              class="dark:bg-gray-800 flex items-center gap-2 transition-all duration-200"
             >
               <UploadOutline class="w-4 h-4" />
               {$_("AddFiles")}

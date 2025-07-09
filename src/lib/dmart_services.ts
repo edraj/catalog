@@ -336,15 +336,19 @@ export async function deleteEntity(shortname: string) {
 }
 
 export async function getSpaces(
-  ignoreFilter = false
+  ignoreFilter = false,
+  scope: string = "managed"
 ): Promise<ApiQueryResponse> {
-  const _spaces: any = await Dmart.query({
-    type: QueryType.spaces,
-    space_name: "management",
-    subpath: "/",
-    search: "",
-    limit: 100,
-  });
+  const _spaces: any = await Dmart.query(
+    {
+      type: QueryType.spaces,
+      space_name: "management",
+      subpath: "/",
+      search: "",
+      limit: 100,
+    },
+    scope
+  );
 
   if (ignoreFilter === false) {
     _spaces.records = _spaces.records.filter((e) => !e.attributes.hide_space);
@@ -364,20 +368,24 @@ export async function getSpaces(
 
 export async function getSpaceContents(
   spaceName: string,
-  subpath = "/"
+  subpath = "/",
+  scope: string = "managed"
 ): Promise<ApiQueryResponse> {
-  const response = await Dmart.query({
-    type: QueryType.search,
-    space_name: spaceName,
-    subpath: subpath,
-    search: "",
-    limit: 100,
-    sort_by: "shortname",
-    sort_type: SortyType.ascending,
-    offset: 0,
-    retrieve_json_payload: true,
-    exact_subpath: true,
-  });
+  const response = await Dmart.query(
+    {
+      type: QueryType.search,
+      space_name: spaceName,
+      subpath: subpath,
+      search: "",
+      limit: 100,
+      sort_by: "shortname",
+      sort_type: SortyType.ascending,
+      offset: 0,
+      retrieve_json_payload: true,
+      exact_subpath: true,
+    },
+    scope
+  );
 
   console.log(`Space contents for ${spaceName}${subpath}:`, response);
   return response;
@@ -401,16 +409,84 @@ export async function getCatalogWorkflow() {
     return null;
   }
 }
+export async function getCatalogItem(
+  spaceName: string,
+  subpath: string,
+  shortname: string,
+  resourceType: ResourceType = ResourceType.content,
+  scope: string = "managed"
+): Promise<any> {
+  try {
+    let cleanSubpath = subpath.startsWith("/") ? subpath.substring(1) : subpath;
+    if (!cleanSubpath || cleanSubpath === "/") {
+      cleanSubpath = "__root__";
+    }
 
-export async function createComment(shortname: string, comment: string) {
+    console.log(
+      `Retrieving item: ${resourceType}/${spaceName}/${cleanSubpath}/${shortname}`
+    );
+
+    const response = await Dmart.retrieve_entry(
+      resourceType,
+      spaceName,
+      cleanSubpath,
+      shortname,
+      true,
+      true,
+      true,
+      scope
+    );
+
+    console.log(`Retrieved item data:`, response);
+    return response;
+  } catch (error) {
+    console.error(`Error retrieving item ${shortname}:`, error);
+
+    // If content type fails, try other resource types
+    if (resourceType === ResourceType.content) {
+      try {
+        return await getCatalogItem(
+          spaceName,
+          subpath,
+          shortname,
+          ResourceType.post
+        );
+      } catch (postError) {
+        try {
+          return await getCatalogItem(
+            spaceName,
+            subpath,
+            shortname,
+            ResourceType.ticket
+          );
+        } catch (ticketError) {
+          throw error; // Return original error
+        }
+      }
+    }
+
+    throw error;
+  }
+}
+export async function createComment(
+  spaceName: string,
+  subpath: string,
+  shortname: string,
+  comment: string
+) {
+  console.log(
+    `Creating comment for ${spaceName}/${subpath}/${shortname}:`,
+    comment
+  );
+
   const data: ActionRequest = {
-    space_name: "catalog",
+    space_name: spaceName,
     request_type: RequestType.create,
     records: [
       {
         resource_type: ResourceType.comment,
         shortname: "auto",
-        subpath: `posts/${shortname}`,
+        subpath: `${subpath}/${shortname}`,
         attributes: {
           is_active: true,
           payload: {

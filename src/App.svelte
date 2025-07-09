@@ -105,29 +105,6 @@
   <link
     rel="stylesheet"
     media="screen"
-    href={new URL(
-      "bootstrap-icons/font/bootstrap-icons.min.css",
-      import.meta.url
-    ).href}
-  />
-  {#if $dir === "rtl"}
-    <link
-      rel="stylesheet"
-      media="screen"
-      href={new URL("bootstrap/dist/css/bootstrap.rtl.min.css", import.meta.url)
-        .href}
-    />
-  {:else}
-    <link
-      rel="stylesheet"
-      media="screen"
-      href={new URL("bootstrap/dist/css/bootstrap.min.css", import.meta.url)
-        .href}
-    />
-  {/if}
-  <link
-    rel="stylesheet"
-    media="screen"
     href={new URL("./app.css", import.meta.url).href}
   />
 </svelte:head>

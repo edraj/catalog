@@ -126,9 +126,19 @@
   function handleItemClick(item) {
     if (item.resource_type === "folder") {
       const newSubpath = `${subpath}-${item.shortname}`;
-      $goto("/catalogs/{spaceName}/${newSubpath}", {
-        spaceName: spaceName,
+      $goto("/catalogs/[space_name]/[subpath]", {
+        space_name: spaceName,
         subpath: newSubpath,
+      });
+    } else {
+      console.log(
+        `Navigating to item: /catalog/${spaceName}/${subpath}/${item.shortname}`
+      );
+      // $goto(`/catalog/${spaceName}/${subpath}/${item.shortname}`);
+      $goto("/catalogs/[space_name]/[subpath]/[shortname]", {
+        space_name: spaceName,
+        subpath: subpath,
+        shortname: item.shortname,
       });
     }
   }
@@ -139,6 +149,8 @@
         return "📁";
       case "content":
         return "📄";
+      case "post":
+        return "📝";
       case "ticket":
         return "🎫";
       case "user":
@@ -156,15 +168,28 @@
         return "bg-blue-100 text-blue-800";
       case "content":
         return "bg-green-100 text-green-800";
-      case "ticket":
+      case "post":
         return "bg-purple-100 text-purple-800";
-      case "user":
+      case "ticket":
         return "bg-orange-100 text-orange-800";
+      case "user":
+        return "bg-indigo-100 text-indigo-800";
       case "media":
         return "bg-pink-100 text-pink-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
+  }
+
+  function getDisplayName(item) {
+    if (item.attributes?.displayname) {
+      return (
+        item.attributes.displayname.ar ||
+        item.attributes.displayname.en ||
+        item.shortname
+      );
+    }
+    return item.shortname;
   }
 
   function formatDate(dateString) {
@@ -382,7 +407,7 @@
                 <th
                   class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                 >
-                  Path
+                  Status
                 </th>
                 <th
                   class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
@@ -425,14 +450,17 @@
                           </span>
                         </div>
                       </div>
-                      <div class="ml-4">
+                      <div class="ml-6">
                         <div class="text-sm font-medium text-gray-900">
+                          {getDisplayName(item)}
+                        </div>
+                        <div class="text-xs text-blue-600 font-medium">
                           {item.shortname}
                         </div>
-                        {#if item.attributes?.displayname}
-                          <div class="text-sm text-gray-500">
-                            {item.attributes.displayname.en ||
-                              item.attributes.displayname.ar ||
+                        {#if item.attributes?.description?.ar || item.attributes?.description?.en}
+                          <div class="text-sm text-gray-500 max-w-xs truncate">
+                            {item.attributes.description.ar ||
+                              item.attributes.description.en ||
                               ""}
                           </div>
                         {/if}
@@ -448,10 +476,21 @@
                       {item.resource_type}
                     </span>
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <code class="bg-gray-100 px-2 py-1 rounded text-xs">
-                      {item.subpath || "/"}
-                    </code>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <span
+                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {item
+                        .attributes?.is_active
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'}"
+                    >
+                      <div
+                        class="w-1.5 h-1.5 rounded-full mr-1.5 {item.attributes
+                          ?.is_active
+                          ? 'bg-green-400'
+                          : 'bg-red-400'}"
+                      ></div>
+                      {item.attributes?.is_active ? "Active" : "Inactive"}
+                    </span>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <div class="flex items-center">
@@ -486,7 +525,15 @@
                         Open
                       </button>
                     {:else}
-                      <span class="text-gray-400">View</span>
+                      <button
+                        onclick={(e) => {
+                          e.stopPropagation();
+                          handleItemClick(item);
+                        }}
+                        class="text-green-600 hover:text-green-900 transition-colors duration-200"
+                      >
+                        View
+                      </button>
                     {/if}
                   </td>
                 </tr>
@@ -542,11 +589,12 @@
         {/if}
       </div>
 
+      <!-- Summary Stats -->
       <div
         class="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6"
       >
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Folder Summary</h3>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
           <div class="text-center">
             <p class="text-2xl font-bold text-blue-600">{totalItems}</p>
             <p class="text-sm text-gray-500">Total Items</p>
@@ -566,9 +614,17 @@
             <p class="text-sm text-gray-500">Content</p>
           </div>
           <div class="text-center">
+            <p class="text-2xl font-bold text-indigo-600">
+              {allContents.filter((item) => item.resource_type === "post")
+                .length}
+            </p>
+            <p class="text-sm text-gray-500">Posts</p>
+          </div>
+          <div class="text-center">
             <p class="text-2xl font-bold text-orange-600">
               {allContents.filter(
-                (item) => !["folder", "content"].includes(item.resource_type)
+                (item) =>
+                  !["folder", "content", "post"].includes(item.resource_type)
               ).length}
             </p>
             <p class="text-sm text-gray-500">Other</p>

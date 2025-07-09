@@ -99,8 +99,8 @@
   }
 </script>
 
-<div class="min-h-screen bg-gray-50">
-  <div class="container mx-auto px-4 py-8 max-w-6xl">
+<div class="min-h-screen bg-gray-50 px-8">
+  <div class="container mx-auto px-12 py-8 max-w-6xl">
     <div class="mb-8">
       <nav class="flex space-x-8 border-b border-gray-200">
         <button
@@ -132,9 +132,9 @@
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-1">
           <div
-            class="bg-white d-flex flex-col align-items-center rounded-xl border border-gray-200 p-6 text-center"
+            class="flex flex-col items-center rounded-xl border border-gray-200 p-6 text-center"
           >
-            <div class="mb-6">
+            <div class="mb-6 flex justify-center">
               <Avatar src={avatar} size="120" />
             </div>
             <h2 class="text-xl font-semibold text-gray-900 mb-2">
