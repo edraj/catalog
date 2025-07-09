@@ -19,7 +19,6 @@
     await initializeContent();
   });
 
-  // Watch for parameter changes
   $effect(() => {
     if ($params.space_name && $params.subpath && $params.shortname) {
       initializeContent();
@@ -31,10 +30,8 @@
     subpath = $params.subpath;
     itemShortname = $params.shortname;
 
-    // Convert URL format to API format
     actualSubpath = subpath.replace(/-/g, "/");
 
-    // Create breadcrumbs
     const pathParts = actualSubpath
       .split("/")
       .filter((part) => part.length > 0);
@@ -63,7 +60,7 @@
   async function loadPostData() {
     isLoading = true;
     error = null;
-    postData = null; // Reset data
+    postData = null;
 
     try {
       console.log(
@@ -174,7 +171,6 @@
     if (!payload?.body) return "";
 
     if (payload.content_type === "html") {
-      // Strip HTML tags for preview
       const div = document.createElement("div");
       div.innerHTML = payload.body;
       return div.textContent || div.innerText || "";
@@ -189,7 +185,6 @@
 
   function getImageUrl(item, payload) {
     if (isImageContent(payload)) {
-      // Use the media URL structure from the API response
       return `/media/${spaceName}${actualSubpath}/${item.shortname}/${payload.body}`;
     }
     return null;
@@ -198,10 +193,8 @@
   function getAttachmentUrl(item, attachment) {
     const filename = attachment.attributes?.payload?.body;
     if (filename && attachment.subpath) {
-      // Use the subpath from the attachment itself
       return `/media/${spaceName}${attachment.subpath}/${filename}`;
     }
-    // Fallback to constructing based on item structure
     if (filename) {
       return `/media/${spaceName}${actualSubpath}/${item.shortname}/${filename}`;
     }
@@ -215,7 +208,6 @@
       attachments.push(...item.attachments.media);
     }
 
-    // Handle other attachment types if they exist
     if (item.attachments) {
       Object.keys(item.attachments).forEach((key) => {
         if (key !== "media" && Array.isArray(item.attachments[key])) {
@@ -246,7 +238,6 @@
   function canPreview(contentType, filename) {
     if (!contentType) return false;
 
-    // Check if it's a directly previewable type
     if (
       contentType.startsWith("image/") ||
       contentType.startsWith("video/") ||
@@ -255,7 +246,6 @@
       return true;
     }
 
-    // Check by file extension
     const ext = getFileExtension(filename);
     const previewableExts = [
       "jpg",

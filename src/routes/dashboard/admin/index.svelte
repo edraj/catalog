@@ -1,15 +1,398 @@
 <script lang="ts">
-    import { Container, Row, Col, Nav, NavItem, Collapse, NavbarToggler, Card, CardBody, CardTitle, CardText } from 'sveltestrap';
-    import {user} from "@/stores/user";
-    import { _ } from '@/i18n';
+  import { onMount } from "svelte";
+  import { getSpaces } from "@/lib/dmart_services";
+  import { Diamonds } from "svelte-loading-spinners";
+  import { goto } from "@roxi/routify";
+  import { _ } from "@/i18n";
+  import { locale } from "@/i18n";
+  import { user } from "@/stores/user";
+  $goto;
+  let isLoading = $state(true);
+  let spaces = $state([]);
+  let error = $state(null);
 
-    let isOpen = $state(true);
-
-    function toggle() {
-        isOpen = !isOpen;
+  onMount(async () => {
+    try {
+      const response = await getSpaces(false, "managed");
+      console.log("Admin spaces response:", response);
+      spaces = response.records || [];
+    } catch (err) {
+      console.error("Error fetching spaces:", err);
+      error = "Failed to load spaces";
+    } finally {
+      isLoading = false;
     }
+  });
+
+  function handleSpaceClick(space: any) {
+    $goto(`/dashboard/admin/[space_name]`, {
+      space_name: space.shortname,
+    });
+  }
+
+  function getDisplayName(space: any): string {
+    const displayname = space.attributes?.displayname;
+    if (displayname) {
+      return (
+        displayname[$locale] ||
+        displayname.en ||
+        displayname.ar ||
+        space.shortname
+      );
+    }
+    return space.shortname || "Unnamed Space";
+  }
+
+  function getDescription(space: any): string {
+    const description = space.attributes?.description;
+    if (description) {
+      return (
+        description[$locale] ||
+        description.en ||
+        description.ar ||
+        "No description available"
+      );
+    }
+    return "No description available";
+  }
+
+  function formatDate(dateString: string): string {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString();
+  }
 </script>
 
-<Container>
-    <h1>{$_('Welcome')} {$user.localized_displayname}</h1>
-</Container>
+<div class="min-h-screen bg-gray-50">
+  <div class="bg-white border-b border-gray-200">
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+      <div class="text-center">
+        <h1 class="text-4xl font-bold text-gray-900 mb-4">Admin Dashboard</h1>
+        <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+          Welcome {$user.localized_displayname}! Manage all spaces and their
+          content with full administrative access.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="container mx-auto px-4 py-8 max-w-7xl">
+    {#if isLoading}
+      <div class="flex justify-center py-16">
+        <Diamonds color="#3b82f6" size="60" unit="px" />
+      </div>
+    {:else if error}
+      <div class="text-center py-16">
+        <div
+          class="mx-auto w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-6"
+        >
+          <svg
+            class="w-12 h-12 text-red-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            ></path>
+          </svg>
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">
+          Error Loading Spaces
+        </h3>
+        <p class="text-gray-600">{error}</p>
+      </div>
+    {:else if spaces.length === 0}
+      <div class="text-center py-16">
+        <div
+          class="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6"
+        >
+          <svg
+            class="w-12 h-12 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+            ></path>
+          </svg>
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">
+          No Spaces Available
+        </h3>
+        <p class="text-gray-600">There are currently no spaces to manage.</p>
+      </div>
+    {:else}
+      <!-- Admin Stats -->
+      <div class="mb-8 grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <div
+                class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center"
+              >
+                <svg
+                  class="w-5 h-5 text-purple-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                  ></path>
+                </svg>
+              </div>
+            </div>
+            <div class="ml-6">
+              <p class="text-sm font-medium text-gray-500">Total Spaces</p>
+              <p class="text-2xl font-semibold text-gray-900">
+                {spaces.length}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <div
+                class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center"
+              >
+                <svg
+                  class="w-5 h-5 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  ></path>
+                </svg>
+              </div>
+            </div>
+            <div class="ml-6">
+              <p class="text-sm font-medium text-gray-500">Active Spaces</p>
+              <p class="text-2xl font-semibold text-gray-900">
+                {spaces.filter((s) => s.attributes?.is_active).length}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <div
+                class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center"
+              >
+                <svg
+                  class="w-5 h-5 text-blue-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
+                  ></path>
+                </svg>
+              </div>
+            </div>
+            <div class="ml-6">
+              <p class="text-sm font-medium text-gray-500">Admin Access</p>
+              <p class="text-2xl font-semibold text-gray-900">Full</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <div
+                class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center"
+              >
+                <svg
+                  class="w-5 h-5 text-orange-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                  ></path>
+                </svg>
+              </div>
+            </div>
+            <div class="ml-6">
+              <p class="text-sm font-medium text-gray-500">Role</p>
+              <p class="text-2xl font-semibold text-gray-900">Super Admin</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+      >
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-gray-900">
+              Manage Spaces ({spaces.length})
+            </h2>
+            <div class="text-sm text-gray-500">
+              Administrative access to all spaces
+            </div>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Space
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Status
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Owner
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Created
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              {#each spaces as space, index}
+                <tr
+                  class="hover:bg-gray-50 transition-colors duration-200 cursor-pointer"
+                  onclick={() => handleSpaceClick(space)}
+                  role="button"
+                  tabindex="0"
+                  onkeydown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      handleSpaceClick(space);
+                    }
+                  }}
+                >
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="flex items-center">
+                      <div class="flex-shrink-0 h-12 w-12">
+                        <div
+                          class="h-12 w-12 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-md"
+                        >
+                          <span class="text-white font-bold text-lg">
+                            {space.shortname
+                              ? space.shortname.charAt(0).toUpperCase()
+                              : "S"}
+                          </span>
+                        </div>
+                      </div>
+                      <div class="ml-6">
+                        <div class="text-sm font-semibold text-gray-900">
+                          {getDisplayName(space)}
+                        </div>
+                        <div class="text-sm text-gray-500 max-w-xs truncate">
+                          {getDescription(space)}
+                        </div>
+                        <div class="text-xs text-purple-600 font-medium mt-1">
+                          {space.shortname}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <span
+                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {space
+                        .attributes?.is_active
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'}"
+                    >
+                      <div
+                        class="w-1.5 h-1.5 rounded-full mr-1.5 {space.attributes
+                          ?.is_active
+                          ? 'bg-green-400'
+                          : 'bg-red-400'}"
+                      ></div>
+                      {space.attributes?.is_active ? "Active" : "Inactive"}
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="flex items-center">
+                      <div
+                        class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center mr-2"
+                      >
+                        <span class="text-xs font-medium text-gray-600">
+                          {space.attributes?.owner_shortname
+                            ? space.attributes.owner_shortname
+                                .charAt(0)
+                                .toUpperCase()
+                            : "U"}
+                        </span>
+                      </div>
+                      <span class="text-sm text-gray-900">
+                        {space.attributes?.owner_shortname || "Unknown"}
+                      </span>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {formatDate(space.attributes?.created_at)}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <button
+                      onclick={(e) => {
+                        e.stopPropagation();
+                        handleSpaceClick(space);
+                      }}
+                      class="text-purple-600 hover:text-purple-900 transition-colors duration-200 mr-4"
+                    >
+                      Manage
+                    </button>
+                    <button
+                      onclick={(e) => {
+                        e.stopPropagation();
+                      }}
+                      class="text-blue-600 hover:text-blue-900 transition-colors duration-200"
+                    >
+                      Edit
+                    </button>
+                  </td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {/if}
+  </div>
+</div>

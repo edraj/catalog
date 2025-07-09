@@ -442,7 +442,6 @@ export async function getCatalogItem(
   } catch (error) {
     console.error(`Error retrieving item ${shortname}:`, error);
 
-    // If content type fails, try other resource types
     if (resourceType === ResourceType.content) {
       try {
         return await getCatalogItem(
@@ -460,7 +459,7 @@ export async function getCatalogItem(
             ResourceType.ticket
           );
         } catch (ticketError) {
-          throw error; // Return original error
+          throw error;
         }
       }
     }

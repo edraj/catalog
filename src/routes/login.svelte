@@ -187,7 +187,7 @@
         <button
           type="submit"
           disabled={isLoading}
-          class="w-full bg-slate-900 bg-primary hover:bg-slate-800 disabled:bg-slate-400 text-white font-medium py-3 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 flex items-center justify-center"
+          class="w-full login-btn hover:bg-gray-800 disabled:bg-slate-400 text-white font-medium py-3 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 flex items-center justify-center"
         >
           {#if isLoading}
             <div class="flex items-center">
@@ -211,3 +211,32 @@
     </div>
   </div>
 </div>
+
+<style>
+  .login-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    color: white;
+    font-weight: 600;
+    font-size: 0.875rem;
+    border: none;
+    border-radius: 0.75rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 6px rgba(59, 130, 246, 0.25);
+  }
+
+  .login-btn:hover {
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.35);
+  }
+
+  .login-btn:active {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  }
+</style>

@@ -102,7 +102,12 @@
   let comment = $state("");
   async function handleAddComment() {
     if (comment) {
-      const response = await createComment($params.shortname, comment);
+      const response = await createComment(
+        $params.space_name,
+        $params.subpath,
+        $params.shortname,
+        comment
+      );
       if (response) {
         successToastMessage("Comment added successfully");
         comment = "";

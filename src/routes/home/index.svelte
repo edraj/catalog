@@ -52,7 +52,7 @@
   ];
 
   function handleStartExploring() {
-    $goto("/dashboard");
+    $goto("/catalogs");
   }
 
   function handleSignIn() {
@@ -60,7 +60,7 @@
   }
 
   function handleExploreAsGuest() {
-    $goto("/dashbaord");
+    $goto("/catalogs");
   }
 </script>
 
