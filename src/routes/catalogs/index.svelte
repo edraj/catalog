@@ -5,27 +5,35 @@
   import { goto } from "@roxi/routify";
   import { _ } from "@/i18n";
   import { locale } from "@/i18n";
-  import { user } from "@/stores/user";
   $goto;
+
   let isLoading = $state(true);
   let spaces = $state([]);
   let error = $state(null);
 
   onMount(async () => {
     try {
-      const response = await getSpaces(false, "managed");
-      console.log("Admin spaces response:", response);
+      const response = await getSpaces(false, "public");
+
+      console.log("Full spaces response:", response);
+      console.log("Spaces records:", response.records);
+
+      if (response.records && response.records.length > 0) {
+        console.log("First space record:", response.records[0]);
+        console.log("Space attributes:", response.records[0].attributes);
+      }
+
       spaces = response.records || [];
     } catch (err) {
       console.error("Error fetching spaces:", err);
-      error = "Failed to load spaces";
+      error = "Failed to load catalogs";
     } finally {
       isLoading = false;
     }
   });
 
   function handleSpaceClick(space: any) {
-    $goto(`/dashboard/admin/[space_name]`, {
+    $goto("/catalogs/[space_name]", {
       space_name: space.shortname,
     });
   }
@@ -66,10 +74,10 @@
   <div class="bg-white border-b border-gray-200">
     <div class="container mx-auto px-4 py-8 max-w-7xl">
       <div class="text-center">
-        <h1 class="text-4xl font-bold text-gray-900 mb-4">Admin Dashboard</h1>
+        <h1 class="text-4xl font-bold text-gray-900 mb-4">Explore Catalogs</h1>
         <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-          Welcome {$user.localized_displayname}! Manage all spaces and their
-          content with full administrative access.
+          Discover all available spaces and their content. Browse through
+          different catalogs to find what interests you most.
         </p>
       </div>
     </div>
@@ -100,7 +108,7 @@
           </svg>
         </div>
         <h3 class="text-xl font-semibold text-gray-900 mb-2">
-          Error Loading Spaces
+          Error Loading Catalogs
         </h3>
         <p class="text-gray-600">{error}</p>
       </div>
@@ -124,21 +132,178 @@
           </svg>
         </div>
         <h3 class="text-xl font-semibold text-gray-900 mb-2">
-          No Spaces Available
+          No Catalogs Available
         </h3>
-        <p class="text-gray-600">There are currently no spaces to manage.</p>
+        <p class="text-gray-600">
+          There are currently no public catalogs to display.
+        </p>
       </div>
     {:else}
-      <!-- Admin Stats -->
-      <div class="mb-8 grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div
+        class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+      >
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-gray-900">
+              Available Catalogs ({spaces.length})
+            </h2>
+            <div class="text-sm text-gray-500">
+              Public spaces you can explore
+            </div>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Space
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Status
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Owner
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Created
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Website
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              {#each spaces as space, index}
+                <tr
+                  class="hover:bg-gray-50 transition-colors duration-200 cursor-pointer"
+                  onclick={() => handleSpaceClick(space)}
+                  role="button"
+                  tabindex="0"
+                  onkeydown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      handleSpaceClick(space);
+                    }
+                  }}
+                >
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="flex items-center">
+                      <div class="flex-shrink-0 h-12 w-12">
+                        <div
+                          class="h-12 w-12 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-md"
+                        >
+                          <span class="text-white font-bold text-lg">
+                            {space.shortname
+                              ? space.shortname.charAt(0).toUpperCase()
+                              : "S"}
+                          </span>
+                        </div>
+                      </div>
+                      <div class="ml-6">
+                        <div class="text-sm font-semibold text-gray-900">
+                          {getDisplayName(space)}
+                        </div>
+                        <div class="text-sm text-gray-500 max-w-xs truncate">
+                          {getDescription(space)}
+                        </div>
+                        <div class="text-xs text-blue-600 font-medium mt-1">
+                          {space.shortname}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <span
+                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {space
+                        .attributes?.is_active
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'}"
+                    >
+                      <div
+                        class="w-1.5 h-1.5 rounded-full mr-1.5 {space.attributes
+                          ?.is_active
+                          ? 'bg-green-400'
+                          : 'bg-red-400'}"
+                      ></div>
+                      {space.attributes?.is_active ? "Active" : "Inactive"}
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="flex items-center">
+                      <div
+                        class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center mr-2"
+                      >
+                        <span class="text-xs font-medium text-gray-600">
+                          {space.attributes?.owner_shortname
+                            ? space.attributes.owner_shortname
+                                .charAt(0)
+                                .toUpperCase()
+                            : "U"}
+                        </span>
+                      </div>
+                      <span class="text-sm text-gray-900">
+                        {space.attributes?.owner_shortname || "Unknown"}
+                      </span>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {formatDate(space.attributes?.created_at)}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {#if space.attributes?.primary_website}
+                      <a
+                        href={space.attributes.primary_website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="text-blue-600 hover:text-blue-800 transition-colors duration-200"
+                        onclick={(e) => e.stopPropagation()}
+                      >
+                        <svg
+                          class="w-4 h-4 inline mr-1"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                          ></path>
+                        </svg>
+                        Visit
+                      </a>
+                    {:else}
+                      <span class="text-gray-400">No website</span>
+                    {/if}
+                  </td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div class="flex items-center">
             <div class="flex-shrink-0">
               <div
-                class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center"
+                class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center"
               >
                 <svg
-                  class="w-5 h-5 text-purple-600"
+                  class="w-5 h-5 text-blue-600"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -195,10 +360,10 @@
           <div class="flex items-center">
             <div class="flex-shrink-0">
               <div
-                class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center"
+                class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center"
               >
                 <svg
-                  class="w-5 h-5 text-blue-600"
+                  class="w-5 h-5 text-purple-600"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -207,192 +372,58 @@
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     stroke-width="2"
-                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
+                    d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9"
                   ></path>
                 </svg>
               </div>
             </div>
             <div class="ml-6">
-              <p class="text-sm font-medium text-gray-500">Admin Access</p>
-              <p class="text-2xl font-semibold text-gray-900">Full</p>
+              <p class="text-sm font-medium text-gray-500">With Websites</p>
+              <p class="text-2xl font-semibold text-gray-900">
+                {spaces.filter((s) => s.attributes?.primary_website).length}
+              </p>
             </div>
           </div>
-        </div>
-
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div class="flex items-center">
-            <div class="flex-shrink-0">
-              <div
-                class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center"
-              >
-                <svg
-                  class="w-5 h-5 text-orange-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                  ></path>
-                </svg>
-              </div>
-            </div>
-            <div class="ml-6">
-              <p class="text-sm font-medium text-gray-500">Role</p>
-              <p class="text-2xl font-semibold text-gray-900">Super Admin</p>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div
-        class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
-      >
-        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-          <div class="flex items-center justify-between">
-            <h2 class="text-lg font-semibold text-gray-900">
-              Manage Spaces ({spaces.length})
-            </h2>
-            <div class="text-sm text-gray-500">
-              Administrative access to all spaces
-            </div>
-          </div>
-        </div>
-
-        <div class="overflow-x-auto">
-          <table class="w-full">
-            <thead class="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Space
-                </th>
-                <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Status
-                </th>
-                <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Owner
-                </th>
-                <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Created
-                </th>
-                <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-              {#each spaces as space, index}
-                <tr
-                  class="hover:bg-gray-50 transition-colors duration-200 cursor-pointer"
-                  onclick={() => handleSpaceClick(space)}
-                  role="button"
-                  tabindex="0"
-                  onkeydown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      handleSpaceClick(space);
-                    }
-                  }}
-                >
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="flex items-center">
-                      <div class="flex-shrink-0 h-12 w-12">
-                        <div
-                          class="h-12 w-12 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-md"
-                        >
-                          <span class="text-white font-bold text-lg">
-                            {space.shortname
-                              ? space.shortname.charAt(0).toUpperCase()
-                              : "S"}
-                          </span>
-                        </div>
-                      </div>
-                      <div class="ml-6">
-                        <div class="text-sm font-semibold text-gray-900">
-                          {getDisplayName(space)}
-                        </div>
-                        <div class="text-sm text-gray-500 max-w-xs truncate">
-                          {getDescription(space)}
-                        </div>
-                        <div class="text-xs text-purple-600 font-medium mt-1">
-                          {space.shortname}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <span
-                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {space
-                        .attributes?.is_active
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'}"
-                    >
-                      <div
-                        class="w-1.5 h-1.5 rounded-full mr-1.5 {space.attributes
-                          ?.is_active
-                          ? 'bg-green-400'
-                          : 'bg-red-400'}"
-                      ></div>
-                      {space.attributes?.is_active ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="flex items-center">
-                      <div
-                        class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center mr-2"
-                      >
-                        <span class="text-xs font-medium text-gray-600">
-                          {space.attributes?.owner_shortname
-                            ? space.attributes.owner_shortname
-                                .charAt(0)
-                                .toUpperCase()
-                            : "U"}
-                        </span>
-                      </div>
-                      <span class="text-sm text-gray-900">
-                        {space.attributes?.owner_shortname || "Unknown"}
-                      </span>
-                    </div>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(space.attributes?.created_at)}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button
-                      onclick={(e) => {
-                        e.stopPropagation();
-                        handleSpaceClick(space);
-                      }}
-                      class="text-purple-600 hover:text-purple-900 transition-colors duration-200 mr-4"
-                    >
-                      Manage
-                    </button>
-                    <button
-                      onclick={(e) => {
-                        e.stopPropagation();
-                      }}
-                      class="text-blue-600 hover:text-blue-900 transition-colors duration-200"
-                    >
-                      Edit
-                    </button>
-                  </td>
-                </tr>
-              {/each}
-            </tbody>
-          </table>
         </div>
       </div>
     {/if}
   </div>
 </div>
+
+<style>
+  table {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  /* Responsive table */
+  @media (max-width: 768px) {
+    .overflow-x-auto {
+      -webkit-overflow-scrolling: touch;
+    }
+
+    th,
+    td {
+      padding: 0.75rem 1rem;
+    }
+
+    th {
+      font-size: 0.75rem;
+    }
+
+    td {
+      font-size: 0.875rem;
+    }
+  }
+
+  /* Hover effects */
+  tbody tr:hover {
+    background-color: #f9fafb;
+  }
+
+  /* Focus styles for accessibility */
+  tbody tr:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: -2px;
+  }
+</style>

@@ -1,16 +1,16 @@
 <script>
-    import {Card, CardBody, CardText, CardTitle, Col, Container, Row} from "sveltestrap";
+    import { Card } from 'flowbite-svelte';
 </script>
 
-<Container>
-    <Row class="justify-content-center ">
-        <Col md="8">
+<div class="container mx-auto px-4">
+    <div class="flex justify-center">
+        <div class="w-full max-w-2xl">
             <Card>
-                <CardBody>
-                    <CardTitle>Card Title users</CardTitle>
-                    <CardText>This is some text within a card body.</CardText>
-                </CardBody>
+                <div class="p-6">
+                    <h3 class="text-lg font-semibold mb-2">Card Title users</h3>
+                    <p class="text-gray-600">This is some text within a card body.</p>
+                </div>
             </Card>
-        </Col>
-    </Row>
-</Container>
+        </div>
+    </div>
+</div>
