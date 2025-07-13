@@ -83,10 +83,6 @@
         `/${actualSubpath}`,
         "managed"
       );
-      console.log(
-        `Admin contents for space ${spaceName} at /${actualSubpath}:`,
-        response
-      );
 
       if (response && response.records) {
         allContents.set(response.records);
@@ -140,9 +136,6 @@
         subpath: newSubpath,
       });
     } else {
-      console.log(
-        `Navigating to item: /catalog/${spaceName}/${subpath}/${item.shortname}`
-      );
       $goto("/dashboard/admin/[space_name]/[subpath]/[shortname]", {
         space_name: spaceName,
         subpath: subpath,
@@ -595,7 +588,7 @@
                             e.stopPropagation();
                             handleItemClick(item);
                           }}
-                          class="text-blue-600 hover:text-blue-900 transition-colors duration-200"
+                          class="text-blue-600 hover:text-blue-900 transition-colors duration-200 mx-4"
                         >
                           Open
                         </button>
@@ -612,7 +605,7 @@
                       {/if}
                       <button
                         onclick={(e) => handleDeleteItem(item, e)}
-                        class="text-red-600 hover:text-red-900 transition-colors duration-200"
+                        class="text-red-600 hover:text-red-900 transition-colors duration-200 mx-4"
                       >
                         Delete
                       </button>
@@ -674,7 +667,6 @@
   </div>
 </div>
 
-<!-- Create Modal -->
 {#if $showCreateModal}
   <div
     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"

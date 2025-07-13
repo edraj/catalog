@@ -14,15 +14,6 @@
   onMount(async () => {
     try {
       const response = await getSpaces(false, "public");
-
-      console.log("Full spaces response:", response);
-      console.log("Spaces records:", response.records);
-
-      if (response.records && response.records.length > 0) {
-        console.log("First space record:", response.records[0]);
-        console.log("Space attributes:", response.records[0].attributes);
-      }
-
       spaces = response.records || [];
     } catch (err) {
       console.error("Error fetching spaces:", err);

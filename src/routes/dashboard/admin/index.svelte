@@ -14,7 +14,6 @@
   onMount(async () => {
     try {
       const response = await getSpaces(false, "managed");
-      console.log("Admin spaces response:", response);
       spaces = response.records || [];
     } catch (err) {
       console.error("Error fetching spaces:", err);
@@ -129,7 +128,6 @@
         <p class="text-gray-600">There are currently no spaces to manage.</p>
       </div>
     {:else}
-      <!-- Admin Stats -->
       <div class="mb-8 grid grid-cols-1 md:grid-cols-4 gap-4">
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div class="flex items-center">
@@ -374,7 +372,7 @@
                         e.stopPropagation();
                         handleSpaceClick(space);
                       }}
-                      class="text-purple-600 hover:text-purple-900 transition-colors duration-200 mr-4"
+                      class="text-purple-600 hover:text-purple-900 transition-colors duration-200 mx-4"
                     >
                       Manage
                     </button>
@@ -382,7 +380,7 @@
                       onclick={(e) => {
                         e.stopPropagation();
                       }}
-                      class="text-blue-600 hover:text-blue-900 transition-colors duration-200"
+                      class="text-blue-600 hover:text-blue-900 transition-colors duration-200 mx-4"
                     >
                       Edit
                     </button>

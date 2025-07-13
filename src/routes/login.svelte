@@ -1,15 +1,24 @@
 <script lang="ts">
-  import { signin } from "@/stores/user";
-  import { _, locale } from "@/i18n";
   import { goto } from "@roxi/routify";
+  import { _ } from "@/i18n";
+  import { locale } from "@/i18n";
+  import {
+    UserSolid,
+    EyeSolid,
+    EyeSlashSolid,
+    LockSolid,
+  } from "flowbite-svelte-icons";
+  import { signin } from "@/stores/user";
   $goto;
+  let username = "";
+  let password = "";
+  let showPassword = false;
+  let isSubmitting = false;
+  let showError = false;
+  let errors: { username?: string; password?: string } = {};
+  let isError: boolean;
   const isRTL = $locale === "ar" || $locale === "ku";
 
-  let username: string;
-  let password: string;
-  let isError: boolean;
-  let showPassword: boolean = $state(false);
-  let isLoading: boolean = $state(false);
   async function handleSubmit(event: Event) {
     event.preventDefault();
     isError = false;
@@ -24,249 +33,477 @@
   function togglePasswordVisibility() {
     showPassword = !showPassword;
   }
+
+  function goToRegister() {
+    $goto("/register");
+  }
+
+  function goBack() {
+    $goto("/home");
+  }
 </script>
 
-<div
-  class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4"
-  dir={isRTL ? "rtl" : "ltr"}
->
-  <div class="w-full max-w-md">
-    <div class="text-center mb-8">
-      <h1 class="text-3xl font-bold text-slate-900 mb-2">
-        {$_("WelcomeBack")}
-      </h1>
-      <p class="text-slate-600">
-        {$_("PleaseSignInToContinue")}
-      </p>
+<div class="login-container">
+  <div class="login-content">
+    <div class="login-header">
+      <div class="header-content">
+        <div class="icon-wrapper">
+          <UserSolid class="header-icon text-white w-6 h-6" />
+        </div>
+        <h1 class="login-title">{$_("WelcomeBack")}</h1>
+        <p class="login-description">{$_("PleaseSignInToContinue")}</p>
+      </div>
     </div>
 
-    <div
-      class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border-0 p-8"
-    >
-      <div class="text-center mb-6">
-        <h2 class="text-2xl font-semibold text-slate-800 mb-2">
-          {$_("SignIn")}
-        </h2>
-        <p class="text-slate-600">
-          {$_("EnterYourCredentials")}
-        </p>
+    {#if showError}
+      <div class="error-message" class:rtl={isRTL}>
+        <svg
+          class="shrink-0 inline w-4 h-4 me-3"
+          aria-hidden="true"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path
+            d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"
+          />
+        </svg>
+        <div class="error-content">
+          <p class="error-text">{$_("InvalidCredentials")}</p>
+        </div>
       </div>
+    {/if}
 
-      <form onsubmit={handleSubmit} class="space-y-6">
-        <div class="space-y-2">
-          <label
-            for="username"
-            class="block text-sm font-medium text-slate-700 {isRTL
-              ? 'text-right'
-              : 'text-left'}"
-          >
+    <div class="form-container">
+      <form onsubmit={handleSubmit} class="login-form">
+        <div class="form-group">
+          <label for="username" class="form-label" class:rtl={isRTL}>
+            <UserSolid class="label-icon" />
             {$_("Username")}
           </label>
-          <div class="relative">
-            <div
-              class="absolute inset-y-0 {isRTL
-                ? 'right-0 pe-3 mx-4'
-                : 'left-0 ps-3'} flex items-center pointer-events-none"
-            >
-              <svg
-                class="h-4 w-4 text-slate-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                ></path>
-              </svg>
-            </div>
-            <input
-              id="username"
-              type="text"
-              name="username"
-              bind:value={username}
-              placeholder={$_("EnterYourUsername")}
-              class="w-full {isRTL
-                ? 'mr-4 text-right'
-                : 'ps-10 pe-4 text-left'} py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-400 focus:border-slate-400 transition-colors bg-white/50 {isError
-                ? 'border-red-300 focus:ring-red-400 focus:border-red-400'
-                : ''}"
-              style="padding-right: 40px;"
-              required
-            />
-          </div>
+          <input
+            id="username"
+            type="text"
+            bind:value={username}
+            placeholder={$_("Username")}
+            class="form-input"
+            class:error={errors.username}
+            class:rtl={isRTL}
+            disabled={isSubmitting}
+          />
+          {#if errors.username}
+            <p class="error-text-small" class:rtl={isRTL}>{errors.username}</p>
+          {/if}
         </div>
 
-        <div class="space-y-2">
-          <label
-            for="password"
-            class="block text-sm font-medium text-slate-700 {isRTL
-              ? 'text-right'
-              : 'text-left'}"
-          >
+        <div class="form-group">
+          <label for="password" class="form-label" class:rtl={isRTL}>
+            <LockSolid class="label-icon" />
             {$_("Password")}
           </label>
-          <div class="relative">
-            <div
-              class="absolute inset-y-0 {isRTL
-                ? 'right-0 pe-3 mx-4'
-                : 'left-0 ps-3'} flex items-center pointer-events-none"
-            >
-              <svg
-                class="h-4 w-4 text-slate-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 01-8 0v4h8z"
-                ></path>
-              </svg>
-            </div>
+          <div class="password-input-wrapper" class:rtl={isRTL}>
             <input
               id="password"
               type={showPassword ? "text" : "password"}
-              name="password"
               bind:value={password}
-              placeholder={$_("EnterYourPassword")}
-              class="w-full {isRTL
-                ? 'pe-10 ps-12 text-right'
-                : 'ps-10 pe-12 text-left'} py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-400 focus:border-slate-400 transition-colors bg-white/50 {isError
-                ? 'border-red-300 focus:ring-red-400 focus:border-red-400'
-                : ''}"
-              style="padding-right: 40px;"
-              required
+              placeholder={$_("Password")}
+              class="form-input password-input"
+              class:error={errors.password}
+              class:rtl={isRTL}
+              disabled={isSubmitting}
             />
             <button
               type="button"
+              class="password-toggle"
               onclick={togglePasswordVisibility}
-              class="absolute inset-y-0 {isRTL
-                ? 'left-0 ps-3 mx-4'
-                : 'right-0 pe-3'} flex items-center hover:text-slate-600 transition-colors"
+              class:rtl={isRTL}
             >
               {#if showPassword}
-                <svg
-                  class="h-4 w-4 text-slate-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"
-                  ></path>
-                </svg>
+                <EyeSlashSolid class="toggle-icon" />
               {:else}
-                <svg
-                  class="h-4 w-4 text-slate-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                  ></path>
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                  ></path>
-                </svg>
+                <EyeSolid class="toggle-icon" />
               {/if}
-              <span class="sr-only"
-                >{showPassword ? $_("HidePassword") : $_("ShowPassword")}</span
-              >
             </button>
           </div>
+          {#if errors.password}
+            <p class="error-text-small" class:rtl={isRTL}>{errors.password}</p>
+          {/if}
         </div>
 
-        <!-- Error Message -->
-        {#if isError}
-          <div class="bg-red-50 border border-red-200 rounded-lg p-3">
-            <p
-              class="text-red-800 text-sm {isRTL ? 'text-right' : 'text-left'}"
-            >
-              {$_("InvalidCredentials")}
-            </p>
-          </div>
-        {/if}
-
-        <!-- Login Button -->
         <button
           type="submit"
-          disabled={isLoading}
-          class="w-full login-btn hover:bg-gray-800 disabled:bg-slate-400 text-white font-medium py-3 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 flex items-center justify-center"
+          class="submit-button"
+          class:loading={isSubmitting}
+          class:rtl={isRTL}
+          disabled={isSubmitting}
         >
-          {#if isLoading}
-            <div class="flex items-center">
-              <div
-                class="animate-spin rounded-full h-4 w-4 border-b-2 border-white {isRTL
-                  ? 'ms-2'
-                  : 'me-2'}"
-              ></div>
-              {$_("SigningIn")}
-            </div>
+          {#if isSubmitting}
+            <div class="loading-spinner"></div>
+            {$_("SigningIn")}
           {:else}
+            <UserSolid class="button-icon" />
             {$_("SignIn")}
           {/if}
         </button>
       </form>
-    </div>
 
-    <!-- Additional Info -->
-    <div class="mt-8 text-center">
-      <p class="text-xs text-slate-500">
-        {$_("TermsAndConditions")}
-      </p>
+      <div class="register-link" class:rtl={isRTL}>
+        <span class="register-text">{$_("DontHaveAccount")}</span>
+        <button class="link-button" onclick={goToRegister}>
+          {$_("Register")}
+        </button>
+      </div>
+
+      <div class="terms-text" class:rtl={isRTL}>
+        <p>{$_("TermsAndConditions")}</p>
+      </div>
     </div>
   </div>
 </div>
 
 <style>
-  .login-btn {
-    display: inline-flex;
+  .login-container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 100%);
+    padding: 2rem 1rem;
+    font-family:
+      "Inter",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
+      sans-serif;
+  }
+
+  .login-content {
+    max-width: 450px;
+    margin: 0 auto;
+  }
+
+  .login-header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .back-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    color: #6b7280;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 2rem;
+    text-decoration: none;
+  }
+
+  .back-button:hover {
+    background: #f9fafb;
+    border-color: #d1d5db;
+  }
+
+  .back-button.rtl {
+    flex-direction: row-reverse;
+  }
+
+  .back-icon {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .back-icon.flip {
+    transform: scaleX(-1);
+  }
+
+  .header-content {
+    margin-bottom: 2rem;
+  }
+
+  .icon-wrapper {
+    width: 4rem;
+    height: 4rem;
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    border-radius: 1rem;
+    display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0.75rem 1.5rem;
-    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    margin: 0 auto 1.5rem auto;
+  }
+
+  .header-icon {
+    width: 2rem;
+    height: 2rem;
     color: white;
-    font-weight: 600;
-    font-size: 0.875rem;
-    border: none;
+  }
+
+  .login-title {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #1f2937;
+    margin-bottom: 1rem;
+  }
+
+  .login-description {
+    font-size: 1rem;
+    color: #6b7280;
+    line-height: 1.6;
+  }
+
+  .error-message {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
     border-radius: 0.75rem;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 6px rgba(59, 130, 246, 0.25);
+    margin-bottom: 2rem;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
   }
 
-  .login-btn:hover {
-    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.35);
+  .error-message.rtl {
+    flex-direction: row-reverse;
   }
 
-  .login-btn:active {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  .error-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    color: #dc2626;
+    flex-shrink: 0;
   }
 
-  /* RTL-specific styles */
-  [dir="rtl"] input::placeholder {
+  .error-text {
+    color: #374151;
+    font-size: 0.875rem;
+  }
+
+  .form-container {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid #f3f4f6;
+  }
+
+  .login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .form-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.875rem;
+  }
+
+  .form-label.rtl {
+    flex-direction: row-reverse;
+  }
+
+  .label-icon {
+    width: 1rem;
+    height: 1rem;
+    color: #6b7280;
+  }
+
+  .form-input {
+    padding: 0.75rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    background: white;
+  }
+
+  .form-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  .form-input.error {
+    border-color: #dc2626;
+  }
+
+  .form-input.rtl {
     text-align: right;
   }
 
-  [dir="ltr"] input::placeholder {
-    text-align: left;
+  .password-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .password-input {
+    padding-right: 3rem;
+    width: 100%;
+  }
+
+  .password-input.rtl {
+    padding-right: 1rem;
+    padding-left: 3rem;
+  }
+
+  .password-toggle {
+    position: absolute;
+    right: 0.75rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #6b7280;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    transition: color 0.2s ease;
+  }
+
+  .password-toggle:hover {
+    color: #374151;
+  }
+
+  .password-toggle.rtl {
+    right: auto;
+    left: 0.75rem;
+  }
+
+  .toggle-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .error-text-small {
+    font-size: 0.75rem;
+    color: #dc2626;
+    margin-top: 0.25rem;
+  }
+
+  .error-text-small.rtl {
+    text-align: right;
+  }
+
+  .submit-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    color: white;
+    font-weight: 600;
+    padding: 1rem 2rem;
+    border-radius: 0.75rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+  }
+
+  .submit-button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+  }
+
+  .submit-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .submit-button.rtl {
+    flex-direction: row-reverse;
+  }
+
+  .button-icon {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .loading-spinner {
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  .register-link {
+    text-align: center;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  .register-text {
+    color: #6b7280;
+    font-size: 0.875rem;
+  }
+
+  .link-button {
+    background: none;
+    border: none;
+    color: #3b82f6;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+    font-size: 0.875rem;
+    margin-left: 0.25rem;
+  }
+
+  .register-link.rtl .link-button {
+    margin-left: 0;
+    margin-right: 0.25rem;
+  }
+
+  .link-button:hover {
+    color: #2563eb;
+  }
+
+  .terms-text {
+    text-align: center;
+    margin-top: 1rem;
+    font-size: 0.75rem;
+    color: #9ca3af;
+    line-height: 1.4;
+  }
+
+  .terms-text.rtl {
+    text-align: center;
+  }
+
+  @media (max-width: 640px) {
+    .login-container {
+      padding: 1rem;
+    }
+
+    .login-title {
+      font-size: 1.75rem;
+    }
+
+    .form-container {
+      padding: 1.5rem;
+    }
   }
 </style>

@@ -9,6 +9,7 @@
     GlobeSolid,
     EditSolid,
     MessageCaptionSolid,
+    MessagesOutline,
   } from "flowbite-svelte-icons";
   import { _ } from "@/i18n";
 
@@ -59,8 +60,16 @@
     $goto("/login");
   }
 
+  function handleRegister() {
+    $goto("/register");
+  }
+
   function handleExploreAsGuest() {
     $goto("/catalogs");
+  }
+
+  function handleContactUs() {
+    $goto("/contact");
   }
 </script>
 
@@ -84,6 +93,9 @@
           </button>
           <button class="btn-secondary" onclick={handleSignIn}>
             Sign In
+          </button>
+          <button class="btn-secondary" onclick={handleRegister}>
+            Create Account
           </button>
         </div>
       </div>
@@ -130,6 +142,13 @@
         <button class="btn-cta-secondary" onclick={handleExploreAsGuest}>
           Explore as Guest
         </button>
+        <button
+          class="btn-cta-secondary flex items-center"
+          onclick={handleContactUs}
+        >
+          <MessagesOutline class="button-icon mr-2" />
+          Contact Us
+        </button>
       </div>
     </div>
   </section>
@@ -161,7 +180,11 @@
           <ul class="footer-links">
             <li><a href="/help">Help Center</a></li>
             <li><a href="/community">Community</a></li>
-            <li><a href="/contact">Contact</a></li>
+            <li>
+              <button onclick={handleContactUs} class="footer-link-button"
+                >Contact Us</button
+              >
+            </li>
             <li><a href="/privacy">Privacy</a></li>
           </ul>
         </div>

@@ -120,7 +120,6 @@
 
   onMount(async () => {
     entity = await getEntity($params.shortname);
-    console.log({ entity });
     title = entity.payload.body.title;
     tags = entity.tags;
   });

@@ -91,10 +91,6 @@
     itemData.set(null);
 
     try {
-      console.log(
-        `Loading admin item: ${spaceNameValue}/${actualSubpathValue}/${itemShortnameValue}`
-      );
-
       const response = await getCatalogItem(
         spaceNameValue,
         actualSubpathValue,
@@ -102,8 +98,6 @@
         ResourceType.content,
         "managed"
       );
-
-      console.log(`Retrieved admin item response:`, response);
 
       if (response && response.uuid) {
         itemDataValue = response;
@@ -114,7 +108,6 @@
           is_active: response.is_active,
         };
         editForm.set(editFormValue);
-        console.log("Admin item data set successfully:", response);
       } else {
         console.error("Invalid response structure:", response);
         error.set("Invalid response structure");
@@ -247,10 +240,8 @@
 </script>
 
 <div class="min-h-screen bg-gray-50">
-  <!-- Header -->
   <div class="bg-white border-b border-gray-200">
     <div class="container mx-auto px-6 py-4 max-w-7xl">
-      <!-- Breadcrumb -->
       <nav class="flex mb-4" aria-label="Breadcrumb">
         <ol class="inline-flex items-center space-x-1 md:space-x-3">
           {#each $breadcrumbs as crumb, index}
@@ -285,7 +276,6 @@
         </ol>
       </nav>
 
-      <!-- Header Actions -->
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-4">
           <button
@@ -336,7 +326,6 @@
     </div>
   </div>
 
-  <!-- Content -->
   <div class="container mx-auto px-6 py-6 max-w-7xl">
     {#if $isLoading}
       <div class="flex justify-center py-16">
@@ -367,7 +356,6 @@
         <p class="text-gray-600">{$error}</p>
       </div>
     {:else if $itemData}
-      <!-- Tab Navigation -->
       <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
         <div class="border-b border-gray-200">
           <nav class="-mb-px flex space-x-8 px-6">
@@ -420,10 +408,8 @@
         </div>
 
         <div class="p-6">
-          <!-- Overview Tab -->
           {#if $activeTab === "overview"}
             <div class="space-y-6">
-              <!-- Basic Information Table -->
               <div>
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">
                   Basic Information
@@ -582,7 +568,6 @@
             </div>
           {/if}
 
-          <!-- Content Tab -->
           {#if $activeTab === "content"}
             <div class="space-y-6">
               <h3 class="text-lg font-semibold text-gray-900">
@@ -672,7 +657,6 @@
             </div>
           {/if}
 
-          <!-- Relationships Tab -->
           {#if $activeTab === "relationships"}
             <div class="space-y-6">
               <h3 class="text-lg font-semibold text-gray-900">Relationships</h3>
@@ -770,7 +754,6 @@
             </div>
           {/if}
 
-          <!-- Attachments Tab -->
           {#if $activeTab === "attachments"}
             <div class="space-y-6">
               <h3 class="text-lg font-semibold text-gray-900">Attachments</h3>
@@ -920,7 +903,6 @@
             </div>
           {/if}
 
-          <!-- Metadata Tab -->
           {#if $activeTab === "metadata"}
             <div class="space-y-6">
               <h3 class="text-lg font-semibold text-gray-900">
@@ -1027,7 +1009,6 @@
                 </table>
               </div>
 
-              <!-- Raw JSON Data -->
               <div>
                 <h4 class="text-md font-medium text-gray-800 mb-3">
                   Raw JSON Data
@@ -1073,7 +1054,6 @@
   </div>
 </div>
 
-<!-- Edit Modal -->
 {#if $showEditModal}
   <div
     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"

@@ -376,7 +376,7 @@ export async function getSpaceContents(
       type: QueryType.search,
       space_name: spaceName,
       subpath: subpath,
-      search: "",
+      search: "-@shortname:schema",
       limit: 100,
       sort_by: "shortname",
       sort_type: SortyType.ascending,
@@ -386,8 +386,6 @@ export async function getSpaceContents(
     },
     scope
   );
-
-  console.log(`Space contents for ${spaceName}${subpath}:`, response);
   return response;
 }
 
@@ -422,10 +420,6 @@ export async function getCatalogItem(
       cleanSubpath = "__root__";
     }
 
-    console.log(
-      `Retrieving item: ${resourceType}/${spaceName}/${cleanSubpath}/${shortname}`
-    );
-
     const response = await Dmart.retrieve_entry(
       resourceType,
       spaceName,
@@ -436,8 +430,6 @@ export async function getCatalogItem(
       true,
       scope
     );
-
-    console.log(`Retrieved item data:`, response);
     return response;
   } catch (error) {
     console.error(`Error retrieving item ${shortname}:`, error);
@@ -473,11 +465,6 @@ export async function createComment(
   shortname: string,
   comment: string
 ) {
-  console.log(
-    `Creating comment for ${spaceName}/${subpath}/${shortname}:`,
-    comment
-  );
-
   const data: ActionRequest = {
     space_name: spaceName,
     request_type: RequestType.create,
@@ -652,4 +639,63 @@ export async function deleteAllNotification(shortnames: string[]) {
     })),
   });
   return response.status == "success";
+}
+
+export async function fetchContactMessages() {
+  try {
+    const query = {
+      type: QueryType.search,
+      space_name: "applications",
+      subpath: "contacts",
+      search: "",
+      sort_by: "created_at",
+      sort_type: SortyType.descending,
+      retrieve_json_payload: true,
+      exact_subpath: true,
+      filter_shortnames: [],
+      retrieve_attachments: true,
+    };
+
+    const response = await Dmart.query(query);
+
+    if (response && response.status === "success") {
+      return response;
+    } else {
+      throw new Error("Failed to fetch contact messages");
+    }
+  } catch (err) {
+    console.error("Error fetching contact messages:", err);
+  }
+}
+
+export async function markMessageAsReplied(
+  spaceName: string,
+  subpath: string,
+  parentShortname: string,
+  replyContent: string
+) {
+  const actionRequest: ActionRequest = {
+    space_name: spaceName,
+    request_type: RequestType.create,
+    records: [
+      {
+        resource_type: ResourceType.comment,
+        shortname: "auto",
+        subpath: `${subpath}/${parentShortname}`.replaceAll("//", "/"),
+        attributes: {
+          is_active: true,
+          payload: {
+            content_type: ContentType.json,
+            body: {
+              state: "replied",
+              body: replyContent,
+            },
+          },
+        },
+      },
+    ],
+  };
+
+  const response: ActionResponse = await Dmart.request(actionRequest);
+  return response.status == "success" && response.records.length > 0;
 }

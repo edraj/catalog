@@ -5,7 +5,8 @@
   import { Diamonds } from "svelte-loading-spinners";
   import { _ } from "@/i18n";
   import { locale } from "@/i18n";
-
+  import { ResourceType } from "@edraj/tsdmart/dmart.model";
+  $goto;
   let isLoading = false;
   let postData = $state(null);
   let error = null;
@@ -63,21 +64,16 @@
     postData = null;
 
     try {
-      console.log(
-        `Loading item: ${spaceName}/${actualSubpath}/${itemShortname}`
-      );
-
       const response = await getCatalogItem(
         spaceName,
         actualSubpath,
-        itemShortname
+        itemShortname,
+        ResourceType.content,
+        "managed"
       );
-
-      console.log(`Retrieved item response:`, response);
 
       if (response && response.uuid) {
         postData = response;
-        console.log("Post data set successfully:", postData);
       } else {
         console.error("Invalid response structure:", response);
         error = "Invalid response structure";
@@ -97,10 +93,7 @@
   }
 
   function goBack() {
-    $goto("/catalogs/[space_name]/[subpath]", {
-      space_name: spaceName,
-      subpath: actualSubpath,
-    });
+    history.back();
   }
 
   function getDisplayName(item) {
@@ -309,7 +302,7 @@
       <div class="flex items-center justify-between">
         <button
           onclick={goBack}
-          class="flex items-center text-gray-600 hover:text-gray-900 transition-colors duration-200"
+          class="flex items-center text-gray-600 hover:text-gray-900 transition-colors duration-200 cursor-pointer"
         >
           <svg
             class="w-5 h-5 mr-2"
@@ -852,45 +845,6 @@
             </div>
           </div>
         {/if}
-      </div>
-
-      <!-- Technical Details -->
-      <div
-        class="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6"
-      >
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">
-          Technical Details
-        </h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h4 class="text-sm font-medium text-gray-500 mb-2">Identifiers</h4>
-            <div class="space-y-1 text-sm">
-              <div>
-                <span class="text-gray-500">UUID:</span>
-                <span class="font-mono text-xs">{postData.uuid}</span>
-              </div>
-              <div>
-                <span class="text-gray-500">Shortname:</span>
-                <span class="font-mono">{postData.shortname}</span>
-              </div>
-            </div>
-          </div>
-          <div>
-            <h4 class="text-sm font-medium text-gray-500 mb-2">System Info</h4>
-            <div class="space-y-1 text-sm">
-              <div>
-                <span class="text-gray-500">Owner:</span>
-                <span class="font-mono">{postData.owner_shortname}</span>
-              </div>
-              <div>
-                <span class="text-gray-500">Active:</span>
-                <span class="font-mono"
-                  >{postData.is_active ? "Yes" : "No"}</span
-                >
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     {:else}
       <!-- No data state -->

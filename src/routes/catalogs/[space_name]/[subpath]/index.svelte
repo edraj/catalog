@@ -17,10 +17,10 @@
   let actualSubpath = "";
   let breadcrumbs = [];
 
-  let currentPage = 1;
-  let itemsPerPage = 25;
-  let totalPages = 1;
-  let totalItems = 0;
+  let currentPage = $state(1);
+  let itemsPerPage = $state(10);
+  let totalPages = $state(1);
+  let totalItems = $state(0);
 
   const itemsPerPageOptions = [10, 25, 50, 100];
 
@@ -35,7 +35,7 @@
       .filter((part) => part.length > 0);
     breadcrumbs = [
       { name: "Catalogs", path: "/catalogs" },
-      { name: spaceName, path: `/catalog/${spaceName}` },
+      { name: spaceName, path: `/catalogs/${spaceName}` },
     ];
 
     let currentPath = "";
@@ -48,7 +48,7 @@
         path:
           index === pathParts.length - 1
             ? null
-            : `/catalog/${spaceName}/${currentUrlPath}`,
+            : `/catalogs/${spaceName}/${currentUrlPath}`,
       });
     });
 
@@ -72,11 +72,10 @@
     error = null;
 
     try {
-      const response = await getSpaceContents(spaceName, `/${actualSubpath}`);
-
-      console.log(
-        `Contents for space ${spaceName} at /${actualSubpath}:`,
-        response
+      const response = await getSpaceContents(
+        spaceName,
+        `/${actualSubpath}`,
+        "public"
       );
 
       if (response && response.records) {
@@ -101,8 +100,11 @@
 
   function updatePagination() {
     totalPages = Math.ceil(totalItems / itemsPerPage);
-    if (currentPage > totalPages) {
-      currentPage = Math.max(1, totalPages);
+    if (currentPage > totalPages && totalPages > 0) {
+      currentPage = totalPages;
+    }
+    if (currentPage < 1) {
+      currentPage = 1;
     }
 
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -131,9 +133,6 @@
         subpath: newSubpath,
       });
     } else {
-      console.log(
-        `Navigating to item: /catalog/${spaceName}/${subpath}/${item.shortname}`
-      );
       $goto("/catalogs/[space_name]/[subpath]/[shortname]", {
         space_name: spaceName,
         subpath: subpath,
@@ -236,12 +235,10 @@
     return pages;
   }
 
-  function updatePaginationEffect() {
-    updatePagination();
-  }
-
-  run(() => {
-    updatePaginationEffect();
+  $effect(() => {
+    if (allContents.length > 0 || totalItems !== allContents.length) {
+      updatePagination();
+    }
   });
 </script>
 
@@ -302,7 +299,7 @@
                 handleItemsPerPageChange(
                   parseInt((e.target as HTMLSelectElement).value)
                 )}
-              class="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="border border-gray-300 rounded-md px-6 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               {#each itemsPerPageOptions as option}
                 <option value={option}>{option}</option>
@@ -552,7 +549,7 @@
                 <button
                   onclick={() => goToPage(currentPage - 1)}
                   disabled={currentPage === 1}
-                  class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                  class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                 >
                   Previous
                 </button>
@@ -563,8 +560,8 @@
                       onclick={() => goToPage(page)}
                       class="px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200 {page ===
                       currentPage
-                        ? 'bg-blue-600 text-white border border-blue-600'
-                        : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'}"
+                        ? 'text-white hover:text-gray-700 bg-blue-600 border border-blue-600 transition-colors duration-200'
+                        : 'text-gray-700 bg-white border border-gray-300 '}"
                     >
                       {page}
                     </button>

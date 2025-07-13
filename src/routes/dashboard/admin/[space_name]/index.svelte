@@ -24,8 +24,6 @@
     isLoading = true;
     try {
       const response = await getSpaceContents(spaceName, "/", "managed");
-      console.log(`Admin contents for space ${spaceName}:`, response);
-
       if (response && response.records) {
         contents = response.records;
       } else {
@@ -313,7 +311,6 @@
   </div>
 </div>
 
-<!-- Create Modal -->
 {#if showCreateModal}
   <div
     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"

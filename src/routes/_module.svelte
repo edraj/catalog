@@ -10,7 +10,12 @@
 
   $goto;
 
-  const publicRoutes = ["/home", { path: "/catalogs", wildcard: true }];
+  const publicRoutes = [
+    "/register",
+    "/contact",
+    "/home",
+    { path: "/catalogs", wildcard: true },
+  ];
 
   function isPublicRoute(path) {
     return publicRoutes.some((route) => {

@@ -15,9 +15,7 @@
     spaceName = $params.space_name;
 
     try {
-      const response = await getSpaceContents(spaceName, "/");
-
-      console.log(`Contents for space ${spaceName}:`, response);
+      const response = await getSpaceContents(spaceName, "/", "public");
 
       if (response && response.records) {
         contents = response.records;
