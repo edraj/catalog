@@ -111,7 +111,6 @@ export async function setAvatar(shortname: string, attachment: File){
       ContentType.image
   );
   return response.status == "success" && response.records.length > 0;
-
 }
 
 export async function updateProfile(data: any) {
