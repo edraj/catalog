@@ -1,10 +1,10 @@
 import {
-  Dmart,
   type ActionRequest,
   type ActionResponse,
   type ApiQueryResponse,
-  type QueryRequest,
   ContentType,
+  Dmart,
+  type QueryRequest,
   QueryType,
   RequestType,
   ResourceType,
@@ -99,6 +99,19 @@ export async function getAvatar(shortname: string) {
     "avatar",
     results.records[0].attributes.payload.body
   );
+}
+
+export async function setAvatar(shortname: string, attachment: File){
+  const response = await Dmart.upload_with_payload(
+      "personal",
+      `people/${shortname}/protected/avatar`,
+      "avatar",
+      ResourceType.media,
+      attachment,
+      ContentType.image
+  );
+  return response.status == "success" && response.records.length > 0;
+
 }
 
 export async function updateProfile(data: any) {
