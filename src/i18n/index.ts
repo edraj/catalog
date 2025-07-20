@@ -1,23 +1,31 @@
-import { addMessages, getLocaleFromNavigator, locale, init, _, time, date, number } from 'svelte-i18n';
+import {
+  addMessages,
+  getLocaleFromNavigator,
+  locale,
+  init,
+  _,
+  time,
+  date,
+  number,
+} from "svelte-i18n";
 import { website } from "@/config";
-import {derived, writable} from 'svelte/store';
-import ar from './ar.json';
-import en from './en.json';
-import ku from './ku.json';
+import { derived, writable } from "svelte/store";
+import ar from "./ar.json";
+import en from "./en.json";
+import ku from "./ku.json";
 
-addMessages('ar', ar);
-addMessages('en', en);
-addMessages('ku', ku);
+addMessages("ar", ar);
+addMessages("en", en);
+addMessages("ku", ku);
 
-let l17ns = { "ar": ar, "en": en, "ku": ku };
+let l17ns = { ar: ar, en: en, ku: ku };
 let available_locales = ["ar", "en", "ku"];
-
 
 function switchLocale(_locale: string) {
   if (!(_locale in website.languages)) {
     _locale = website.default_language;
   }
-  if (typeof localStorage !== 'undefined') {
+  if (typeof localStorage !== "undefined") {
     localStorage.setItem("preferred_locale", JSON.stringify(_locale));
   }
   locale.set(_locale);
@@ -25,12 +33,19 @@ function switchLocale(_locale: string) {
 }
 
 function getPreferredLocale(): string {
-  let preferred_locale = "ar";
+  let preferred_locale = "en";
 
-  if (typeof localStorage !== 'undefined')
-    preferred_locale = localStorage.getItem("preferred_locale");
-  if (typeof preferred_locale === "string") {
-    return JSON.parse(preferred_locale);
+  if (typeof localStorage !== "undefined") {
+    const stored = localStorage.getItem("preferred_locale");
+    try {
+      preferred_locale = JSON.parse(stored || '"en"');
+    } catch {
+      preferred_locale = "en";
+    }
+  }
+
+  if (preferred_locale && preferred_locale in website.languages) {
+    return preferred_locale;
   }
 
   let fallback: string = "";
@@ -38,11 +53,9 @@ function getPreferredLocale(): string {
   let _locale_found = false;
 
   for (const key in website.languages) {
-    // Assign first locale as fallback
-    if (fallback.trim().length > 0) {
+    if (fallback.trim().length === 0) {
       fallback = key;
     }
-    // Match User locale from browser to existing locale.
     if (!_locale_found && _locale && _locale.startsWith(key)) {
       _locale = key;
       _locale_found = true;
@@ -50,15 +63,13 @@ function getPreferredLocale(): string {
   }
 
   if (!_locale_found) {
-    _locale = fallback;
+    _locale = fallback || "en";
   }
 
-  if (!_locale) {
-    _locale = "en";
-  }
-
-  if (typeof localStorage !== 'undefined')
+  if (typeof localStorage !== "undefined") {
     localStorage.setItem("preferred_locale", JSON.stringify(_locale));
+  }
+
   return _locale;
 }
 
@@ -71,13 +82,29 @@ function setupI18n() {
 
   init({
     initialLocale: _locale,
-    fallbackLocale: website.default_language
+    fallbackLocale: website.default_language,
   });
 }
 
 const rtl = ["ar", "ku"]; // Arabic, Farsi, Urdu, Kurdish
 
-const dir = derived(locale, $locale => rtl.indexOf($locale ? $locale : "") >= 0 ? 'rtl' : 'ltr');
-const isLocaleLoaded = derived(locale, $locale => typeof $locale === 'string');
+const dir = derived(locale, ($locale) =>
+  rtl.indexOf($locale ? $locale : "") >= 0 ? "rtl" : "ltr"
+);
+const isLocaleLoaded = derived(
+  locale,
+  ($locale) => typeof $locale === "string"
+);
 
-export { _, dir, setupI18n, time, date, number, locale, isLocaleLoaded, switchLocale, available_locales };
+export {
+  _,
+  dir,
+  setupI18n,
+  time,
+  date,
+  number,
+  locale,
+  isLocaleLoaded,
+  switchLocale,
+  available_locales,
+};
