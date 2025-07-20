@@ -6,16 +6,39 @@
   import { _ } from "@/i18n";
   import { Dmart, ResourceType, RequestType } from "@edraj/tsdmart";
   import { createEntity, deleteEntity } from "@/lib/dmart_services";
+  import FolderForm from "@/routes/components/forms/FolderForm.svelte";
   $goto;
 
   let isLoading = $state(true);
   let contents = $state([]);
   let error = $state(null);
   let spaceName = $state("");
-  let showCreateModal = $state(false);
-  let newItemName = $state("");
-  let newItemType = $state("content");
+  let showCreateFolderModal = $state(false);
   let actualSubpath = $state("");
+  let folderContent = $state({
+    title: "",
+    content: "",
+    is_active: true,
+    tags: [],
+    index_attributes: [],
+    sort_by: "created_at",
+    sort_type: "descending",
+    content_resource_types: [],
+    content_schema_shortnames: [],
+    workflow_shortnames: [],
+    allow_view: true,
+    allow_create: true,
+    allow_update: true,
+    allow_delete: false,
+    allow_create_category: false,
+    allow_csv: false,
+    allow_upload_csv: false,
+    use_media: false,
+    stream: false,
+    expand_children: false,
+    disable_filter: false,
+  });
+  let isCreatingFolder = $state(false);
 
   onMount(async () => {
     spaceName = $params.space_name;
@@ -52,15 +75,132 @@
       });
     }
   }
-  function handleCreateItem() {
-    $goto(
-      "/entries/create",
-      {},
-      {
-        space_name: spaceName,
-        subpath: actualSubpath || "/",
+
+  function handleCreateFolder() {
+    folderContent = {
+      title: "",
+      content: "",
+      is_active: true,
+      tags: [],
+      index_attributes: [],
+      sort_by: "created_at",
+      sort_type: "descending",
+      content_resource_types: [],
+      content_schema_shortnames: [],
+      workflow_shortnames: [],
+      allow_view: true,
+      allow_create: true,
+      allow_update: true,
+      allow_delete: false,
+      allow_create_category: false,
+      allow_csv: false,
+      allow_upload_csv: false,
+      use_media: false,
+      stream: false,
+      expand_children: false,
+      disable_filter: false,
+    };
+    showCreateFolderModal = true;
+  }
+
+  async function handleSaveFolder(event) {
+    const folderData = event.detail;
+
+    if (!folderData.title) {
+      alert("Please enter a folder title");
+      return;
+    }
+
+    isCreatingFolder = true;
+
+    try {
+      const entityData = {
+        title: folderData.title,
+        content: JSON.stringify(folderData),
+        is_active: folderData.is_active,
+        tags: folderData.tags || [],
+      };
+
+      const response = await createFolderEntity(
+        entityData,
+        spaceName,
+        actualSubpath
+      );
+
+      if (response) {
+        showCreateFolderModal = false;
+        await loadContents();
+      } else {
+        alert("Failed to create folder");
       }
-    );
+    } catch (err) {
+      console.error("Error creating folder:", err);
+      alert("Error creating folder: " + err.message);
+    } finally {
+      isCreatingFolder = false;
+    }
+  }
+
+  async function createFolderEntity(data, spaceName, subpath) {
+    let actionRequest;
+
+    if (spaceName === "catalog") {
+      actionRequest = {
+        space_name: spaceName,
+        request_type: RequestType.create,
+        records: [
+          {
+            resource_type: ResourceType.ticket,
+            shortname: "auto",
+            subpath: subpath,
+            attributes: {
+              is_active: data.is_active,
+              workflow_shortname: "catalog_idea_workflow",
+              relationships: [],
+              tags: data.tags,
+              payload: {
+                content_type: "folder",
+                schema_shortname: "catelog_post",
+                body: {
+                  title: data.title,
+                  content: data.content,
+                },
+              },
+            },
+          },
+        ],
+      };
+    } else {
+      actionRequest = {
+        space_name: spaceName,
+        request_type: RequestType.create,
+        records: [
+          {
+            resource_type: ResourceType.content,
+            shortname: "auto",
+            subpath: subpath,
+            attributes: {
+              is_active: data.is_active,
+              relationships: [],
+              tags: data.tags,
+              payload: {
+                content_type: "folder",
+                body: {
+                  title: data.title,
+                  content: data.content,
+                },
+              },
+            },
+          },
+        ],
+      };
+    }
+
+    const response = await Dmart.request(actionRequest);
+    if (response.status == "success" && response.records.length > 0) {
+      return response.records[0].shortname;
+    }
+    return null;
   }
 
   async function handleDeleteItem(item: any, event: Event) {
@@ -147,14 +287,25 @@
           </div>
         </div>
 
-        {#if actualSubpath !== "/" && actualSubpath !== ""}
-          <button
-            onclick={handleCreateItem}
-            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200"
+        <button
+          onclick={handleCreateFolder}
+          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-            Create New Item
-          </button>
-        {/if}
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4v16m8-8H4"
+            ></path>
+          </svg>
+          Create Folder
+        </button>
       </div>
     </div>
   </div>
@@ -211,7 +362,7 @@
           No Contents Found
         </h3>
         <p class="text-gray-600">
-          This space appears to be empty. Create some content to get started.
+          This space appears to be empty. Create some folders to get started.
         </p>
       </div>
     {:else}
@@ -281,64 +432,96 @@
   </div>
 </div>
 
-<!-- {#if showCreateModal}
+{#if showCreateFolderModal}
   <div
-    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
   >
-    <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-      <h3 class="text-lg font-semibold mb-4">Create New Item</h3>
-
-      <div class="space-y-4">
-        <div>
-          <label
-            for="itemName"
-            class="block text-sm font-medium text-gray-700 mb-1"
+    <div
+      class="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto"
+    >
+      <div
+        class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between"
+      >
+        <h3 class="text-lg font-semibold text-gray-900">Create New Folder</h3>
+        <button
+          onclick={() => (showCreateFolderModal = false)}
+          class="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+          aria-label="Close modal"
+        >
+          <svg
+            class="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-            Item Name
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            ></path>
+          </svg>
+        </button>
+      </div>
+
+      <div class="p-6">
+        <div class="mb-4">
+          <label
+            for="folderTitle"
+            class="block text-sm font-medium text-gray-700 mb-2"
+          >
+            Folder Title *
           </label>
           <input
-            id="itemName"
+            id="folderTitle"
             type="text"
-            bind:value={newItemName}
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Enter item name"
+            bind:value={folderContent.title}
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Enter folder title"
+            required
           />
         </div>
 
-        <div>
-          <label
-            for="itemType"
-            class="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Item Type
-          </label>
-          <select
-            id="itemType"
-            bind:value={newItemType}
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="content">Content</option>
-            <option value="folder">Folder</option>
-            <option value="ticket">Ticket</option>
-            <option value="media">Media</option>
-          </select>
-        </div>
+        <FolderForm bind:content={folderContent} on:save={handleSaveFolder} />
       </div>
 
-      <div class="flex justify-end space-x-3 mt-6">
+      <div
+        class="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex justify-end space-x-3"
+      >
         <button
-          onclick={() => (showCreateModal = false)}
+          onclick={() => (showCreateFolderModal = false)}
           class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors duration-200"
+          disabled={isCreatingFolder}
         >
           Cancel
         </button>
         <button
-          onclick={handleCreateItem}
-          class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors duration-200"
+          onclick={() => handleSaveFolder({ detail: folderContent })}
+          class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors duration-200 flex items-center gap-2"
+          disabled={isCreatingFolder}
         >
-          Create
+          {#if isCreatingFolder}
+            <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              ></circle>
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            Creating...
+          {:else}
+            Create Folder
+          {/if}
         </button>
       </div>
     </div>
   </div>
-{/if} -->
+{/if}

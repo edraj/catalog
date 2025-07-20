@@ -1,6 +1,11 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { getSpaces } from "@/lib/dmart_services";
+  import {
+    getSpaces,
+    createSpace,
+    editSpace,
+    deleteSpace,
+  } from "@/lib/dmart_services";
   import { Diamonds } from "svelte-loading-spinners";
   import { goto } from "@roxi/routify";
   import { _ } from "@/i18n";
@@ -10,6 +15,26 @@
   let isLoading = $state(true);
   let spaces = $state([]);
   let error = $state(null);
+
+  let showCreateModal = $state(false);
+  let newSpaceName = $state("");
+  let newDisplayName = $state("");
+  let newDescription = $state("");
+  let isCreating = $state(false);
+  let createError = $state(null);
+
+  let showEditModal = $state(false);
+  let editingSpace = $state(null);
+  let editSpaceName = $state("");
+  let editDisplayName = $state("");
+  let editDescription = $state("");
+  let editIsActive = $state(true);
+  let isEditing = $state(false);
+  let editError = $state(null);
+
+  let showDeleteModal = $state(false);
+  let deletingSpace = $state(null);
+  let isDeleting = $state(false);
 
   onMount(async () => {
     try {
@@ -27,6 +52,163 @@
     $goto(`/dashboard/admin/[space_name]`, {
       space_name: space.shortname,
     });
+  }
+
+  function openCreateModal() {
+    showCreateModal = true;
+    newSpaceName = "";
+    newDisplayName = "";
+    newDescription = "";
+    createError = null;
+  }
+
+  function closeCreateModal() {
+    showCreateModal = false;
+    newSpaceName = "";
+    newDisplayName = "";
+    newDescription = "";
+    createError = null;
+  }
+
+  function openEditModal(space: any) {
+    editingSpace = space;
+    editSpaceName = space.shortname;
+    editDisplayName = getDisplayName(space);
+    editDescription = getDescription(space);
+    editIsActive = space.attributes?.is_active ?? true;
+    showEditModal = true;
+    editError = null;
+  }
+
+  function closeEditModal() {
+    showEditModal = false;
+    editingSpace = null;
+    editSpaceName = "";
+    editDisplayName = "";
+    editDescription = "";
+    editIsActive = true;
+    editError = null;
+  }
+
+  function openDeleteModal(space: any) {
+    deletingSpace = space;
+    showDeleteModal = true;
+  }
+
+  function closeDeleteModal() {
+    showDeleteModal = false;
+    deletingSpace = null;
+  }
+
+  async function handleCreateSpace() {
+    if (!newSpaceName.trim()) {
+      createError = "Space name is required";
+      return;
+    }
+
+    if (!newDisplayName.trim()) {
+      createError = "Display name is required";
+      return;
+    }
+
+    const spaceNameRegex = /^[a-zA-Z0-9_-]+$/;
+    if (!spaceNameRegex.test(newSpaceName.trim())) {
+      createError =
+        "Space name can only contain letters, numbers, underscores, and hyphens";
+      return;
+    }
+
+    isCreating = true;
+    createError = null;
+
+    try {
+      const displayname = {
+        [$locale]: newDisplayName.trim(),
+        en: newDisplayName.trim(),
+        ar: newDisplayName.trim(),
+        ku: newDisplayName.trim(),
+      };
+
+      const description = {
+        [$locale]: newDescription.trim() || "No description available",
+        en: newDescription.trim() || "No description available",
+        ar: newDescription.trim() || "No description available",
+        ku: newDescription.trim() || "No description available",
+      };
+
+      await createSpace({
+        shortname: newSpaceName.trim(),
+        displayname,
+        description,
+      });
+
+      const response = await getSpaces(false, "managed");
+      spaces = response.records || [];
+
+      closeCreateModal();
+    } catch (err) {
+      console.error("Error creating space:", err);
+      createError = "Failed to create space. Please try again.";
+    } finally {
+      isCreating = false;
+    }
+  }
+
+  async function handleEditSpace() {
+    if (!editDisplayName.trim()) {
+      editError = "Display name is required";
+      return;
+    }
+
+    isEditing = true;
+    editError = null;
+
+    try {
+      const displayname = {
+        [$locale]: editDisplayName.trim(),
+        en: editDisplayName.trim(),
+      };
+
+      const description = {
+        [$locale]: editDescription.trim() || "No description available",
+        en: editDescription.trim() || "No description available",
+      };
+
+      await editSpace(editingSpace.shortname, {
+        is_active: editIsActive,
+        displayname,
+        description,
+      });
+
+      const response = await getSpaces(false, "managed");
+      spaces = response.records || [];
+
+      closeEditModal();
+    } catch (err) {
+      console.error("Error editing space:", err);
+      editError = "Failed to update space. Please try again.";
+    } finally {
+      isEditing = false;
+    }
+  }
+
+  async function handleDeleteSpace() {
+    if (!deletingSpace) return;
+
+    isDeleting = true;
+
+    try {
+      await deleteSpace(deletingSpace.shortname);
+
+      const response = await getSpaces(false, "managed");
+      spaces = response.records || [];
+
+      closeDeleteModal();
+    } catch (err) {
+      console.error("Error deleting space:", err);
+    } finally {
+      isDeleting = false;
+    }
   }
 
   function getDisplayName(space: any): string {
@@ -125,7 +307,28 @@
         <h3 class="text-xl font-semibold text-gray-900 mb-2">
           No Spaces Available
         </h3>
-        <p class="text-gray-600">There are currently no spaces to manage.</p>
+        <p class="text-gray-600 mb-6">
+          There are currently no spaces to manage.
+        </p>
+        <button
+          onclick={openCreateModal}
+          class="inline-flex items-center px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors duration-200"
+        >
+          <svg
+            class="w-5 h-5 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4v16m8-8H4"
+            ></path>
+          </svg>
+          Create First Space
+        </button>
       </div>
     {:else}
       <div class="mb-8 grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -253,8 +456,29 @@
             <h2 class="text-lg font-semibold text-gray-900">
               Manage Spaces ({spaces.length})
             </h2>
-            <div class="text-sm text-gray-500">
-              Administrative access to all spaces
+            <div class="flex items-center gap-4">
+              <div class="text-sm text-gray-500">
+                Administrative access to all spaces
+              </div>
+              <button
+                onclick={openCreateModal}
+                class="inline-flex items-center px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors duration-200"
+              >
+                <svg
+                  class="w-4 h-4 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 4v16m8-8H4"
+                  ></path>
+                </svg>
+                Create Space
+              </button>
             </div>
           </div>
         </div>
@@ -372,17 +596,27 @@
                         e.stopPropagation();
                         handleSpaceClick(space);
                       }}
-                      class="text-purple-600 hover:text-purple-900 transition-colors duration-200 mx-4"
+                      class="text-purple-600 hover:text-purple-900 transition-colors duration-200 mx-2"
                     >
                       Manage
                     </button>
                     <button
                       onclick={(e) => {
                         e.stopPropagation();
+                        openEditModal(space);
                       }}
-                      class="text-blue-600 hover:text-blue-900 transition-colors duration-200 mx-4"
+                      class="text-blue-600 hover:text-blue-900 transition-colors duration-200 mx-2"
                     >
                       Edit
+                    </button>
+                    <button
+                      onclick={(e) => {
+                        e.stopPropagation();
+                        openDeleteModal(space);
+                      }}
+                      class="text-red-600 hover:text-red-900 transition-colors duration-200 mx-2"
+                    >
+                      Delete
                     </button>
                   </td>
                 </tr>
@@ -394,3 +628,685 @@
     {/if}
   </div>
 </div>
+
+<!-- Create Space Modal -->
+{#if showCreateModal}
+  <div class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="flex items-center justify-between">
+          <h3 class="modal-title create">Create New Space</h3>
+          <button onclick={closeCreateModal} class="modal-close">
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              ></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-content">
+        <div class="form-group">
+          <label for="spaceName" class="form-label required">Space Name</label>
+          <input
+            id="spaceName"
+            type="text"
+            bind:value={newSpaceName}
+            placeholder="Enter space name (e.g., my-space)"
+            class="form-input {createError ? 'error' : ''}"
+          />
+          <p class="form-help">
+            Use only letters, numbers, underscores, and hyphens
+          </p>
+        </div>
+
+        <div class="form-group">
+          <label for="displayName" class="form-label required"
+            >Display Name</label
+          >
+          <input
+            id="displayName"
+            type="text"
+            bind:value={newDisplayName}
+            placeholder="Enter display name (e.g., My Awesome Space)"
+            class="form-input {createError ? 'error' : ''}"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="description" class="form-label">Description</label>
+          <textarea
+            id="description"
+            bind:value={newDescription}
+            placeholder="Enter space description (optional)"
+            rows="3"
+            class="form-input form-textarea"
+          ></textarea>
+        </div>
+
+        {#if createError}
+          <div class="error-message">
+            <p class="error-text">{createError}</p>
+          </div>
+        {/if}
+
+        <div class="modal-actions">
+          <button
+            onclick={closeCreateModal}
+            class="btn btn-secondary"
+            disabled={isCreating}
+          >
+            Cancel
+          </button>
+          <button
+            onclick={handleCreateSpace}
+            disabled={isCreating ||
+              !newSpaceName.trim() ||
+              !newDisplayName.trim()}
+            class="btn btn-primary"
+          >
+            {#if isCreating}
+              <div class="spinner"></div>
+              Creating...
+            {:else}
+              Create Space
+            {/if}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- Edit Space Modal -->
+{#if showEditModal}
+  <div class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="flex items-center justify-between">
+          <h3 class="modal-title edit">Edit Space</h3>
+          <button onclick={closeEditModal} class="modal-close">
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              ></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-content">
+        <div class="form-group">
+          <label class="form-label">Space Name</label>
+          <input
+            type="text"
+            value={editSpaceName}
+            disabled
+            class="form-input"
+          />
+          <p class="form-help">Space name cannot be changed</p>
+        </div>
+
+        <div class="form-group">
+          <label for="editDisplayName" class="form-label required"
+            >Display Name</label
+          >
+          <input
+            id="editDisplayName"
+            type="text"
+            bind:value={editDisplayName}
+            placeholder="Enter display name"
+            class="form-input {editError ? 'error' : ''}"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="editDescription" class="form-label">Description</label>
+          <textarea
+            id="editDescription"
+            bind:value={editDescription}
+            placeholder="Enter space description"
+            rows="3"
+            class="form-input form-textarea"
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <div class="form-checkbox">
+            <input
+              type="checkbox"
+              bind:checked={editIsActive}
+              id="editIsActive"
+            />
+            <label for="editIsActive">Space is active</label>
+          </div>
+        </div>
+
+        {#if editError}
+          <div class="error-message">
+            <p class="error-text">{editError}</p>
+          </div>
+        {/if}
+
+        <div class="modal-actions">
+          <button
+            onclick={closeEditModal}
+            class="btn btn-secondary"
+            disabled={isEditing}
+          >
+            Cancel
+          </button>
+          <button
+            onclick={handleEditSpace}
+            disabled={isEditing || !editDisplayName.trim()}
+            class="btn btn-edit"
+          >
+            {#if isEditing}
+              <div class="spinner"></div>
+              Updating...
+            {:else}
+              Update Space
+            {/if}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- Delete Space Modal -->
+{#if showDeleteModal}
+  <div class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="flex items-center justify-between">
+          <h3 class="modal-title delete">Delete Space</h3>
+          <button onclick={closeDeleteModal} class="modal-close">
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              ></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-content">
+        <div class="delete-warning">
+          <div class="delete-warning-header">
+            <div class="delete-icon">⚠️</div>
+            <div>
+              <h4>Are you sure?</h4>
+              <p>This action cannot be undone.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-details">
+          <p>
+            <strong>Space:</strong>
+            {deletingSpace ? getDisplayName(deletingSpace) : ""}
+          </p>
+          <p>
+            <strong>Shortname:</strong>
+            {deletingSpace ? deletingSpace.shortname : ""}
+          </p>
+        </div>
+
+        <div class="delete-final-warning">
+          All data in this space will be permanently deleted and cannot be
+          recovered.
+        </div>
+
+        <div class="modal-actions">
+          <button
+            onclick={closeDeleteModal}
+            class="btn btn-secondary"
+            disabled={isDeleting}
+          >
+            Cancel
+          </button>
+          <button
+            onclick={handleDeleteSpace}
+            disabled={isDeleting}
+            class="btn btn-danger"
+          >
+            {#if isDeleting}
+              <div class="spinner"></div>
+              Deleting...
+            {:else}
+              Delete Space
+            {/if}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<style>
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  .modal-container {
+    background: white;
+    border-radius: 16px;
+    box-shadow:
+      0 25px 50px -12px rgba(0, 0, 0, 0.25),
+      0 0 0 1px rgba(255, 255, 255, 0.1);
+    max-height: 90vh;
+    overflow-y: auto;
+    width: 100%;
+    max-width: 500px;
+    animation: slideIn 0.3s ease-out;
+    border: 1px solid rgba(229, 231, 235, 0.8);
+  }
+
+  .modal-header {
+    padding: 1.5rem 1.5rem 1rem 1.5rem;
+    border-bottom: 1px solid #f3f4f6;
+    background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
+    border-radius: 16px 16px 0 0;
+  }
+
+  .modal-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .modal-title.create::before {
+    content: "✨";
+    font-size: 1.5rem;
+  }
+
+  .modal-title.edit::before {
+    content: "✏️";
+    font-size: 1.5rem;
+  }
+
+  .modal-title.delete::before {
+    content: "⚠️";
+    font-size: 1.5rem;
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-close:hover {
+    background: #f3f4f6;
+    color: #374151;
+    transform: scale(1.05);
+  }
+
+  .modal-content {
+    padding: 1.5rem;
+  }
+
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+  }
+
+  .form-label.required::after {
+    content: " *";
+    color: #ef4444;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+    background: #fafafa;
+  }
+
+  .form-input:focus {
+    outline: none;
+    border-color: #8b5cf6;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+  }
+
+  .form-input:disabled {
+    background: #f9fafb;
+    color: #6b7280;
+    cursor: not-allowed;
+    border-color: #d1d5db;
+  }
+
+  .form-input.error {
+    border-color: #ef4444;
+    background: #fef2f2;
+  }
+
+  .form-textarea {
+    resize: vertical;
+    min-height: 80px;
+    font-family: inherit;
+  }
+
+  .form-help {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+  }
+
+  .form-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+  }
+
+  .form-checkbox:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+  }
+
+  .form-checkbox input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    border-radius: 4px;
+    border: 2px solid #d1d5db;
+    background: white;
+    accent-color: #8b5cf6;
+  }
+
+  .form-checkbox label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+    margin: 0;
+  }
+
+  .error-message {
+    padding: 0.75rem 1rem;
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    border: 1px solid #fca5a5;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+  }
+
+  .error-text {
+    font-size: 0.875rem;
+    color: #dc2626;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .error-text::before {
+    content: "⚠️";
+    font-size: 1rem;
+  }
+
+  .delete-warning {
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    border: 1px solid #fca5a5;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .delete-warning-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .delete-icon {
+    width: 3rem;
+    height: 3rem;
+    background: linear-gradient(135deg, #fee2e2 0%, #fca5a5 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+  }
+
+  .delete-warning h4 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #991b1b;
+    margin: 0;
+  }
+
+  .delete-warning p {
+    font-size: 0.875rem;
+    color: #7f1d1d;
+    margin: 0;
+  }
+
+  .space-details {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin: 1rem 0;
+  }
+
+  .space-details p {
+    font-size: 0.875rem;
+    margin: 0.25rem 0;
+  }
+
+  .space-details strong {
+    color: #374151;
+  }
+
+  .delete-final-warning {
+    font-size: 0.875rem;
+    color: #dc2626;
+    font-weight: 500;
+    text-align: center;
+    padding: 0.75rem;
+    background: #fef2f2;
+    border-radius: 8px;
+    border: 1px solid #fca5a5;
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding-top: 1rem;
+    border-top: 1px solid #f3f4f6;
+    margin-top: 1.5rem;
+  }
+
+  .btn {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 100px;
+    justify-content: center;
+  }
+
+  .btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  .btn-secondary {
+    background: #f8fafc;
+    color: #475569;
+    border: 2px solid #e2e8f0;
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    color: white;
+    box-shadow: 0 4px 14px 0 rgba(139, 92, 246, 0.3);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px 0 rgba(139, 92, 246, 0.4);
+  }
+
+  .btn-edit {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.3);
+  }
+
+  .btn-edit:hover:not(:disabled) {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px 0 rgba(59, 130, 246, 0.4);
+  }
+
+  .btn-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    box-shadow: 0 4px 14px 0 rgba(239, 68, 68, 0.3);
+  }
+
+  .btn-danger:hover:not(:disabled) {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px 0 rgba(239, 68, 68, 0.4);
+  }
+
+  .spinner {
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95) translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @media (max-width: 640px) {
+    .modal-overlay {
+      padding: 0.5rem;
+    }
+
+    .modal-container {
+      max-width: 100%;
+      border-radius: 12px;
+    }
+
+    .modal-header {
+      padding: 1rem 1rem 0.75rem 1rem;
+    }
+
+    .modal-content {
+      padding: 1rem;
+    }
+
+    .modal-actions {
+      flex-direction: column-reverse;
+    }
+
+    .btn {
+      width: 100%;
+    }
+  }
+</style>

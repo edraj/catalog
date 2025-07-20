@@ -102,7 +102,6 @@
           <div>
             <h1 class="text-2xl font-bold text-gray-900 capitalize">
               {$_("space.title")}
-              {spaceName}
             </h1>
             <p class="text-gray-600">
               {$_("space.browse_description")}
