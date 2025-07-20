@@ -894,3 +894,41 @@ async function createSpace({shortname, displayname, description}:{shortname: str
   } finally {
   }
 }
+
+async function deleteSpace(shortname: string) {
+    try {
+      await Dmart.request({
+        space_name: shortname,
+        request_type: RequestType.delete,
+        records: [{
+          resource_type: ResourceType.space,
+          shortname: shortname,
+          subpath: '/',
+          attributes: {}
+        }]
+      })
+      await getSpaces();
+    } catch (error) {
+    } finally {
+    }
+}
+
+async function editSpace(shortname: string, attributes: Record<string, any>) {
+    try {
+      await Dmart.request({
+        space_name: shortname,
+        request_type: RequestType.replace,
+        records: [
+          {
+            resource_type: ResourceType.space,
+            shortname: shortname,
+            subpath: '/',
+            attributes: attributes
+          }
+        ]
+      })
+      await getSpaces();
+    } catch (error) {
+    } finally {
+    }
+}
