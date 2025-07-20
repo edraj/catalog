@@ -11,6 +11,7 @@
   import { _ } from "@/i18n";
   import { locale } from "@/i18n";
   import { user } from "@/stores/user";
+  import MetaForm from "@/routes/components/forms/MetaForm.svelte";
   $goto;
   let isLoading = $state(true);
   let spaces = $state([]);
@@ -35,6 +36,9 @@
   let showDeleteModal = $state(false);
   let deletingSpace = $state(null);
   let isDeleting = $state(false);
+
+  let metaContent: any = $state({});
+  let validateMetaForm;
 
   onMount(async () => {
     try {
@@ -101,20 +105,8 @@
   }
 
   async function handleCreateSpace() {
-    if (!newSpaceName.trim()) {
-      createError = "Space name is required";
-      return;
-    }
-
-    if (!newDisplayName.trim()) {
-      createError = "Display name is required";
-      return;
-    }
-
-    const spaceNameRegex = /^[a-zA-Z0-9_-]+$/;
-    if (!spaceNameRegex.test(newSpaceName.trim())) {
-      createError =
-        "Space name can only contain letters, numbers, underscores, and hyphens";
+    if (!validateMetaForm()) {
+      createError = "Please fill all required fields in the meta form.";
       return;
     }
 
@@ -122,22 +114,9 @@
     createError = null;
 
     try {
-      const displayname = {
-        [$locale]: newDisplayName.trim(),
-        en: newDisplayName.trim(),
-        ar: newDisplayName.trim(),
-        ku: newDisplayName.trim(),
-      };
-
-      const description = {
-        [$locale]: newDescription.trim() || "No description available",
-        en: newDescription.trim() || "No description available",
-        ar: newDescription.trim() || "No description available",
-        ku: newDescription.trim() || "No description available",
-      };
-
+      const {shortname, displayname, description} = metaContent;
       await createSpace({
-        shortname: newSpaceName.trim(),
+        shortname,
         displayname,
         description,
       });
@@ -655,43 +634,8 @@
       </div>
 
       <div class="modal-content">
-        <div class="form-group">
-          <label for="spaceName" class="form-label required">Space Name</label>
-          <input
-            id="spaceName"
-            type="text"
-            bind:value={newSpaceName}
-            placeholder="Enter space name (e.g., my-space)"
-            class="form-input {createError ? 'error' : ''}"
-          />
-          <p class="form-help">
-            Use only letters, numbers, underscores, and hyphens
-          </p>
-        </div>
 
-        <div class="form-group">
-          <label for="displayName" class="form-label required"
-            >Display Name</label
-          >
-          <input
-            id="displayName"
-            type="text"
-            bind:value={newDisplayName}
-            placeholder="Enter display name (e.g., My Awesome Space)"
-            class="form-input {createError ? 'error' : ''}"
-          />
-        </div>
-
-        <div class="form-group">
-          <label for="description" class="form-label">Description</label>
-          <textarea
-            id="description"
-            bind:value={newDescription}
-            placeholder="Enter space description (optional)"
-            rows="3"
-            class="form-input form-textarea"
-          ></textarea>
-        </div>
+        <MetaForm bind:formData={metaContent} bind:validateFn={validateMetaForm} isCreate={true}/>
 
         {#if createError}
           <div class="error-message">
@@ -710,8 +654,7 @@
           <button
             onclick={handleCreateSpace}
             disabled={isCreating ||
-              !newSpaceName.trim() ||
-              !newDisplayName.trim()}
+              !metaContent.shortname}
             class="btn btn-primary"
           >
             {#if isCreating}

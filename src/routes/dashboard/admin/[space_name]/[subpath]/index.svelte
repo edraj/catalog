@@ -7,6 +7,8 @@
   import { Dmart, ResourceType, RequestType } from "@edraj/tsdmart";
   import { writable } from "svelte/store";
   import { createEntity, deleteEntity } from "@/lib/dmart_services";
+  import MetaForm from "@/routes/components/forms/MetaForm.svelte";
+  import FolderForm from "@/routes/components/forms/FolderForm.svelte";
   $goto;
   let isLoading = writable(false);
   let allContents = writable([]);
@@ -265,6 +267,97 @@
 
     return pages;
   }
+
+  let isCreatingFolder = $state(false);
+  let metaContent: any = $state({});
+  let showCreateFolderModal = $state(false);
+  let validateMetaForm;
+  let folderContent = $state({
+    title: "",
+    content: "",
+    is_active: true,
+    tags: [],
+    index_attributes: [],
+    sort_by: "created_at",
+    sort_type: "descending",
+    content_resource_types: [],
+    content_schema_shortnames: [],
+    workflow_shortnames: [],
+    allow_view: true,
+    allow_create: true,
+    allow_update: true,
+    allow_delete: false,
+    allow_create_category: false,
+    allow_csv: false,
+    allow_upload_csv: false,
+    use_media: false,
+    stream: false,
+    expand_children: false,
+    disable_filter: false,
+  });
+  function handleCreateFolder() {
+    folderContent = {
+      title: "",
+      content: "",
+      is_active: true,
+      tags: [],
+      index_attributes: [],
+      sort_by: "created_at",
+      sort_type: "descending",
+      content_resource_types: [],
+      content_schema_shortnames: [],
+      workflow_shortnames: [],
+      allow_view: true,
+      allow_create: true,
+      allow_update: true,
+      allow_delete: false,
+      allow_create_category: false,
+      allow_csv: false,
+      allow_upload_csv: false,
+      use_media: false,
+      stream: false,
+      expand_children: false,
+      disable_filter: false,
+    };
+    showCreateFolderModal = true;
+  }
+  async function handleSaveFolder(event) {
+    isCreatingFolder = true;
+
+    try {
+      const response = await Dmart.request({
+        space_name: spaceName,
+        request_type: RequestType.create,
+        records: [
+          {
+            resource_type: ResourceType.folder,
+            shortname: metaContent.shortname || "auto",
+            subpath: `/${$actualSubpath}`,
+            attributes: {
+              displayname: metaContent.displayname,
+              description: metaContent.description,
+              payload: {
+                body: folderContent,
+                content_type: "json"
+              }
+            },
+          },
+        ],
+      });
+
+      if (response) {
+        showCreateFolderModal = false;
+        await loadContents();
+      } else {
+        alert("Failed to create folder");
+      }
+    } catch (err) {
+      console.error("Error creating folder:", err);
+      alert("Error creating folder: " + err.message);
+    } finally {
+      isCreatingFolder = false;
+    }
+  }
 </script>
 
 <div class="min-h-screen bg-gray-50">
@@ -341,6 +434,26 @@
               class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200"
             >
               Create New Item
+            </button>
+
+            <button
+                    onclick={handleCreateFolder}
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+            >
+              <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+              >
+                <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 4v16m8-8H4"
+                ></path>
+              </svg>
+              Create Folder
             </button>
           {/if}
         </div>
@@ -692,3 +805,82 @@
     </div>
   </div>
 {/if} -->
+
+
+{#if showCreateFolderModal}
+  <div
+          class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+  >
+    <div
+            class="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto"
+    >
+      <div
+              class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between"
+      >
+        <h3 class="text-lg font-semibold text-gray-900">Create New Folder</h3>
+        <button
+                onclick={() => (showCreateFolderModal = false)}
+                class="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                aria-label="Close modal"
+        >
+          <svg
+                  class="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+          >
+            <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+            ></path>
+          </svg>
+        </button>
+      </div>
+
+      <div class="p-6">
+        <MetaForm bind:formData={metaContent} bind:validateFn={validateMetaForm} isCreate={true}/>
+        <FolderForm bind:content={folderContent} on:save={handleSaveFolder} />
+      </div>
+
+      <div
+              class="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex justify-end space-x-3"
+      >
+        <button
+                onclick={() => (showCreateFolderModal = false)}
+                class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors duration-200"
+                disabled={isCreatingFolder}
+        >
+          Cancel
+        </button>
+        <button
+                onclick={() => handleSaveFolder({ detail: folderContent })}
+                class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors duration-200 flex items-center gap-2"
+                disabled={isCreatingFolder}
+        >
+          {#if isCreatingFolder}
+            <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle
+                      class="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      stroke-width="4"
+              ></circle>
+              <path
+                      class="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            Creating...
+          {:else}
+            Create Folder
+          {/if}
+        </button>
+      </div>
+    </div>
+  </div>
+{/if}

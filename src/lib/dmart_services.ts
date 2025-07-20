@@ -871,7 +871,7 @@ export async function deleteItem(
   return response.status === "success";
 }
 
-async function createSpace({shortname, displayname, description}:{shortname: string, displayname: Translation, description: Translation}) {
+export async function createSpace({shortname, displayname, description}:{shortname: string, displayname: Translation, description: Translation}) {
   try {
     await Dmart.space({
       space_name: shortname.trim(),
@@ -895,7 +895,7 @@ async function createSpace({shortname, displayname, description}:{shortname: str
   }
 }
 
-async function deleteSpace(shortname: string) {
+export async function deleteSpace(shortname: string) {
     try {
       await Dmart.request({
         space_name: shortname,
@@ -913,7 +913,7 @@ async function deleteSpace(shortname: string) {
     }
 }
 
-async function editSpace(shortname: string, attributes: Record<string, any>) {
+export async function editSpace(shortname: string, attributes: Record<string, any>) {
     try {
       await Dmart.request({
         space_name: shortname,

@@ -125,7 +125,6 @@
 
 <Card class="w-full max-w-4xl mx-auto p-4 my-2">
     <form bind:this={form} class="space-y-4">
-        <h2 class="text-2xl font-bold mb-4">Meta Information</h2>
         <div class="mb-4">
             <Label for="shortname" class="mb-2">
                 {#if isCreate}<span class="text-red-500 text-lg" style="vertical-align: center">*</span>{/if}

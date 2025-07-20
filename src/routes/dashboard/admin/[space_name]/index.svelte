@@ -7,6 +7,7 @@
   import { Dmart, ResourceType, RequestType } from "@edraj/tsdmart";
   import { createEntity, deleteEntity } from "@/lib/dmart_services";
   import FolderForm from "@/routes/components/forms/FolderForm.svelte";
+  import MetaForm from "@/routes/components/forms/MetaForm.svelte";
   $goto;
 
   let isLoading = $state(true);
@@ -39,6 +40,9 @@
     disable_filter: false,
   });
   let isCreatingFolder = $state(false);
+
+  let metaContent: any = $state({});
+  let validateMetaForm;
 
   onMount(async () => {
     spaceName = $params.space_name;
@@ -104,28 +108,28 @@
   }
 
   async function handleSaveFolder(event) {
-    const folderData = event.detail;
-
-    if (!folderData.title) {
-      alert("Please enter a folder title");
-      return;
-    }
-
     isCreatingFolder = true;
 
     try {
-      const entityData = {
-        title: folderData.title,
-        content: JSON.stringify(folderData),
-        is_active: folderData.is_active,
-        tags: folderData.tags || [],
-      };
-
-      const response = await createFolderEntity(
-        entityData,
-        spaceName,
-        actualSubpath
-      );
+      const response = await Dmart.request({
+        space_name: spaceName,
+        request_type: RequestType.create,
+        records: [
+          {
+            resource_type: ResourceType.folder,
+            shortname: metaContent.shortname || "auto",
+            subpath: '/',
+            attributes: {
+              displayname: metaContent.displayname,
+              description: metaContent.description,
+              payload: {
+                body: folderContent,
+                content_type: "json"
+              }
+            },
+          },
+        ],
+      });
 
       if (response) {
         showCreateFolderModal = false;
@@ -434,86 +438,70 @@
 
 {#if showCreateFolderModal}
   <div
-    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
   >
     <div
-      class="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto"
+            class="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto"
     >
       <div
-        class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between"
+              class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between"
       >
         <h3 class="text-lg font-semibold text-gray-900">Create New Folder</h3>
         <button
-          onclick={() => (showCreateFolderModal = false)}
-          class="text-gray-400 hover:text-gray-600 transition-colors duration-200"
-          aria-label="Close modal"
+                onclick={() => (showCreateFolderModal = false)}
+                class="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                aria-label="Close modal"
         >
           <svg
-            class="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+                  class="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
           >
             <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M6 18L18 6M6 6l12 12"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
             ></path>
           </svg>
         </button>
       </div>
 
       <div class="p-6">
-        <div class="mb-4">
-          <label
-            for="folderTitle"
-            class="block text-sm font-medium text-gray-700 mb-2"
-          >
-            Folder Title *
-          </label>
-          <input
-            id="folderTitle"
-            type="text"
-            bind:value={folderContent.title}
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Enter folder title"
-            required
-          />
-        </div>
-
+        <MetaForm bind:formData={metaContent} bind:validateFn={validateMetaForm} isCreate={true}/>
         <FolderForm bind:content={folderContent} on:save={handleSaveFolder} />
       </div>
 
       <div
-        class="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex justify-end space-x-3"
+              class="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex justify-end space-x-3"
       >
         <button
-          onclick={() => (showCreateFolderModal = false)}
-          class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors duration-200"
-          disabled={isCreatingFolder}
+                onclick={() => (showCreateFolderModal = false)}
+                class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors duration-200"
+                disabled={isCreatingFolder}
         >
           Cancel
         </button>
         <button
-          onclick={() => handleSaveFolder({ detail: folderContent })}
-          class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors duration-200 flex items-center gap-2"
-          disabled={isCreatingFolder}
+                onclick={() => handleSaveFolder({ detail: folderContent })}
+                class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors duration-200 flex items-center gap-2"
+                disabled={isCreatingFolder}
         >
           {#if isCreatingFolder}
             <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
               <circle
-                class="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                stroke-width="4"
+                      class="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      stroke-width="4"
               ></circle>
               <path
-                class="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      class="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
               ></path>
             </svg>
             Creating...
