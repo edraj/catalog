@@ -12,6 +12,7 @@ import {
 } from "@edraj/tsdmart";
 import { user } from "@/stores/user";
 import { get } from "svelte/store";
+import type {Translation} from "@edraj/tsdmart/dmart.model";
 
 export interface EntitySearch {
   limit: number;
@@ -868,4 +869,28 @@ export async function deleteItem(
 
   const response = await Dmart.request(actionRequest);
   return response.status === "success";
+}
+
+async function createSpace({shortname, displayname, description}:{shortname: string, displayname: Translation, description: Translation}) {
+  try {
+    await Dmart.space({
+      space_name: shortname.trim(),
+      request_type: RequestType.create,
+      records: [
+        {
+          resource_type: ResourceType.space,
+          shortname: shortname.trim(),
+          subpath: '/',
+          attributes: {
+            is_active: true,
+            displayname: displayname,
+            description: description
+          }
+        }
+      ]
+    });
+    await getSpaces();
+  } catch (error) {
+  } finally {
+  }
 }
