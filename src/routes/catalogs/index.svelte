@@ -1,15 +1,23 @@
 <script lang="ts">
+  import { run } from "svelte/legacy";
+
   import { onMount } from "svelte";
   import { getSpaces } from "@/lib/dmart_services";
   import { Diamonds } from "svelte-loading-spinners";
   import { goto } from "@roxi/routify";
   import { _ } from "@/i18n";
   import { locale } from "@/i18n";
+  import { derived } from "svelte/store";
   $goto;
-
   let isLoading = $state(true);
   let spaces = $state([]);
   let error = $state(null);
+
+  const isRTL = derived(
+    locale,
+    ($locale) => $locale === "ar" || $locale === "ku"
+  );
+  let direction = $state("ltr");
 
   onMount(async () => {
     try {
@@ -17,7 +25,7 @@
       spaces = response.records || [];
     } catch (err) {
       console.error("Error fetching spaces:", err);
-      error = "Failed to load catalogs";
+      error = $_("error.failed_load_catalogs");
     } finally {
       isLoading = false;
     }
@@ -39,7 +47,7 @@
         space.shortname
       );
     }
-    return space.shortname || "Unnamed Space";
+    return space.shortname || $_("common.unnamed_space");
   }
 
   function getDescription(space: any): string {
@@ -49,26 +57,31 @@
         description[$locale] ||
         description.en ||
         description.ar ||
-        "No description available"
+        $_("common.no_description")
       );
     }
-    return "No description available";
+    return $_("common.no_description");
   }
 
   function formatDate(dateString: string): string {
-    if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString();
+    if (!dateString) return $_("common.not_available");
+    return new Date(dateString).toLocaleDateString($locale);
   }
+
+  run(() => {
+    direction = isRTL ? "rtl" : "ltr";
+  });
 </script>
 
-<div class="min-h-screen bg-gray-50">
+<div class="min-h-screen bg-gray-50" class:rtl={$isRTL}>
   <div class="bg-white border-b border-gray-200">
     <div class="container mx-auto px-4 py-8 max-w-7xl">
       <div class="text-center">
-        <h1 class="text-4xl font-bold text-gray-900 mb-4">Explore Catalogs</h1>
+        <h1 class="text-4xl font-bold text-gray-900 mb-4">
+          {$_("catalogs.explore_title")}
+        </h1>
         <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-          Discover all available spaces and their content. Browse through
-          different catalogs to find what interests you most.
+          {$_("catalogs.explore_description")}
         </p>
       </div>
     </div>
@@ -99,7 +112,7 @@
           </svg>
         </div>
         <h3 class="text-xl font-semibold text-gray-900 mb-2">
-          Error Loading Catalogs
+          {$_("error.loading_catalogs_title")}
         </h3>
         <p class="text-gray-600">{error}</p>
       </div>
@@ -123,10 +136,10 @@
           </svg>
         </div>
         <h3 class="text-xl font-semibold text-gray-900 mb-2">
-          No Catalogs Available
+          {$_("catalogs.no_catalogs_title")}
         </h3>
         <p class="text-gray-600">
-          There are currently no public catalogs to display.
+          {$_("catalogs.no_catalogs_description")}
         </p>
       </div>
     {:else}
@@ -136,42 +149,48 @@
         <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
           <div class="flex items-center justify-between">
             <h2 class="text-lg font-semibold text-gray-900">
-              Available Catalogs ({spaces.length})
+              {$_("catalogs.available_catalogs")}
+              {spaces.length}
             </h2>
             <div class="text-sm text-gray-500">
-              Public spaces you can explore
+              {$_("catalogs.public_spaces_subtitle")}
             </div>
           </div>
         </div>
 
         <div class="overflow-x-auto">
-          <table class="w-full">
+          <table class="w-full" class:rtl={$isRTL}>
             <thead class="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th
                   class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  class:text-right={$isRTL}
                 >
-                  Space
+                  {$_("table.space")}
                 </th>
                 <th
                   class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  class:text-right={$isRTL}
                 >
-                  Status
+                  {$_("table.status")}
                 </th>
                 <th
                   class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  class:text-right={$isRTL}
                 >
-                  Owner
+                  {$_("table.owner")}
                 </th>
                 <th
                   class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  class:text-right={$isRTL}
                 >
-                  Created
+                  {$_("table.created")}
                 </th>
                 <th
                   class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  class:text-right={$isRTL}
                 >
-                  Website
+                  {$_("table.website")}
                 </th>
               </tr>
             </thead>
@@ -189,8 +208,15 @@
                   }}
                 >
                   <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="flex items-center">
-                      <div class="flex-shrink-0 h-12 w-12">
+                    <div
+                      class="flex items-center"
+                      class:flex-row-reverse={$isRTL}
+                    >
+                      <div
+                        class="flex-shrink-0 h-12 w-12"
+                        class:ml-6={$isRTL}
+                        class:mr-6={!$isRTL}
+                      >
                         <div
                           class="h-12 w-12 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-md"
                         >
@@ -201,7 +227,7 @@
                           </span>
                         </div>
                       </div>
-                      <div class="ml-6">
+                      <div class:mr-6={$isRTL} class:ml-6={!$isRTL}>
                         <div class="text-sm font-semibold text-gray-900">
                           {getDisplayName(space)}
                         </div>
@@ -220,20 +246,30 @@
                         .attributes?.is_active
                         ? 'bg-green-100 text-green-800'
                         : 'bg-red-100 text-red-800'}"
+                      class:flex-row-reverse={$isRTL}
                     >
                       <div
-                        class="w-1.5 h-1.5 rounded-full mr-1.5 {space.attributes
+                        class="w-1.5 h-1.5 rounded-full {space.attributes
                           ?.is_active
                           ? 'bg-green-400'
                           : 'bg-red-400'}"
+                        class:ml-1.5={$isRTL}
+                        class:mr-1.5={!$isRTL}
                       ></div>
-                      {space.attributes?.is_active ? "Active" : "Inactive"}
+                      {space.attributes?.is_active
+                        ? $_("status.active")
+                        : $_("status.inactive")}
                     </span>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="flex items-center">
+                    <div
+                      class="flex items-center"
+                      class:flex-row-reverse={$isRTL}
+                    >
                       <div
-                        class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center mr-2"
+                        class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center"
+                        class:ml-2={$isRTL}
+                        class:mr-2={!$isRTL}
                       >
                         <span class="text-xs font-medium text-gray-600">
                           {space.attributes?.owner_shortname
@@ -244,7 +280,8 @@
                         </span>
                       </div>
                       <span class="text-sm text-gray-900">
-                        {space.attributes?.owner_shortname || "Unknown"}
+                        {space.attributes?.owner_shortname ||
+                          $_("common.unknown")}
                       </span>
                     </div>
                   </td>
@@ -261,7 +298,7 @@
                         onclick={(e) => e.stopPropagation()}
                       >
                         <svg
-                          class="w-4 h-4 inline mr-1"
+                          class="w-4 h-4 inline {$isRTL ? 'ml-1' : 'mr-1'}"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -273,10 +310,12 @@
                             d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
                           ></path>
                         </svg>
-                        Visit
+                        {$_("actions.visit")}
                       </a>
                     {:else}
-                      <span class="text-gray-400">No website</span>
+                      <span class="text-gray-400"
+                        >{$_("common.no_website")}</span
+                      >
                     {/if}
                   </td>
                 </tr>
@@ -288,7 +327,7 @@
 
       <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div class="flex items-center">
+          <div class="flex items-center" class:flex-row-reverse={$isRTL}>
             <div class="flex-shrink-0">
               <div
                 class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center"
@@ -308,8 +347,10 @@
                 </svg>
               </div>
             </div>
-            <div class="ml-6">
-              <p class="text-sm font-medium text-gray-500">Total Spaces</p>
+            <div class:mr-6={$isRTL} class:ml-6={!$isRTL}>
+              <p class="text-sm font-medium text-gray-500">
+                {$_("stats.total_spaces")}
+              </p>
               <p class="text-2xl font-semibold text-gray-900">
                 {spaces.length}
               </p>
@@ -318,7 +359,7 @@
         </div>
 
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div class="flex items-center">
+          <div class="flex items-center" class:flex-row-reverse={$isRTL}>
             <div class="flex-shrink-0">
               <div
                 class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center"
@@ -333,13 +374,15 @@
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     stroke-width="2"
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9"
                   ></path>
                 </svg>
               </div>
             </div>
-            <div class="ml-6">
-              <p class="text-sm font-medium text-gray-500">Active Spaces</p>
+            <div class:mr-6={$isRTL} class:ml-6={!$isRTL}>
+              <p class="text-sm font-medium text-gray-500">
+                {$_("stats.active_spaces")}
+              </p>
               <p class="text-2xl font-semibold text-gray-900">
                 {spaces.filter((s) => s.attributes?.is_active).length}
               </p>
@@ -348,7 +391,7 @@
         </div>
 
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div class="flex items-center">
+          <div class="flex items-center" class:flex-row-reverse={$isRTL}>
             <div class="flex-shrink-0">
               <div
                 class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center"
@@ -368,8 +411,10 @@
                 </svg>
               </div>
             </div>
-            <div class="ml-6">
-              <p class="text-sm font-medium text-gray-500">With Websites</p>
+            <div class:mr-6={$isRTL} class:ml-6={!$isRTL}>
+              <p class="text-sm font-medium text-gray-500">
+                {$_("stats.with_websites")}
+              </p>
               <p class="text-2xl font-semibold text-gray-900">
                 {spaces.filter((s) => s.attributes?.primary_website).length}
               </p>
@@ -387,7 +432,10 @@
     border-spacing: 0;
   }
 
-  /* Responsive table */
+  .rtl {
+    direction: rtl;
+  }
+
   @media (max-width: 768px) {
     .overflow-x-auto {
       -webkit-overflow-scrolling: touch;
@@ -407,12 +455,10 @@
     }
   }
 
-  /* Hover effects */
   tbody tr:hover {
     background-color: #f9fafb;
   }
 
-  /* Focus styles for accessibility */
   tbody tr:focus {
     outline: 2px solid #3b82f6;
     outline-offset: -2px;

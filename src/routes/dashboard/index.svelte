@@ -2,7 +2,7 @@
   import { getEntityAttachmentsCount, getEntities } from "@/lib/dmart_services";
   import { onMount } from "svelte";
   import { errorToastMessage } from "@/lib/toasts_messages";
-  import { goto } from "@roxi/routify";
+  import { goto, params } from "@roxi/routify";
   import { Diamonds } from "svelte-loading-spinners";
   import { formatDate, renderStateString, truncateString } from "@/lib/helpers";
   $goto;
@@ -13,19 +13,19 @@
 
   async function fetchEntities() {
     isLoading = true;
-    const _entities = await getEntities({
-      search: "",
-      limit: 10,
-      offset: 0,
-      shortname: "",
-    });
+    const _entities = await getEntities();
+
     if (_entities === null) {
       errorToastMessage("Failed to fetch entities!", true);
       entities = [];
     } else {
       entities = await Promise.all(
         _entities.map(async (item) => {
-          const counts = await getEntityAttachmentsCount(item.shortname);
+          const counts = await getEntityAttachmentsCount(
+            item.shortname,
+            item.subpath,
+            item.subpath
+          );
           return {
             is_active: item.attributes.is_active,
             shortname: item.shortname,

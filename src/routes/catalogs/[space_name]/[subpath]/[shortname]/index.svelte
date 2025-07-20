@@ -6,6 +6,9 @@
   import { _ } from "@/i18n";
   import { locale } from "@/i18n";
   import { ResourceType } from "@edraj/tsdmart/dmart.model";
+  import Attachments from "@/routes/components/Attachments.svelte";
+  import { user } from "@/stores/user";
+
   $goto;
   let isLoading = false;
   let postData = $state(null);
@@ -15,8 +18,11 @@
   let itemShortname = "";
   let actualSubpath = "";
   let breadcrumbs = [];
+  let isOwner = $state(false);
 
   onMount(async () => {
+    isOwner = $user.shortname === itemShortname;
+
     await initializeContent();
   });
 
@@ -69,7 +75,7 @@
         actualSubpath,
         itemShortname,
         ResourceType.content,
-        "managed"
+        "public"
       );
 
       if (response && response.uuid) {
@@ -125,36 +131,6 @@
     return new Date(dateString).toLocaleDateString();
   }
 
-  function getResourceTypeIcon(resourceType) {
-    switch (resourceType) {
-      case "content":
-        return "📄";
-      case "post":
-        return "📝";
-      case "ticket":
-        return "🎫";
-      case "media":
-        return "🖼️";
-      default:
-        return "📋";
-    }
-  }
-
-  function getResourceTypeColor(resourceType) {
-    switch (resourceType) {
-      case "content":
-        return "bg-green-100 text-green-800";
-      case "post":
-        return "bg-purple-100 text-purple-800";
-      case "ticket":
-        return "bg-orange-100 text-orange-800";
-      case "media":
-        return "bg-pink-100 text-pink-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  }
-
   function getAuthorInfo(item) {
     const relationships = item.relationships || [];
     const author = relationships.find(
@@ -163,115 +139,117 @@
     return author?.related_to?.shortname || item.owner_shortname || "Unknown";
   }
 
-  function getContentPreview(payload) {
-    if (!payload?.body) return "";
-
-    if (payload.content_type === "html") {
-      const div = document.createElement("div");
-      div.innerHTML = payload.body;
-      return div.textContent || div.innerText || "";
+  function getPostTitle(postData) {
+    if (postData?.payload?.body?.title) {
+      return postData.payload.body.title;
     }
-
-    return payload.body.toString();
+    return getDisplayName(postData);
   }
 
-  function isImageContent(payload) {
-    return payload?.content_type === "image" && payload?.body;
+  function getPostContent(postData) {
+    if (postData?.payload?.body?.content) {
+      return postData.payload.body.content;
+    }
+    if (postData?.payload?.body && typeof postData.payload.body === "string") {
+      return postData.payload.body;
+    }
+    return "";
   }
 
-  function getImageUrl(item, payload) {
-    if (isImageContent(payload)) {
-      return `/media/${spaceName}${actualSubpath}/${item.shortname}/${payload.body}`;
-    }
-    return null;
-  }
-
-  function getAttachmentUrl(item, attachment) {
-    const filename = attachment.attributes?.payload?.body;
-    if (filename && attachment.subpath) {
-      return `/media/${spaceName}${attachment.subpath}/${filename}`;
-    }
-    if (filename) {
-      return `/media/${spaceName}${actualSubpath}/${item.shortname}/${filename}`;
-    }
-    return null;
-  }
-
-  function getAttachmentsList(item) {
-    const attachments = [];
-
-    if (item.attachments?.media && Array.isArray(item.attachments.media)) {
-      attachments.push(...item.attachments.media);
-    }
+  function categorizeAttachments(item) {
+    const reactions = [];
+    const comments = [];
+    const mediaFiles = [];
 
     if (item.attachments) {
       Object.keys(item.attachments).forEach((key) => {
-        if (key !== "media" && Array.isArray(item.attachments[key])) {
-          attachments.push(...item.attachments[key]);
+        if (Array.isArray(item.attachments[key])) {
+          item.attachments[key].forEach((attachment) => {
+            if (attachment.resource_type === ResourceType.reaction) {
+              reactions.push(attachment);
+            } else if (attachment.resource_type === ResourceType.comment) {
+              comments.push(attachment);
+            } else if (
+              attachment.resource_type === ResourceType.media ||
+              (attachment.attributes?.payload?.content_type &&
+                (attachment.attributes.payload.content_type.startsWith(
+                  "image/"
+                ) ||
+                  attachment.attributes.payload.content_type.startsWith(
+                    "video/"
+                  ) ||
+                  attachment.attributes.payload.content_type.startsWith(
+                    "audio/"
+                  ) ||
+                  attachment.attributes.payload.content_type ===
+                    "application/pdf"))
+            ) {
+              mediaFiles.push(attachment);
+            }
+          });
         }
       });
     }
 
-    return attachments;
+    return { reactions, comments, mediaFiles };
   }
 
-  function isVideoContent(contentType) {
-    return contentType && contentType.startsWith("video/");
+  function getReactionType(reaction) {
+    return (
+      reaction?.attributes?.payload?.body?.body?.type ||
+      reaction?.payload?.body?.body?.type ||
+      "unknown"
+    );
   }
 
-  function isAudioContent(contentType) {
-    return contentType && contentType.startsWith("audio/");
+  function getCommentText(comment) {
+    return (
+      comment?.attributes?.payload?.body?.body ||
+      comment?.payload?.body?.body ||
+      "No content"
+    );
   }
 
-  function isPdfContent(contentType) {
-    return contentType === "application/pdf";
+  function getCommentState(comment) {
+    return (
+      comment?.attributes?.payload?.body?.state ||
+      comment?.payload?.body?.state ||
+      "unknown"
+    );
   }
 
-  function getFileExtension(filename) {
-    return filename ? filename.split(".").pop().toLowerCase() : "";
-  }
-
-  function canPreview(contentType, filename) {
-    if (!contentType) return false;
-
-    if (
-      contentType.startsWith("image/") ||
-      contentType.startsWith("video/") ||
-      contentType.startsWith("audio/")
-    ) {
-      return true;
+  function getReactionEmoji(type) {
+    switch (type) {
+      case "like":
+        return "👍";
+      case "love":
+        return "❤️";
+      case "laugh":
+        return "😂";
+      case "wow":
+        return "😮";
+      case "sad":
+        return "😢";
+      case "angry":
+        return "😠";
+      default:
+        return "👍";
     }
-
-    const ext = getFileExtension(filename);
-    const previewableExts = [
-      "jpg",
-      "jpeg",
-      "png",
-      "gif",
-      "svg",
-      "webp",
-      "mp4",
-      "webm",
-      "mp3",
-      "wav",
-      "ogg",
-    ];
-    return previewableExts.includes(ext);
   }
 </script>
 
-<div class="min-h-screen bg-gray-50">
+<div class="page-container">
   <!-- Header Section -->
-  <div class="bg-white border-b border-gray-200">
-    <div class="container mx-auto px-4 py-6 max-w-4xl">
+  <header class="page-header">
+    <div class="header-content">
       <!-- Breadcrumbs -->
-      <nav class="flex mb-4" aria-label="Breadcrumb">
-        <ol class="inline-flex items-center space-x-1 md:space-x-3">
+      <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <ol class="breadcrumb-list">
           {#each breadcrumbs as crumb, index}
-            <li class="inline-flex items-center">
+            <li class="breadcrumb-item">
               {#if index > 0}
                 <svg
-                  class="w-4 h-4 text-gray-400 mx-1"
+                  class="breadcrumb-separator"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -285,61 +263,46 @@
               {#if crumb.path}
                 <button
                   onclick={() => navigateToBreadcrumb(crumb.path)}
-                  class="text-gray-500 hover:text-gray-700 transition-colors duration-200 text-sm"
+                  class="breadcrumb-link"
                 >
                   {crumb.name}
                 </button>
               {:else}
-                <span class="text-gray-900 font-medium text-sm"
-                  >{crumb.name}</span
-                >
+                <span class="breadcrumb-current">{crumb.name}</span>
               {/if}
             </li>
           {/each}
         </ol>
       </nav>
 
-      <div class="flex items-center justify-between">
-        <button
-          onclick={goBack}
-          class="flex items-center text-gray-600 hover:text-gray-900 transition-colors duration-200 cursor-pointer"
+      <button onclick={goBack} class="back-button">
+        <svg
+          class="back-icon"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
         >
-          <svg
-            class="w-5 h-5 mr-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M15 19l-7-7 7-7"
-            ></path>
-          </svg>
-          Back to Contents
-        </button>
-      </div>
+          <line x1="19" y1="12" x2="5" y2="12" />
+          <polyline points="12 19 5 12 12 5" />
+        </svg>
+        <span>Back to Contents</span>
+      </button>
     </div>
-  </div>
+  </header>
 
   <!-- Main Content -->
-  <div class="container mx-auto px-4 py-8 max-w-4xl">
+  <main class="main-content">
     {#if isLoading}
-      <div class="flex justify-center py-16">
-        <Diamonds color="#3b82f6" size="60" unit="px" />
+      <div class="loading-container">
+        <div class="loading-content">
+          <Diamonds color="#4f46e5" size="60" unit="px" />
+          <p class="loading-text">Loading content...</p>
+        </div>
       </div>
     {:else if error}
-      <div class="text-center py-16">
-        <div
-          class="mx-auto w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-6"
-        >
-          <svg
-            class="w-12 h-12 text-red-500"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
+      <div class="error-container">
+        <div class="error-icon">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -348,516 +311,326 @@
             ></path>
           </svg>
         </div>
-        <h3 class="text-xl font-semibold text-gray-900 mb-2">
-          Error Loading Post
-        </h3>
-        <p class="text-gray-600">{error}</p>
-        <div class="mt-4 text-sm text-gray-500">
-          <p>Debug info:</p>
-          <p>Space: {spaceName}</p>
-          <p>Subpath: {actualSubpath}</p>
-          <p>Item: {itemShortname}</p>
+        <h3 class="error-title">Error Loading Post</h3>
+        <p class="error-message">{error}</p>
+        <div class="debug-info">
+          <p class="debug-title">Debug Information:</p>
+          <p>Space: <span class="debug-value">{spaceName}</span></p>
+          <p>Subpath: <span class="debug-value">{actualSubpath}</span></p>
+          <p>Item: <span class="debug-value">{itemShortname}</span></p>
         </div>
       </div>
     {:else if postData}
-      <!-- Post Content -->
-      <div
-        class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
-      >
-        <!-- Post Header -->
-        <div class="p-8 border-b border-gray-100">
-          <div class="flex items-start justify-between mb-6">
-            <div class="flex items-center space-x-4">
-              <div
-                class="w-16 h-16 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center"
-              >
-                <span class="text-white text-2xl">
-                  {getResourceTypeIcon("content")}
-                </span>
+      {#if postData}
+        {@const { reactions, comments, mediaFiles } =
+          categorizeAttachments(postData)}
+
+        <!-- Post Content Card -->
+        <article class="post-card">
+          <!-- Post Header -->
+          <header class="post-header">
+            <div class="post-title-section">
+              <div class="post-icon">
+                <span>📝</span>
               </div>
-              <div>
-                <h1 class="text-2xl font-bold text-gray-900 mb-2">
-                  {getDisplayName(postData)}
-                </h1>
-                <div class="flex items-center space-x-4 text-sm text-gray-600">
-                  <span
-                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {getResourceTypeColor(
-                      'content'
-                    )}"
-                  >
-                    content
+              <div class="post-title-content">
+                <h1 class="post-title">{getPostTitle(postData)}</h1>
+                <div class="post-badges">
+                  <span class="badge badge-primary">
+                    {postData.payload?.schema_shortname || "Content"}
                   </span>
                   <span
-                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {postData.is_active
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-red-100 text-red-800'}"
+                    class="badge {postData.is_active
+                      ? 'badge-success'
+                      : 'badge-error'}"
                   >
                     <div
-                      class="w-1.5 h-1.5 rounded-full mr-1.5 {postData.is_active
-                        ? 'bg-green-400'
-                        : 'bg-red-400'}"
+                      class="status-dot {postData.is_active
+                        ? 'status-active'
+                        : 'status-inactive'}"
                     ></div>
                     {postData.is_active ? "Active" : "Inactive"}
                   </span>
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- Post Meta Information -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <div>
-              <h3 class="text-sm font-medium text-gray-500 mb-1">Author</h3>
-              <p class="text-sm text-gray-900">{getAuthorInfo(postData)}</p>
-            </div>
-            <div>
-              <h3 class="text-sm font-medium text-gray-500 mb-1">Created</h3>
-              <p class="text-sm text-gray-900">
-                {formatDate(postData.created_at)}
-              </p>
-            </div>
-            <div>
-              <h3 class="text-sm font-medium text-gray-500 mb-1">Updated</h3>
-              <p class="text-sm text-gray-900">
-                {formatDate(postData.updated_at)}
-              </p>
-            </div>
-          </div>
-
-          {#if getDescription(postData)}
-            <div class="mb-6">
-              <h3 class="text-sm font-medium text-gray-500 mb-2">
-                Description
-              </h3>
-              <p class="text-gray-700">{getDescription(postData)}</p>
-            </div>
-          {/if}
-
-          <!-- Tags -->
-          {#if postData.tags && postData.tags.length > 0 && postData.tags[0] !== ""}
-            <div class="mb-6">
-              <h3 class="text-sm font-medium text-gray-500 mb-2">Tags</h3>
-              <div class="flex flex-wrap gap-2">
-                {#each postData.tags as tag}
-                  {#if tag && tag.trim()}
-                    <span
-                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                    >
-                      #{tag}
-                    </span>
-                  {/if}
-                {/each}
-              </div>
-            </div>
-          {/if}
-        </div>
-
-        <!-- Post Content/Payload -->
-
-        {#if postData.payload}
-          <div class="p-8">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Content</h3>
-
-            {#if isImageContent(postData.payload)}
-              <!-- Image Content -->
-              <div class="mb-6">
-                <img
-                  src={getImageUrl(postData, postData.payload) ||
-                    "/placeholder.svg"}
-                  alt={getDisplayName(postData)}
-                  class="max-w-full h-auto rounded-lg shadow-md"
-                  onerror={(e) => {
-                    (e.currentTarget as HTMLElement).style.display = "none";
-                    const next = (e.currentTarget as HTMLElement)
-                      .nextElementSibling as HTMLElement | null;
-                    if (next) next.style.display = "block";
-                  }}
-                />
-                <div
-                  class="hidden bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center"
+            <!-- Post Meta Grid -->
+            <div class="meta-grid">
+              <div class="meta-item">
+                <svg
+                  class="meta-icon"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
                 >
-                  <svg
-                    class="w-12 h-12 text-gray-400 mx-auto mb-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    />
-                  </svg>
-                  <p class="text-gray-500">Image could not be loaded</p>
-                  <p class="text-xs text-gray-400 mt-1">
-                    {postData.payload.body}
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+                <div class="meta-content">
+                  <p class="meta-label">Author</p>
+                  <p class="meta-value">{getAuthorInfo(postData)}</p>
+                </div>
+              </div>
+              <div class="meta-item">
+                <svg
+                  class="meta-icon"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                <div class="meta-content">
+                  <p class="meta-label">Created</p>
+                  <p class="meta-value">{formatDate(postData.created_at)}</p>
+                </div>
+              </div>
+              <div class="meta-item">
+                <svg
+                  class="meta-icon"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                <div class="meta-content">
+                  <p class="meta-label">Updated</p>
+                  <p class="meta-value">{formatDate(postData.updated_at)}</p>
+                </div>
+              </div>
+              <div class="meta-item">
+                <svg
+                  class="meta-icon"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    d="M9 12h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+                <div class="meta-content">
+                  <p class="meta-label">Content Type</p>
+                  <p class="meta-value">
+                    {postData.payload?.content_type || "Unknown"}
                   </p>
                 </div>
               </div>
-            {:else if postData.payload.content_type === "html"}
-              <!-- HTML Content -->
-              <div
-                class="prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-blue-600 prose-strong:text-gray-900"
-              >
-                {@html postData.payload.body}
-              </div>
-            {:else}
-              <!-- Other Content Types -->
-              <div class="bg-gray-50 rounded-lg p-6">
-                <div class="flex items-center mb-4">
-                  <svg
-                    class="w-5 h-5 text-gray-400 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
+            </div>
+
+            {#if getDescription(postData)}
+              <div class="description-section">
+                <h3 class="section-title">
+                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M9 12h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      d="M20.59 13.41L10.59 3.41A2 2 0 0 0 9.17 3H4a2 2 0 0 0-2 2v5.17a2 2 0 0 0 .59 1.42l10 10a2 2 0 0 0 2.83 0l5.17-5.17a2 2 0 0 0 0-2.83z"
                     />
+                    <circle cx="7.5" cy="7.5" r="1.5" />
                   </svg>
-                  <span class="text-sm font-medium text-gray-700"
-                    >Content Type: {postData.payload.content_type}</span
-                  >
-                </div>
-                <pre
-                  class="text-sm text-gray-800 whitespace-pre-wrap bg-white p-4 rounded border">{getContentPreview(
-                    postData.payload
-                  )}</pre>
+                  Description
+                </h3>
+                <p class="description-text">{getDescription(postData)}</p>
               </div>
             {/if}
-          </div>
-        {/if}
 
-        <!-- Enhanced Attachments Section with Media Previews -->
-        {#if getAttachmentsList(postData).length > 0}
-          <div class="px-8 pb-8">
-            <div class="border-t border-gray-100 pt-8">
-              <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                Attachments ({getAttachmentsList(postData).length})
-              </h3>
-              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {#each getAttachmentsList(postData) as attachment}
-                  <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <div class="flex items-center mb-3">
-                      <div
-                        class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center mr-3"
-                      >
-                        {#if attachment.attributes?.payload?.content_type === "image"}
-                          <svg
-                            class="w-5 h-5 text-blue-600"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                            />
-                          </svg>
-                        {:else if isVideoContent(attachment.attributes?.payload?.content_type)}
-                          <svg
-                            class="w-5 h-5 text-blue-600"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-                            />
-                          </svg>
-                        {:else if isAudioContent(attachment.attributes?.payload?.content_type)}
-                          <svg
-                            class="w-5 h-5 text-blue-600"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M5.25 5.25C5.25 8.9 8.1 11.25 11.25 11.25s6-2.35 6-5.25-2.85-3.75-6-3.75-6 2.35-6 5.25z"
-                            />
-                          </svg>
-                        {:else}
-                          <svg
-                            class="w-5 h-5 text-blue-600"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M9 12h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                            />
-                          </svg>
-                        {/if}
-                      </div>
-                      <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium text-gray-900 truncate">
-                          {attachment.attributes?.displayname?.ar ||
-                            attachment.attributes?.displayname?.en ||
-                            attachment.shortname}
-                        </p>
-                        <p class="text-xs text-gray-500">
-                          {attachment.attributes?.payload?.content_type ||
-                            "Unknown type"}
-                        </p>
-                      </div>
-                    </div>
-
-                    {#if attachment.attributes?.payload?.bytesize}
-                      <div class="text-xs text-gray-500 mb-2">
-                        Size: {(
-                          attachment.attributes.payload.bytesize / 1024
-                        ).toFixed(1)} KB
-                      </div>
+            <!-- Tags -->
+            {#if postData.tags && postData.tags.length > 0 && postData.tags[0] !== ""}
+              <div class="tags-section">
+                <h3 class="section-title">
+                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path
+                      d="M20.59 13.41L10.59 3.41A2 2 0 0 0 9.17 3H4a2 2 0 0 0-2 2v5.17a2 2 0 0 0 .59 1.42l10 10a2 2 0 0 0 2.83 0l5.17-5.17a2 2 0 0 0 0-2.83z"
+                    />
+                    <circle cx="7.5" cy="7.5" r="1.5" />
+                  </svg>
+                  Tags
+                </h3>
+                <div class="tags-container">
+                  {#each postData.tags as tag}
+                    {#if tag && tag.trim()}
+                      <span class="tag">#{tag}</span>
                     {/if}
+                  {/each}
+                </div>
+              </div>
+            {/if}
+          </header>
 
-                    <!-- Media Preview Section -->
-                    {#if attachment.attributes?.payload?.content_type === "image"}
-                      <div class="mb-3">
-                        <button
-                          type="button"
-                          class="w-full h-32 p-0 border-0 bg-transparent rounded cursor-pointer focus:outline-none"
-                          aria-label="Preview image"
-                          onclick={() => {
-                            const modal = document.createElement("div");
-                            modal.className =
-                              "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50";
-                            modal.innerHTML = `
-                            <div class="relative max-w-4xl max-h-full p-4">
-                              <img src="${getAttachmentUrl(postData, attachment)}" class="max-w-full max-h-full object-contain rounded-lg" />
-                              <button type="button" class="absolute top-4 right-4 text-white hover:text-gray-300 text-2xl" aria-label="Close preview">&times;</button>
-                            </div>
-                          `;
-                            document.body.appendChild(modal);
-                            const closeBtn = modal.querySelector("button");
-                            if (closeBtn) {
-                              closeBtn.addEventListener("click", () => {
-                                document.body.removeChild(modal);
-                              });
-                            }
-                            modal.addEventListener("click", (event) => {
-                              if (event.target === modal) {
-                                document.body.removeChild(modal);
-                              }
-                            });
-                          }}
-                          onkeydown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
-                              e.currentTarget.click();
-                            }
-                          }}
-                        >
-                          <img
-                            src={getAttachmentUrl(postData, attachment) ||
-                              "/placeholder.svg"}
-                            alt={attachment.shortname}
-                            class="w-full h-32 object-cover rounded border hover:opacity-80"
-                            onerror={(e) => {
-                              const img = e.currentTarget as HTMLImageElement;
-                              img.style.display = "none";
-                              const fallback =
-                                img.nextElementSibling as HTMLElement | null;
-                              if (fallback) fallback.style.display = "block";
-                            }}
-                          />
-                          <div
-                            class="hidden bg-gray-200 h-32 flex items-center justify-center rounded border"
-                          >
-                            <span class="text-gray-500 text-sm"
-                              >Image not available</span
+          <!-- Post Content -->
+          {#if getPostContent(postData)}
+            <section class="content-section">
+              <h3 class="content-title">
+                <span class="title-accent"></span>
+                Content
+              </h3>
+
+              <div class="post-content">
+                <div class="content-text">
+                  {getPostContent(postData)}
+                </div>
+              </div>
+            </section>
+          {/if}
+
+          <!-- Interactions Section -->
+          {#if reactions.length > 0 || comments.length > 0}
+            <section class="interactions-section">
+              <h3 class="section-title-large">
+                <span class="title-accent-pink"></span>
+                Interactions
+              </h3>
+
+              <div class="interactions-grid">
+                <!-- Reactions -->
+                {#if reactions.length > 0}
+                  <div class="reactions-container">
+                    <h4 class="subsection-title">
+                      <svg
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          d="M20.8 4.6c-1.6-1.4-4-1.4-5.6 0l-.7.7-.7-.7c-1.6-1.4-4-1.4-5.6 0-1.7 1.5-1.7 4.1 0 5.6l6.3 6.2 6.3-6.2c1.7-1.5 1.7-4.1 0-5.6z"
+                        />
+                      </svg>
+                      Reactions ({reactions.length})
+                    </h4>
+                    <div class="reactions-list">
+                      {#each reactions as reaction}
+                        <div class="reaction-item">
+                          <span class="reaction-emoji">
+                            {getReactionEmoji(getReactionType(reaction))}
+                          </span>
+                          <div class="reaction-details">
+                            <span class="reaction-type"
+                              >{getReactionType(reaction)}</span
+                            >
+                            <span class="reaction-author"
+                              >by {reaction.attributes?.owner_shortname ||
+                                "Unknown"}</span
                             >
                           </div>
-                        </button>
-                        <div
-                          class="hidden bg-gray-200 h-32 flex items-center justify-center rounded border"
-                        >
-                          <span class="text-gray-500 text-sm"
-                            >Image not available</span
-                          >
                         </div>
-                      </div>
-                    {:else if isVideoContent(attachment.attributes?.payload?.content_type)}
-                      <div class="mb-3">
-                        <video
-                          src={getAttachmentUrl(postData, attachment)}
-                          class="w-full h-32 object-cover rounded border"
-                          controls
-                          preload="metadata"
-                        >
-                          <track kind="captions" />
-                          Your browser does not support the video tag.
-                        </video>
-                      </div>
-                    {:else if isAudioContent(attachment.attributes?.payload?.content_type)}
-                      <div class="mb-3">
-                        <audio
-                          src={getAttachmentUrl(postData, attachment)}
-                          class="w-full"
-                          controls
-                          preload="metadata"
-                        >
-                          Your browser does not support the audio tag.
-                        </audio>
-                      </div>
-                    {:else if isPdfContent(attachment.attributes?.payload?.content_type)}
-                      <div class="mb-3">
-                        <div
-                          class="bg-red-50 border border-red-200 rounded p-3 text-center"
-                        >
-                          <svg
-                            class="w-8 h-8 text-red-600 mx-auto mb-2"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                            />
-                          </svg>
-                          <p class="text-sm text-red-700">PDF Document</p>
-                        </div>
-                      </div>
-                    {:else}
-                      <div class="mb-3">
-                        <div
-                          class="bg-gray-100 border border-gray-300 rounded p-3 text-center"
-                        >
-                          <svg
-                            class="w-8 h-8 text-gray-400 mx-auto mb-2"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M9 12h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                            />
-                          </svg>
-                          <p class="text-sm text-gray-600">
-                            File: {attachment.attributes?.payload?.body}
-                          </p>
-                        </div>
-                      </div>
-                    {/if}
-
-                    <!-- Download/Open Link -->
-                    <div class="flex space-x-2">
-                      <a
-                        href={getAttachmentUrl(postData, attachment)}
-                        target="_blank"
-                        class="inline-flex items-center text-xs text-blue-600 hover:text-blue-800 flex-1 justify-center py-2 px-3 border border-blue-200 rounded hover:bg-blue-50"
-                      >
-                        <svg
-                          class="w-3 h-3 mr-1"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                          />
-                        </svg>
-                        Open
-                      </a>
-                      <a
-                        href={getAttachmentUrl(postData, attachment)}
-                        download
-                        class="inline-flex items-center text-xs text-green-600 hover:text-green-800 flex-1 justify-center py-2 px-3 border border-green-200 rounded hover:bg-green-50"
-                      >
-                        <svg
-                          class="w-3 h-3 mr-1"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                          />
-                        </svg>
-                        Download
-                      </a>
+                      {/each}
                     </div>
                   </div>
-                {/each}
+                {/if}
+
+                <!-- Comments -->
+                {#if comments.length > 0}
+                  <div class="comments-container">
+                    <h4 class="subsection-title">
+                      <svg
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          d="M21 11.5a8.38 8.38 0 0 1-1.9 5.4 8.5 8.5 0 0 1-6.6 3.1 8.38 8.38 0 0 1-5.4-1.9L3 21l2.9-4.1a8.38 8.38 0 0 1-1.9-5.4 8.5 8.5 0 0 1 3.1-6.6A8.38 8.38 0 0 1 12.5 3a8.5 8.5 0 0 1 6.6 3.1 8.38 8.38 0 0 1 1.9 5.4z"
+                        />
+                      </svg>
+                      Comments ({comments.length})
+                    </h4>
+                    <div class="comments-list">
+                      {#each comments as comment}
+                        <div class="comment-item">
+                          <div class="comment-header">
+                            <svg
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              class="comment-icon"
+                            >
+                              <path
+                                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                              />
+                            </svg>
+                            <div class="comment-meta">
+                              <span class="comment-author"
+                                >{comment.attributes?.owner_shortname ||
+                                  "Unknown"}</span
+                              >
+                              <span class="comment-state"
+                                >({getCommentState(comment)})</span
+                              >
+                            </div>
+                          </div>
+                          <div class="comment-content">
+                            {getCommentText(comment)}
+                          </div>
+                        </div>
+                      {/each}
+                    </div>
+                  </div>
+                {/if}
               </div>
-            </div>
-          </div>
-        {/if}
-        <!-- Relationships -->
-        {#if postData.relationships && postData.relationships.length > 0}
-          <div class="px-8 pb-8">
-            <div class="border-t border-gray-100 pt-8">
-              <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            </section>
+          {/if}
+
+          <!-- Media Attachments -->
+          {#if mediaFiles.length > 0}
+            <section class="media-section">
+              <h3 class="section-title-large">
+                <span class="title-accent-green"></span>
+                Media & Files ({mediaFiles.length})
+              </h3>
+              <Attachments
+                attachments={mediaFiles}
+                resource_type={ResourceType.content}
+                space_name={spaceName}
+                subpath={actualSubpath}
+                parent_shortname={itemShortname}
+                {isOwner}
+              />
+            </section>
+          {/if}
+
+          {#if postData.relationships && postData.relationships.length > 0}
+            <section class="relationships-section">
+              <h3 class="section-title-large">
+                <span class="title-accent-purple"></span>
                 Relationships
               </h3>
-              <div class="space-y-3">
+              <div class="relationships-grid">
                 {#each postData.relationships as relationship}
-                  <div
-                    class="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                  >
-                    <div class="flex items-center space-x-3">
-                      <span
-                        class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                      >
+                  <div class="relationship-item">
+                    <div class="relationship-content">
+                      <span class="relationship-role">
                         {relationship.attributes?.role || "Related"}
                       </span>
-                      <span class="text-sm font-medium text-gray-900">
+                      <span class="relationship-name">
                         {relationship.related_to?.shortname || "Unknown"}
                       </span>
                       {#if relationship.related_to?.space_name}
-                        <span class="text-xs text-gray-500">
+                        <span class="relationship-space">
                           ({relationship.related_to.space_name})
                         </span>
                       {/if}
                     </div>
-                    <span class="text-xs text-gray-400">
+                    <span class="relationship-type">
                       {relationship.related_to?.resource_type || "unknown"}
                     </span>
                   </div>
                 {/each}
               </div>
-            </div>
-          </div>
-        {/if}
-      </div>
+            </section>
+          {/if}
+        </article>
+      {/if}
     {:else}
       <!-- No data state -->
-      <div class="text-center py-16">
-        <div
-          class="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6"
-        >
-          <svg
-            class="w-12 h-12 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
+      <div class="no-data-container">
+        <div class="no-data-icon">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -866,19 +639,691 @@
             ></path>
           </svg>
         </div>
-        <h3 class="text-xl font-semibold text-gray-900 mb-2">
-          No Data Available
-        </h3>
-        <p class="text-gray-600">Unable to load post data.</p>
+        <h3 class="no-data-title">No Data Available</h3>
+        <p class="no-data-message">Unable to load post data.</p>
       </div>
     {/if}
-  </div>
+  </main>
 </div>
 
 <style>
-  /* Prose styling for HTML content */
-  .prose {
+  .page-container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 50%, #e0e7ff 100%);
+  }
+
+  .page-header {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .header-content {
+    max-width: 80rem;
+    margin: 0 auto;
+    padding: 1rem 1.5rem;
+  }
+
+  .breadcrumbs {
+    margin-bottom: 1rem;
+  }
+
+  .breadcrumb-list {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .breadcrumb-item {
+    display: flex;
+    align-items: center;
+  }
+
+  .breadcrumb-separator {
+    width: 1rem;
+    height: 1rem;
+    color: #94a3b8;
+    margin: 0 0.5rem;
+  }
+
+  .breadcrumb-link {
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 500;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color 0.2s ease;
+  }
+
+  .breadcrumb-link:hover {
+    color: #4f46e5;
+  }
+
+  .breadcrumb-current {
+    color: #0f172a;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .back-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #64748b;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+
+  .back-button:hover {
+    color: #4f46e5;
+  }
+
+  .back-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    transition: transform 0.2s ease;
+  }
+
+  .back-button:hover .back-icon {
+    transform: translateX(-0.25rem);
+  }
+
+  .main-content {
+    max-width: 80rem;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+  }
+
+  .loading-container {
+    display: flex;
+    justify-content: center;
+    padding: 5rem 0;
+  }
+
+  .loading-content {
+    text-align: center;
+  }
+
+  .loading-text {
+    margin-top: 1rem;
+    color: #64748b;
+    font-weight: 500;
+  }
+
+  .error-container {
+    text-align: center;
+    padding: 5rem 0;
+  }
+
+  .error-icon {
+    width: 5rem;
+    height: 5rem;
+    background: #fee2e2;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    color: #ef4444;
+  }
+
+  .error-icon svg {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .error-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 0.75rem;
+  }
+
+  .error-message {
+    color: #64748b;
+    margin-bottom: 1.5rem;
+  }
+
+  .debug-info {
+    background: #f1f5f9;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    font-size: 0.875rem;
+    color: #64748b;
+    max-width: 28rem;
+    margin: 0 auto;
+  }
+
+  .debug-title {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+
+  .debug-value {
+    font-family: "Courier New", monospace;
+  }
+
+  .post-card {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(8px);
+    border-radius: 1rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    overflow: hidden;
+  }
+
+  .post-header {
+    padding: 2rem;
+    background: linear-gradient(135deg, #f0f9ff 0%, #dbeafe 100%);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+  }
+
+  .post-title-section {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .post-icon {
+    width: 4rem;
+    height: 4rem;
+    border-radius: 0.75rem;
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25);
+    font-size: 2rem;
+  }
+
+  .post-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 0.5rem;
+    line-height: 1.2;
+  }
+
+  .post-badges {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .badge-primary {
+    background: #e0e7ff;
+    color: #3730a3;
+  }
+
+  .badge-success {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  .badge-error {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .status-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+  }
+
+  .status-active {
+    background: #10b981;
+  }
+
+  .status-inactive {
+    background: #ef4444;
+  }
+
+  .meta-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 0.75rem;
+  }
+
+  .meta-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: #64748b;
+  }
+
+  .meta-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0;
+  }
+
+  .meta-value {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #0f172a;
+    margin: 0;
+  }
+
+  .description-section {
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
     color: #374151;
-    line-height: 1.7;
+    margin-bottom: 0.5rem;
+  }
+
+  .section-title svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .description-text {
+    color: #374151;
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .tags-section {
+    margin-top: 1.5rem;
+  }
+
+  .tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    background: #dbeafe;
+    color: #1e40af;
+    transition: background-color 0.2s ease;
+  }
+
+  .tag:hover {
+    background: #bfdbfe;
+  }
+
+  .content-section {
+    padding: 2rem;
+  }
+
+  .content-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 1.5rem;
+  }
+
+  .title-accent {
+    width: 0.25rem;
+    height: 1.5rem;
+    background: #4f46e5;
+    border-radius: 9999px;
+  }
+
+  .title-accent-pink {
+    width: 0.25rem;
+    height: 1.5rem;
+    background: #ec4899;
+    border-radius: 9999px;
+  }
+
+  .title-accent-green {
+    width: 0.25rem;
+    height: 1.5rem;
+    background: #10b981;
+    border-radius: 9999px;
+  }
+
+  .title-accent-purple {
+    width: 0.25rem;
+    height: 1.5rem;
+    background: #8b5cf6;
+    border-radius: 9999px;
+  }
+
+  .post-content {
+    background: #f8fafc;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    border: 1px solid #e2e8f0;
+  }
+
+  .content-text {
+    font-size: 1rem;
+    line-height: 1.75;
+    color: #334155;
+    white-space: pre-wrap;
+  }
+
+  .interactions-section {
+    padding: 0 2rem 1.5rem;
+  }
+
+  .section-title-large {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 1.5rem;
+    padding-top: 2rem;
+    border-top: 1px solid #e2e8f0;
+  }
+
+  .interactions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .reactions-container {
+    background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    border: 1px solid #f9a8d4;
+  }
+
+  .comments-container {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    border: 1px solid #93c5fd;
+  }
+
+  .subsection-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #0f172a;
+    margin-bottom: 1rem;
+  }
+
+  .subsection-title svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .reactions-container .subsection-title svg {
+    color: #ec4899;
+  }
+
+  .comments-container .subsection-title svg {
+    color: #3b82f6;
+  }
+
+  .reactions-list,
+  .comments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .reaction-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 0.5rem;
+  }
+
+  .reaction-emoji {
+    font-size: 1.5rem;
+  }
+
+  .reaction-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .reaction-type {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+    text-transform: capitalize;
+  }
+
+  .reaction-author {
+    font-size: 0.75rem;
+    color: #64748b;
+  }
+
+  .comment-item {
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 0.5rem;
+    border-left: 3px solid #3b82f6;
+  }
+
+  .comment-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .comment-icon {
+    width: 1rem;
+    height: 1rem;
+    color: #3b82f6;
+  }
+
+  .comment-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .comment-author {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+  }
+
+  .comment-state {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-style: italic;
+  }
+
+  .comment-content {
+    font-size: 0.875rem;
+    color: #374151;
+    line-height: 1.5;
+    padding-left: 1.5rem;
+  }
+
+  .media-section {
+    padding: 0 2rem 2rem;
+  }
+
+  .relationships-section {
+    padding: 0 2rem 2rem;
+  }
+
+  .relationships-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+  }
+
+  .relationship-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+    border-radius: 0.75rem;
+    border: 1px solid #c4b5fd;
+  }
+
+  .relationship-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .relationship-role {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: #e9d5ff;
+    color: #6b21a8;
+  }
+
+  .relationship-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  .relationship-space {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-family: "Courier New", monospace;
+  }
+
+  .relationship-type {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .no-data-container {
+    text-align: center;
+    padding: 5rem 0;
+  }
+
+  .no-data-icon {
+    width: 5rem;
+    height: 5rem;
+    background: #f1f5f9;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    color: #94a3b8;
+  }
+
+  .no-data-icon svg {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .no-data-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 0.75rem;
+  }
+
+  .no-data-message {
+    color: #64748b;
+    margin: 0;
+  }
+
+  @media (max-width: 768px) {
+    .header-content {
+      padding: 1rem;
+    }
+
+    .main-content {
+      padding: 1rem;
+    }
+
+    .post-header {
+      padding: 1.5rem;
+    }
+
+    .content-section {
+      padding: 1.5rem;
+    }
+
+    .interactions-section,
+    .media-section,
+    .relationships-section {
+      padding: 0 1.5rem 1.5rem;
+    }
+
+    .post-title {
+      font-size: 1.5rem;
+    }
+
+    .meta-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .interactions-grid,
+    .relationships-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .post-title-section {
+      flex-direction: column;
+      align-items: flex-start;
+    }
   }
 </style>

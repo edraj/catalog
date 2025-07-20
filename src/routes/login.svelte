@@ -8,25 +8,45 @@
     EyeSlashSolid,
     LockSolid,
   } from "flowbite-svelte-icons";
-  import { signin } from "@/stores/user";
+  import { loginBy, signin } from "@/stores/user";
   $goto;
-  let username = "";
+  let identifier = "";
   let password = "";
   let showPassword = false;
   let isSubmitting = false;
   let showError = false;
-  let errors: { username?: string; password?: string } = {};
+  let errors: { identifier?: string; password?: string } = {};
   let isError: boolean;
   const isRTL = $locale === "ar" || $locale === "ku";
-
+  function isEmail(input: string): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input);
+  }
   async function handleSubmit(event: Event) {
     event.preventDefault();
     isError = false;
+    showError = false;
+    errors = {};
+    isSubmitting = true;
+
+    if (!identifier || !password) {
+      if (!identifier) errors.identifier = $_("ThisFieldIsRequired");
+      if (!password) errors.password = $_("ThisFieldIsRequired");
+      isSubmitting = false;
+      return;
+    }
+
     try {
-      await signin(username, password);
-      $goto("/dashboard");
+      if (isEmail(identifier)) {
+        await loginBy(identifier, password);
+      } else {
+        await signin(identifier, password);
+      }
+      $goto("/entries");
     } catch (error) {
       isError = true;
+      showError = true;
+    } finally {
+      isSubmitting = false;
     }
   }
 
@@ -77,22 +97,24 @@
     <div class="form-container">
       <form onsubmit={handleSubmit} class="login-form">
         <div class="form-group">
-          <label for="username" class="form-label" class:rtl={isRTL}>
+          <label for="identifier" class="form-label" class:rtl={isRTL}>
             <UserSolid class="label-icon" />
-            {$_("Username")}
+            {$_("Username")} / {$_("Email")}
           </label>
           <input
-            id="username"
+            id="identifier"
             type="text"
-            bind:value={username}
-            placeholder={$_("Username")}
+            bind:value={identifier}
+            placeholder={$_("Username") + " or " + $_("Email")}
             class="form-input"
-            class:error={errors.username}
+            class:error={errors.identifier}
             class:rtl={isRTL}
             disabled={isSubmitting}
           />
-          {#if errors.username}
-            <p class="error-text-small" class:rtl={isRTL}>{errors.username}</p>
+          {#if errors.identifier}
+            <p class="error-text-small" class:rtl={isRTL}>
+              {errors.identifier}
+            </p>
           {/if}
         </div>
 
@@ -184,41 +206,6 @@
     text-align: center;
     margin-bottom: 2rem;
   }
-
-  .back-button {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.5rem;
-    padding: 0.75rem 1rem;
-    color: #6b7280;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    margin-bottom: 2rem;
-    text-decoration: none;
-  }
-
-  .back-button:hover {
-    background: #f9fafb;
-    border-color: #d1d5db;
-  }
-
-  .back-button.rtl {
-    flex-direction: row-reverse;
-  }
-
-  .back-icon {
-    width: 1rem;
-    height: 1rem;
-  }
-
-  .back-icon.flip {
-    transform: scaleX(-1);
-  }
-
   .header-content {
     margin-bottom: 2rem;
   }
@@ -232,12 +219,6 @@
     align-items: center;
     justify-content: center;
     margin: 0 auto 1.5rem auto;
-  }
-
-  .header-icon {
-    width: 2rem;
-    height: 2rem;
-    color: white;
   }
 
   .login-title {
@@ -266,13 +247,6 @@
 
   .error-message.rtl {
     flex-direction: row-reverse;
-  }
-
-  .error-icon {
-    width: 1.5rem;
-    height: 1.5rem;
-    color: #dc2626;
-    flex-shrink: 0;
   }
 
   .error-text {
@@ -311,12 +285,6 @@
 
   .form-label.rtl {
     flex-direction: row-reverse;
-  }
-
-  .label-icon {
-    width: 1rem;
-    height: 1rem;
-    color: #6b7280;
   }
 
   .form-input {
@@ -379,11 +347,6 @@
     left: 0.75rem;
   }
 
-  .toggle-icon {
-    width: 1.25rem;
-    height: 1.25rem;
-  }
-
   .error-text-small {
     font-size: 0.75rem;
     color: #dc2626;
@@ -424,11 +387,6 @@
 
   .submit-button.rtl {
     flex-direction: row-reverse;
-  }
-
-  .button-icon {
-    width: 1rem;
-    height: 1rem;
   }
 
   .loading-spinner {

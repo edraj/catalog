@@ -1,15 +1,17 @@
 import {
+  Dmart,
   type ActionRequest,
   type ActionResponse,
   type ApiQueryResponse,
-  ContentType,
-  Dmart,
   type QueryRequest,
+  ContentType,
   QueryType,
   RequestType,
   ResourceType,
   SortyType,
 } from "@edraj/tsdmart";
+import { user } from "@/stores/user";
+import { get } from "svelte/store";
 
 export interface EntitySearch {
   limit: number;
@@ -101,14 +103,14 @@ export async function getAvatar(shortname: string) {
   );
 }
 
-export async function setAvatar(shortname: string, attachment: File){
+export async function setAvatar(shortname: string, attachment: File) {
   const response = await Dmart.upload_with_payload(
-      "personal",
-      `people/${shortname}/protected/avatar`,
-      "avatar",
-      ResourceType.media,
-      attachment,
-      ContentType.image
+    "personal",
+    `people/${shortname}/protected/avatar`,
+    "avatar",
+    ResourceType.media,
+    attachment,
+    ContentType.image
   );
   return response.status == "success" && response.records.length > 0;
 }
@@ -157,53 +159,89 @@ export async function createUser(user: User) {
   return response.status == "success" && response.records.length > 0;
 }
 
-export async function getEntities(entitySearch: EntitySearch = null) {
-  const { limit, offset, shortname, search } =
-    entitySearch === null
-      ? {
-          limit: 15,
-          offset: 0,
-          shortname: "",
-          search: "",
-        }
-      : entitySearch;
+export async function getEntities() {
+  const result = await getSpaces();
+  const spaces = result.records.map((space) => space.shortname);
 
-  const queryRequest: QueryRequest = {
-    filter_shortnames: [],
-    type: QueryType.search,
-    space_name: "catalog",
-    subpath: "posts",
-    exact_subpath: true,
-    limit: limit,
-    sort_by: "shortname",
-    sort_type: SortyType.ascending,
-    offset: offset,
-    search: search,
-    retrieve_json_payload: true,
-  };
+  const promises = spaces.map(async (space) => {
+    const { search } = {
+      search: "",
+    };
 
-  // if (shortname) {
-  //   queryRequest.search = `@owner_shortname:${shortname}`;
-  // }
+    const queryRequest: QueryRequest = {
+      filter_shortnames: [],
+      type: QueryType.subpath,
+      space_name: space,
+      subpath: "/",
+      exact_subpath: false,
+      sort_by: "shortname",
+      sort_type: SortyType.ascending,
+      search,
+      retrieve_json_payload: true,
+      retrieve_attachments: true,
+    };
 
-  const response: ApiQueryResponse = await Dmart.query(queryRequest);
+    const response: ApiQueryResponse = await Dmart.query(queryRequest);
+    return response?.records ?? [];
+  });
 
-  if (response === null) {
-    return null;
-  }
-  return response.records;
+  const allRecordsArrays = await Promise.all(promises);
+
+  return allRecordsArrays.flat();
+}
+
+export async function getMyEntities(shortname = "") {
+  const result = await getSpaces();
+  const spaces = result.records.map((space) => space.shortname);
+
+  const promises = spaces.map(async (space) => {
+    let currentUser = get(user);
+    const search = `@owner_shortname:${shortname || currentUser.shortname}`;
+
+    const queryRequest: QueryRequest = {
+      filter_shortnames: [],
+      type: QueryType.subpath,
+      space_name: space,
+      subpath: "/",
+      exact_subpath: false,
+      sort_by: "shortname",
+      sort_type: SortyType.ascending,
+      search,
+      retrieve_json_payload: true,
+      retrieve_attachments: true,
+    };
+
+    const response: ApiQueryResponse = await Dmart.query(queryRequest);
+    return response?.records ?? [];
+  });
+
+  const allRecordsArrays = await Promise.all(promises);
+
+  return allRecordsArrays.flat();
 }
 
 export async function getEntity(
   shortname: string,
+  spaceName: string,
+  subpath: string,
   retrieve_json_payload: boolean = true,
   retrieve_attachments: boolean = true
 ) {
   try {
+    if (spaceName === "maqola") {
+      return Dmart.retrieve_entry(
+        ResourceType.content,
+        spaceName,
+        subpath,
+        shortname,
+        retrieve_json_payload,
+        retrieve_attachments
+      );
+    }
     return Dmart.retrieve_entry(
       ResourceType.ticket,
-      "catalog",
-      "posts",
+      spaceName,
+      subpath,
       shortname,
       retrieve_json_payload,
       retrieve_attachments
@@ -213,32 +251,63 @@ export async function getEntity(
   }
 }
 
-export async function createEntity(data: Entity) {
-  const actionRequest: ActionRequest = {
-    space_name: "catalog",
-    request_type: RequestType.create,
-    records: [
-      {
-        resource_type: ResourceType.ticket,
-        shortname: "auto",
-        subpath: "posts",
-        attributes: {
-          is_active: data.is_active,
-          workflow_shortname: "catalog_idea_workflow",
-          relationships: [],
-          tags: data.tags,
-          payload: {
-            content_type: "json",
-            schema_shortname: "catelog_post",
-            body: {
-              title: data.title,
-              content: data.content,
+export async function createEntity(
+  data: Entity,
+  spaceName: string,
+  subpath: string
+) {
+  let actionRequest: ActionRequest;
+  if (spaceName === "catalog") {
+    actionRequest = {
+      space_name: spaceName,
+      request_type: RequestType.create,
+      records: [
+        {
+          resource_type: ResourceType.ticket,
+          shortname: "auto",
+          subpath: subpath,
+          attributes: {
+            is_active: data.is_active,
+            workflow_shortname: "catalog_idea_workflow",
+            relationships: [],
+            tags: data.tags,
+            payload: {
+              content_type: "json",
+              schema_shortname: "catelog_post",
+              body: {
+                title: data.title,
+                content: data.content,
+              },
             },
           },
         },
-      },
-    ],
-  };
+      ],
+    };
+  } else {
+    actionRequest = {
+      space_name: spaceName,
+      request_type: RequestType.create,
+      records: [
+        {
+          resource_type: ResourceType.content,
+          shortname: "auto",
+          subpath: subpath,
+          attributes: {
+            is_active: data.is_active,
+            relationships: [],
+            tags: data.tags,
+            payload: {
+              content_type: "json",
+              body: {
+                title: data.title,
+                content: data.content,
+              },
+            },
+          },
+        },
+      ],
+    };
+  }
   const response: ActionResponse = await Dmart.request(actionRequest);
   if (response.status == "success" && response.records.length > 0) {
     return response.records[0].shortname;
@@ -246,37 +315,49 @@ export async function createEntity(data: Entity) {
   return null;
 }
 
-export async function updateEntity(shortname, data: Entity) {
+export async function updateEntity(
+  shortname,
+  space_name,
+  subpath,
+  data: Entity
+) {
+  const isCatalog = space_name === "catalog";
+
+  const attributes: any = {
+    is_active: data.is_active,
+    relationships: [],
+    tags: data.tags,
+    payload: {
+      content_type: "json",
+      body: {
+        title: data.title,
+        content: data.content,
+      },
+    },
+  };
+
+  if (isCatalog) {
+    attributes.workflow_shortname = "catalog_idea_workflow";
+    attributes.payload.schema_shortname = "catelog_post";
+  }
+
   const actionRequest: ActionRequest = {
-    space_name: "catalog",
+    space_name,
     request_type: RequestType.update,
     records: [
       {
-        resource_type: ResourceType.ticket,
-        shortname: shortname,
-        subpath: "posts",
-        attributes: {
-          is_active: data.is_active,
-          workflow_shortname: "catalog_idea_workflow",
-          relationships: [],
-          tags: data.tags,
-          payload: {
-            content_type: "json",
-            schema_shortname: "catelog_post",
-            body: {
-              title: data.title,
-              content: data.content,
-            },
-          },
-        },
+        resource_type: isCatalog ? ResourceType.ticket : ResourceType.content,
+        shortname,
+        subpath,
+        attributes,
       },
     ],
   };
+
   const response: ActionResponse = await Dmart.request(actionRequest);
-  if (response.status == "success" && response.records.length > 0) {
-    return response.records[0].shortname;
-  }
-  return null;
+  return response.status === "success" && response.records.length > 0
+    ? response.records[0].shortname
+    : null;
 }
 
 export async function attachAttachmentsToEntity(
@@ -295,12 +376,16 @@ export async function attachAttachmentsToEntity(
   return response.status == "success" && response.records.length > 0;
 }
 
-export async function getEntityAttachmentsCount(shortname: string) {
+export async function getEntityAttachmentsCount(
+  shortname: string,
+  spaceName: string,
+  subpath: string
+) {
   const query: QueryRequest = {
     filter_shortnames: [],
     type: QueryType.attachments_aggregation,
-    space_name: "catalog",
-    subpath: `posts/${shortname}`,
+    space_name: spaceName,
+    subpath: `${subpath}/${shortname}`,
     limit: 100,
     sort_by: "shortname",
     sort_type: SortyType.ascending,
@@ -330,21 +415,29 @@ export async function progressEntity(
   return r.status == "success";
 }
 
-export async function deleteEntity(shortname: string) {
+export async function deleteEntity(
+  shortname: string,
+  spaceName: string,
+  subpath: string
+) {
+  const resourceType =
+    spaceName === "catalog" ? ResourceType.ticket : ResourceType.content;
+
   const actionRequest: ActionRequest = {
-    space_name: "catalog",
+    space_name: spaceName,
     request_type: RequestType.delete,
     records: [
       {
-        resource_type: ResourceType.ticket,
+        resource_type: resourceType,
         shortname: shortname,
-        subpath: "posts",
+        subpath: subpath,
         attributes: {},
       },
     ],
   };
+
   const response: ActionResponse = await Dmart.request(actionRequest);
-  return response.status == "success" && response.records.length > 0;
+  return response.status === "success" && response.records.length > 0;
 }
 
 export async function getSpaces(
@@ -381,7 +474,7 @@ export async function getSpaces(
 export async function getSpaceContents(
   spaceName: string,
   subpath = "/",
-  scope: string = "managed"
+  scope: string
 ): Promise<ApiQueryResponse> {
   const response = await Dmart.query(
     {
@@ -419,6 +512,7 @@ export async function getCatalogWorkflow() {
     return null;
   }
 }
+
 export async function getCatalogItem(
   spaceName: string,
   subpath: string,
@@ -471,6 +565,7 @@ export async function getCatalogItem(
     throw error;
   }
 }
+
 export async function createComment(
   spaceName: string,
   subpath: string,
@@ -502,15 +597,19 @@ export async function createComment(
   return response.status == "success" && response.records.length > 0;
 }
 
-export async function createReaction(shortname: string) {
+export async function createReaction(
+  shortname: string,
+  spaceName: string,
+  subpath: string
+) {
   const data: ActionRequest = {
-    space_name: "catalog",
+    space_name: spaceName,
     request_type: RequestType.create,
     records: [
       {
         resource_type: ResourceType.reaction,
         shortname: "auto",
-        subpath: `posts/${shortname}`,
+        subpath: `${subpath}/${shortname}`,
         attributes: {
           is_active: true,
           payload: {
@@ -531,10 +630,11 @@ export async function createReaction(shortname: string) {
 export async function deleteReactionComment(
   type: ResourceType,
   entry: string,
-  shortname: string
+  shortname: string,
+  spaceName: string
 ) {
   const data: ActionRequest = {
-    space_name: "catalog",
+    space_name: spaceName,
     request_type: RequestType.delete,
     records: [
       {
@@ -552,13 +652,15 @@ export async function deleteReactionComment(
 
 export async function checkCurrentUserReactedIdea(
   user_shortname: string,
-  entry_shortname: string
+  entry_shortname: string,
+  spaceName: string,
+  subpath: string
 ) {
   const data: QueryRequest = {
     filter_shortnames: [],
     type: QueryType.attachments,
-    space_name: "catalog",
-    subpath: `posts/${entry_shortname}`,
+    space_name: spaceName,
+    subpath: `${subpath}/${entry_shortname}`,
     limit: 100,
     sort_by: "shortname",
     sort_type: SortyType.ascending,
@@ -710,4 +812,60 @@ export async function markMessageAsReplied(
 
   const response: ActionResponse = await Dmart.request(actionRequest);
   return response.status == "success" && response.records.length > 0;
+}
+
+export async function createItem(
+  itemName: string,
+  itemType: string,
+  spaceName: string,
+  subpath: string = "/"
+) {
+  const actionRequest = {
+    space_name: spaceName,
+    request_type: RequestType.create,
+    records: [
+      {
+        resource_type: itemType as ResourceType,
+        shortname: "auto",
+        subpath: subpath,
+        attributes: {
+          is_active: true,
+          displayname: {
+            en: itemName,
+            ar: itemName,
+          },
+          description: {
+            en: `Created via admin panel`,
+            ar: `تم إنشاؤه عبر لوحة الإدارة`,
+          },
+        },
+      },
+    ],
+  };
+
+  const response = await Dmart.request(actionRequest);
+  return response.status === "success" && response.records.length > 0;
+}
+
+export async function deleteItem(
+  shortname: string,
+  resourceType: string,
+  subpath: string,
+  spaceName: string
+) {
+  const actionRequest = {
+    space_name: spaceName,
+    request_type: RequestType.delete,
+    records: [
+      {
+        resource_type: resourceType as ResourceType,
+        shortname: shortname,
+        subpath: subpath || "/",
+        attributes: {},
+      },
+    ],
+  };
+
+  const response = await Dmart.request(actionRequest);
+  return response.status === "success";
 }

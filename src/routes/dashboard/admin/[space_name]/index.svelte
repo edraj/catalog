@@ -5,6 +5,7 @@
   import { Diamonds } from "svelte-loading-spinners";
   import { _ } from "@/i18n";
   import { Dmart, ResourceType, RequestType } from "@edraj/tsdmart";
+  import { createEntity, deleteEntity } from "@/lib/dmart_services";
   $goto;
 
   let isLoading = $state(true);
@@ -14,9 +15,11 @@
   let showCreateModal = $state(false);
   let newItemName = $state("");
   let newItemType = $state("content");
+  let actualSubpath = $state("");
 
   onMount(async () => {
     spaceName = $params.space_name;
+    actualSubpath = $params.subpath || "/";
     await loadContents();
   });
 
@@ -49,42 +52,15 @@
       });
     }
   }
-
-  async function handleCreateItem() {
-    if (!newItemName.trim()) return;
-
-    try {
-      const response = await Dmart.request({
+  function handleCreateItem() {
+    $goto(
+      "/entries/create",
+      {},
+      {
         space_name: spaceName,
-        request_type: RequestType.create,
-        records: [
-          {
-            resource_type: newItemType as ResourceType,
-            shortname: newItemName,
-            subpath: "/",
-            attributes: {
-              is_active: true,
-              displayname: {
-                en: newItemName,
-                ar: newItemName,
-              },
-              description: {
-                en: `Created via admin panel`,
-                ar: `تم إنشاؤه عبر لوحة الإدارة`,
-              },
-            },
-          },
-        ],
-      });
-
-      if (response.status === "success") {
-        showCreateModal = false;
-        newItemName = "";
-        await loadContents();
+        subpath: actualSubpath || "/",
       }
-    } catch (err) {
-      console.error("Error creating item:", err);
-    }
+    );
   }
 
   async function handleDeleteItem(item: any, event: Event) {
@@ -95,20 +71,12 @@
     }
 
     try {
-      const response = await Dmart.request({
-        space_name: spaceName,
-        request_type: RequestType.delete,
-        records: [
-          {
-            resource_type: item.resource_type,
-            shortname: item.shortname,
-            subpath: item.subpath || "/",
-            attributes: {},
-          },
-        ],
-      });
-
-      if (response.status === "success") {
+      const success = await deleteEntity(
+        item.shortname,
+        spaceName,
+        actualSubpath
+      );
+      if (success) {
         await loadContents();
       }
     } catch (err) {
@@ -179,12 +147,14 @@
           </div>
         </div>
 
-        <button
-          onclick={() => (showCreateModal = true)}
-          class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200"
-        >
-          Create New Item
-        </button>
+        {#if actualSubpath !== "/" && actualSubpath !== ""}
+          <button
+            onclick={handleCreateItem}
+            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200"
+          >
+            Create New Item
+          </button>
+        {/if}
       </div>
     </div>
   </div>
@@ -311,7 +281,7 @@
   </div>
 </div>
 
-{#if showCreateModal}
+<!-- {#if showCreateModal}
   <div
     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
   >
@@ -371,4 +341,4 @@
       </div>
     </div>
   </div>
-{/if}
+{/if} -->

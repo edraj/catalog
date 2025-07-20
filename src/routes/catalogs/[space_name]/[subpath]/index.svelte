@@ -632,13 +632,11 @@
 </div>
 
 <style>
-  /* Custom table styling */
   table {
     border-collapse: separate;
     border-spacing: 0;
   }
 
-  /* Responsive table */
   @media (max-width: 768px) {
     .overflow-x-auto {
       -webkit-overflow-scrolling: touch;
@@ -658,18 +656,15 @@
     }
   }
 
-  /* Hover effects */
   tbody tr:hover {
     background-color: #f9fafb;
   }
 
-  /* Focus styles for accessibility */
   tbody tr:focus {
     outline: 2px solid #3b82f6;
     outline-offset: -2px;
   }
 
-  /* Pagination button styles */
   nav button:disabled {
     opacity: 0.5;
     cursor: not-allowed;

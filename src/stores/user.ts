@@ -39,6 +39,12 @@ function guess_locale(): Locale {
 let signedout: User = { signedin: false, locale: guess_locale() };
 export let user: Writable<User>;
 
+export let roles: Writable<string[]> = writable(
+  typeof localStorage !== "undefined"
+    ? JSON.parse(localStorage.getItem("roles") || "[]")
+    : []
+);
+
 // Load the user information from store, if it exists
 const data =
   typeof localStorage !== "undefined"
@@ -160,6 +166,7 @@ export async function register(
       email: email,
       email_otp: otp,
       password: password,
+      roles: ["catalog_user_role"],
     },
   };
 

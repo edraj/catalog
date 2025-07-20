@@ -2,10 +2,12 @@
   import { onMount } from "svelte";
   import {
     getAvatar,
+    setAvatar,
     getEntityAttachmentsCount,
     getProfile,
     getEntities,
     updateProfile,
+    getMyEntities,
   } from "@/lib/dmart_services";
   import {
     errorToastMessage,
@@ -13,7 +15,7 @@
   } from "@/lib/toasts_messages";
   import Avatar from "@/routes/components/Avatar.svelte";
   import { formatDate, renderStateString } from "@/lib/helpers";
-  import { goto } from "@roxi/routify";
+  import { goto, params } from "@roxi/routify";
   import { Diamonds } from "svelte-loading-spinners";
   $goto;
   import { _ } from "@/i18n";
@@ -27,48 +29,63 @@
   let profileSection: string = $state(ProfileSection.ME);
 
   let isLoading = $state(true);
+  let isUploadingAvatar = $state(false);
   let user = $state(null);
   let avatar = $state(null);
   let entities = $state([]);
   let displayname = $state("");
   let description = $state("");
+  let fileInput: HTMLInputElement;
 
   onMount(async () => {
     isLoading = true;
     user = await getProfile();
-    displayname = user.attributes.displayname.en ?? "";
+    displayname = user?.attributes?.displayname?.en ?? user.attributes.email;
     description = user.attributes?.description?.en ?? "";
 
     avatar = await getAvatar(user.shortname);
 
-    const _entities = await getEntities({
-      limit: 15,
-      offset: 0,
-      shortname: user.shortname,
-      search: `@owner_shortname:${user.shortname}`,
-    });
-    if (_entities === null) {
-      errorToastMessage("Failed to fetch entities!", true);
-      entities = [];
-    } else {
-      for (const item of _entities) {
-        const counts = await getEntityAttachmentsCount(item.shortname);
-
-        entities.push({
-          shortname: item.shortname,
-          owner: item.attributes.owner_shortname,
-          tags: item.attributes.tags,
-          state: item.attributes.state,
-          is_active: item.attributes.is_active,
-          created_at: formatDate(item.attributes.created_at),
-          updated_at: formatDate(item.attributes.updated_at),
-          ...item.attributes.payload.body,
-          ...counts[0].attributes,
-        });
-      }
-    }
+    await fetchEntities();
     isLoading = false;
   });
+
+  async function fetchEntities() {
+    isLoading = true;
+    try {
+      const rawEntities = await getMyEntities();
+
+      entities = rawEntities.map((entity) => ({
+        shortname: entity.shortname,
+        title:
+          entity.attributes?.payload?.body?.title ||
+          entity.attributes?.displayname?.en ||
+          "Untitled",
+        content: entity.attributes?.payload?.body?.content || "",
+        tags: entity.attributes?.tags || [],
+        state: entity.attributes?.state || "unknown",
+        is_active: entity.attributes?.is_active || false,
+        created_at: entity.attributes?.created_at
+          ? formatDate(entity.attributes.created_at)
+          : "",
+        updated_at: entity.attributes?.updated_at
+          ? formatDate(entity.attributes.updated_at)
+          : "",
+        raw_created_at: entity.attributes?.created_at || "",
+        raw_updated_at: entity.attributes?.updated_at || "",
+        space_name: entity.attributes?.space_name || "",
+        subpath: entity?.subpath || "",
+        owner_shortname: entity.attributes?.owner_shortname || "",
+        comment: entity.attachments?.comment?.length ?? 0,
+        reaction: entity.attachments?.reaction?.length ?? 0,
+      }));
+    } catch (error) {
+      console.error("Error fetching entities:", error);
+      errorToastMessage("An error occurred while fetching your entries");
+      entities = [];
+    } finally {
+      isLoading = false;
+    }
+  }
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -93,9 +110,54 @@
   }
 
   function gotoEntityDetails(entity: any) {
-    $goto("/dashboard/[shortname]", {
+    $goto("/entries/[shortname]", {
       shortname: entity.shortname,
+      space_name: entity.space_name,
+      subpath: entity.subpath,
     });
+  }
+
+  function triggerFileInput() {
+    fileInput?.click();
+  }
+
+  async function handleAvatarChange(event: Event) {
+    const target = event.target as HTMLInputElement;
+    const file = target.files?.[0];
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      errorToastMessage("Please select a valid image file");
+      return;
+    }
+
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      errorToastMessage("File size must be less than 5MB");
+      return;
+    }
+
+    isUploadingAvatar = true;
+
+    try {
+      const success = await setAvatar(user.shortname, file);
+
+      if (success) {
+        avatar = await getAvatar(user.shortname);
+        successToastMessage("Profile picture updated successfully");
+      } else {
+        errorToastMessage("Failed to update profile picture");
+      }
+    } catch (error) {
+      console.error("Error updating avatar:", error);
+      errorToastMessage(
+        "An error occurred while updating your profile picture"
+      );
+    } finally {
+      isUploadingAvatar = false;
+      target.value = "";
+    }
   }
 </script>
 
@@ -134,9 +196,90 @@
           <div
             class="flex flex-col items-center rounded-xl border border-gray-200 p-6 text-center"
           >
-            <div class="mb-6 flex justify-center">
-              <Avatar src={avatar} size="120" />
+            <div class="mb-6 flex justify-center relative">
+              <div class="relative group">
+                <Avatar src={avatar} size="120" />
+
+                <!-- Avatar Edit Overlay -->
+                <div
+                  class="absolute inset-0 bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center cursor-pointer"
+                  onclick={triggerFileInput}
+                >
+                  {#if isUploadingAvatar}
+                    <div class="text-white">
+                      <Diamonds color="#ffffff" size="24" unit="px" />
+                    </div>
+                  {:else}
+                    <div class="text-white text-center">
+                      <svg
+                        class="w-6 h-6 mx-auto mb-1"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                        ></path>
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+                        ></path>
+                      </svg>
+                      <span class="text-xs">Edit</span>
+                    </div>
+                  {/if}
+                </div>
+              </div>
+
+              <!-- Hidden file input -->
+              <input
+                bind:this={fileInput}
+                type="file"
+                accept="image/*"
+                class="hidden"
+                onchange={handleAvatarChange}
+                disabled={isUploadingAvatar}
+              />
             </div>
+
+            <!-- Edit Avatar Button (alternative placement) -->
+            <button
+              class="mb-4 px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors duration-200 flex items-center gap-2"
+              onclick={triggerFileInput}
+              disabled={isUploadingAvatar}
+            >
+              {#if isUploadingAvatar}
+                <Diamonds color="#6b7280" size="16" unit="px" />
+                Uploading...
+              {:else}
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                  ></path>
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+                  ></path>
+                </svg>
+                {$_("ChangePhoto")}
+              {/if}
+            </button>
+
             <h2 class="text-xl font-semibold text-gray-900 mb-2">
               {displayname || user.shortname}
             </h2>

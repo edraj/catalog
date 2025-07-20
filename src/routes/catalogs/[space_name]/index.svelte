@@ -4,12 +4,16 @@
   import { getSpaceContents } from "@/lib/dmart_services";
   import { Diamonds } from "svelte-loading-spinners";
   import { _ } from "@/i18n";
+  import { locale } from "@/i18n";
   $goto;
 
   let isLoading = $state(true);
   let contents = $state([]);
   let error = $state(null);
   let spaceName = $state("");
+
+  const isRTL = $locale === "ar" || $locale === "ku";
+  const direction = isRTL ? "rtl" : "ltr";
 
   onMount(async () => {
     spaceName = $params.space_name;
@@ -24,7 +28,7 @@
       }
     } catch (err) {
       console.error("Error fetching space contents:", err);
-      error = "Failed to load space contents";
+      error = $_("error.failed_load_space_contents");
     } finally {
       isLoading = false;
     }
@@ -61,8 +65,8 @@
   }
 
   function formatDate(dateString: string): string {
-    if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString();
+    if (!dateString) return $_("common.not_available");
+    return new Date(dateString).toLocaleDateString($locale);
   }
 
   function goBack() {
@@ -70,18 +74,18 @@
   }
 </script>
 
-<div class="min-h-screen bg-gray-50">
+<div class="min-h-screen bg-gray-50" dir={direction}>
   <div class="bg-white border-b border-gray-200">
     <div class="container mx-auto px-4 py-6 max-w-7xl">
       <div class="flex items-center justify-between">
-        <div class="flex items-center space-x-4">
+        <div class="flex items-center space-x-4" class:space-x-reverse={isRTL}>
           <button
             onclick={goBack}
             class="flex items-center text-gray-600 hover:text-gray-900 transition-colors duration-200"
-            aria-label="Go back"
+            aria-label={$_("actions.go_back")}
           >
             <svg
-              class="w-12 h-12 mr-2"
+              class="w-12 h-12 {isRTL ? 'ml-2 rotate-180' : 'mr-2'}"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -97,10 +101,11 @@
           <div class="h-6 w-px bg-gray-300"></div>
           <div>
             <h1 class="text-2xl font-bold text-gray-900 capitalize">
-              {spaceName} Space
+              {$_("space.title")}
+              {spaceName}
             </h1>
             <p class="text-gray-600">
-              Browse contents and navigate through folders
+              {$_("space.browse_description")}
             </p>
           </div>
         </div>
@@ -133,7 +138,7 @@
           </svg>
         </div>
         <h3 class="text-xl font-semibold text-gray-900 mb-2">
-          Error Loading Contents
+          {$_("error.loading_contents_title")}
         </h3>
         <p class="text-gray-600">{error}</p>
       </div>
@@ -157,11 +162,10 @@
           </svg>
         </div>
         <h3 class="text-xl font-semibold text-gray-900 mb-2">
-          No Contents Found
+          {$_("space.no_contents_title")}
         </h3>
         <p class="text-gray-600">
-          This space appears to be empty or you don't have access to view its
-          contents.
+          {$_("space.no_contents_description")}
         </p>
       </div>
     {:else}
@@ -178,7 +182,11 @@
               }
             }}
           >
-            <div class="flex items-start space-x-3">
+            <div
+              class="flex items-start space-x-3"
+              class:space-x-reverse={isRTL}
+              class:flex-row-reverse={isRTL}
+            >
               <div class="text-2xl">
                 {getItemIcon(item)}
               </div>
@@ -187,7 +195,7 @@
                   {item.shortname}
                 </h3>
                 <p class="text-xs text-gray-500 mt-1">
-                  {item.resource_type}
+                  {$_(`resource_type.${item.resource_type}`)}
                 </p>
                 {#if item.attributes?.created_at}
                   <p class="text-xs text-gray-400 mt-1">
@@ -208,25 +216,27 @@
       <div
         class="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6"
       >
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Space Summary</h3>
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+          {$_("space.summary_title")}
+        </h3>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div class="text-center">
             <p class="text-2xl font-bold text-blue-600">{contents.length}</p>
-            <p class="text-sm text-gray-500">Total Items</p>
+            <p class="text-sm text-gray-500">{$_("stats.total_items")}</p>
           </div>
           <div class="text-center">
             <p class="text-2xl font-bold text-green-600">
               {contents.filter((item) => item.resource_type === "folder")
                 .length}
             </p>
-            <p class="text-sm text-gray-500">Folders</p>
+            <p class="text-sm text-gray-500">{$_("stats.folders")}</p>
           </div>
           <div class="text-center">
             <p class="text-2xl font-bold text-purple-600">
               {contents.filter((item) => item.resource_type === "content")
                 .length}
             </p>
-            <p class="text-sm text-gray-500">Content</p>
+            <p class="text-sm text-gray-500">{$_("stats.content")}</p>
           </div>
           <div class="text-center">
             <p class="text-2xl font-bold text-orange-600">
@@ -234,7 +244,7 @@
                 (item) => !["folder", "content"].includes(item.resource_type)
               ).length}
             </p>
-            <p class="text-sm text-gray-500">Other</p>
+            <p class="text-sm text-gray-500">{$_("stats.other")}</p>
           </div>
         </div>
       </div>
@@ -243,7 +253,6 @@
 </div>
 
 <style>
-  /* Focus styles for accessibility */
   [role="button"]:focus {
     outline: 2px solid #3b82f6;
     outline-offset: 2px;

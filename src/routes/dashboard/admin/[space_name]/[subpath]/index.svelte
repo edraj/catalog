@@ -6,13 +6,14 @@
   import { _ } from "@/i18n";
   import { Dmart, ResourceType, RequestType } from "@edraj/tsdmart";
   import { writable } from "svelte/store";
+  import { createEntity, deleteEntity } from "@/lib/dmart_services";
   $goto;
   let isLoading = writable(false);
   let allContents = writable([]);
   let paginatedContents = writable([]);
   let error = writable(null);
 
-  let actualSubpath = "";
+  let actualSubpath = writable("");
   let breadcrumbs = writable([]);
   let showCreateModal = writable(false);
   let newItemName = writable("");
@@ -32,9 +33,9 @@
     spaceName = $params.space_name;
     subpath = $params.subpath;
 
-    actualSubpath = subpath.replace(/-/g, "/");
+    actualSubpath.set(subpath.replace(/-/g, "/"));
 
-    const pathParts = actualSubpath
+    const pathParts = $actualSubpath
       .split("/")
       .filter((part) => part.length > 0);
     breadcrumbs.set([
@@ -80,7 +81,7 @@
     try {
       const response = await getSpaceContents(
         spaceName,
-        `/${actualSubpath}`,
+        `/${$actualSubpath}`,
         "managed"
       );
 
@@ -144,43 +145,12 @@
     }
   }
 
-  async function handleCreateItem() {
-    if (!$newItemName.trim()) return;
-
-    try {
-      const response = await Dmart.request({
-        space_name: spaceName,
-        request_type: RequestType.create,
-        records: [
-          {
-            resource_type: $newItemType as ResourceType,
-            shortname: $newItemName,
-            subpath: `/${actualSubpath}`,
-            attributes: {
-              is_active: true,
-              displayname: {
-                en: $newItemName,
-                ar: $newItemName,
-              },
-              description: {
-                en: `Created via admin panel`,
-                ar: `تم إنشاؤه عبر لوحة الإدارة`,
-              },
-            },
-          },
-        ],
-      });
-
-      if (response.status === "success") {
-        showCreateModal.set(false);
-        newItemName.set("");
-        await loadContents();
-      }
-    } catch (err) {
-      console.error("Error creating item:", err);
-    }
+  function handleCreateItem() {
+    $goto("/entries/create", {
+      space_name: spaceName,
+      subpath: $actualSubpath,
+    });
   }
-
   async function handleDeleteItem(item, event) {
     event.stopPropagation();
 
@@ -189,20 +159,12 @@
     }
 
     try {
-      const response = await Dmart.request({
-        space_name: spaceName,
-        request_type: RequestType.delete,
-        records: [
-          {
-            resource_type: item.resource_type,
-            shortname: item.shortname,
-            subpath: item.subpath || `/${actualSubpath}`,
-            attributes: {},
-          },
-        ],
-      });
-
-      if (response.status === "success") {
+      const success = await deleteEntity(
+        item.shortname,
+        spaceName,
+        `/${$actualSubpath}`
+      );
+      if (success) {
         await loadContents();
       }
     } catch (err) {
@@ -346,10 +308,10 @@
         <div>
           <h1 class="text-2xl font-bold text-gray-900">
             Admin: {$breadcrumbs[$breadcrumbs.length - 1]?.name ||
-              actualSubpath.split("/").pop()}
+              $actualSubpath.split("/").pop()}
           </h1>
           <p class="text-gray-600">
-            Managing contents in {spaceName}/{actualSubpath}
+            Managing contents in {spaceName}/{$actualSubpath}
           </p>
         </div>
 
@@ -373,12 +335,14 @@
             </div>
           {/if}
 
-          <button
-            onclick={() => showCreateModal.set(true)}
-            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200"
-          >
-            Create New Item
-          </button>
+          {#if $actualSubpath !== "/" && $actualSubpath !== ""}
+            <button
+              onclick={() => handleCreateItem()}
+              class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200"
+            >
+              Create New Item
+            </button>
+          {/if}
         </div>
       </div>
     </div>
@@ -667,7 +631,7 @@
   </div>
 </div>
 
-{#if $showCreateModal}
+<!-- {#if $showCreateModal}
   <div
     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
   >
@@ -727,4 +691,4 @@
       </div>
     </div>
   </div>
-{/if}
+{/if} -->

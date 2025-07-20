@@ -1,13 +1,18 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { params, goto } from "@roxi/routify";
-  import { getCatalogItem } from "@/lib/dmart_services";
+  import {
+    getCatalogItem,
+    deleteEntity,
+    updateEntity,
+    getMyEntities,
+  } from "@/lib/dmart_services";
   import { Diamonds } from "svelte-loading-spinners";
   import { _ } from "@/i18n";
   import { locale } from "@/i18n";
   import { Dmart, ResourceType, RequestType } from "@edraj/tsdmart";
   import { writable } from "svelte/store";
-
+  $goto;
   const isLoading = writable(false);
   const itemData = writable(null);
   const error = writable(null);
@@ -18,24 +23,29 @@
   const breadcrumbs = writable([]);
   const showEditModal = writable(false);
   const activeTab = writable("overview");
-  const editForm = writable({
-    displayname: "",
-    description: "",
-    is_active: true,
-  });
-
   let spaceNameValue = $state("");
   let subpathValue = "";
   let itemShortnameValue = $state("");
   let actualSubpathValue = $state("");
   let breadcrumbsValue = [];
+  const authorRelatedEntries = writable([]);
+  let authorRelatedEntriesValue = $state([]);
   let itemDataValue = $state(null);
-  let editFormValue = $state({
-    displayname: "",
-    description: "",
+  const editForm = writable({
+    title: "",
+    content: "",
+    tags: [],
+    tagsString: "",
     is_active: true,
   });
 
+  let editFormValue = $state({
+    title: "",
+    content: "",
+    tags: [],
+    tagsString: "",
+    is_active: true,
+  });
   onMount(async () => {
     await initializeContent();
   });
@@ -45,7 +55,7 @@
   }
 
   async function initializeContent() {
-    subscribeStore(params, (value) => {
+    subscribeStore(params, async (value) => {
       spaceNameValue = value.space_name;
       subpathValue = value.subpath;
       itemShortnameValue = value.shortname;
@@ -80,9 +90,23 @@
       });
 
       breadcrumbs.set(breadcrumbsValue);
+
+      if (actualSubpathValue === "authors") {
+        await loadAuthorRelatedEntries();
+      }
     });
 
     await loadItemData();
+  }
+
+  async function loadAuthorRelatedEntries() {
+    try {
+      const entries = await getMyEntities(itemShortnameValue);
+      authorRelatedEntriesValue = entries;
+      authorRelatedEntries.set(entries);
+    } catch (err) {
+      console.error("Error fetching author related entries:", err);
+    }
   }
 
   async function loadItemData() {
@@ -102,9 +126,23 @@
       if (response && response.uuid) {
         itemDataValue = response;
         itemData.set(response);
+
+        const title =
+          response.payload?.body?.title ||
+          response.displayname ||
+          response.shortname ||
+          "";
+        const content =
+          response.payload?.body?.content || response.description || "";
+        const tags = response.tags || [];
+        const tagsString = tags.join(", ");
+
         editFormValue = {
-          displayname: getDisplayName(response),
-          description: getDescription(response),
+          title: typeof title === "string" ? title : getDisplayName(response),
+          content:
+            typeof content === "string" ? content : getDescription(response),
+          tags: tags,
+          tagsString: tagsString,
           is_active: response.is_active,
         };
         editForm.set(editFormValue);
@@ -120,37 +158,38 @@
     }
   }
 
-  async function handleUpdateItem() {
+  async function handleUpdateItem(event) {
+    event?.preventDefault();
     try {
-      const response = await Dmart.request({
-        space_name: spaceNameValue,
-        request_type: RequestType.update,
-        records: [
-          {
-            resource_type: itemDataValue.resource_type,
-            shortname: itemShortnameValue,
-            subpath: `/${actualSubpathValue}`,
-            attributes: {
-              displayname: {
-                en: editFormValue.displayname,
-                ar: editFormValue.displayname,
-              },
-              description: {
-                en: editFormValue.description,
-                ar: editFormValue.description,
-              },
-              is_active: editFormValue.is_active,
-            },
-          },
-        ],
-      });
+      const tagsArray = editFormValue.tagsString
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0);
 
-      if (response.status === "success") {
+      const entityData = {
+        title: editFormValue.title,
+        tags: tagsArray,
+        content: editFormValue.content,
+        is_active: editFormValue.is_active,
+      };
+
+      const response = await updateEntity(
+        itemShortnameValue,
+        spaceNameValue,
+        actualSubpathValue,
+        entityData
+      );
+
+      if (response) {
         showEditModal.set(false);
         await loadItemData();
+      } else {
+        console.error("Update failed: No response received");
+        error.set("Failed to update item");
       }
     } catch (err) {
       console.error("Error updating item:", err);
+      error.set(err.message || "Failed to update item");
     }
   }
 
@@ -160,23 +199,16 @@
     }
 
     try {
-      const response = await Dmart.request({
-        space_name: spaceNameValue,
-        request_type: RequestType.delete,
-        records: [
-          {
-            resource_type: itemDataValue.resource_type,
-            shortname: itemShortnameValue,
-            subpath: `/${actualSubpathValue}`,
-            attributes: {},
-          },
-        ],
-      });
+      const success = await deleteEntity(
+        itemShortnameValue,
+        spaceNameValue,
+        actualSubpathValue
+      );
 
-      if (response.status === "success") {
+      if (success) {
         $goto("/dashboard/admin/[space_name]/[subpath]", {
           space_name: spaceNameValue,
-          subpath: subpathValue,
+          subpath: actualSubpathValue,
         });
       }
     } catch (err) {
@@ -395,6 +427,17 @@
             >
               Attachments
             </button>
+            {#if actualSubpathValue === "authors"}
+              <button
+                onclick={() => setActiveTab("author-entries")}
+                class="py-4 px-1 border-b-2 font-medium text-sm {$activeTab ===
+                'author-entries'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}"
+              >
+                Author Related Entries
+              </button>
+            {/if}
             <button
               onclick={() => setActiveTab("metadata")}
               class="py-4 px-1 border-b-2 font-medium text-sm {$activeTab ===
@@ -1024,6 +1067,124 @@
               </div>
             </div>
           {/if}
+          {#if $activeTab === "author-entries"}
+            <div class="space-y-6">
+              <h3 class="text-lg font-semibold text-gray-900">
+                Author Related Entries
+              </h3>
+
+              {#if authorRelatedEntriesValue && authorRelatedEntriesValue.length > 0}
+                <div
+                  class="bg-white border border-gray-200 rounded-lg overflow-hidden"
+                >
+                  <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                      <tr>
+                        <th
+                          class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Shortname
+                        </th>
+                        <th
+                          class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Display Name
+                        </th>
+                        <th
+                          class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Space
+                        </th>
+                        <th
+                          class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Type
+                        </th>
+                        <th
+                          class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Status
+                        </th>
+                        <th
+                          class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Created
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                      {#each authorRelatedEntriesValue as entry}
+                        <tr>
+                          <td
+                            class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
+                          >
+                            {entry.shortname}
+                          </td>
+                          <td
+                            class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                          >
+                            {getDisplayName(entry)}
+                          </td>
+                          <td
+                            class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                          >
+                            {entry.space_name || "N/A"}
+                          </td>
+                          <td
+                            class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                          >
+                            <span
+                              class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800"
+                            >
+                              {entry.resource_type || "content"}
+                            </span>
+                          </td>
+                          <td
+                            class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                          >
+                            <span
+                              class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {entry.is_active
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-red-100 text-red-800'}"
+                            >
+                              <div
+                                class="w-1.5 h-1.5 rounded-full mr-1.5 {entry.is_active
+                                  ? 'bg-green-400'
+                                  : 'bg-red-400'}"
+                              ></div>
+                              {entry.is_active ? "Active" : "Inactive"}
+                            </span>
+                          </td>
+                          <td
+                            class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                          >
+                            {formatDate(entry.created_at)}
+                          </td>
+                        </tr>
+                      {/each}
+                    </tbody>
+                  </table>
+                </div>
+              {:else}
+                <div class="text-center py-8 text-gray-500">
+                  <svg
+                    class="mx-auto h-12 w-12 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  <p class="mt-2">No author related entries found</p>
+                </div>
+              {/if}
+            </div>
+          {/if}
         </div>
       </div>
     {:else}
@@ -1055,43 +1216,86 @@
 </div>
 
 {#if $showEditModal}
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <!-- svelte-ignore a11y_consider_explicit_label -->
   <div
     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    onclick={() => showEditModal.set(false)}
   >
-    <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-      <h3 class="text-lg font-semibold mb-4">Edit Item</h3>
-
-      <div class="space-y-4">
+    <div
+      class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto"
+      onclick={(event) => event.stopPropagation()}
+    >
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-xl font-semibold text-gray-900">Edit Item</h3>
+        <button
+          onclick={() => showEditModal.set(false)}
+          class="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+        >
+          <svg
+            class="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+      </div>
+      <form class="space-y-5" onsubmit={handleUpdateItem}>
         <div>
           <label
-            for="editDisplayname"
-            class="block text-sm font-medium text-gray-700 mb-1"
+            for="editTitle"
+            class="block text-sm font-medium text-gray-700 mb-2"
           >
-            Display Name
+            Title
           </label>
           <input
-            id="editDisplayname"
+            id="editTitle"
             type="text"
-            bind:value={editFormValue.displayname}
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Enter display name"
+            bind:value={editFormValue.title}
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Enter title"
+            required
           />
         </div>
 
         <div>
           <label
-            for="editDescription"
-            class="block text-sm font-medium text-gray-700 mb-1"
+            for="editContent"
+            class="block text-sm font-medium text-gray-700 mb-2"
           >
-            Description
+            Content
           </label>
           <textarea
-            id="editDescription"
-            bind:value={editFormValue.description}
-            rows="3"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Enter description"
+            id="editContent"
+            bind:value={editFormValue.content}
+            rows="4"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+            placeholder="Enter content"
           ></textarea>
+        </div>
+
+        <div>
+          <label
+            for="editTags"
+            class="block text-sm font-medium text-gray-700 mb-2"
+          >
+            Tags (comma-separated)
+          </label>
+          <input
+            id="editTags"
+            type="text"
+            bind:value={editFormValue.tagsString}
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="tag1, tag2, tag3"
+          />
         </div>
 
         <div class="flex items-center">
@@ -1105,22 +1309,23 @@
             Active
           </label>
         </div>
-      </div>
 
-      <div class="flex justify-end space-x-3 mt-6">
-        <button
-          onclick={() => showEditModal.set(false)}
-          class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors duration-200"
-        >
-          Cancel
-        </button>
-        <button
-          onclick={handleUpdateItem}
-          class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors duration-200"
-        >
-          Save Changes
-        </button>
-      </div>
+        <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+          <button
+            type="button"
+            onclick={() => showEditModal.set(false)}
+            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+          >
+            Save Changes
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 {/if}

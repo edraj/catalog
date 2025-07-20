@@ -16,39 +16,33 @@
   const features = [
     {
       icon: HeartSolid,
-      title: "Interactive Engagement",
-      description:
-        "Like and comment on posts to engage with the community. Build meaningful connections through authentic interactions.",
+      title: $_("InteractiveEngagement"),
+      description: $_("InteractiveEngagementDesc"),
     },
     {
       icon: BellSolid,
-      title: "Real-time Notifications",
-      description:
-        "Get instant alerts when someone reacts to your posts. Stay connected and never miss important interactions.",
+      title: $_("RealtimeNotifications"),
+      description: $_("RealtimeNotificationsDesc"),
     },
     {
       icon: UserSolid,
-      title: "Personal Profile",
-      description:
-        "Manage your posts, track engagement, and customize your profile. Full control over your content and presence.",
+      title: $_("PersonalProfile"),
+      description: $_("PersonalProfileDesc"),
     },
     {
       icon: EyeSolid,
-      title: "Public Browse Mode",
-      description:
-        "Explore all posts even without an account. Discover amazing content before deciding to join the community.",
+      title: $_("PublicBrowseMode"),
+      description: $_("PublicBrowseModeDesc"),
     },
     {
       icon: EditSolid,
-      title: "Content Management",
-      description:
-        "Create, edit, and unpublish your posts with ease. Maintain full ownership and control of your content.",
+      title: $_("ContentManagement"),
+      description: $_("ContentManagementDesc"),
     },
     {
       icon: MessageCaptionSolid,
-      title: "Rich Discussions",
-      description:
-        "Dive deep into conversations with detailed post pages and threaded comments for meaningful discussions.",
+      title: $_("RichDiscussions"),
+      description: $_("RichDiscussionsDesc"),
     },
   ];
 
@@ -78,24 +72,22 @@
     <div class="hero-content">
       <div class="hero-text">
         <h1 class="hero-title">
-          Share Ideas,
-          <span class="gradient-text"> Build Community </span>
+          {$_("ShareIdeas")},
+          <span class="gradient-text"> {$_("BuildCommunity")} </span>
         </h1>
         <p class="hero-description">
-          Catalog is where creators share their thoughts, engage with others,
-          and build meaningful connections. Join a community that values
-          authentic conversations and quality content.
+          {$_("HeroDescription")}
         </p>
 
         <div class="hero-buttons">
           <button class="btn-primary" onclick={handleStartExploring}>
-            Start Exploring
+            {$_("StartExploring")}
           </button>
           <button class="btn-secondary" onclick={handleSignIn}>
-            Sign In
+            {$_("SignIn")}
           </button>
           <button class="btn-secondary" onclick={handleRegister}>
-            Create Account
+            {$_("CreateAccount")}
           </button>
         </div>
       </div>
@@ -105,10 +97,9 @@
   <section class="features-section">
     <div class="features-content">
       <div class="features-header">
-        <h2 class="features-title">Everything You Need to Connect</h2>
+        <h2 class="features-title">{$_("FeaturesTitle")}</h2>
         <p class="features-description">
-          Powerful features designed to make sharing and discovering content
-          effortless and engaging.
+          {$_("FeaturesDescription")}
         </p>
       </div>
 
@@ -132,22 +123,21 @@
 
   <section class="cta-section">
     <div class="cta-content">
-      <h2 class="cta-title">Ready to Join the Community?</h2>
+      <h2 class="cta-title">{$_("CTATitle")}</h2>
       <p class="cta-description">
-        Start sharing your ideas, discover amazing content, and connect with
-        like-minded creators today.
+        {$_("CTADescription")}
       </p>
 
       <div class="cta-buttons">
         <button class="btn-cta-secondary" onclick={handleExploreAsGuest}>
-          Explore as Guest
+          {$_("ExploreAsGuest")}
         </button>
         <button
           class="btn-cta-secondary flex items-center"
           onclick={handleContactUs}
         >
           <MessagesOutline class="button-icon mr-2" />
-          Contact Us
+          {$_("ContactUs")}
         </button>
       </div>
     </div>
@@ -157,10 +147,9 @@
     <div class="footer-content">
       <div class="footer-grid">
         <div class="footer-brand">
-          <h3 class="brand-name">Catalog</h3>
+          <h3 class="brand-name">{$_("Catalog")}</h3>
           <p class="brand-description">
-            Building communities through authentic conversations and meaningful
-            connections. Share your story, discover new perspectives.
+            {$_("BrandDescription")}
           </p>
           <div class="social-icons">
             <a href="#" class="social-icon">
@@ -176,22 +165,22 @@
         </div>
 
         <div class="footer-column">
-          <h4 class="footer-column-title">Support</h4>
+          <h4 class="footer-column-title">{$_("Support")}</h4>
           <ul class="footer-links">
-            <li><a href="/help">Help Center</a></li>
-            <li><a href="/community">Community</a></li>
+            <li><a href="/help">{$_("HelpCenter")}</a></li>
+            <li><a href="/community">{$_("Community")}</a></li>
             <li>
               <button onclick={handleContactUs} class="footer-link-button"
-                >Contact Us</button
+                >{$_("ContactUs")}</button
               >
             </li>
-            <li><a href="/privacy">Privacy</a></li>
+            <li><a href="/privacy">{$_("Privacy")}</a></li>
           </ul>
         </div>
       </div>
 
       <div class="footer-bottom">
-        <p>&copy; 2025 Catalog. All rights reserved.</p>
+        <p>{$_("Copyright")}</p>
       </div>
     </div>
   </footer>

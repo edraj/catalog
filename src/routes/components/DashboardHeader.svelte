@@ -5,14 +5,13 @@
   import { newNotificationType } from "@/stores/newNotificationType";
   import { _ } from "@/i18n";
   import { locale, switchLocale } from "@/i18n";
-  import { user, signout } from "@/stores/user";
+  import { user, signout, roles } from "@/stores/user";
   import { goto } from "@roxi/routify";
   $goto;
 
   let ws = $state(null);
 
   onMount(() => {
-    // Only setup websocket if user is logged in
     if ($user.signedin) {
       if (isWSOpen(ws)) {
         ws.send(JSON.stringify({ type: "notification_unsubscribe" }));
@@ -123,7 +122,7 @@
         {#if $user.signedin}
           <SearchBar />
 
-          <a
+          <!-- <a
             href="/dashboard"
             class="nav-icon-btn"
             aria-label="Dashboard"
@@ -142,9 +141,51 @@
                 d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
               ></path>
             </svg>
-          </a>
+          </a> -->
+          {#if $roles.includes("super_admin")}
+            <a
+              href="/dashboard/admin"
+              class="nav-icon-btn"
+              aria-label="Admin Dashboard"
+              title="Admin Dashboard"
+            >
+              <svg
+                class="nav-icon"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1"
+                  d="M12 14v2a6 6 0 0 0-6 6H4a8 8 0 0 1 8-8zm0-1c-3.315 0-6-2.685-6-6s2.685-6 6-6 6 2.685 6 6-2.685 6-6 6zm0-2c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm9 6h1v5h-8v-5h1v-1a3 3 0 0 1 6 0v1zm-2 0v-1a1 1 0 0 0-2 0v1h2z"
+                ></path>
+              </svg>
+            </a>
+            <a
+              href="/dashboard/admin/contact-messages"
+              class="nav-icon-btn"
+              aria-label="Contact Messages"
+              title="Contact Messages"
+            >
+              <svg
+                class="nav-icon"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                ></path>
+              </svg>
+            </a>
+          {/if}
           <a
-            href="/dashboard/admin"
+            href="/entries"
             class="nav-icon-btn"
             aria-label="Admin Dashboard"
             title="Admin Dashboard"
@@ -158,32 +199,11 @@
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
-                stroke-width="1"
-                d="M12 14v2a6 6 0 0 0-6 6H4a8 8 0 0 1 8-8zm0-1c-3.315 0-6-2.685-6-6s2.685-6 6-6 6 2.685 6 6-2.685 6-6 6zm0-2c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm9 6h1v5h-8v-5h1v-1a3 3 0 0 1 6 0v1zm-2 0v-1a1 1 0 0 0-2 0v1h2z"
-              ></path>
-            </svg>
-          </a>
-          <a
-            href="/dashboard/admin/contact-messages"
-            class="nav-icon-btn"
-            aria-label="Contact Messages"
-            title="Contact Messages"
-          >
-            <svg
-              class="nav-icon"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
                 stroke-width="2"
-                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
               ></path>
             </svg>
           </a>
-
           <a
             href="/notifications"
             class="nav-icon-btn relative"
@@ -290,7 +310,6 @@
 </header>
 
 <style>
-  /* Navigation Icon Buttons */
   .nav-icon-btn {
     display: flex;
     align-items: center;
@@ -330,7 +349,6 @@
     color: #374151;
   }
 
-  /* Logout button specific styling */
   .logout-btn:hover {
     background: rgba(254, 242, 242, 0.9);
     border-color: rgba(252, 165, 165, 0.6);
@@ -340,7 +358,6 @@
     color: #dc2626;
   }
 
-  /* Login Button */
   .login-btn {
     display: inline-flex;
     align-items: center;
@@ -368,7 +385,6 @@
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
   }
 
-  /* Language Selector */
   .language-select {
     appearance: none;
     background: rgba(249, 250, 251, 0.8);
@@ -400,12 +416,10 @@
     border-color: #3b82f6;
   }
 
-  /* Enhanced header backdrop */
   header {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   }
 
-  /* Responsive adjustments */
   @media (max-width: 640px) {
     .nav-icon-btn {
       width: 2.5rem;
@@ -420,12 +434,6 @@
     .login-btn {
       padding: 0.625rem 1.25rem;
       font-size: 0.8rem;
-    }
-
-    .login-btn svg {
-      width: 1rem;
-      height: 1rem;
-      margin-right: 0.25rem;
     }
 
     .language-select {
@@ -450,7 +458,6 @@
     animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 
-  /* Improved focus states for accessibility */
   .nav-icon-btn:focus {
     outline: none;
     ring: 2px;

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Button, Card, Input, TextPlaceholder } from "flowbite-svelte";
-  import { goto } from "@roxi/routify";
+  import { goto, params } from "@roxi/routify";
   import HtmlEditor from "@/routes/components/HtmlEditor.svelte";
   import {
     attachAttachmentsToEntity,
@@ -86,7 +86,11 @@
       tags: tags,
       is_active: isPublish,
     };
-    const response = await createEntity(entity);
+    const response = await createEntity(
+      entity,
+      $params.space_name,
+      $params.subpath
+    );
     const msg = isPublish ? "published" : "saved";
     if (response) {
       successToastMessage(`Entity ${msg} successfully.`);
