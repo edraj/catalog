@@ -97,6 +97,11 @@
         parentPath || "/",
         "managed"
       );
+      console.log(
+        `Loaded subpath for ${spaceName} at level ${level}:`,
+        response
+      );
+
       const folders = response.records.filter(
         (item) => item.resource_type === "folder"
       );
@@ -109,7 +114,7 @@
         path: parentPath,
         folders: folders.map((folder) => ({
           value: folder.shortname,
-          name: folder.attributes.displayname || folder.shortname,
+          name: folder.attributes?.displayname?.en || folder.shortname,
           fullPath: parentPath
             ? `${parentPath}/${folder.shortname}`
             : folder.shortname,
@@ -301,6 +306,7 @@
 
         selectedSubpath = prefilledSubpath;
         currentPath = prefilledSubpath;
+        canCreateEntry = true;
       }
     }
   });
