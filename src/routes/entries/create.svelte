@@ -7,7 +7,6 @@
     createEntity,
     getSpaces,
     getSpaceContents,
-    ResourceType,
   } from "@/lib/dmart_services";
   import {
     errorToastMessage,
@@ -33,6 +32,7 @@
   import { _ } from "@/i18n";
   import { dir } from "@/i18n";
   import { onMount } from "svelte";
+  import {ResourceType} from "@edraj/tsdmart";
 
   $goto;
 
