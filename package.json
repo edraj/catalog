@@ -8,8 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json",
-    "export": "vite build && spank",
-    "ssg": "spank"
+    "ssg": "npx spank"
   },
   "devDependencies": {
     "@akebifiky/remark-simple-plantuml": "^1.0.2",
@@ -52,5 +51,33 @@
     "spank": "^2.2.4",
     "svelte-steps": "^2.4.1",
     "tailwindcss-rtl": "^0.9.0"
+  },
+  "spank":{
+    "sitemap": [
+    "/",
+    "/catalogs",
+    "/catalogs/index",
+    "/community",
+    "/contact",
+    "/dashboard",
+    "/dashboard/admin",
+    "/dashboard/admin/contact-messages",
+    "/dashboard/admin/index",
+    "/dashboard/admin/users",
+    "/entries",
+    "/entries/create",
+    "/entries/index",
+    "/help",
+    "/home",
+    "/home/index",
+    "/index",
+    "/login",
+    "/me",
+    "/me/index",
+    "/notifications",
+    "/notifications/index",
+    "/privacy",
+    "/register"
+  ]
   }
 }

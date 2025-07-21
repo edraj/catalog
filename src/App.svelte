@@ -33,7 +33,7 @@
 
   let createdRouter = null;
 
-  async function prepareRouter() {
+  function prepareRouter() {
     if (createdRouter === null) {
       createdRouter = createRouter({
         routes: routes,
@@ -98,6 +98,8 @@
     return createdRouter;
   }
 
+  const router = prepareRouter();
+
   setupI18n();
 </script>
 
@@ -111,7 +113,5 @@
 
 <div id="routify-app">
   <SvelteToast />
-  {#await prepareRouter() then router}
-    <Router {router} />
-  {/await}
+  <Router {router} />
 </div>

@@ -34,15 +34,7 @@ export default defineConfig({
     routify({
       forceLogging: true,
       render: {
-        ssg: {
-          enable: true,
-          spank: {
-            distDir: 'dist/client',
-            outDir: 'dist/static',
-            entrypoint: 'index.html',
-            verbose: true,
-          }
-        },
+        ssg: true,
         ssr: true,
       },
       routesDir: {
