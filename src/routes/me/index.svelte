@@ -13,7 +13,7 @@
     errorToastMessage,
     successToastMessage,
   } from "@/lib/toasts_messages";
-  import Avatar from "@/routes/components/Avatar.svelte";
+  import Avatar from "@/components/Avatar.svelte";
   import { formatDate, renderStateString } from "@/lib/helpers";
   import { goto, params } from "@roxi/routify";
   import { Diamonds } from "svelte-loading-spinners";

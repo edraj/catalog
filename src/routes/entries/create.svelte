@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Button, Card, Input, Select } from "flowbite-svelte";
   import { goto, params } from "@roxi/routify";
-  import HtmlEditor from "@/routes/components/HtmlEditor.svelte";
+  import HtmlEditor from "@/components/HtmlEditor.svelte";
   import {
     attachAttachmentsToEntity,
     createEntity,
@@ -40,6 +40,7 @@
   let content = "";
   let resource_type: ResourceType = $state(ResourceType.content);
   let isRTL = $dir === "rtl";
+  let itemResourceType;
 
   let title = $state("");
   let isEditing = $state(false);
@@ -52,7 +53,8 @@
   let loadingSpaces = $state(false);
   let loadingSubpaths = $state(false);
   let canCreateEntry = $state(true);
-
+  let workflow_shortname = $state("");
+  let schema_shortname = $state("");
   onMount(async () => {
     await loadSpaces();
   });
@@ -106,8 +108,11 @@
       const hasNonFolderContent = response.records.some(
         (item) => item.resource_type !== "folder"
       );
-
-      const itemResoureceType = response.records[0].resource_type;
+      if (parentPath === "") {
+        itemResourceType =
+          response?.records[0]?.attributes?.payload?.body
+            .content_resource_types[0];
+      }
 
       const levelData = {
         level,
@@ -119,7 +124,11 @@
             ? `${parentPath}/${folder.shortname}`
             : folder.shortname,
         })),
-        resource_type: itemResoureceType,
+        resource_type: itemResourceType,
+        workflow_shortname:
+          response.records[0].attributes?.workflow_shortname || "",
+        schema_shortname:
+          response.records[0].attributes?.payload?.schema_shortname || "",
         canCreateEntry: hasNonFolderContent || folders.length === 0,
         selectedFolder: "",
       };
@@ -144,6 +153,8 @@
     const lastLevel = subpathHierarchy[subpathHierarchy.length - 1];
     canCreateEntry = lastLevel.canCreateEntry;
     resource_type = lastLevel.resource_type;
+    workflow_shortname = lastLevel.workflow_shortname;
+    schema_shortname = lastLevel.schema_shortname;
     currentPath = lastLevel.path;
     selectedSubpath = currentPath;
   }
@@ -239,6 +250,8 @@
       content: getContent(),
       tags: tags,
       resource_type,
+      workflow_shortname,
+      schema_shortname,
       is_active: isPublish,
     };
 
@@ -246,14 +259,21 @@
       entity,
       selectedSpace,
       selectedSubpath,
-      resource_type
+      resource_type,
+      workflow_shortname,
+      schema_shortname
     );
     const msg = isPublish ? "published" : "saved";
 
     if (response) {
       successToastMessage(`Entry ${msg} successfully.`);
       for (const attachment of attachments) {
-        const r = await attachAttachmentsToEntity(response, attachment);
+        const r = await attachAttachmentsToEntity(
+          response,
+          selectedSpace,
+          selectedSubpath,
+          attachment
+        );
         if (r === false) {
           errorToastMessage(`Failed to attach ${attachment.name} to entry!`);
         }

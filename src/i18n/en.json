@@ -245,8 +245,6 @@
   "catalogs.no_catalogs_description": "There are currently no public catalogs to display.",
   "catalogs.available_catalogs": "Available Catalogs ",
   "catalogs.public_spaces_subtitle": "Public spaces you can explore",
-  "space.title": "{spaceName} Space",
-  "space.browse_description": "Browse contents and navigate through folders",
   "space.no_contents_title": "No Contents Found",
   "space.no_contents_description": "This space appears to be empty or you don't have access to view its contents.",
   "space.summary_title": "Space Summary",

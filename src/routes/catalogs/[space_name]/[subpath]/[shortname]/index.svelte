@@ -1,12 +1,12 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { params, goto } from "@roxi/routify";
-  import { getCatalogItem } from "@/lib/dmart_services";
+  import { getEntity } from "@/lib/dmart_services";
   import { Diamonds } from "svelte-loading-spinners";
   import { _ } from "@/i18n";
   import { locale } from "@/i18n";
   import { ResourceType } from "@edraj/tsdmart/dmart.model";
-  import Attachments from "@/routes/components/Attachments.svelte";
+  import Attachments from "@/components/Attachments.svelte";
   import { user } from "@/stores/user";
 
   $goto;
@@ -70,12 +70,13 @@
     postData = null;
 
     try {
-      const response = await getCatalogItem(
+      const response = await getEntity(
+        itemShortname,
         spaceName,
         actualSubpath,
-        itemShortname,
-        ResourceType.content,
-        "public"
+        $params.resource_type,
+        "public",
+        true
       );
 
       if (response && response.uuid) {

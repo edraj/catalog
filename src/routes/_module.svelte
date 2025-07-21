@@ -1,5 +1,5 @@
 <script>
-  import DashboardHeader from "@/routes/components/DashboardHeader.svelte";
+  import DashboardHeader from "@/components/DashboardHeader.svelte";
   import { signout, user } from "@/stores/user";
   import { onMount } from "svelte";
   import { getProfile } from "@/lib/dmart_services";

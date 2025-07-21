@@ -11,7 +11,7 @@
   import { _ } from "@/i18n";
   import { locale } from "@/i18n";
   import { user } from "@/stores/user";
-  import MetaForm from "@/routes/components/forms/MetaForm.svelte";
+  import MetaForm from "@/components/forms/MetaForm.svelte";
   $goto;
   let isLoading = $state(true);
   let spaces = $state([]);

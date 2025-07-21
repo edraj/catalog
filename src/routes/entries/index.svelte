@@ -160,7 +160,7 @@
   }
 
   function viewEntity(entity: any) {
-    $goto("/entries/[shortname]", {
+    $goto("/entries/[space_name]/[subpath]/[shortname]/[resource_type]", {
       shortname: entity.shortname,
       space_name: entity.space_name,
       subpath: entity.subpath,

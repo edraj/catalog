@@ -2,8 +2,8 @@
   import { params } from "@roxi/routify";
   import { goto } from "@roxi/routify";
   import { onMount } from "svelte";
-  import HtmlEditor from "@/routes/components/HtmlEditor.svelte";
-  import Attachments from "@/routes/components/Attachments.svelte";
+  import HtmlEditor from "@/components/HtmlEditor.svelte";
+  import Attachments from "@/components/Attachments.svelte";
   import {
     attachAttachmentsToEntity,
     getEntity,
@@ -104,14 +104,21 @@
       $params.space_name,
       $params.subpath,
       $params.resource_type,
-      entityData
+      entityData,
+      entity.workflow_shortname,
+      entity.attributes?.payload?.schema_shortname
     );
     const msg = isPublish ? "published" : "updated";
 
     if (response) {
       successToastMessage(`Entry ${msg} successfully.`);
       for (const attachment of attachments) {
-        const r = await attachAttachmentsToEntity(response, attachment);
+        const r = await attachAttachmentsToEntity(
+          response,
+          $params.space_name,
+          $params.subpath,
+          attachment
+        );
         if (r === false) {
           errorToastMessage(`Failed to attach ${attachment.name} to entry!`);
         }
@@ -135,7 +142,8 @@
       $params.shortname,
       $params.space_name,
       $params.subpath,
-      $params.resource_type
+      $params.resource_type,
+      "managed"
     );
     if (entity) {
       title = entity.payload?.body?.title || "";
@@ -215,7 +223,10 @@
         <button
           class="back-button"
           on:click={() =>
-            $goto("/entries/[shortname]", { shortname: $params.shortname })}
+            $goto(
+              "/entries/[space_name]/[subpath]/[shortname]/[resource_type]",
+              { shortname: $params.shortname }
+            )}
         >
           <ArrowLeftOutline class="icon" />
           <span>Back to Entry</span>

@@ -6,9 +6,9 @@
   import { _ } from "@/i18n";
   import { Dmart, ResourceType, RequestType } from "@edraj/tsdmart";
   import { writable } from "svelte/store";
-  import { createEntity, deleteEntity } from "@/lib/dmart_services";
-  import MetaForm from "@/routes/components/forms/MetaForm.svelte";
-  import FolderForm from "@/routes/components/forms/FolderForm.svelte";
+  import { deleteEntity } from "@/lib/dmart_services";
+  import MetaForm from "@/components/forms/MetaForm.svelte";
+  import FolderForm from "@/components/forms/FolderForm.svelte";
   $goto;
   let isLoading = writable(false);
   let allContents = writable([]);
@@ -143,6 +143,7 @@
         space_name: spaceName,
         subpath: subpath,
         shortname: item.shortname,
+        resource_type: item.resource_type,
       });
     }
   }
@@ -164,7 +165,8 @@
       const success = await deleteEntity(
         item.shortname,
         spaceName,
-        `/${$actualSubpath}`
+        `/${$actualSubpath}`,
+        item.resource_type
       );
       if (success) {
         await loadContents();

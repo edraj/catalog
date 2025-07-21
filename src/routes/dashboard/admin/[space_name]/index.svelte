@@ -5,9 +5,9 @@
   import { Diamonds } from "svelte-loading-spinners";
   import { _ } from "@/i18n";
   import { Dmart, ResourceType, RequestType } from "@edraj/tsdmart";
-  import { createEntity, deleteEntity } from "@/lib/dmart_services";
-  import FolderForm from "@/routes/components/forms/FolderForm.svelte";
-  import MetaForm from "@/routes/components/forms/MetaForm.svelte";
+  import { deleteEntity } from "@/lib/dmart_services";
+  import FolderForm from "@/components/forms/FolderForm.svelte";
+  import MetaForm from "@/components/forms/MetaForm.svelte";
   $goto;
 
   let isLoading = $state(true);
@@ -218,7 +218,8 @@
       const success = await deleteEntity(
         item.shortname,
         spaceName,
-        actualSubpath
+        actualSubpath,
+        item.resource_type
       );
       if (success) {
         await loadContents();

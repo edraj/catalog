@@ -137,6 +137,7 @@
         space_name: spaceName,
         subpath: subpath,
         shortname: item.shortname,
+        resource_type: item.resource_type,
       });
     }
   }

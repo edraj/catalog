@@ -10,7 +10,7 @@
   import { user } from "@/stores/user";
   import { onMount } from "svelte";
   import { formatDate, truncateString } from "@/lib/helpers";
-  import Avatar from "@/routes/components/Avatar.svelte";
+  import Avatar from "@/components/Avatar.svelte";
   import { SyncLoader } from "svelte-loading-spinners";
   import { newNotificationType } from "@/stores/newNotificationType";
   import { ResourceType } from "@edraj/tsdmart";

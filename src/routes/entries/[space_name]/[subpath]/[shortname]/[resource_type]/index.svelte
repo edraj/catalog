@@ -12,14 +12,14 @@
     getEntity,
   } from "@/lib/dmart_services";
   import { formatDate } from "@/lib/helpers";
-  import Attachments from "@/routes/components/Attachments.svelte";
+  import Attachments from "@/components/Attachments.svelte";
   import { ResourceType } from "@edraj/tsdmart";
   import { user } from "@/stores/user";
   import {
     errorToastMessage,
     successToastMessage,
   } from "@/lib/toasts_messages";
-  import Avatar from "@/routes/components/Avatar.svelte";
+  import Avatar from "@/components/Avatar.svelte";
   import { Diamonds } from "svelte-loading-spinners";
   import {
     ArrowLeftOutline,
@@ -55,7 +55,7 @@
   });
 
   function handleEdit(entity) {
-    $goto("/entries/[shortname]/edit", {
+    $goto("/entries/[space_name]/[subpath]/[shortname]/[resource_type]/edit", {
       shortname: entity.shortname,
       space_name: $params.space_name,
       subpath: $params.subpath,
@@ -139,7 +139,8 @@
       $params.shortname,
       $params.space_name,
       $params.subpath,
-      $params.resource_type
+      $params.resource_type,
+      "managed"
     );
     if (entity) {
       userReactionEntry = await checkCurrentUserReactedIdea(

@@ -101,10 +101,10 @@
           <div class="h-6 w-px bg-gray-300"></div>
           <div>
             <h1 class="text-2xl font-bold text-gray-900 capitalize">
-              {$_("space.title")}
+              {spaceName}
             </h1>
             <p class="text-gray-600">
-              {$_("space.browse_description")}
+              Browse contents and navigate through folders
             </p>
           </div>
         </div>

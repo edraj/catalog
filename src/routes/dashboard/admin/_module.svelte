@@ -1,5 +1,5 @@
 <script>
-  import DashboardHeader from "@/routes/components/DashboardHeader.svelte";
+  import DashboardHeader from "@/components/DashboardHeader.svelte";
 </script>
 
 <slot />

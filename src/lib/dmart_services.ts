@@ -13,52 +13,7 @@ import {
 import { user } from "@/stores/user";
 import { get } from "svelte/store";
 import type { Translation } from "@edraj/tsdmart/dmart.model";
-
-export interface EntitySearch {
-  limit: number;
-  offset: number;
-  shortname: string;
-  search: string;
-}
-
-function getFileType(
-  file: File
-): { contentType: ContentType; resourceType: ResourceType } | null {
-  const mimeType = file.type;
-
-  let contentType: ContentType;
-  let resourceType: ResourceType;
-
-  if (mimeType.startsWith("image")) {
-    contentType = ContentType.image;
-    resourceType = ResourceType.media;
-  } else if (mimeType.startsWith("audio")) {
-    contentType = ContentType.audio;
-    resourceType = ResourceType.media;
-  } else if (mimeType.startsWith("video")) {
-    contentType = ContentType.video;
-    resourceType = ResourceType.media;
-  } else {
-    switch (mimeType) {
-      case "application/pdf":
-        contentType = ContentType.pdf;
-        resourceType = ResourceType.media;
-        break;
-      case "text/plain":
-        contentType = ContentType.text;
-        resourceType = ResourceType.media;
-        break;
-      case "application/json":
-        contentType = ContentType.json;
-        resourceType = ResourceType.json;
-        break;
-      default:
-        return null;
-    }
-  }
-
-  return { contentType, resourceType };
-}
+import { getFileType } from "./helpers";
 
 export async function getProfile() {
   try {
@@ -134,32 +89,6 @@ export async function updateProfile(data: any) {
   return response.status == "success";
 }
 
-export async function createUser(user: User) {
-  const data = {
-    shortname: user.shortname,
-    resource_type: ResourceType.user,
-    subpath: "users",
-    attributes: {
-      is_active: true,
-      displayname: user.displayname,
-      description: user.description,
-      tags: [],
-      password: user.password,
-      type: "web",
-      roles: ["catalog_role"],
-      groups: [],
-      firebase_token: "",
-      is_email_verified: true,
-      is_msisdn_verified: true,
-      force_password_change: false,
-      relationships: [],
-      invitation: "",
-    },
-  };
-  const response: ActionResponse = await Dmart.create_user(data);
-  return response.status == "success" && response.records.length > 0;
-}
-
 export async function getEntities() {
   const result = await getSpaces();
   const spaces = result.records.map((space) => space.shortname);
@@ -226,19 +155,29 @@ export async function getEntity(
   spaceName: string,
   subpath: string,
   resourceType: ResourceType,
+  scope: string,
   retrieve_json_payload: boolean = true,
   retrieve_attachments: boolean = true
 ) {
+  let cleanSubpath = subpath.startsWith("/") ? subpath.substring(1) : subpath;
+  if (!cleanSubpath || cleanSubpath === "/") {
+    cleanSubpath = "__root__";
+  }
+
   try {
-    return Dmart.retrieve_entry(
+    const response = await Dmart.retrieve_entry(
       resourceType,
       spaceName,
-      subpath,
+      cleanSubpath,
       shortname,
       retrieve_json_payload,
-      retrieve_attachments
+      retrieve_attachments,
+      true,
+      scope
     );
-  } catch (e) {
+    return response;
+  } catch (error) {
+    console.error(`Error retrieving item ${shortname}:`, error);
     return null;
   }
 }
@@ -247,10 +186,12 @@ export async function createEntity(
   data: Entity,
   spaceName: string,
   subpath: string,
-  resourceType: ResourceType
+  resourceType: ResourceType,
+  workflow_shortname: string,
+  schema_shortname: string
 ) {
   let actionRequest: ActionRequest;
-  if (spaceName === "catalog") {
+  if (workflow_shortname && schema_shortname) {
     actionRequest = {
       space_name: spaceName,
       request_type: RequestType.create,
@@ -261,12 +202,12 @@ export async function createEntity(
           subpath: subpath,
           attributes: {
             is_active: data.is_active,
-            workflow_shortname: "catalog_idea_workflow",
+            workflow_shortname: workflow_shortname,
             relationships: [],
             tags: data.tags,
             payload: {
               content_type: "json",
-              schema_shortname: "catelog_post",
+              schema_shortname: schema_shortname,
               body: {
                 title: data.title,
                 content: data.content,
@@ -313,10 +254,10 @@ export async function updateEntity(
   space_name,
   subpath,
   resourceType: ResourceType,
-  data: Entity
+  data: Entity,
+  workflow_shortname: string,
+  schema_shortname: string
 ) {
-  const isCatalog = space_name === "catalog";
-
   const attributes: any = {
     is_active: data.is_active,
     relationships: [],
@@ -330,9 +271,9 @@ export async function updateEntity(
     },
   };
 
-  if (isCatalog) {
-    attributes.workflow_shortname = "catalog_idea_workflow";
-    attributes.payload.schema_shortname = "catelog_post";
+  if (workflow_shortname && schema_shortname) {
+    attributes.workflow_shortname = workflow_shortname;
+    attributes.payload.schema_shortname = schema_shortname;
   }
 
   const actionRequest: ActionRequest = {
@@ -356,12 +297,14 @@ export async function updateEntity(
 
 export async function attachAttachmentsToEntity(
   shortname: string,
+  spaceName: string,
+  subpath: string,
   attachment: File
 ) {
   const { contentType, resourceType } = getFileType(attachment);
   const response = await Dmart.upload_with_payload(
-    "catalog",
-    `posts/${shortname}`,
+    spaceName,
+    `${subpath}/${shortname}`,
     "auto",
     resourceType,
     attachment,
@@ -392,37 +335,18 @@ export async function getEntityAttachmentsCount(
   return response.records;
 }
 
-export async function progressEntity(
-  shrotname: string,
-  action: string,
-  resolution?: string,
-  comment?: string
-) {
-  const r = await Dmart.progress_ticket(
-    "catalog",
-    "posts",
-    shrotname,
-    action,
-    resolution,
-    comment
-  );
-  return r.status == "success";
-}
-
 export async function deleteEntity(
   shortname: string,
   spaceName: string,
-  subpath: string
+  subpath: string,
+  resource_type: ResourceType
 ) {
-  const resourceType =
-    spaceName === "catalog" ? ResourceType.ticket : ResourceType.content;
-
   const actionRequest: ActionRequest = {
     space_name: spaceName,
     request_type: RequestType.delete,
     records: [
       {
-        resource_type: resourceType,
+        resource_type: resource_type,
         shortname: shortname,
         subpath: subpath,
         attributes: {},
@@ -486,78 +410,6 @@ export async function getSpaceContents(
     scope
   );
   return response;
-}
-
-export async function getCatalogWorkflow() {
-  try {
-    const response = await Dmart.retrieve_entry(
-      ResourceType.content,
-      "catalog",
-      "workflows",
-      "catalog_idea_workflow",
-      true,
-      false
-    );
-    return response.payload.body;
-  } catch (e) {
-    if (e.error.code) {
-      return {};
-    }
-    return null;
-  }
-}
-
-export async function getCatalogItem(
-  spaceName: string,
-  subpath: string,
-  shortname: string,
-  resourceType: ResourceType = ResourceType.content,
-  scope: string = "managed"
-): Promise<any> {
-  try {
-    let cleanSubpath = subpath.startsWith("/") ? subpath.substring(1) : subpath;
-    if (!cleanSubpath || cleanSubpath === "/") {
-      cleanSubpath = "__root__";
-    }
-
-    const response = await Dmart.retrieve_entry(
-      resourceType,
-      spaceName,
-      cleanSubpath,
-      shortname,
-      true,
-      true,
-      true,
-      scope
-    );
-    return response;
-  } catch (error) {
-    console.error(`Error retrieving item ${shortname}:`, error);
-
-    if (resourceType === ResourceType.content) {
-      try {
-        return await getCatalogItem(
-          spaceName,
-          subpath,
-          shortname,
-          ResourceType.post
-        );
-      } catch (postError) {
-        try {
-          return await getCatalogItem(
-            spaceName,
-            subpath,
-            shortname,
-            ResourceType.ticket
-          );
-        } catch (ticketError) {
-          throw error;
-        }
-      }
-    }
-
-    throw error;
-  }
 }
 
 export async function createComment(

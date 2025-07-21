@@ -2,15 +2,15 @@
   import { onMount } from "svelte";
   import { params, goto } from "@roxi/routify";
   import {
-    getCatalogItem,
     deleteEntity,
     updateEntity,
     getMyEntities,
+    getEntity,
   } from "@/lib/dmart_services";
   import { Diamonds } from "svelte-loading-spinners";
   import { _ } from "@/i18n";
   import { locale } from "@/i18n";
-  import { Dmart, ResourceType, RequestType } from "@edraj/tsdmart";
+  import { ResourceType } from "@edraj/tsdmart";
   import { writable } from "svelte/store";
   $goto;
   const isLoading = writable(false);
@@ -115,11 +115,11 @@
     itemData.set(null);
 
     try {
-      const response = await getCatalogItem(
+      const response = await getEntity(
+        itemShortnameValue,
         spaceNameValue,
         actualSubpathValue,
-        itemShortnameValue,
-        ResourceType.content,
+        $params.resource_type,
         "managed"
       );
 
@@ -135,20 +135,20 @@
         const content =
           response.payload?.body?.content || response.description || "";
         const tags = response.tags || [];
-        const tagsString = tags.join(", ");
+        const tagsString = Array.from(tags).join(", ");
 
         editFormValue = {
           title: typeof title === "string" ? title : getDisplayName(response),
           content:
             typeof content === "string" ? content : getDescription(response),
-          tags: tags,
+          tags: Array.isArray(tags) ? tags : Array.from(tags),
           tagsString: tagsString,
           is_active: response.is_active,
         };
         editForm.set(editFormValue);
       } else {
-        console.error("Invalid response structure:", response);
-        error.set("Invalid response structure");
+        console.error("No valid response found for item:", itemShortnameValue);
+        error.set("Item not found");
       }
     } catch (err) {
       console.error("Error fetching admin item data:", err);
@@ -157,7 +157,6 @@
       isLoading.set(false);
     }
   }
-
   async function handleUpdateItem(event) {
     event?.preventDefault();
     try {
@@ -177,8 +176,10 @@
         itemShortnameValue,
         spaceNameValue,
         actualSubpathValue,
-        $params.resource_type || ResourceType.content,
-        entityData
+        $params.resource_type,
+        entityData,
+        $params.workflow_shortname,
+        $params.schema_shortname
       );
 
       if (response) {
@@ -203,11 +204,12 @@
       const success = await deleteEntity(
         itemShortnameValue,
         spaceNameValue,
-        actualSubpathValue
+        actualSubpathValue,
+        $params.resource_type
       );
 
       if (success) {
-        $goto("/dashboard/admin/[space_name]/[subpath]", {
+        $goto("/dashboard/admin/[space_name]/", {
           space_name: spaceNameValue,
           subpath: actualSubpathValue,
         });
