@@ -1,229 +1,552 @@
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
-    import { Button, Card, Input, Label, Select, } from "flowbite-svelte";
-    import {Dmart, QueryType} from "@edraj/tsdmart";
+  import { createEventDispatcher } from "svelte";
+  import { Dmart, QueryType } from "@edraj/tsdmart";
 
-    const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher();
 
-    let {
-        content = $bindable({})
-    } : {
-        content: any
-    } = $props();
+  let {
+    content = $bindable({}),
+  }: {
+    content: any;
+  } = $props();
 
-    content = {
-        icon: content.icon || '',
-        icon_closed: content.icon_closed || '',
-        icon_opened: content.icon_opened || '',
-        shortname_title: content.shortname_title || '',
+  content = {
+    icon: content.icon || "",
+    icon_closed: content.icon_closed || "",
+    icon_opened: content.icon_opened || "",
+    shortname_title: content.shortname_title || "",
 
-        index_attributes: content.index_attributes || [],
+    index_attributes: content.index_attributes || [],
 
-        query: content.query || {
-            type: '',
-            search: '',
-            filter_types: []
-        },
+    query: content.query || {
+      type: "",
+      search: "",
+      filter_types: [],
+    },
 
-        search_columns: content.search_columns || [],
-        csv_columns: content.csv_columns || [],
+    search_columns: content.search_columns || [],
+    csv_columns: content.csv_columns || [],
 
-        sort_by: content.sort_by || '',
-        sort_type: content.sort_type || '',
+    sort_by: content.sort_by || "",
+    sort_type: content.sort_type || "",
 
-        content_resource_types: content.content_resource_types || [],
-        content_schema_shortnames: content.content_schema_shortnames || [],
-        workflow_shortnames: content.workflow_shortnames || [],
-        enable_pdf_schema_shortnames: content.enable_pdf_schema_shortnames || [],
+    content_resource_types: content.content_resource_types || [],
+    content_schema_shortnames: content.content_schema_shortnames || [],
+    workflow_shortnames: content.workflow_shortnames || [],
+    enable_pdf_schema_shortnames: content.enable_pdf_schema_shortnames || [],
 
-        allow_view: content.allow_view || true,
-        allow_create: content.allow_create || true,
-        allow_update: content.allow_update || true,
-        allow_delete: content.allow_delete || false,
-        allow_create_category: content.allow_create_category || false,
-        allow_csv: content.allow_csv || false,
-        allow_upload_csv: content.allow_upload_csv || false,
-        use_media: content.use_media || false,
-        stream: content.stream || false,
-        expand_children: content.expand_children || false,
-        disable_filter: content.disable_filter || false,
+    allow_view: content.allow_view || true,
+    allow_create: content.allow_create || true,
+    allow_update: content.allow_update || true,
+    allow_delete: content.allow_delete || false,
+    allow_create_category: content.allow_create_category || false,
+    allow_csv: content.allow_csv || false,
+    allow_upload_csv: content.allow_upload_csv || false,
+    use_media: content.use_media || false,
+    stream: content.stream || false,
+    expand_children: content.expand_children || false,
+    disable_filter: content.disable_filter || false,
 
-        ...content
-    };
+    ...content,
+  };
 
-    if (!content.query) content.query = {};
+  if (!content.query) content.query = {};
 
-    let errors = $state({});
+  let errors = $state({});
 
-    function validateForm() {
-        errors = {};
+  function validateForm() {
+    errors = {};
 
-        if (!content.index_attributes || content.index_attributes.length === 0) {
-            errors['index_attributes'] = 'Index attributes is required';
-        }
-
-        return Object.keys(errors).length === 0;
+    if (!content.index_attributes || content.index_attributes.length === 0) {
+      errors["index_attributes"] = "Index attributes is required";
     }
 
-    function onSave() {
-        if (validateForm()) {
-            dispatch('save', content);
-        }
+    return Object.keys(errors).length === 0;
+  }
+
+  function onSave() {
+    if (validateForm()) {
+      dispatch("save", content);
+    }
+  }
+
+  function addItem(path, template = {}) {
+    let target = content;
+    const parts = path.split(".");
+
+    for (let i = 0; i < parts.length - 1; i++) {
+      if (!target[parts[i]]) target[parts[i]] = {};
+      target = target[parts[i]];
     }
 
-    function addItem(path, template = {}) {
-        let target = content;
-        const parts = path.split('.');
+    const lastPart = parts[parts.length - 1];
+    if (!target[lastPart]) target[lastPart] = [];
 
-        for (let i = 0; i < parts.length - 1; i++) {
-            if (!target[parts[i]]) target[parts[i]] = {};
-            target = target[parts[i]];
-        }
+    target[lastPart] = [...target[lastPart], structuredClone(template)];
+    content = { ...content };
+  }
 
-        const lastPart = parts[parts.length - 1];
-        if (!target[lastPart]) target[lastPart] = [];
+  function removeItem(path, index) {
+    let target = content;
+    const parts = path.split(".");
 
-        target[lastPart] = [...target[lastPart], structuredClone(template)];
-        content = {...content};
+    for (let i = 0; i < parts.length - 1; i++) {
+      if (!target[parts[i]]) return;
+      target = target[parts[i]];
     }
 
-    function removeItem(path, index) {
-        let target = content;
-        const parts = path.split('.');
+    const lastPart = parts[parts.length - 1];
+    if (!target[lastPart]) return;
 
-        for (let i = 0; i < parts.length - 1; i++) {
-            if (!target[parts[i]]) return;
-            target = target[parts[i]];
-        }
+    target[lastPart] = target[lastPart].filter((_, i) => i !== index);
+    content = { ...content };
+  }
 
-        const lastPart = parts[parts.length - 1];
-        if (!target[lastPart]) return;
-
-        target[lastPart] = target[lastPart].filter((_, i) => i !== index);
-        content = {...content};
+  function handleResourceTypeChange(e) {
+    const target = e.target as HTMLSelectElement;
+    if (target.value) {
+      content.content_resource_types = [target.value];
+    } else {
+      content.content_resource_types = [];
     }
+  }
+
+  function addSchemaShortname(e) {
+    if (
+      e.target.value &&
+      !content.content_schema_shortnames.includes(e.target.value)
+    ) {
+      content.content_schema_shortnames = [
+        ...content.content_schema_shortnames,
+        e.target.value,
+      ];
+      e.target.value = "";
+    }
+  }
+
+  function removeSchemaShortname(schema) {
+    content.content_schema_shortnames =
+      content.content_schema_shortnames.filter((s) => s !== schema);
+  }
+
+  function addWorkflowShortname(e) {
+    if (
+      e.target.value &&
+      !content.workflow_shortnames.includes(e.target.value)
+    ) {
+      content.workflow_shortnames = [
+        ...content.workflow_shortnames,
+        e.target.value,
+      ];
+      e.target.value = "";
+    }
+  }
+
+  function removeWorkflowShortname(workflow) {
+    content.workflow_shortnames = content.workflow_shortnames.filter(
+      (w) => w !== workflow
+    );
+  }
 </script>
 
-<Card class="p-4 max-w-4xl mx-auto my-2">
-    <h2 class="text-xl font-bold mb-4">Folder Schema Editor</h2>
+<div class="editor-card">
+  <h2 class="editor-title">Folder Schema Editor</h2>
 
-    <div class="space-y-6">
-        <div class="border p-4 rounded-lg">
-            <h3 class="font-semibold mb-2">Index Attributes</h3>
-            <p class="text-sm text-gray-500 mb-2">The attributes from the schema that should be displayed in index page</p>
+  <div class="editor-content">
+    <!-- Index Attributes Section -->
+    <div class="section">
+      <h3 class="section-title">Index Attributes</h3>
+      <p class="section-description">
+        The attributes from the schema that should be displayed in index page
+      </p>
 
-            {#if errors['index_attributes']}
-                <p class="text-red-500 text-sm">{errors['index_attributes']}</p>
-            {/if}
+      {#if errors["index_attributes"]}
+        <p class="error-message">{errors["index_attributes"]}</p>
+      {/if}
 
-            {#if content.index_attributes?.length > 0}
-                {#each content.index_attributes as attribute, index}
-                    <div class="flex items-center gap-2 mt-2 p-2 bg-gray-50 rounded">
-                        <div class="flex-1">
-                            <Input bind:value={attribute.key} placeholder="Key" />
-                        </div>
-                        <div class="flex-1">
-                            <Input bind:value={attribute.name} placeholder="Name" />
-                        </div>
-                        <Button size="xs" color="red" onclick={() => removeItem('index_attributes', index)}>Remove</Button>
-                    </div>
-                {/each}
-            {/if}
-            <Button size="sm" class="mt-2 text-gray hover:text-gray cursor-pointer" outline onclick={() => addItem('index_attributes', {key: '', name: ''})}>Add Index Attribute</Button>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <Label for="sort_by">Sort By</Label>
-                <Input id="sort_by" placeholder="Field name for sorting" bind:value={content.sort_by} />
+      {#if content.index_attributes?.length > 0}
+        {#each content.index_attributes as attribute, index}
+          <div class="attribute-item">
+            <div class="attribute-input">
+              <input
+                class="input-field"
+                bind:value={attribute.key}
+                placeholder="Key"
+              />
             </div>
-
-            <div>
-                <Label for="sort_type">Sort Order</Label>
-                <Select id="sort_type" bind:value={content.sort_type}>
-                    <option value="ascending">Ascending</option>
-                    <option value="descending">Descending</option>
-                </Select>
+            <div class="attribute-input">
+              <input
+                class="input-field"
+                bind:value={attribute.name}
+                placeholder="Name"
+              />
             </div>
-        </div>
+            <button
+              type="button"
+              class="button-danger button-small"
+              onclick={() => removeItem("index_attributes", index)}
+            >
+              Remove
+            </button>
+          </div>
+        {/each}
+      {/if}
 
-        <div class="grid">
-
-            <h3 class="font-semibold">Content Resource Types</h3>
-
-            <div class="mb-3">
-                <Select id="resource-type-select" onchange={(e) => {
-            const target = e.target as HTMLSelectElement;
-            if (target.value) {
-                content.content_resource_types = [target.value];
-            } else {
-                content.content_resource_types = [];
-            }
-        }}>
-                    <option value="">Select a type...</option>
-                    <option value="ticket" selected={content.content_resource_types.includes('ticket')}>Ticket</option>
-                    <option value="content" selected={content.content_resource_types.includes('content')}>Content</option>
-                </Select>
-            </div>
-
-            <h3 class="font-semibold">Schema Shortnames</h3>
-
-            <div class="mb-3">
-                <Select class="mb-2" onclick={(e) => {
-                    if (e.target.value && !content.content_schema_shortnames.includes(e.target.value)) {
-                        content.content_schema_shortnames = [...content.content_schema_shortnames, e.target.value];
-                        e.target.value = "";
-                    }
-                }}>
-                    {#await Dmart.query({ space_name: "management", type: QueryType.search, subpath: "/schema", search: "", retrieve_json_payload: true, limit: 99 }) then schemas}
-                        {#each schemas.records.map(e => e.shortname) as schema}
-                            <option value={schema}>{schema}</option>
-                        {/each}
-                    {/await}
-                </Select>
-
-
-                <div class="flex flex-wrap gap-1 mt-1">
-                    {#each content.content_schema_shortnames as schema}
-                <span class="bg-blue-100 text-blue-800 px-2 py-1 text-xs rounded-md flex items-center gap-1">
-                    {schema}
-                    <button type="button" class="text-xs" onclick={() => {
-                        content.content_schema_shortnames = content.content_schema_shortnames.filter(s => s !== schema);
-                    }}>×</button>
-                </span>
-                    {/each}
-                </div>
-            </div>
-
-            <h3 class="font-semibold">Workflow Shortnames</h3>
-
-            <Select class="mb-2" onclick={(e) => {
-                        if (e.target.value && !content.workflow_shortnames.includes(e.target.value)) {
-                            content.workflow_shortnames = [...content.workflow_shortnames, e.target.value];
-                            e.target.value = "";
-                        }
-                    }}>
-                {#await Dmart.query({ space_name: "management", type: QueryType.search, subpath: "/workflow", search: "", retrieve_json_payload: true, limit: 99 }) then workflows}
-                    {#each workflows.records.map(e => e.shortname) as workflow}
-                        <option value={workflow}>{workflow}</option>
-                    {/each}
-                {/await}
-            </Select>
-
-            <div class="mb-3">
-                <div class="flex flex-wrap gap-1 mt-1">
-                    {#each content.workflow_shortnames as workflow}
-                <span class="bg-blue-100 text-blue-800 px-2 py-1 text-xs rounded-md flex items-center gap-1">
-                    {workflow}
-                    <button type="button" class="text-xs" onclick={() => {
-                        content.workflow_shortnames = content.workflow_shortnames.filter(w => w !== workflow);
-                    }}>×</button>
-                </span>
-                    {/each}
-                </div>
-            </div>
-        </div>
-
-
+      <button
+        type="button"
+        class="button-outline button-small add-button"
+        onclick={() => addItem("index_attributes", { key: "", name: "" })}
+      >
+        Add Index Attribute
+      </button>
     </div>
-</Card>
+
+    <!-- Sort Settings -->
+    <div class="grid-2">
+      <div class="field-group">
+        <label for="sort_by" class="field-label">Sort By</label>
+        <input
+          id="sort_by"
+          class="input-field"
+          placeholder="Field name for sorting"
+          bind:value={content.sort_by}
+        />
+      </div>
+
+      <div class="field-group">
+        <label for="sort_type" class="field-label">Sort Order</label>
+        <select
+          id="sort_type"
+          class="select-field"
+          bind:value={content.sort_type}
+        >
+          <option value="">Select sort order...</option>
+          <option value="ascending">Ascending</option>
+          <option value="descending">Descending</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Content Resource Types -->
+    <div class="section">
+      <h3 class="section-title">Content Resource Types</h3>
+      <div class="field-group">
+        <select
+          id="resource-type-select"
+          class="select-field"
+          onchange={handleResourceTypeChange}
+        >
+          <option value="">Select a type...</option>
+          <option
+            value="ticket"
+            selected={content.content_resource_types.includes("ticket")}
+          >
+            Ticket
+          </option>
+          <option
+            value="content"
+            selected={content.content_resource_types.includes("content")}
+          >
+            Content
+          </option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Schema Shortnames -->
+    <div class="section">
+      <h3 class="section-title">Schema Shortnames</h3>
+      <div class="field-group">
+        <select class="select-field" onchange={addSchemaShortname}>
+          <option value="">Select schema to add...</option>
+          {#await Dmart.query( { space_name: "management", type: QueryType.search, subpath: "/schema", search: "", retrieve_json_payload: true, limit: 99 } ) then schemas}
+            {#each schemas.records.map((e) => e.shortname) as schema}
+              <option value={schema}>{schema}</option>
+            {/each}
+          {:catch error}
+            <option disabled>Error loading schemas</option>
+          {/await}
+        </select>
+
+        {#if content.content_schema_shortnames.length > 0}
+          <div class="tags-container">
+            {#each content.content_schema_shortnames as schema}
+              <span class="tag">
+                {schema}
+                <button
+                  type="button"
+                  class="tag-remove"
+                  onclick={() => removeSchemaShortname(schema)}
+                >
+                  ×
+                </button>
+              </span>
+            {/each}
+          </div>
+        {/if}
+      </div>
+    </div>
+
+    <!-- Workflow Shortnames -->
+    <div class="section">
+      <h3 class="section-title">Workflow Shortnames</h3>
+      <div class="field-group">
+        <select class="select-field" onchange={addWorkflowShortname}>
+          <option value="">Select workflow to add...</option>
+          {#await Dmart.query( { space_name: "management", type: QueryType.search, subpath: "/workflow", search: "", retrieve_json_payload: true, limit: 99 } ) then workflows}
+            {#each workflows.records.map((e) => e.shortname) as workflow}
+              <option value={workflow}>{workflow}</option>
+            {/each}
+          {:catch error}
+            <option disabled>Error loading workflows</option>
+          {/await}
+        </select>
+
+        {#if content.workflow_shortnames.length > 0}
+          <div class="tags-container">
+            {#each content.workflow_shortnames as workflow}
+              <span class="tag">
+                {workflow}
+                <button
+                  type="button"
+                  class="tag-remove"
+                  onclick={() => removeWorkflowShortname(workflow)}
+                >
+                  ×
+                </button>
+              </span>
+            {/each}
+          </div>
+        {/if}
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .editor-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow:
+      0 4px 6px -1px rgba(0, 0, 0, 0.1),
+      0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    max-width: 90rem;
+    margin: 0.5rem auto;
+    padding: 1.5rem;
+    border: 1px solid #e5e7eb;
+  }
+
+  .editor-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 1.5rem;
+    margin-top: 0;
+  }
+
+  .editor-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .section {
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    background-color: #fafafa;
+  }
+
+  .section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+    margin-top: 0;
+  }
+
+  .section-description {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-bottom: 1rem;
+    margin-top: 0;
+  }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  @media (min-width: 768px) {
+    .grid-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .field-label {
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: #374151;
+  }
+
+  .input-field {
+    padding: 0.625rem 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    transition: all 0.15s ease-in-out;
+    background: white;
+    width: 100%;
+  }
+
+  .input-field:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  .select-field {
+    padding: 0.625rem 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    background: white;
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+    width: 100%;
+  }
+
+  .select-field:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  .attribute-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background-color: #f9fafb;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+  }
+
+  .attribute-input {
+    flex: 1;
+  }
+
+  .button-small {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+    white-space: nowrap;
+  }
+
+  .button-danger {
+    background-color: #ef4444;
+    color: white;
+    border: 1px solid #ef4444;
+  }
+
+  .button-danger:hover {
+    background-color: #dc2626;
+    border-color: #dc2626;
+  }
+
+  .button-outline {
+    background-color: transparent;
+    color: #6b7280;
+    border: 1px solid #d1d5db;
+  }
+
+  .button-outline:hover {
+    background-color: #f9fafb;
+    color: #374151;
+    border-color: #9ca3af;
+  }
+
+  .add-button {
+    margin-top: 0.75rem;
+    align-self: flex-start;
+  }
+
+  .tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
+
+  .tag {
+    background-color: #dbeafe;
+    color: #1e40af;
+    padding: 0.375rem 0.5rem;
+    font-size: 0.75rem;
+    border-radius: 0.375rem;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    border: 1px solid #93c5fd;
+  }
+
+  .tag-remove {
+    background: none;
+    border: none;
+    color: #1e40af;
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    padding: 0;
+    width: 1rem;
+    height: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.15s ease-in-out;
+  }
+
+  .tag-remove:hover {
+    background-color: #1e40af;
+    color: white;
+  }
+
+  .error-message {
+    color: #ef4444;
+    font-size: 0.875rem;
+    margin-bottom: 0.75rem;
+    margin-top: 0;
+  }
+
+  option:disabled {
+    color: #9ca3af;
+    font-style: italic;
+  }
+
+  @media (max-width: 640px) {
+    .attribute-item {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .attribute-input {
+      width: 100%;
+    }
+
+    .tags-container {
+      margin-top: 0.5rem;
+    }
+  }
+</style>

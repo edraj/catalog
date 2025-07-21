@@ -40,6 +40,9 @@
   let metaContent: any = $state({});
   let validateMetaForm;
 
+  let editMetaContent: any = $state({});
+  let validateEditMetaForm;
+
   onMount(async () => {
     try {
       const response = await getSpaces(false, "managed");
@@ -80,6 +83,20 @@
     editDisplayName = getDisplayName(space);
     editDescription = getDescription(space);
     editIsActive = space.attributes?.is_active ?? true;
+
+    // Prefill MetaForm data for editing
+    editMetaContent = {
+      shortname: space.shortname,
+      displayname: space.attributes?.displayname || {
+        [$locale]: getDisplayName(space),
+        en: getDisplayName(space),
+      },
+      description: space.attributes?.description || {
+        [$locale]: getDescription(space),
+        en: getDescription(space),
+      },
+    };
+
     showEditModal = true;
     editError = null;
   }
@@ -91,6 +108,7 @@
     editDisplayName = "";
     editDescription = "";
     editIsActive = true;
+    editMetaContent = {};
     editError = null;
   }
 
@@ -114,7 +132,7 @@
     createError = null;
 
     try {
-      const {shortname, displayname, description} = metaContent;
+      const { shortname, displayname, description } = metaContent;
       await createSpace({
         shortname,
         displayname,
@@ -134,8 +152,8 @@
   }
 
   async function handleEditSpace() {
-    if (!editDisplayName.trim()) {
-      editError = "Display name is required";
+    if (!validateEditMetaForm()) {
+      editError = "Please fill all required fields in the meta form.";
       return;
     }
 
@@ -143,15 +161,7 @@
     editError = null;
 
     try {
-      const displayname = {
-        [$locale]: editDisplayName.trim(),
-        en: editDisplayName.trim(),
-      };
-
-      const description = {
-        [$locale]: editDescription.trim() || "No description available",
-        en: editDescription.trim() || "No description available",
-      };
+      const { displayname, description } = editMetaContent;
 
       await editSpace(editingSpace.shortname, {
         is_active: editIsActive,
@@ -631,40 +641,45 @@
             </svg>
           </button>
         </div>
+        <p class="text-sm text-gray-600 mt-2">
+          Fill in the details to create a new space
+        </p>
       </div>
 
       <div class="modal-content">
-
-        <MetaForm bind:formData={metaContent} bind:validateFn={validateMetaForm} isCreate={true}/>
+        <MetaForm
+          bind:formData={metaContent}
+          bind:validateFn={validateMetaForm}
+          isCreate={true}
+        />
 
         {#if createError}
           <div class="error-message">
             <p class="error-text">{createError}</p>
           </div>
         {/if}
+      </div>
 
-        <div class="modal-actions">
-          <button
-            onclick={closeCreateModal}
-            class="btn btn-secondary"
-            disabled={isCreating}
-          >
-            Cancel
-          </button>
-          <button
-            onclick={handleCreateSpace}
-            disabled={isCreating ||
-              !metaContent.shortname}
-            class="btn btn-primary"
-          >
-            {#if isCreating}
-              <div class="spinner"></div>
-              Creating...
-            {:else}
-              Create Space
-            {/if}
-          </button>
-        </div>
+      <div class="modal-actions">
+        <button
+          onclick={closeCreateModal}
+          class="btn btn-secondary"
+          disabled={isCreating}
+        >
+          Cancel
+        </button>
+        <button
+          onclick={handleCreateSpace}
+          disabled={isCreating || !metaContent.shortname}
+          class="btn btn-primary"
+        >
+          {#if isCreating}
+            <div class="spinner"></div>
+            Creating...
+          {:else}
+            Create Space
+          {/if}
+        </button>
       </div>
     </div>
   </div>
@@ -693,43 +708,17 @@
             </svg>
           </button>
         </div>
+        <p class="text-sm text-gray-600 mt-2">
+          Update space information and translations
+        </p>
       </div>
 
       <div class="modal-content">
-        <div class="form-group">
-          <label class="form-label">Space Name</label>
-          <input
-            type="text"
-            value={editSpaceName}
-            disabled
-            class="form-input"
-          />
-          <p class="form-help">Space name cannot be changed</p>
-        </div>
-
-        <div class="form-group">
-          <label for="editDisplayName" class="form-label required"
-            >Display Name</label
-          >
-          <input
-            id="editDisplayName"
-            type="text"
-            bind:value={editDisplayName}
-            placeholder="Enter display name"
-            class="form-input {editError ? 'error' : ''}"
-          />
-        </div>
-
-        <div class="form-group">
-          <label for="editDescription" class="form-label">Description</label>
-          <textarea
-            id="editDescription"
-            bind:value={editDescription}
-            placeholder="Enter space description"
-            rows="3"
-            class="form-input form-textarea"
-          ></textarea>
-        </div>
+        <MetaForm
+          bind:formData={editMetaContent}
+          bind:validateFn={validateEditMetaForm}
+          isCreate={false}
+        />
 
         <div class="form-group">
           <div class="form-checkbox">
@@ -747,28 +736,28 @@
             <p class="error-text">{editError}</p>
           </div>
         {/if}
+      </div>
 
-        <div class="modal-actions">
-          <button
-            onclick={closeEditModal}
-            class="btn btn-secondary"
-            disabled={isEditing}
-          >
-            Cancel
-          </button>
-          <button
-            onclick={handleEditSpace}
-            disabled={isEditing || !editDisplayName.trim()}
-            class="btn btn-edit"
-          >
-            {#if isEditing}
-              <div class="spinner"></div>
-              Updating...
-            {:else}
-              Update Space
-            {/if}
-          </button>
-        </div>
+      <div class="modal-actions">
+        <button
+          onclick={closeEditModal}
+          class="btn btn-secondary"
+          disabled={isEditing}
+        >
+          Cancel
+        </button>
+        <button
+          onclick={handleEditSpace}
+          disabled={isEditing || !editMetaContent.shortname}
+          class="btn btn-edit"
+        >
+          {#if isEditing}
+            <div class="spinner"></div>
+            Updating...
+          {:else}
+            Update Space
+          {/if}
+        </button>
       </div>
     </div>
   </div>
@@ -938,61 +927,6 @@
   .form-group {
     margin-bottom: 1.5rem;
   }
-
-  .form-label {
-    display: block;
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #374151;
-    margin-bottom: 0.5rem;
-  }
-
-  .form-label.required::after {
-    content: " *";
-    color: #ef4444;
-  }
-
-  .form-input {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    border: 2px solid #e5e7eb;
-    border-radius: 10px;
-    font-size: 0.875rem;
-    transition: all 0.2s ease;
-    background: #fafafa;
-  }
-
-  .form-input:focus {
-    outline: none;
-    border-color: #8b5cf6;
-    background: white;
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
-  }
-
-  .form-input:disabled {
-    background: #f9fafb;
-    color: #6b7280;
-    cursor: not-allowed;
-    border-color: #d1d5db;
-  }
-
-  .form-input.error {
-    border-color: #ef4444;
-    background: #fef2f2;
-  }
-
-  .form-textarea {
-    resize: vertical;
-    min-height: 80px;
-    font-family: inherit;
-  }
-
-  .form-help {
-    font-size: 0.75rem;
-    color: #6b7280;
-    margin-top: 0.25rem;
-  }
-
   .form-checkbox {
     display: flex;
     align-items: center;
@@ -1122,6 +1056,7 @@
     padding-top: 1rem;
     border-top: 1px solid #f3f4f6;
     margin-top: 1.5rem;
+    margin: 22px;
   }
 
   .btn {

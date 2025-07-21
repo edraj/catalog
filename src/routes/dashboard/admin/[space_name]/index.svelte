@@ -118,14 +118,14 @@
           {
             resource_type: ResourceType.folder,
             shortname: metaContent.shortname || "auto",
-            subpath: '/',
+            subpath: "/",
             attributes: {
               displayname: metaContent.displayname,
               description: metaContent.description,
               payload: {
                 body: folderContent,
-                content_type: "json"
-              }
+                content_type: "json",
+              },
             },
           },
         ],
@@ -437,73 +437,80 @@
 </div>
 
 {#if showCreateFolderModal}
-  <div
-          class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-  >
-    <div
-            class="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto"
-    >
-      <div
-              class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between"
-      >
-        <h3 class="text-lg font-semibold text-gray-900">Create New Folder</h3>
+  <div class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="modal-header-content">
+          <h3 class="modal-title">Create New Folder</h3>
+          <p class="modal-subtitle">
+            Configure folder settings and permissions
+          </p>
+        </div>
         <button
-                onclick={() => (showCreateFolderModal = false)}
-                class="text-gray-400 hover:text-gray-600 transition-colors duration-200"
-                aria-label="Close modal"
+          onclick={() => (showCreateFolderModal = false)}
+          class="modal-close-btn"
+          aria-label="Close modal"
         >
           <svg
-                  class="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+            class="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
             <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M6 18L18 6M6 6l12 12"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
             ></path>
           </svg>
         </button>
       </div>
 
-      <div class="p-6">
-        <MetaForm bind:formData={metaContent} bind:validateFn={validateMetaForm} isCreate={true}/>
-        <FolderForm bind:content={folderContent} on:save={handleSaveFolder} />
+      <div class="modal-content">
+        <div class="form-section">
+          <div class="section-header">
+            <h4 class="section-title">Basic Information</h4>
+            <p class="section-description">
+              Set the folder name and description
+            </p>
+          </div>
+          <MetaForm
+            bind:formData={metaContent}
+            bind:validateFn={validateMetaForm}
+            isCreate={true}
+          />
+        </div>
+
+        <div class="form-section">
+          <div class="section-header">
+            <h4 class="section-title">Folder Configuration</h4>
+            <p class="section-description">
+              Configure folder behavior and permissions
+            </p>
+          </div>
+          <FolderForm bind:content={folderContent} on:save={handleSaveFolder} />
+        </div>
       </div>
 
-      <div
-              class="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex justify-end space-x-3"
-      >
+      <div class="modal-footer">
         <button
-                onclick={() => (showCreateFolderModal = false)}
-                class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors duration-200"
-                disabled={isCreatingFolder}
+          onclick={() => (showCreateFolderModal = false)}
+          class="btn btn-secondary"
+          disabled={isCreatingFolder}
         >
           Cancel
         </button>
         <button
-                onclick={() => handleSaveFolder({ detail: folderContent })}
-                class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors duration-200 flex items-center gap-2"
-                disabled={isCreatingFolder}
+          onclick={() => {
+            event.preventDefault();
+            handleSaveFolder({ detail: folderContent });
+          }}
+          class="btn btn-primary"
+          disabled={isCreatingFolder}
         >
           {#if isCreatingFolder}
-            <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle
-                      class="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      stroke-width="4"
-              ></circle>
-              <path
-                      class="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              ></path>
-            </svg>
+            <div class="spinner"></div>
             Creating...
           {:else}
             Create Folder
@@ -513,3 +520,280 @@
     </div>
   </div>
 {/if}
+
+<style>
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  .modal-container {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    width: 100%;
+    max-width: 80rem;
+    max-height: 95vh;
+    display: flex;
+    flex-direction: column;
+    animation: slideIn 0.3s ease-out;
+    border: 1px solid rgba(229, 231, 235, 0.8);
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid #f3f4f6;
+    background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
+    border-radius: 16px 16px 0 0;
+    flex-shrink: 0;
+  }
+
+  .modal-header-content {
+    flex: 1;
+  }
+
+  .modal-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 0.25rem 0;
+  }
+
+  .modal-subtitle {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin: 0;
+  }
+
+  .modal-close-btn {
+    background: none;
+    border: none;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .modal-close-btn:hover {
+    background: #f3f4f6;
+    color: #374151;
+    transform: scale(1.05);
+  }
+
+  .modal-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    min-height: 0;
+  }
+
+  .form-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .section-header {
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 0.75rem;
+  }
+
+  .section-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 0.25rem 0;
+  }
+
+  .section-description {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin: 0;
+  }
+
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 1.5rem 2rem;
+    border-top: 1px solid #f3f4f6;
+    background: #fafafa;
+    border-radius: 0 0 16px 16px;
+    flex-shrink: 0;
+  }
+
+  .btn {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 120px;
+    justify-content: center;
+  }
+
+  .btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  .btn-secondary {
+    background: #f8fafc;
+    color: #475569;
+    border: 2px solid #e2e8f0;
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.3);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px 0 rgba(59, 130, 246, 0.4);
+  }
+
+  .spinner {
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95) translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (max-width: 1024px) {
+    .modal-container {
+      max-width: 95vw;
+      margin: 0.5rem;
+    }
+
+    .modal-header {
+      padding: 1rem 1.5rem;
+    }
+
+    .modal-content {
+      padding: 1.5rem;
+    }
+
+    .modal-footer {
+      padding: 1rem 1.5rem;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .modal-container {
+      max-width: 100vw;
+      max-height: 100vh;
+      margin: 0;
+      border-radius: 0;
+    }
+
+    .modal-header {
+      padding: 1rem;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .modal-header-content {
+      flex: none;
+      width: 100%;
+    }
+
+    .modal-close-btn {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+    }
+
+    .modal-content {
+      padding: 1rem;
+    }
+
+    .modal-footer {
+      padding: 1rem;
+      flex-direction: column-reverse;
+    }
+
+    .btn {
+      width: 100%;
+    }
+  }
+
+  .modal-content::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .modal-content::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+  }
+
+  .modal-content::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+  }
+
+  .modal-content::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+</style>
