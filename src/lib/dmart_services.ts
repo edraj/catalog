@@ -792,4 +792,48 @@ export async function editSpace(
   }
 }
 
-export { ResourceType };
+export async function getChildren(
+    space_name: string,
+    subpath: string,
+    limit: number = 20,
+    offset: number = 0,
+    restrict_types: Array<ResourceType> = [],
+    spaces: any = null,
+    ignoreFilter=false
+): Promise<ApiQueryResponse> {
+  const folders = await Dmart.query({
+    type: QueryType.search,
+    space_name: space_name,
+    subpath: subpath,
+    filter_types: restrict_types,
+    exact_subpath: true,
+    search: "",
+    limit: limit,
+    offset: offset,
+  });
+  if(ignoreFilter == false && spaces !== null){
+    const selectedSpace = spaces.records.find(record => record.shortname === space_name);
+    const hiddenFolders: string[] = selectedSpace.attributes.hide_folders;
+    if(hiddenFolders){
+      folders.records = folders.records.filter(record => hiddenFolders.includes(record.shortname) === false);
+    }
+  }
+
+  folders.records = folders.records.sort((leftSide, rightSide) => {
+    if (leftSide.shortname.toLowerCase() < rightSide.shortname.toLowerCase()) return -1;
+    if (leftSide.shortname.toLowerCase() > rightSide.shortname.toLowerCase()) return 1;
+    return 0;
+  });
+  return folders
+}
+
+export async function getChildrenAndSubChildren(subpathsPTR: any,spacename, base: string, _subpaths: any) {
+  for (const _subpath of _subpaths.records) {
+    if (_subpath.resource_type === "folder") {
+      const childSubpaths = await getChildren(spacename, _subpath.shortname);
+      await getChildrenAndSubChildren(subpathsPTR, spacename, `${base}/${_subpath.shortname}`, childSubpaths);
+      subpathsPTR.push(`${base}/${_subpath.shortname}`);
+    }
+  }
+}
+
