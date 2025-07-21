@@ -12,7 +12,6 @@
     getEntity,
   } from "@/lib/dmart_services";
   import { formatDate } from "@/lib/helpers";
-  import { Button, Card, Input } from "flowbite-svelte";
   import Attachments from "@/routes/components/Attachments.svelte";
   import { ResourceType } from "@edraj/tsdmart";
   import { user } from "@/stores/user";
@@ -60,6 +59,7 @@
       shortname: entity.shortname,
       space_name: $params.space_name,
       subpath: $params.subpath,
+      resource_type: $params.resource_type,
     });
   }
 
@@ -138,7 +138,8 @@
     entity = await getEntity(
       $params.shortname,
       $params.space_name,
-      $params.subpath
+      $params.subpath,
+      $params.resource_type
     );
     if (entity) {
       userReactionEntry = await checkCurrentUserReactedIdea(

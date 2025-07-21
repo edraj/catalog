@@ -7,6 +7,7 @@
     createEntity,
     getSpaces,
     getSpaceContents,
+    ResourceType,
   } from "@/lib/dmart_services";
   import {
     errorToastMessage,
@@ -37,6 +38,7 @@
 
   let isLoading = $state(false);
   let content = "";
+  let resource_type: ResourceType = $state(ResourceType.content);
   let isRTL = $dir === "rtl";
 
   let title = $state("");
@@ -97,10 +99,6 @@
         parentPath || "/",
         "managed"
       );
-      console.log(
-        `Loaded subpath for ${spaceName} at level ${level}:`,
-        response
-      );
 
       const folders = response.records.filter(
         (item) => item.resource_type === "folder"
@@ -108,6 +106,8 @@
       const hasNonFolderContent = response.records.some(
         (item) => item.resource_type !== "folder"
       );
+
+      const itemResoureceType = response.records[0].resource_type;
 
       const levelData = {
         level,
@@ -119,6 +119,7 @@
             ? `${parentPath}/${folder.shortname}`
             : folder.shortname,
         })),
+        resource_type: itemResoureceType,
         canCreateEntry: hasNonFolderContent || folders.length === 0,
         selectedFolder: "",
       };
@@ -142,7 +143,7 @@
 
     const lastLevel = subpathHierarchy[subpathHierarchy.length - 1];
     canCreateEntry = lastLevel.canCreateEntry;
-
+    resource_type = lastLevel.resource_type;
     currentPath = lastLevel.path;
     selectedSubpath = currentPath;
   }
@@ -237,13 +238,15 @@
       title: title,
       content: getContent(),
       tags: tags,
+      resource_type,
       is_active: isPublish,
     };
 
     const response = await createEntity(
       entity,
       selectedSpace,
-      selectedSubpath || "posts"
+      selectedSubpath,
+      resource_type
     );
     const msg = isPublish ? "published" : "saved";
 

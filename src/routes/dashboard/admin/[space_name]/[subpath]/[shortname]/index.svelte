@@ -177,6 +177,7 @@
         itemShortnameValue,
         spaceNameValue,
         actualSubpathValue,
+        $params.resource_type || ResourceType.content,
         entityData
       );
 

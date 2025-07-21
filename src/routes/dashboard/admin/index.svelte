@@ -84,7 +84,6 @@
     editDescription = getDescription(space);
     editIsActive = space.attributes?.is_active ?? true;
 
-    // Prefill MetaForm data for editing
     editMetaContent = {
       shortname: space.shortname,
       displayname: space.attributes?.displayname || {
@@ -133,13 +132,19 @@
 
     try {
       const { shortname, displayname, description } = metaContent;
-      await createSpace({
+      const create = await createSpace({
         shortname,
         displayname,
         description,
       });
 
+      if (create === undefined) {
+        createError = "Please give a valid shortname for the space.";
+        return;
+      }
+
       const response = await getSpaces(false, "managed");
+
       spaces = response.records || [];
 
       closeCreateModal();

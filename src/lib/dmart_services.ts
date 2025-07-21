@@ -12,7 +12,7 @@ import {
 } from "@edraj/tsdmart";
 import { user } from "@/stores/user";
 import { get } from "svelte/store";
-import type {Translation} from "@edraj/tsdmart/dmart.model";
+import type { Translation } from "@edraj/tsdmart/dmart.model";
 
 export interface EntitySearch {
   limit: number;
@@ -225,22 +225,13 @@ export async function getEntity(
   shortname: string,
   spaceName: string,
   subpath: string,
+  resourceType: ResourceType,
   retrieve_json_payload: boolean = true,
   retrieve_attachments: boolean = true
 ) {
   try {
-    if (spaceName === "maqola") {
-      return Dmart.retrieve_entry(
-        ResourceType.content,
-        spaceName,
-        subpath,
-        shortname,
-        retrieve_json_payload,
-        retrieve_attachments
-      );
-    }
     return Dmart.retrieve_entry(
-      ResourceType.ticket,
+      resourceType,
       spaceName,
       subpath,
       shortname,
@@ -255,7 +246,8 @@ export async function getEntity(
 export async function createEntity(
   data: Entity,
   spaceName: string,
-  subpath: string
+  subpath: string,
+  resourceType: ResourceType
 ) {
   let actionRequest: ActionRequest;
   if (spaceName === "catalog") {
@@ -264,7 +256,7 @@ export async function createEntity(
       request_type: RequestType.create,
       records: [
         {
-          resource_type: ResourceType.ticket,
+          resource_type: resourceType,
           shortname: "auto",
           subpath: subpath,
           attributes: {
@@ -290,7 +282,7 @@ export async function createEntity(
       request_type: RequestType.create,
       records: [
         {
-          resource_type: ResourceType.content,
+          resource_type: resourceType,
           shortname: "auto",
           subpath: subpath,
           attributes: {
@@ -320,6 +312,7 @@ export async function updateEntity(
   shortname,
   space_name,
   subpath,
+  resourceType: ResourceType,
   data: Entity
 ) {
   const isCatalog = space_name === "catalog";
@@ -347,7 +340,7 @@ export async function updateEntity(
     request_type: RequestType.update,
     records: [
       {
-        resource_type: isCatalog ? ResourceType.ticket : ResourceType.content,
+        resource_type: resourceType,
         shortname,
         subpath,
         attributes,
@@ -871,23 +864,52 @@ export async function deleteItem(
   return response.status === "success";
 }
 
-export async function createSpace({shortname, displayname, description}:{shortname: string, displayname: Translation, description: Translation}) {
+export async function createSpace({
+  shortname,
+  displayname,
+  description,
+}: {
+  shortname: string;
+  displayname: Translation;
+  description: Translation;
+}) {
   try {
-    await Dmart.space({
+    const response = await Dmart.space({
       space_name: shortname.trim(),
       request_type: RequestType.create,
       records: [
         {
           resource_type: ResourceType.space,
           shortname: shortname.trim(),
-          subpath: '/',
+          subpath: "/",
           attributes: {
             is_active: true,
             displayname: displayname,
-            description: description
-          }
-        }
-      ]
+            description: description,
+          },
+        },
+      ],
+    });
+    await getSpaces();
+    return response.status;
+  } catch (error) {
+  } finally {
+  }
+}
+
+export async function deleteSpace(shortname: string) {
+  try {
+    await Dmart.request({
+      space_name: shortname,
+      request_type: RequestType.delete,
+      records: [
+        {
+          resource_type: ResourceType.space,
+          shortname: shortname,
+          subpath: "/",
+          attributes: {},
+        },
+      ],
     });
     await getSpaces();
   } catch (error) {
@@ -895,40 +917,27 @@ export async function createSpace({shortname, displayname, description}:{shortna
   }
 }
 
-export async function deleteSpace(shortname: string) {
-    try {
-      await Dmart.request({
-        space_name: shortname,
-        request_type: RequestType.delete,
-        records: [{
+export async function editSpace(
+  shortname: string,
+  attributes: Record<string, any>
+) {
+  try {
+    await Dmart.request({
+      space_name: shortname,
+      request_type: RequestType.replace,
+      records: [
+        {
           resource_type: ResourceType.space,
           shortname: shortname,
-          subpath: '/',
-          attributes: {}
-        }]
-      })
-      await getSpaces();
-    } catch (error) {
-    } finally {
-    }
+          subpath: "/",
+          attributes: attributes,
+        },
+      ],
+    });
+    await getSpaces();
+  } catch (error) {
+  } finally {
+  }
 }
 
-export async function editSpace(shortname: string, attributes: Record<string, any>) {
-    try {
-      await Dmart.request({
-        space_name: shortname,
-        request_type: RequestType.replace,
-        records: [
-          {
-            resource_type: ResourceType.space,
-            shortname: shortname,
-            subpath: '/',
-            attributes: attributes
-          }
-        ]
-      })
-      await getSpaces();
-    } catch (error) {
-    } finally {
-    }
-}
+export { ResourceType };

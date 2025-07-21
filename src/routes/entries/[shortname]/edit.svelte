@@ -103,6 +103,7 @@
       $params.shortname,
       $params.space_name,
       $params.subpath,
+      $params.resource_type,
       entityData
     );
     const msg = isPublish ? "published" : "updated";
@@ -133,7 +134,8 @@
     entity = await getEntity(
       $params.shortname,
       $params.space_name,
-      $params.subpath
+      $params.subpath,
+      $params.resource_type
     );
     if (entity) {
       title = entity.payload?.body?.title || "";

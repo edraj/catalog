@@ -1,11 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { params, goto } from "@roxi/routify";
-  import {
-    getEntities,
-    getEntityAttachmentsCount,
-    getMyEntities,
-  } from "@/lib/dmart_services";
+  import { getMyEntities } from "@/lib/dmart_services";
   import { formatDate, renderStateString, truncateString } from "@/lib/helpers";
   import { errorToastMessage } from "@/lib/toasts_messages";
   import { user } from "@/stores/user";
@@ -51,6 +47,7 @@
       const rawEntities = await getMyEntities();
 
       entities = rawEntities.map((entity) => ({
+        resource_type: entity?.resource_type || "",
         shortname: entity.shortname,
         uuid: entity?.uuid,
         title:
@@ -167,6 +164,7 @@
       shortname: entity.shortname,
       space_name: entity.space_name,
       subpath: entity.subpath,
+      resource_type: entity.resource_type,
     });
   }
 
