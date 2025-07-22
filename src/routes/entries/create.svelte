@@ -164,7 +164,6 @@
     schema_shortname = lastLevel.schema_shortname;
     currentPath = lastLevel.path;
     selectedSubpath = currentPath;
-    console.log("Subpath hierarchy:", lastLevel);
   }
 
   async function handleSubpathChange(level: number, folderValue: string) {
@@ -317,8 +316,6 @@
       await initializeSubpathHierarchy(prefilledSpace);
 
       if (prefilledSubpath && prefilledSubpath !== "/") {
-        console.log("Prefilled subpath:", prefilledSubpath);
-
         const pathParts = prefilledSubpath
           .split("/")
           .filter((part) => part.length > 0);
@@ -327,20 +324,18 @@
           const part = pathParts[i];
 
           while (subpathHierarchy.length <= i || loadingSubpaths) {
-            await new Promise((resolve) => setTimeout(resolve, 50));
+            await new Promise((resolve) => setTimeout(resolve, 500));
           }
 
           const currentLevel = subpathHierarchy[i];
-          console.log("Current level:", currentLevel);
 
           if (currentLevel) {
             const folder = currentLevel.folders.find((f) => f.value === part);
             if (folder) {
               currentLevel.selectedFolder = part;
 
-              if (i < pathParts.length - 1) {
+              if (i < pathParts.length) {
                 const currentPath = pathParts.slice(0, i + 1).join("/");
-                console.log("Loading subpath:", currentPath);
                 await loadSubpathLevel(selectedSpace, `/${currentPath}`, i + 1);
               }
             }
