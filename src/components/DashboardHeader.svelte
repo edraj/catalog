@@ -11,6 +11,7 @@
 
   let ws = $state(null);
   let isMenuOpen = $state(false);
+  let isRTL = $locale === "ar" || $locale === "ku";
 
   onMount(() => {
     if ($user.signedin) {
@@ -103,7 +104,6 @@
     renderNotificationIconColor();
   });
 
-  // Close menu when clicking outside
   $effect(() => {
     function handleClickOutside(event: MouseEvent) {
       const target = event.target as Element;
@@ -182,12 +182,16 @@
             </button>
 
             {#if isMenuOpen}
-              <div class="dropdown-menu">
+              <div
+                class="dropdown-menu {isRTL
+                  ? 'dropdown-menu-rtl'
+                  : 'dropdown-menu-ltr'}"
+              >
                 <div class="dropdown-content">
                   <!-- Admin Items -->
                   {#if $roles.includes("super_admin")}
                     <div class="menu-section">
-                      <div class="menu-section-title">Admin</div>
+                      <div class="menu-section-title">{$_("admin")}</div>
                       <button
                         onclick={() => handleMenuItemClick("/dashboard/admin")}
                         class="menu-item"
@@ -205,7 +209,7 @@
                             d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8v-10h-8v10zm0-18v6h8V3h-8z"
                           />
                         </svg>
-                        <span>Dashboard</span>
+                        <span>{$_("dashboard")}</span>
                       </button>
                       <button
                         onclick={() =>
@@ -227,7 +231,7 @@
                             d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
                           />
                         </svg>
-                        <span>Contact Messages</span>
+                        <span>{$_("contact_messages")}</span>
                       </button>
                       <button
                         onclick={() =>
@@ -253,7 +257,7 @@
                             d="M9 12l2 2 4-4"
                           />
                         </svg>
-                        <span>Permissions</span>
+                        <span>{$_("permissions")}</span>
                       </button>
                     </div>
                     <div class="menu-divider"></div>
@@ -278,7 +282,7 @@
                           d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"
                         />
                       </svg>
-                      <span>Entries</span>
+                      <span>{$_("entries")}</span>
                     </button>
                     <button
                       onclick={() => handleMenuItemClick("/notifications")}
@@ -297,7 +301,7 @@
                           d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
                         />
                       </svg>
-                      <span>Notifications</span>
+                      <span>{$_("notifications")}</span>
                       {#if $newNotificationType}
                         <span class="notification-badge"></span>
                       {/if}
@@ -319,7 +323,7 @@
                           d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                         />
                       </svg>
-                      <span>My Profile</span>
+                      <span>{$_("my_profile")}</span>
                     </button>
                   </div>
 
@@ -347,9 +351,9 @@
                           switchLocale((e.target as HTMLSelectElement).value)}
                         class="language-select-dropdown"
                       >
-                        <option value="en">English</option>
-                        <option value="ar">العربية</option>
-                        <option value="ku">کوردی</option>
+                        <option value="en">{$_("english")}</option>
+                        <option value="ar">{$_("arabic")}</option>
+                        <option value="ku">{$_("kurdish")}</option>
                       </select>
                     </div>
                     <button
@@ -369,7 +373,7 @@
                           d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
                         />
                       </svg>
-                      <span>Sign Out</span>
+                      <span>{$_("sign_out")}</span>
                     </button>
                   </div>
                 </div>
@@ -463,7 +467,6 @@
   .dropdown-menu {
     position: absolute;
     top: calc(100% + 0.5rem);
-    right: 0;
     z-index: 50;
     min-width: 16rem;
     background: white;
@@ -706,5 +709,22 @@
     outline: none;
     background: rgba(59, 130, 246, 0.1);
     color: #1d4ed8;
+  }
+  .dropdown-menu-ltr {
+    right: 0;
+  }
+
+  .dropdown-menu-rtl {
+    left: 0;
+  }
+
+  @media (max-width: 640px) {
+    .dropdown-menu-ltr {
+      right: -1rem;
+    }
+
+    .dropdown-menu-rtl {
+      left: -1rem;
+    }
   }
 </style>

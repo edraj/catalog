@@ -198,7 +198,7 @@ export async function createEntity(
       records: [
         {
           resource_type: resourceType,
-          shortname: "auto",
+          shortname: data.shortname,
           subpath: subpath,
           attributes: {
             is_active: data.is_active,

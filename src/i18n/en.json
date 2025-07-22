@@ -322,5 +322,18 @@
   "common.not_available": "N/A",
   "common.unknown": "Unknown",
   "common.no_website": "No website",
-  "common.loading_content": "Loading content..."
+  "common.loading_content": "Loading content...",
+
+  "admin": "Admin",
+  "dashboard": "Dashboard",
+  "contact_messages": "Contact Messages",
+  "permissions": "Permissions",
+  "entries": "Entries",
+  "notifications": "Notifications",
+  "my_profile": "My Profile",
+  "sign_out": "Sign Out",
+  "language": "Language",
+  "english": "English",
+  "arabic": "Arabic",
+  "kurdish": "Kurdish"
 }

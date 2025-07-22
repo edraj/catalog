@@ -33,6 +33,7 @@
   import { dir } from "@/i18n";
   import { onMount } from "svelte";
   import { ResourceType } from "@edraj/tsdmart";
+  import { roles } from "@/stores/user";
 
   $goto;
 
@@ -41,10 +42,16 @@
   let resource_type: ResourceType = $state(ResourceType.content);
   let isRTL = $dir === "rtl";
   let itemResourceType;
+  let isAdmin = false;
+
+  if ($roles) {
+    isAdmin = $roles.includes("super_admin");
+  }
 
   let title = $state("");
+  let shortname = $state("");
   let isEditing = $state(false);
-
+  let isEditingShortname = $state(false);
   let selectedSpace = $state("catalog");
   let selectedSubpath = $state("posts");
   let spaces = $state([]);
@@ -157,6 +164,7 @@
     schema_shortname = lastLevel.schema_shortname;
     currentPath = lastLevel.path;
     selectedSubpath = currentPath;
+    console.log("Subpath hierarchy:", lastLevel);
   }
 
   async function handleSubpathChange(level: number, folderValue: string) {
@@ -191,7 +199,13 @@
   function handleInputBlur() {
     isEditing = false;
   }
+  function handleShortnameClick() {
+    isEditingShortname = true;
+  }
 
+  function handleShortnameBlur() {
+    isEditingShortname = false;
+  }
   let tags = $state([]);
   let newTag = $state("");
 
@@ -253,6 +267,7 @@
       workflow_shortname,
       schema_shortname,
       is_active: isPublish,
+      ...(isAdmin && shortname ? { shortname: shortname } : {}),
     };
 
     const response = await createEntity(
@@ -293,9 +308,7 @@
     return htmlEditor.getHtml(true);
   }
 
-  onMount(async () => {
-    await loadSpaces();
-
+  async function loadPrefilledData() {
     const prefilledSpace = $params.space_name;
     const prefilledSubpath = $params.subpath;
 
@@ -304,24 +317,31 @@
       await initializeSubpathHierarchy(prefilledSpace);
 
       if (prefilledSubpath && prefilledSubpath !== "/") {
+        console.log("Prefilled subpath:", prefilledSubpath);
+
         const pathParts = prefilledSubpath
           .split("/")
           .filter((part) => part.length > 0);
-        let currentPath = "";
 
         for (let i = 0; i < pathParts.length; i++) {
           const part = pathParts[i];
-          currentPath += (i === 0 ? "" : "/") + part;
 
-          if (subpathHierarchy[i]) {
-            const folder = subpathHierarchy[i].folders.find(
-              (f) => f.value === part
-            );
+          while (subpathHierarchy.length <= i || loadingSubpaths) {
+            await new Promise((resolve) => setTimeout(resolve, 50));
+          }
+
+          const currentLevel = subpathHierarchy[i];
+          console.log("Current level:", currentLevel);
+
+          if (currentLevel) {
+            const folder = currentLevel.folders.find((f) => f.value === part);
             if (folder) {
-              subpathHierarchy[i].selectedFolder = part;
+              currentLevel.selectedFolder = part;
+
               if (i < pathParts.length - 1) {
+                const currentPath = pathParts.slice(0, i + 1).join("/");
+                console.log("Loading subpath:", currentPath);
                 await loadSubpathLevel(selectedSpace, `/${currentPath}`, i + 1);
-                canCreateEntry = true;
               }
             }
           }
@@ -329,9 +349,15 @@
 
         selectedSubpath = prefilledSubpath;
         currentPath = prefilledSubpath;
-        canCreateEntry = true;
+
+        updateCanCreateEntry();
       }
     }
+  }
+
+  onMount(async () => {
+    await loadSpaces();
+    await loadPrefilledData();
   });
 </script>
 
@@ -518,7 +544,50 @@
         {/if}
       </div>
     </div>
-
+    {#if isAdmin}
+      <div class="section">
+        <div class="section-header">
+          <TagOutline class="section-icon" />
+          <h2>Shortname (Admin Only)</h2>
+        </div>
+        <div class="section-content">
+          {#if isEditingShortname}
+            <input
+              type="text"
+              bind:value={shortname}
+              onblur={handleShortnameBlur}
+              class="shortname-input"
+              placeholder="Enter custom shortname (optional)..."
+            />
+          {:else}
+            <div
+              class="shortname-display"
+              tabindex="0"
+              onkeydown={(e) => {
+                if (e.key === "Enter") handleShortnameClick();
+              }}
+              role="button"
+              aria-label="Edit shortname"
+              onclick={handleShortnameClick}
+            >
+              {#if shortname}
+                {shortname}
+              {:else}
+                <span class="shortname-placeholder"
+                  >Click to set custom shortname (optional)...</span
+                >
+              {/if}
+            </div>
+          {/if}
+          <div class="shortname-help">
+            <small
+              >Leave empty to auto-generate from title. Only alphanumeric
+              characters and underscores allowed.</small
+            >
+          </div>
+        </div>
+      </div>
+    {/if}
     <div class="section">
       <div class="section-header">
         <TagOutline class="section-icon" />
@@ -1055,7 +1124,8 @@
     padding: 2rem;
   }
 
-  .title-input {
+  .title-input,
+  .shortname-input {
     width: 100%;
     padding: 1rem 1.5rem;
     border: 2px solid var(--gray-200);
@@ -1066,13 +1136,18 @@
     transition: all 0.2s ease;
     outline: none;
   }
-
-  .title-input:focus {
+  .shortname-input {
+    font-size: 1rem;
+    font-weight: 500;
+  }
+  .title-input:focus,
+  .shortname-input:focus {
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
   }
 
-  .title-display {
+  .title-display,
+  .shortname-display {
     padding: 1rem 1.5rem;
     border: 2px solid transparent;
     border-radius: var(--radius-lg);
@@ -1087,13 +1162,23 @@
     background: var(--gray-50);
   }
 
-  .title-display:hover {
+  .shortname-display {
+    font-size: 1rem;
+    font-weight: 500;
+    min-height: 3rem;
+  }
+
+  .title-display:hover,
+  .shortname-display:hover {
     border-color: var(--primary-color);
     background: var(--white);
     transform: translateY(-1px);
     box-shadow: var(--shadow-md);
   }
-
+  .shortname-help {
+    margin-top: 0.5rem;
+    color: var(--gray-500);
+  }
   .title-placeholder {
     color: var(--gray-400);
   }

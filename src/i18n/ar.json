@@ -323,5 +323,17 @@
   "common.not_available": "غير متاح",
   "common.unknown": "غير معروف",
   "common.no_website": "لا يوجد موقع إلكتروني",
-  "common.loading_content": "جاري تحميل المحتوى..."
+  "common.loading_content": "جاري تحميل المحتوى...",
+  "admin": "الإدارة",
+  "dashboard": "لوحة التحكم",
+  "contact_messages": "رسائل التواصل",
+  "permissions": "الصلاحيات",
+  "entries": "المُدخلات",
+  "notifications": "الإشعارات",
+  "my_profile": "ملفي الشخصي",
+  "sign_out": "تسجيل الخروج",
+  "language": "اللغة",
+  "english": "الإنجليزية",
+  "arabic": "العربية",
+  "kurdish": "الكردية"
 }
