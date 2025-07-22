@@ -10,6 +10,7 @@
   $goto;
 
   let ws = $state(null);
+  let isMenuOpen = $state(false);
 
   onMount(() => {
     if ($user.signedin) {
@@ -82,10 +83,39 @@
   async function handleLogout() {
     await signout();
     $goto("/login");
+    isMenuOpen = false;
+  }
+
+  function toggleMenu() {
+    isMenuOpen = !isMenuOpen;
+  }
+
+  function closeMenu() {
+    isMenuOpen = false;
+  }
+
+  function handleMenuItemClick(href: string) {
+    $goto(href);
+    closeMenu();
   }
 
   $effect(() => {
     renderNotificationIconColor();
+  });
+
+  // Close menu when clicking outside
+  $effect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as Element;
+      if (isMenuOpen && !target.closest(".menu-container")) {
+        closeMenu();
+      }
+    }
+
+    if (isMenuOpen) {
+      document.addEventListener("click", handleClickOutside);
+      return () => document.removeEventListener("click", handleClickOutside);
+    }
   });
 </script>
 
@@ -118,15 +148,18 @@
       </div>
 
       <!-- Navigation Items -->
-      <div class="flex items-center space-x-2">
+      <div class="flex items-center space-x-3">
         {#if $user.signedin}
           <SearchBar />
-          {#if $roles.includes("super_admin")}
-            <a
-              href="/dashboard/admin"
-              class="nav-icon-btn"
-              aria-label="Admin Dashboard"
-              title="Admin Dashboard"
+
+          <!-- Menu Dropdown -->
+          <div class="relative menu-container">
+            <button
+              onclick={toggleMenu}
+              class="nav-icon-btn menu-trigger"
+              aria-label="Menu"
+              title="Menu"
+              aria-expanded={isMenuOpen}
             >
               <svg
                 class="nav-icon"
@@ -138,146 +171,214 @@
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8v-10h-8v10zm0-18v6h8V3h-8z"
+                  d="M4 6h16M4 12h16M4 18h16"
                 />
               </svg>
-            </a>
-            <a
-              href="/dashboard/admin/contact-messages"
-              class="nav-icon-btn"
-              aria-label="Contact Messages"
-              title="Contact Messages"
-            >
-              <svg
-                class="nav-icon"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                ></path>
-              </svg>
-            </a>
-            <a
-              href="/dashboard/permissions"
-              class="nav-icon-btn"
-              aria-label="Permissions"
-              title="Permissions"
-            >
-              <svg
-                class="nav-icon"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
-                />
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 12l2 2 4-4"
-                />
-              </svg>
-            </a>
-          {/if}
-          <a
-            href="/entries"
-            class="nav-icon-btn"
-            aria-label="Entries"
-            title="Entries"
-          >
-            <svg
-              class="nav-icon"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"
-              />
-            </svg>
-          </a>
-          <a
-            href="/notifications"
-            class="nav-icon-btn relative"
-            aria-label="Notifications"
-            title="Notifications"
-          >
-            <svg
-              class="nav-icon {renderNotificationIconColor()}"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-              ></path>
-            </svg>
-            {#if $newNotificationType}
-              <span
-                class="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500 border-2 border-white animate-pulse"
-              ></span>
+              {#if $newNotificationType}
+                <span
+                  class="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500 border-2 border-white animate-pulse"
+                ></span>
+              {/if}
+            </button>
+
+            {#if isMenuOpen}
+              <div class="dropdown-menu">
+                <div class="dropdown-content">
+                  <!-- Admin Items -->
+                  {#if $roles.includes("super_admin")}
+                    <div class="menu-section">
+                      <div class="menu-section-title">Admin</div>
+                      <button
+                        onclick={() => handleMenuItemClick("/dashboard/admin")}
+                        class="menu-item"
+                      >
+                        <svg
+                          class="menu-icon"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8v-10h-8v10zm0-18v6h8V3h-8z"
+                          />
+                        </svg>
+                        <span>Dashboard</span>
+                      </button>
+                      <button
+                        onclick={() =>
+                          handleMenuItemClick(
+                            "/dashboard/admin/contact-messages"
+                          )}
+                        class="menu-item"
+                      >
+                        <svg
+                          class="menu-icon"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                          />
+                        </svg>
+                        <span>Contact Messages</span>
+                      </button>
+                      <button
+                        onclick={() =>
+                          handleMenuItemClick("/dashboard/permissions")}
+                        class="menu-item"
+                      >
+                        <svg
+                          class="menu-icon"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
+                          />
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M9 12l2 2 4-4"
+                          />
+                        </svg>
+                        <span>Permissions</span>
+                      </button>
+                    </div>
+                    <div class="menu-divider"></div>
+                  {/if}
+
+                  <!-- Main Navigation -->
+                  <div class="menu-section">
+                    <button
+                      onclick={() => handleMenuItemClick("/entries")}
+                      class="menu-item"
+                    >
+                      <svg
+                        class="menu-icon"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"
+                        />
+                      </svg>
+                      <span>Entries</span>
+                    </button>
+                    <button
+                      onclick={() => handleMenuItemClick("/notifications")}
+                      class="menu-item"
+                    >
+                      <svg
+                        class="menu-icon {renderNotificationIconColor()}"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                        />
+                      </svg>
+                      <span>Notifications</span>
+                      {#if $newNotificationType}
+                        <span class="notification-badge"></span>
+                      {/if}
+                    </button>
+                    <button
+                      onclick={() => handleMenuItemClick("/me")}
+                      class="menu-item"
+                    >
+                      <svg
+                        class="menu-icon"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                        />
+                      </svg>
+                      <span>My Profile</span>
+                    </button>
+                  </div>
+
+                  <div class="menu-divider"></div>
+
+                  <!-- Settings & Actions -->
+                  <div class="menu-section">
+                    <div class="menu-item language-item">
+                      <svg
+                        class="menu-icon"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
+                        />
+                      </svg>
+                      <select
+                        bind:value={$locale}
+                        onchange={(e) =>
+                          switchLocale((e.target as HTMLSelectElement).value)}
+                        class="language-select-dropdown"
+                      >
+                        <option value="en">English</option>
+                        <option value="ar">العربية</option>
+                        <option value="ku">کوردی</option>
+                      </select>
+                    </div>
+                    <button
+                      onclick={handleLogout}
+                      class="menu-item logout-item"
+                    >
+                      <svg
+                        class="menu-icon"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                        />
+                      </svg>
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
             {/if}
-          </a>
+          </div>
 
-          <a
-            href="/me"
-            class="nav-icon-btn"
-            aria-label="Profile"
-            title="My Profile"
-          >
-            <svg
-              class="nav-icon"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-              ></path>
-            </svg>
-          </a>
-
-          <button
-            onclick={handleLogout}
-            class="nav-icon-btn logout-btn"
-            aria-label="Logout"
-            title="Sign Out"
-          >
-            <svg
-              class="nav-icon"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-              ></path>
-            </svg>
-          </button>
-
-          <div class="relative ml-2">
+          <!-- Language selector for larger screens -->
+          <div class="relative ml-2 hidden sm:block">
             <select
               bind:value={$locale}
               onchange={(e) =>
@@ -343,6 +444,11 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 
+  .menu-trigger[aria-expanded="true"] {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: rgba(59, 130, 246, 0.3);
+  }
+
   .nav-icon {
     width: 1.25rem;
     height: 1.25rem;
@@ -354,13 +460,127 @@
     color: #374151;
   }
 
-  .logout-btn:hover {
-    background: rgba(254, 242, 242, 0.9);
-    border-color: rgba(252, 165, 165, 0.6);
+  .dropdown-menu {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    z-index: 50;
+    min-width: 16rem;
+    background: white;
+    border: 1px solid rgba(229, 231, 235, 0.8);
+    border-radius: 1rem;
+    box-shadow:
+      0 20px 25px -5px rgba(0, 0, 0, 0.1),
+      0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    backdrop-filter: blur(16px);
+    animation: dropdown-enter 0.2s ease-out;
   }
 
-  .logout-btn:hover .nav-icon {
+  @keyframes dropdown-enter {
+    from {
+      opacity: 0;
+      transform: translateY(-8px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .dropdown-content {
+    padding: 0.75rem;
+  }
+
+  .menu-section {
+    margin-bottom: 0.5rem;
+  }
+
+  .menu-section:last-child {
+    margin-bottom: 0;
+  }
+
+  .menu-section-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.5rem 0.75rem 0.25rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .menu-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 0.75rem;
+    border: none;
+    background: none;
+    border-radius: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+    color: #374151;
+    font-size: 0.875rem;
+    font-weight: 500;
+    position: relative;
+  }
+
+  .menu-item:hover {
+    background: rgba(243, 244, 246, 0.8);
+    color: #111827;
+  }
+
+  .menu-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+  }
+
+  .menu-item span {
+    flex: 1;
+  }
+
+  .logout-item:hover {
+    background: rgba(254, 242, 242, 0.8);
     color: #dc2626;
+  }
+
+  .logout-item:hover .menu-icon {
+    color: #dc2626;
+  }
+
+  .language-item {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .language-select-dropdown {
+    appearance: none;
+    background: transparent;
+    border: none;
+    color: #374151;
+    font-weight: 500;
+    font-size: 0.875rem;
+    cursor: pointer;
+    outline: none;
+    flex: 1;
+    margin-left: 0.75rem;
+  }
+
+  .menu-divider {
+    height: 1px;
+    background: rgba(229, 231, 235, 0.6);
+    margin: 0.5rem 0;
+  }
+
+  .notification-badge {
+    width: 0.5rem;
+    height: 0.5rem;
+    background: #ef4444;
+    border-radius: 50%;
+    margin-left: auto;
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 
   .login-btn {
@@ -446,6 +666,11 @@
       font-size: 0.8rem;
       min-width: 3.5rem;
     }
+
+    .dropdown-menu {
+      min-width: 14rem;
+      right: -1rem;
+    }
   }
 
   /* Animation for notification badge */
@@ -475,5 +700,11 @@
     ring: 2px;
     ring-color: rgba(59, 130, 246, 0.5);
     ring-offset: 2px;
+  }
+
+  .menu-item:focus {
+    outline: none;
+    background: rgba(59, 130, 246, 0.1);
+    color: #1d4ed8;
   }
 </style>
