@@ -198,7 +198,7 @@ export async function createEntity(
       records: [
         {
           resource_type: resourceType,
-          shortname: data.shortname,
+          shortname: data.shortname || "auto",
           subpath: subpath,
           attributes: {
             is_active: data.is_active,
@@ -224,7 +224,7 @@ export async function createEntity(
       records: [
         {
           resource_type: resourceType,
-          shortname: "auto",
+          shortname: data.shortname || "auto",
           subpath: subpath,
           attributes: {
             is_active: data.is_active,
