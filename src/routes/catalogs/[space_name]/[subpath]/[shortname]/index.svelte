@@ -485,95 +485,42 @@
           {#if reactions.length > 0 || comments.length > 0}
             <section class="interactions-section">
               <h3 class="section-title-large">
-                <span class="title-accent-pink"></span>
+                <span class="title-accent"></span>
                 Interactions
               </h3>
 
-              <div class="interactions-grid">
-                <!-- Reactions -->
-                {#if reactions.length > 0}
-                  <div class="reactions-container">
-                    <h4 class="subsection-title">
-                      <svg
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          d="M20.8 4.6c-1.6-1.4-4-1.4-5.6 0l-.7.7-.7-.7c-1.6-1.4-4-1.4-5.6 0-1.7 1.5-1.7 4.1 0 5.6l6.3 6.2 6.3-6.2c1.7-1.5 1.7-4.1 0-5.6z"
-                        />
-                      </svg>
-                      Reactions ({reactions.length})
-                    </h4>
-                    <div class="reactions-list">
-                      {#each reactions as reaction}
-                        <div class="reaction-item">
-                          <span class="reaction-emoji">
-                            {getReactionEmoji(getReactionType(reaction))}
-                          </span>
-                          <div class="reaction-details">
-                            <span class="reaction-type"
-                              >{getReactionType(reaction)}</span
-                            >
-                            <span class="reaction-author"
-                              >by {reaction.attributes?.owner_shortname ||
-                                "Unknown"}</span
-                            >
-                          </div>
-                        </div>
-                      {/each}
-                    </div>
+              <!-- Reactions Summary -->
+              {#if reactions.length > 0}
+                <div class="reactions-summary">
+                  <h4 class="simple-subtitle">Reactions</h4>
+                  <div class="reactions-simple">
+                    {#each Object.entries(reactions.reduce((acc, reaction) => {
+                        const type = getReactionType(reaction);
+                        acc[type] = (acc[type] || 0) + 1;
+                        return acc;
+                      }, {})) as [type, count]}
+                      <span class="reaction-count">
+                        {getReactionEmoji(type)}
+                        {count}
+                      </span>
+                    {/each}
                   </div>
-                {/if}
+                </div>
+              {/if}
 
-                <!-- Comments -->
-                {#if comments.length > 0}
-                  <div class="comments-container">
-                    <h4 class="subsection-title">
-                      <svg
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          d="M21 11.5a8.38 8.38 0 0 1-1.9 5.4 8.5 8.5 0 0 1-6.6 3.1 8.38 8.38 0 0 1-5.4-1.9L3 21l2.9-4.1a8.38 8.38 0 0 1-1.9-5.4 8.5 8.5 0 0 1 3.1-6.6A8.38 8.38 0 0 1 12.5 3a8.5 8.5 0 0 1 6.6 3.1 8.38 8.38 0 0 1 1.9 5.4z"
-                        />
-                      </svg>
-                      Comments ({comments.length})
-                    </h4>
-                    <div class="comments-list">
-                      {#each comments as comment}
-                        <div class="comment-item">
-                          <div class="comment-header">
-                            <svg
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                              class="comment-icon"
-                            >
-                              <path
-                                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                              />
-                            </svg>
-                            <div class="comment-meta">
-                              <span class="comment-author"
-                                >{comment.attributes?.owner_shortname ||
-                                  "Unknown"}</span
-                              >
-                              <span class="comment-state"
-                                >({getCommentState(comment)})</span
-                              >
-                            </div>
-                          </div>
-                          <div class="comment-content">
-                            {getCommentText(comment)}
-                          </div>
-                        </div>
-                      {/each}
-                    </div>
+              <!-- Comments List -->
+              {#if comments.length > 0}
+                <div class="comments-simple">
+                  <h4 class="simple-subtitle">Comments ({comments.length})</h4>
+                  <div class="comments-list-simple">
+                    {#each comments as comment}
+                      <div class="comment-simple">
+                        {getCommentText(comment)}
+                      </div>
+                    {/each}
                   </div>
-                {/if}
-              </div>
+                </div>
+              {/if}
             </section>
           {/if}
 
@@ -1014,13 +961,6 @@
     border-radius: 9999px;
   }
 
-  .title-accent-pink {
-    width: 0.25rem;
-    height: 1.5rem;
-    background: #ec4899;
-    border-radius: 9999px;
-  }
-
   .title-accent-green {
     width: 0.25rem;
     height: 1.5rem;
@@ -1053,142 +993,53 @@
     padding: 0 2rem 1.5rem;
   }
 
-  .section-title-large {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: #0f172a;
+  .reactions-summary {
     margin-bottom: 1.5rem;
-    padding-top: 2rem;
-    border-top: 1px solid #e2e8f0;
   }
 
-  .interactions-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1.5rem;
-  }
-
-  .reactions-container {
-    background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
-    border-radius: 0.75rem;
-    padding: 1.5rem;
-    border: 1px solid #f9a8d4;
-  }
-
-  .comments-container {
-    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-    border-radius: 0.75rem;
-    padding: 1.5rem;
-    border: 1px solid #93c5fd;
-  }
-
-  .subsection-title {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 1.125rem;
+  .simple-subtitle {
+    font-size: 1rem;
     font-weight: 600;
-    color: #0f172a;
-    margin-bottom: 1rem;
+    color: #374151;
+    margin-bottom: 0.75rem;
   }
 
-  .subsection-title svg {
-    width: 1.25rem;
-    height: 1.25rem;
-  }
-
-  .reactions-container .subsection-title svg {
-    color: #ec4899;
-  }
-
-  .comments-container .subsection-title svg {
-    color: #3b82f6;
-  }
-
-  .reactions-list,
-  .comments-list {
+  .reactions-simple {
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
     gap: 0.75rem;
   }
 
-  .reaction-item {
-    display: flex;
+  .reaction-count {
+    display: inline-flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem;
-    background: rgba(255, 255, 255, 0.6);
-    border-radius: 0.5rem;
-  }
-
-  .reaction-emoji {
-    font-size: 1.5rem;
-  }
-
-  .reaction-details {
-    display: flex;
-    flex-direction: column;
     gap: 0.25rem;
-  }
-
-  .reaction-type {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #374151;
-    text-transform: capitalize;
-  }
-
-  .reaction-author {
-    font-size: 0.75rem;
-    color: #64748b;
-  }
-
-  .comment-item {
-    padding: 1rem;
-    background: rgba(255, 255, 255, 0.6);
+    padding: 0.5rem 0.75rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
     border-radius: 0.5rem;
-    border-left: 3px solid #3b82f6;
-  }
-
-  .comment-header {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .comment-icon {
-    width: 1rem;
-    height: 1rem;
-    color: #3b82f6;
-  }
-
-  .comment-meta {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .comment-author {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #374151;
-  }
-
-  .comment-state {
-    font-size: 0.75rem;
-    color: #64748b;
-    font-style: italic;
-  }
-
-  .comment-content {
     font-size: 0.875rem;
     color: #374151;
+  }
+
+  .comments-simple {
+    margin-top: 1.5rem;
+  }
+
+  .comments-list-simple {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .comment-simple {
+    padding: 0.75rem 1rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
     line-height: 1.5;
-    padding-left: 1.5rem;
+    color: #374151;
   }
 
   .media-section {
@@ -1284,47 +1135,5 @@
   .no-data-message {
     color: #64748b;
     margin: 0;
-  }
-
-  @media (max-width: 768px) {
-    .header-content {
-      padding: 1rem;
-    }
-
-    .main-content {
-      padding: 1rem;
-    }
-
-    .post-header {
-      padding: 1.5rem;
-    }
-
-    .content-section {
-      padding: 1.5rem;
-    }
-
-    .interactions-section,
-    .media-section,
-    .relationships-section {
-      padding: 0 1.5rem 1.5rem;
-    }
-
-    .post-title {
-      font-size: 1.5rem;
-    }
-
-    .meta-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .interactions-grid,
-    .relationships-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .post-title-section {
-      flex-direction: column;
-      align-items: flex-start;
-    }
   }
 </style>

@@ -295,6 +295,56 @@ export async function updateEntity(
     : null;
 }
 
+export async function updatePermission(
+  shortname: string,
+  space_name: string,
+  subpath: string,
+  resourceType: ResourceType,
+  data: any,
+  workflow_shortname: string,
+  schema_shortname: string
+) {
+  console.log("Updating permission:", data);
+
+  const attributes: any = {
+    is_active: data.is_active ?? true,
+    tags: data.tags || [],
+    relationships: data.relationships || [],
+    acl: data.acl || [],
+    subpaths: data.subpaths || {},
+    resource_types: data.resource_types || [],
+    actions: data.actions || [],
+    conditions: data.conditions || [],
+    restricted_fields: data.restricted_fields || [],
+    allowed_fields_values: data.allowed_fields_values || {},
+    attachments: data.attachments || {},
+    slug: data.slug || null,
+  };
+
+  if (workflow_shortname && schema_shortname) {
+    attributes.workflow_shortname = workflow_shortname;
+    attributes.schema_shortname = schema_shortname;
+  }
+
+  const actionRequest: ActionRequest = {
+    space_name,
+    request_type: RequestType.update,
+    records: [
+      {
+        resource_type: resourceType,
+        shortname,
+        subpath,
+        attributes,
+      },
+    ],
+  };
+
+  const response: ActionResponse = await Dmart.request(actionRequest);
+  return response.status === "success" && response.records.length > 0
+    ? response.records[0].shortname
+    : null;
+}
+
 export async function attachAttachmentsToEntity(
   shortname: string,
   spaceName: string,
@@ -793,13 +843,13 @@ export async function editSpace(
 }
 
 export async function getChildren(
-    space_name: string,
-    subpath: string,
-    limit: number = 20,
-    offset: number = 0,
-    restrict_types: Array<ResourceType> = [],
-    spaces: any = null,
-    ignoreFilter=false
+  space_name: string,
+  subpath: string,
+  limit: number = 20,
+  offset: number = 0,
+  restrict_types: Array<ResourceType> = [],
+  spaces: any = null,
+  ignoreFilter = false
 ): Promise<ApiQueryResponse> {
   const folders = await Dmart.query({
     type: QueryType.search,
@@ -811,29 +861,44 @@ export async function getChildren(
     limit: limit,
     offset: offset,
   });
-  if(ignoreFilter == false && spaces !== null){
-    const selectedSpace = spaces.records.find(record => record.shortname === space_name);
+  if (ignoreFilter == false && spaces !== null) {
+    const selectedSpace = spaces.records.find(
+      (record) => record.shortname === space_name
+    );
     const hiddenFolders: string[] = selectedSpace.attributes.hide_folders;
-    if(hiddenFolders){
-      folders.records = folders.records.filter(record => hiddenFolders.includes(record.shortname) === false);
+    if (hiddenFolders) {
+      folders.records = folders.records.filter(
+        (record) => hiddenFolders.includes(record.shortname) === false
+      );
     }
   }
 
   folders.records = folders.records.sort((leftSide, rightSide) => {
-    if (leftSide.shortname.toLowerCase() < rightSide.shortname.toLowerCase()) return -1;
-    if (leftSide.shortname.toLowerCase() > rightSide.shortname.toLowerCase()) return 1;
+    if (leftSide.shortname.toLowerCase() < rightSide.shortname.toLowerCase())
+      return -1;
+    if (leftSide.shortname.toLowerCase() > rightSide.shortname.toLowerCase())
+      return 1;
     return 0;
   });
-  return folders
+  return folders;
 }
 
-export async function getChildrenAndSubChildren(subpathsPTR: any,spacename, base: string, _subpaths: any) {
+export async function getChildrenAndSubChildren(
+  subpathsPTR: any,
+  spacename,
+  base: string,
+  _subpaths: any
+) {
   for (const _subpath of _subpaths.records) {
     if (_subpath.resource_type === "folder") {
       const childSubpaths = await getChildren(spacename, _subpath.shortname);
-      await getChildrenAndSubChildren(subpathsPTR, spacename, `${base}/${_subpath.shortname}`, childSubpaths);
+      await getChildrenAndSubChildren(
+        subpathsPTR,
+        spacename,
+        `${base}/${_subpath.shortname}`,
+        childSubpaths
+      );
       subpathsPTR.push(`${base}/${_subpath.shortname}`);
     }
   }
 }
-
