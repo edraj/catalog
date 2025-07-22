@@ -145,68 +145,6 @@
     }
   }
 
-  async function createFolderEntity(data, spaceName, subpath) {
-    let actionRequest;
-
-    if (spaceName === "catalog") {
-      actionRequest = {
-        space_name: spaceName,
-        request_type: RequestType.create,
-        records: [
-          {
-            resource_type: ResourceType.ticket,
-            shortname: "auto",
-            subpath: subpath,
-            attributes: {
-              is_active: data.is_active,
-              workflow_shortname: "catalog_idea_workflow",
-              relationships: [],
-              tags: data.tags,
-              payload: {
-                content_type: "folder",
-                schema_shortname: "catelog_post",
-                body: {
-                  title: data.title,
-                  content: data.content,
-                },
-              },
-            },
-          },
-        ],
-      };
-    } else {
-      actionRequest = {
-        space_name: spaceName,
-        request_type: RequestType.create,
-        records: [
-          {
-            resource_type: ResourceType.content,
-            shortname: "auto",
-            subpath: subpath,
-            attributes: {
-              is_active: data.is_active,
-              relationships: [],
-              tags: data.tags,
-              payload: {
-                content_type: "folder",
-                body: {
-                  title: data.title,
-                  content: data.content,
-                },
-              },
-            },
-          },
-        ],
-      };
-    }
-
-    const response = await Dmart.request(actionRequest);
-    if (response.status == "success" && response.records.length > 0) {
-      return response.records[0].shortname;
-    }
-    return null;
-  }
-
   async function handleDeleteItem(item: any, event: Event) {
     event.stopPropagation();
 

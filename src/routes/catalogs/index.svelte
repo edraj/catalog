@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { run } from "svelte/legacy";
-
   import { onMount } from "svelte";
   import { getSpaces } from "@/lib/dmart_services";
   import { Diamonds } from "svelte-loading-spinners";
@@ -17,7 +15,6 @@
     locale,
     ($locale) => $locale === "ar" || $locale === "ku"
   );
-  let direction = $state("ltr");
 
   onMount(async () => {
     try {
@@ -67,10 +64,6 @@
     if (!dateString) return $_("common.not_available");
     return new Date(dateString).toLocaleDateString($locale);
   }
-
-  run(() => {
-    direction = isRTL ? "rtl" : "ltr";
-  });
 </script>
 
 <div class="min-h-screen bg-gray-50" class:rtl={$isRTL}>

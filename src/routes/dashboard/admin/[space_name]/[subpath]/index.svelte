@@ -139,12 +139,15 @@
         subpath: newSubpath,
       });
     } else {
-      $goto("/dashboard/admin/[space_name]/[subpath]/[shortname]", {
-        space_name: spaceName,
-        subpath: subpath,
-        shortname: item.shortname,
-        resource_type: item.resource_type,
-      });
+      $goto(
+        "/dashboard/admin/[space_name]/[subpath]/[shortname]/[resource_type]",
+        {
+          space_name: spaceName,
+          subpath: subpath,
+          shortname: item.shortname,
+          resource_type: item.resource_type,
+        }
+      );
     }
   }
 

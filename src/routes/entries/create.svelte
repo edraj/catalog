@@ -32,7 +32,7 @@
   import { _ } from "@/i18n";
   import { dir } from "@/i18n";
   import { onMount } from "svelte";
-  import {ResourceType} from "@edraj/tsdmart";
+  import { ResourceType } from "@edraj/tsdmart";
 
   $goto;
 
@@ -279,7 +279,7 @@
         }
       }
       setTimeout(() => {
-        $goto("/entries");
+        window.history.back();
       }, 500);
     } else {
       errorToastMessage(`Failed to ${msg} entry!`);
