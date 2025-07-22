@@ -133,9 +133,9 @@
         })),
         resource_type: itemResourceType,
         workflow_shortname:
-          response.records[0].attributes?.workflow_shortname || "",
+          response.records[0]?.attributes?.workflow_shortname || "",
         schema_shortname:
-          response.records[0].attributes?.payload?.schema_shortname || "",
+          response.records[0]?.attributes?.payload?.schema_shortname || "",
         canCreateEntry: hasNonFolderContent || folders.length === 0,
         selectedFolder: "",
       };
