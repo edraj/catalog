@@ -152,7 +152,8 @@ export async function register(
   email: string,
   otp: string,
   password: string,
-  confirmPassword: string
+  confirmPassword: string,
+  role: string
 ) {
   if (password !== confirmPassword) {
     throw new Error("Passwords do not match");
@@ -166,7 +167,7 @@ export async function register(
       email: email,
       email_otp: otp,
       password: password,
-      roles: ["catalog_user_role"],
+      roles: [role],
     },
   };
 

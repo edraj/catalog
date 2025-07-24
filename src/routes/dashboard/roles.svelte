@@ -1,5 +1,5 @@
 <script lang="ts">
-  import MetaPermissionForm from "@/components/forms/MetaPermissionForm.svelte";
+  import MetaRoleForm from "@/components/forms/MetaRoleForm.svelte";
   import {
     successToastMessage,
     errorToastMessage,
@@ -7,60 +7,60 @@
   import { onMount } from "svelte";
   import {
     getEntity,
+    updateRole,
+    createEntity,
     getSpaces,
-    updatePermission,
     getSpaceContents,
     deleteEntity,
-    createPermission,
+    createRole,
   } from "@/lib/dmart_services";
   import { ResourceType } from "@edraj/tsdmart";
 
+  let roleTypes = $state([]);
+  let selectedRoleType = $state("");
   let formData = $state({});
   let validateFn = $state(() => true);
   let isLoading = $state(false);
   let isSaving = $state(false);
+  let isLoadingRoles = $state(true);
   let lastSaved = $state(null);
   let spaces = $state([]);
-  let permissionExists = $state(false);
-  let currentPermissionShortname = $state("");
-  let permissionTypes = $state([]);
-  let selectedPermissionType = $state("");
-  let isLoadingPermissions = $state(true);
+  let roleExists = $state(false);
+  let currentRoleShortname = $state("");
   let isDeleting = $state(false);
   let isCreating = $state(false);
   let showDeleteConfirm = $state(false);
   let showAddModal = $state(false);
-  let newPermissionName = $state("");
+  let newRoleName = $state("");
 
-  async function loadPermissionTypes() {
-    isLoadingPermissions = true;
+  async function loadRoleTypes() {
+    isLoadingRoles = true;
     try {
-      const permissionsResponse = await getSpaceContents(
+      const rolesResponse = await getSpaceContents(
         "management",
-        "permissions",
+        "roles",
         "managed"
       );
-      if (permissionsResponse.status === "success") {
-        permissionTypes = permissionsResponse.records.map((permission) => ({
-          name: permission.attributes.displayname?.en || permission.shortname,
-          value: permission.shortname,
+
+      if (rolesResponse.status === "success") {
+        roleTypes = rolesResponse.records.map((role) => ({
+          name: role?.attributes?.displayname?.en || role.shortname,
+          value: role.shortname,
         }));
 
-        if (permissionTypes.length > 0 && !selectedPermissionType) {
-          selectedPermissionType = permissionTypes[0].value;
+        if (roleTypes.length > 0 && !selectedRoleType) {
+          selectedRoleType = roleTypes[0].value;
         }
 
-        successToastMessage(
-          `Loaded ${permissionTypes.length} permission types`
-        );
+        successToastMessage(`Loaded ${roleTypes.length} role types`);
       } else {
-        errorToastMessage("Failed to load permission types");
+        errorToastMessage("Failed to load role types");
       }
     } catch (error) {
-      console.error("Error loading permission types:", error);
-      errorToastMessage("Failed to load permission types");
+      console.error("Error loading role types:", error);
+      errorToastMessage("Failed to load role types");
     } finally {
-      isLoadingPermissions = false;
+      isLoadingRoles = false;
     }
   }
 
@@ -74,194 +74,153 @@
     }
   }
 
-  async function loadPermissionData(permissionType) {
-    if (!permissionType) return;
+  async function loadRoleData(roleType) {
+    if (!roleType) return;
+
     isLoading = true;
     try {
-      const permissionEntity = await getEntity(
-        permissionType,
+      const roleEntity = await getEntity(
+        roleType,
         "management",
-        "permissions",
-        ResourceType.permission,
+        "roles",
+        ResourceType.role,
         "managed",
         true,
         false
       );
 
-      if (permissionEntity) {
-        const permission = permissionEntity;
-        permissionExists = true;
-        currentPermissionShortname = permission.shortname;
+      if (roleEntity) {
+        roleExists = true;
+        currentRoleShortname = roleEntity.shortname;
 
         formData = {
-          resource_types: permissionEntity?.resource_types || [],
-          actions: permissionEntity?.actions || [],
-          subpaths: permissionEntity?.subpaths || {},
-          conditions: permissionEntity?.conditions || [],
-          restricted_fields: permissionEntity?.restricted_fields || [],
-          allowed_fields_values: permissionEntity?.allowed_fields_values || {},
+          permissions: roleEntity.permissions || [],
         };
 
-        successToastMessage(`Loaded ${permissionType} permissions`);
+        successToastMessage(`Loaded ${roleType} role`);
       } else {
-        permissionExists = false;
-        currentPermissionShortname = "";
+        roleExists = false;
+        currentRoleShortname = "";
         successToastMessage(
-          `No existing ${permissionType} permissions found. Using defaults.`
+          `No existing ${roleType} role found. Using defaults.`
         );
       }
     } catch (error) {
-      console.error("Error loading permission data:", error);
-      errorToastMessage("Failed to load permission data");
+      console.error("Error loading role data:", error);
+      errorToastMessage("Failed to load role data");
     } finally {
       isLoading = false;
     }
   }
 
-  async function savePermissions() {
+  async function saveRole() {
+    if (!validateFn()) {
+      errorToastMessage("Please fix validation errors before saving");
+      return;
+    }
+
     isSaving = true;
     try {
-      const payload = {
-        shortname: currentPermissionShortname,
-        tags: ["permission", selectedPermissionType],
-        subpaths: formData.subpaths || {},
-        resource_types: formData.resource_types || [],
-        actions: formData.actions || [],
-        conditions: formData.conditions || [],
-        restricted_fields: formData.restricted_fields || [],
-        allowed_fields_values: formData.allowed_fields_values || {},
-      };
-
       let result;
-      const updatePayload = {
-        tags: payload.tags,
-        subpaths: payload.subpaths,
-        resource_types: payload.resource_types,
-        actions: payload.actions,
-        conditions: payload.conditions,
-        restricted_fields: payload.restricted_fields,
-        allowed_fields_values: payload.allowed_fields_values,
-      };
-
-      result = await updatePermission(
-        currentPermissionShortname,
+      result = await updateRole(
+        currentRoleShortname,
         "management",
-        "permissions",
-        ResourceType.permission,
-        updatePayload,
+        "roles",
+        ResourceType.role,
+        formData,
         "",
         ""
       );
 
       if (result) {
         lastSaved = new Date().toLocaleTimeString();
-        successToastMessage(
-          `${selectedPermissionType} permissions saved successfully`
-        );
+        successToastMessage(`${selectedRoleType} role saved successfully`);
       } else {
-        throw new Error("Failed to save permissions");
+        throw new Error("Failed to save role");
       }
     } catch (error) {
-      console.error("Error saving permissions:", error);
-      errorToastMessage("Failed to save permissions");
+      console.error("Error saving role:", error);
+      errorToastMessage("Failed to save role");
     } finally {
       isSaving = false;
     }
   }
-  async function createNewPermission() {
-    if (!newPermissionName.trim()) {
-      errorToastMessage("Please enter a permission name");
+
+  async function createNewRole() {
+    if (!newRoleName.trim()) {
+      errorToastMessage("Please enter a role name");
       return;
     }
 
     isCreating = true;
     try {
-      const permissionData = {
-        shortname: newPermissionName,
-        tags: ["permission"],
-        subpaths: {},
-        resource_types: [],
-        actions: [],
-        conditions: [],
-        restricted_fields: [],
-        allowed_fields_values: {},
+      const roleData = {
+        title: newRoleName,
+        content: `Role configuration for ${newRoleName}`,
+        is_active: true,
+        tags: [],
       };
 
-      // const permissionData = {
-      //   shortname: newPermissionName,
-      //   tags: payload.tags,
-      //   subpaths: payload.subpaths,
-      //   resource_types: payload.resource_types,
-      //   actions: payload.actions,
-      //   conditions: payload.conditions,
-      //   restricted_fields: payload.restricted_fields,
-      //   allowed_fields_values: payload.allowed_fields_values,
-      // };
-
-      const result = await createPermission(
-        permissionData,
+      const result = await createRole(
+        roleData,
         "management",
-        "permissions",
-        ResourceType.permission,
+        "roles",
+        ResourceType.role,
         "",
         ""
       );
 
       if (result) {
-        successToastMessage(
-          `Permission "${newPermissionName}" created successfully`
-        );
+        successToastMessage(`Role "${newRoleName}" created successfully`);
         showAddModal = false;
-        newPermissionName = "";
-        await loadPermissionTypes();
-        selectedPermissionType = result;
+        newRoleName = "";
+        await loadRoleTypes();
+        selectedRoleType = result;
       } else {
-        throw new Error("Failed to create permission");
+        throw new Error("Failed to create role");
       }
     } catch (error) {
-      console.error("Error creating permission:", error);
-      errorToastMessage("Failed to create permission");
+      console.error("Error creating role:", error);
+      errorToastMessage("Failed to create role");
     } finally {
       isCreating = false;
     }
   }
 
-  async function deletePermission() {
-    if (!currentPermissionShortname) {
-      errorToastMessage("No permission selected to delete");
+  async function deleteRole() {
+    if (!currentRoleShortname) {
+      errorToastMessage("No role selected to delete");
       return;
     }
 
     isDeleting = true;
     try {
       const result = await deleteEntity(
-        currentPermissionShortname,
+        currentRoleShortname,
         "management",
-        "permissions",
-        ResourceType.permission
+        "roles",
+        ResourceType.role
       );
 
       if (result) {
-        successToastMessage(
-          `Permission "${selectedPermissionType}" deleted successfully`
-        );
+        successToastMessage(`Role "${selectedRoleType}" deleted successfully`);
         showDeleteConfirm = false;
-        await loadPermissionTypes();
+        await loadRoleTypes();
 
-        if (permissionTypes.length > 0) {
-          selectedPermissionType = permissionTypes[0].value;
+        if (roleTypes.length > 0) {
+          selectedRoleType = roleTypes[0].value;
         } else {
-          selectedPermissionType = "";
-          permissionExists = false;
-          currentPermissionShortname = "";
+          selectedRoleType = "";
+          roleExists = false;
+          currentRoleShortname = "";
           formData = {};
         }
       } else {
-        throw new Error("Failed to delete permission");
+        throw new Error("Failed to delete role");
       }
     } catch (error) {
-      console.error("Error deleting permission:", error);
-      errorToastMessage("Failed to delete permission");
+      console.error("Error deleting role:", error);
+      errorToastMessage("Failed to delete role");
     } finally {
       isDeleting = false;
     }
@@ -269,33 +228,33 @@
 
   onMount(async () => {
     await loadSpaces();
-    await loadPermissionTypes();
+    await loadRoleTypes();
   });
 
   $effect(() => {
-    if (selectedPermissionType && !isLoadingPermissions) {
-      loadPermissionData(selectedPermissionType);
+    if (selectedRoleType && !isLoadingRoles) {
+      loadRoleData(selectedRoleType);
     }
   });
 </script>
 
 <div class="container">
   <div class="page-header">
-    <h1 class="page-title">User Permissions Management</h1>
+    <h1 class="page-title">Role Management</h1>
     <p class="page-subtitle">
-      Configure access permissions for different user types
+      Configure roles and their associated permissions
     </p>
   </div>
 
   <div class="card">
     <div class="card-header">
-      <h2 class="card-title">Select Permission Type</h2>
+      <h2 class="card-title">Select Role Type</h2>
       <div class="header-actions">
         <button class="btn btn-success" onclick={() => (showAddModal = true)}>
           <span>+</span>
-          Add Permission
+          Add Role
         </button>
-        {#if permissionExists}
+        {#if roleExists}
           <button
             class="btn btn-danger"
             onclick={() => (showDeleteConfirm = true)}
@@ -312,117 +271,147 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-2">
-      <div>
-        <select class="form-select" bind:value={selectedPermissionType}>
-          {#each permissionTypes as type}
-            <option value={type.value}>{type.name}</option>
-          {/each}
-        </select>
-      </div>
-      <div style="display: flex; align-items: center; gap: 16px;">
-        {#if lastSaved}
-          <div class="status-indicator status-success">
-            <span>✓</span>
-            <span>Last saved: {lastSaved}</span>
-          </div>
-        {/if}
-        {#if permissionExists}
-          <div class="status-indicator status-info">
-            <span>ℹ</span>
-            <span>Existing configuration</span>
-          </div>
-        {:else}
-          <div class="status-indicator status-warning">
-            <span>⚠</span>
-            <span>New configuration</span>
-          </div>
-        {/if}
-      </div>
-    </div>
-  </div>
-
-  <div class="alert alert-info">
-    <div class="alert-icon">ℹ</div>
-    <div>
-      <strong>Permission Info:</strong>
-      {#if selectedPermissionType === "world"}
-        World permissions apply to all guests and unauthenticated users. These
-        are the most restrictive permissions.
-      {:else if selectedPermissionType === "catalog_user"}
-        Catalog User permissions apply to authenticated users with catalog
-        access. These users can interact with content.
-      {/if}
-    </div>
-  </div>
-
-  {#if isLoading}
-    <div class="card">
+    {#if isLoadingRoles}
       <div class="loading-card">
         <div class="spinner"></div>
-        <span>Loading permission data...</span>
+        <span>Loading role types...</span>
       </div>
-    </div>
-  {:else}
-    <MetaPermissionForm bind:formData bind:validateFn />
-
-    <div class="card">
-      <div class="action-bar">
-        <div class="action-buttons">
-          <button
-            class="btn btn-primary"
-            onclick={savePermissions}
-            disabled={isSaving}
-          >
-            {#if isSaving}
-              <div
-                class="spinner"
-                style="width: 16px; height: 16px; border-width: 2px; margin-right: 8px;"
-              ></div>
-              Saving...
-            {:else}
-              {permissionExists ? "Update" : "Create"} Permissions
-            {/if}
-          </button>
+    {:else if roleTypes.length === 0}
+      <div class="alert alert-warning">
+        <div class="alert-icon">⚠</div>
+        <div>
+          <strong>No Roles Found:</strong>
+          No role types are available in the management/roles space.
         </div>
-
-        <div class="meta-info">
-          <div><strong>Permission Type:</strong> {selectedPermissionType}</div>
-          {#if currentPermissionShortname}
-            <div>
-              <strong>ID:</strong>
-              <span class="meta-code">{currentPermissionShortname}</span>
+      </div>
+    {:else}
+      <div class="grid grid-cols-2">
+        <div>
+          <select class="form-select" bind:value={selectedRoleType}>
+            {#each roleTypes as type}
+              <option value={type.value}>{type.name}</option>
+            {/each}
+          </select>
+        </div>
+        <div style="display: flex; align-items: center; gap: 16px;">
+          {#if lastSaved}
+            <div class="status-indicator status-success">
+              <span>✓</span>
+              <span>Last saved: {lastSaved}</span>
+            </div>
+          {/if}
+          {#if roleExists}
+            <div class="status-indicator status-info">
+              <span>ℹ</span>
+              <span>Existing role</span>
+            </div>
+          {:else}
+            <div class="status-indicator status-warning">
+              <span>⚠</span>
+              <span>New role</span>
             </div>
           {/if}
         </div>
       </div>
-    </div>
-  {/if}
+    {/if}
+  </div>
 
-  {#if spaces.length > 0}
-    <div class="card">
-      <h3 class="card-title">Available Spaces</h3>
-      <div class="spaces-grid">
-        {#each spaces as space}
-          <div class="space-item">
-            <div class="space-name">{space.shortname}</div>
-            {#if space.attributes?.displayname?.en}
-              <div class="space-display">{space.attributes.displayname.en}</div>
-            {/if}
-          </div>
-        {/each}
+  {#if !isLoadingRoles && roleTypes.length > 0}
+    <div class="alert alert-info">
+      <div class="alert-icon">ℹ</div>
+      <div>
+        <strong>Role Info:</strong>
+        {#if selectedRoleType === "super_admin"}
+          Super Admin has full system access and can manage all aspects of the
+          platform.
+        {:else if selectedRoleType === "admin"}
+          Admin has administrative access to manage content and users.
+        {:else if selectedRoleType === "moderator"}
+          Moderator can review and moderate content but has limited
+          administrative access.
+        {:else if selectedRoleType === "catalog_user"}
+          Catalog User can view and create content within the catalog system.
+        {:else if selectedRoleType === "guest"}
+          Guest has read-only access to public content.
+        {:else}
+          Configure the permissions and settings for {selectedRoleType} role.
+        {/if}
       </div>
     </div>
+
+    {#if isLoading}
+      <div class="card">
+        <div class="loading-card">
+          <div class="spinner"></div>
+          <span>Loading role data...</span>
+        </div>
+      </div>
+    {:else}
+      <MetaRoleForm bind:formData bind:validateFn />
+
+      <div class="card">
+        <div class="action-bar">
+          <div class="action-buttons">
+            <button
+              class="btn btn-primary"
+              onclick={(e) => {
+                e.preventDefault();
+                saveRole();
+              }}
+              disabled={isSaving}
+            >
+              {#if isSaving}
+                <div
+                  class="spinner"
+                  style="width: 16px; height: 16px; border-width: 2px; margin-right: 8px;"
+                ></div>
+                Saving...
+              {:else}
+                {roleExists ? "Update" : "Create"} Role
+              {/if}
+            </button>
+          </div>
+
+          <div class="meta-info">
+            <div><strong>Role Type:</strong> {selectedRoleType}</div>
+            {#if currentRoleShortname}
+              <div>
+                <strong>ID:</strong>
+                <span class="meta-code">{currentRoleShortname}</span>
+              </div>
+            {/if}
+          </div>
+        </div>
+      </div>
+    {/if}
+
+    {#if spaces.length > 0}
+      <div class="card">
+        <h3 class="card-title">Available Spaces</h3>
+        <div class="spaces-grid">
+          {#each spaces as space}
+            <div class="space-item">
+              <div class="space-name">{space.shortname}</div>
+              {#if space.attributes?.displayname?.en}
+                <div class="space-display">
+                  {space.attributes.displayname.en}
+                </div>
+              {/if}
+            </div>
+          {/each}
+        </div>
+      </div>
+    {/if}
   {/if}
 </div>
 
-<!-- Add Permission Modal -->
 {#if showAddModal}
   <div
     class="modal-overlay"
     role="dialog"
     aria-modal="true"
-    tabindex="-1"
+    aria-labelledby="add-role-modal-title"
+    tabindex="0"
     onkeydown={(e) => {
       if (e.key === "Escape") showAddModal = false;
     }}
@@ -430,49 +419,63 @@
     <div
       class="modal"
       role="document"
-      tabindex="0"
+      tabindex="-1"
       onkeydown={(e) => {
         if (e.key === "Escape") showAddModal = false;
       }}
-      onclick={(e) => e.stopPropagation()}
     >
       <div class="modal-header">
-        <h3>Add New Permission</h3>
+        <h3 id="add-role-modal-title">Add New Role</h3>
         <button
           class="modal-close"
-          onclick={() => (showAddModal = false)}
           aria-label="Close"
+          onclick={() => (showAddModal = false)}
+          onkeydown={(e) => {
+            if (e.key === "Enter") showAddModal = false;
+          }}
         >
           ×
         </button>
       </div>
       <div class="modal-body">
-        <label class="form-label" for="permissionName">Permission Name</label>
+        <label class="form-label" for="new-role-name">Role Name</label>
         <input
           type="text"
           class="form-input"
-          bind:value={newPermissionName}
-          placeholder="Enter permission name"
-          id="permissionName"
+          id="new-role-name"
+          bind:value={newRoleName}
+          placeholder="Enter role name"
+          onkeydown={(e) => {
+            if (e.key === "Enter") createNewRole();
+          }}
         />
       </div>
       <div class="modal-footer">
         <button
           class="btn btn-secondary"
           onclick={() => (showAddModal = false)}
+          onkeydown={(e) => {
+            if (e.key === "Enter") showAddModal = false;
+          }}
         >
           Cancel
         </button>
         <button
           class="btn btn-primary"
-          onclick={createNewPermission}
-          disabled={isCreating || !newPermissionName.trim()}
+          onclick={(e) => {
+            e.preventDefault();
+            createNewRole();
+          }}
+          disabled={isCreating || !newRoleName.trim()}
+          onkeydown={(e) => {
+            if (e.key === "Enter") createNewRole();
+          }}
         >
           {#if isCreating}
             <div class="spinner-small"></div>
             Creating...
           {:else}
-            Create Permission
+            Create Role
           {/if}
         </button>
       </div>
@@ -480,13 +483,13 @@
   </div>
 {/if}
 
-<!-- Delete Confirmation Modal -->
 {#if showDeleteConfirm}
   <div
     class="modal-overlay"
     role="dialog"
     aria-modal="true"
-    tabindex="-1"
+    aria-labelledby="delete-role-modal-title"
+    tabindex="0"
     onkeydown={(e) => {
       if (e.key === "Escape") showDeleteConfirm = false;
     }}
@@ -494,26 +497,28 @@
     <div
       class="modal"
       role="document"
-      tabindex="0"
+      tabindex="-1"
       onkeydown={(e) => {
         if (e.key === "Escape") showDeleteConfirm = false;
       }}
-      onclick={(e) => e.stopPropagation()}
     >
       <div class="modal-header">
-        <h3>Delete Permission</h3>
+        <h3 id="delete-role-modal-title">Delete Role</h3>
         <button
           class="modal-close"
-          onclick={() => (showDeleteConfirm = false)}
           aria-label="Close"
+          onclick={() => (showDeleteConfirm = false)}
+          onkeydown={(e) => {
+            if (e.key === "Enter") showDeleteConfirm = false;
+          }}
         >
           ×
         </button>
       </div>
       <div class="modal-body">
         <p>
-          Are you sure you want to delete the permission <strong
-            >"{selectedPermissionType}"</strong
+          Are you sure you want to delete the role <strong
+            >"{selectedRoleType}"</strong
           >?
         </p>
         <p class="text-danger">This action cannot be undone.</p>
@@ -522,19 +527,28 @@
         <button
           class="btn btn-secondary"
           onclick={() => (showDeleteConfirm = false)}
+          onkeydown={(e) => {
+            if (e.key === "Enter") showDeleteConfirm = false;
+          }}
         >
           Cancel
         </button>
         <button
           class="btn btn-danger"
-          onclick={deletePermission}
+          onclick={(e) => {
+            e.preventDefault();
+            deleteRole();
+          }}
           disabled={isDeleting}
+          onkeydown={(e) => {
+            if (e.key === "Enter") deleteRole();
+          }}
         >
           {#if isDeleting}
             <div class="spinner-small"></div>
             Deleting...
           {:else}
-            Delete Permission
+            Delete Role
           {/if}
         </button>
       </div>
@@ -657,6 +671,12 @@
     background: #eff6ff;
     border: 1px solid #bfdbfe;
     color: #1e40af;
+  }
+
+  .alert-warning {
+    background: #fffbeb;
+    border: 1px solid #fed7aa;
+    color: #92400e;
   }
 
   .alert-icon {

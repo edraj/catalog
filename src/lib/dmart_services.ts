@@ -120,7 +120,7 @@ export async function getEntities() {
   return allRecordsArrays.flat();
 }
 
-export async function getMyEntities(shortname = "") {
+export async function getMyEntities(shortname: string = "") {
   const result = await getSpaces();
   const spaces = result.records.map((space) => space.shortname);
 
@@ -134,7 +134,7 @@ export async function getMyEntities(shortname = "") {
       space_name: space,
       subpath: "/",
       exact_subpath: false,
-      sort_by: "shortname",
+      sort_by: "Created_at",
       sort_type: SortyType.ascending,
       search,
       retrieve_json_payload: true,
@@ -178,12 +178,12 @@ export async function getEntity(
     return response;
   } catch (error) {
     console.error(`Error retrieving item ${shortname}:`, error);
-    return null;
+    return error;
   }
 }
 
 export async function createEntity(
-  data: Entity,
+  data: any,
   spaceName: string,
   subpath: string,
   resourceType: ResourceType,
@@ -191,7 +191,7 @@ export async function createEntity(
   schema_shortname: string
 ) {
   let actionRequest: ActionRequest;
-  if (workflow_shortname && schema_shortname) {
+  if (workflow_shortname || schema_shortname) {
     actionRequest = {
       space_name: spaceName,
       request_type: RequestType.create,
@@ -201,17 +201,14 @@ export async function createEntity(
           shortname: data.shortname || "auto",
           subpath: subpath,
           attributes: {
-            is_active: data.is_active,
+            is_active: data.is_active || true,
             workflow_shortname: workflow_shortname,
             relationships: [],
-            tags: data.tags,
+            tags: data.tags || [],
             payload: {
               content_type: "json",
               schema_shortname: schema_shortname,
-              body: {
-                title: data.title,
-                content: data.content,
-              },
+              body: data.body,
             },
           },
         },
@@ -224,7 +221,7 @@ export async function createEntity(
       records: [
         {
           resource_type: resourceType,
-          shortname: data.shortname || "auto",
+          shortname: data?.shortname || "auto",
           subpath: subpath,
           attributes: {
             is_active: data.is_active,
@@ -254,7 +251,7 @@ export async function updateEntity(
   space_name,
   subpath,
   resourceType: ResourceType,
-  data: Entity,
+  data: any,
   workflow_shortname: string,
   schema_shortname: string
 ) {
@@ -264,10 +261,7 @@ export async function updateEntity(
     tags: data.tags,
     payload: {
       content_type: "json",
-      body: {
-        title: data.title,
-        content: data.content,
-      },
+      body: data,
     },
   };
 
@@ -304,8 +298,6 @@ export async function updatePermission(
   workflow_shortname: string,
   schema_shortname: string
 ) {
-  console.log("Updating permission:", data);
-
   const attributes: any = {
     is_active: data.is_active ?? true,
     tags: data.tags || [],
@@ -343,6 +335,138 @@ export async function updatePermission(
   return response.status === "success" && response.records.length > 0
     ? response.records[0].shortname
     : null;
+}
+
+export async function updateRole(
+  shortname: string,
+  space_name: string,
+  subpath: string,
+  resourceType: ResourceType,
+  data: any,
+  workflow_shortname: string,
+  schema_shortname: string
+) {
+  const attributes: any = {
+    is_active: data.is_active ?? true,
+    tags: data.tags || [],
+    relationships: data.relationships || [],
+    permissions: data.permissions || [],
+    displayname: data.displayname || {},
+    description: data.description || {},
+    slug: data.slug || null,
+  };
+
+  if (workflow_shortname && schema_shortname) {
+    attributes.workflow_shortname = workflow_shortname;
+    attributes.schema_shortname = schema_shortname;
+  }
+
+  const actionRequest: ActionRequest = {
+    space_name,
+    request_type: RequestType.update,
+    records: [
+      {
+        resource_type: resourceType,
+        shortname,
+        subpath,
+        attributes,
+      },
+    ],
+  };
+
+  const response: ActionResponse = await Dmart.request(actionRequest);
+  return response.status === "success" && response.records.length > 0
+    ? response.records[0].shortname
+    : null;
+}
+
+export async function createRole(
+  data: any,
+  space_name: string,
+  subpath: string,
+  resourceType: ResourceType,
+  workflow_shortname: string,
+  schema_shortname: string
+) {
+  const attributes: any = {
+    is_active: data.is_active ?? true,
+    tags: data.tags || [],
+    relationships: data.relationships || [],
+    permissions: data.permissions || [],
+    displayname: data.displayname || {},
+    description: data.description || {},
+    slug: data.slug || null,
+  };
+  if (workflow_shortname && schema_shortname) {
+    attributes.workflow_shortname = workflow_shortname;
+    attributes.schema_shortname = schema_shortname;
+  }
+
+  const actionRequest: ActionRequest = {
+    space_name,
+    request_type: RequestType.create,
+    records: [
+      {
+        resource_type: resourceType,
+        shortname: data.title || "auto",
+        subpath,
+        attributes,
+      },
+    ],
+  };
+  const response: ActionResponse = await Dmart.request(actionRequest);
+  if (response.status == "success" && response.records.length > 0) {
+    return response.records[0].shortname;
+  }
+  return null;
+}
+
+export async function createPermission(
+  data: any,
+  space_name: string,
+  subpath: string,
+  resourceType: ResourceType,
+  workflow_shortname: string,
+  schema_shortname: string
+) {
+  const attributes: any = {
+    is_active: data.is_active ?? true,
+    tags: data.tags || [],
+    relationships: data.relationships || [],
+    acl: data.acl || [],
+    subpaths: data.subpaths || {},
+    resource_types: data.resource_types || [],
+    actions: data.actions || [],
+    conditions: data.conditions || [],
+    restricted_fields: data.restricted_fields || [],
+    allowed_fields_values: data.allowed_fields_values || {},
+    attachments: data.attachments || {},
+    slug: data.slug || null,
+  };
+
+  if (workflow_shortname && schema_shortname) {
+    attributes.workflow_shortname = workflow_shortname;
+    attributes.schema_shortname = schema_shortname;
+  }
+
+  const actionRequest: ActionRequest = {
+    space_name,
+    request_type: RequestType.create,
+    records: [
+      {
+        resource_type: resourceType,
+        shortname: data.shortname || "auto",
+        subpath,
+        attributes,
+      },
+    ],
+  };
+
+  const response: ActionResponse = await Dmart.request(actionRequest);
+  if (response.status == "success" && response.records.length > 0) {
+    return response.records[0].shortname;
+  }
+  return null;
 }
 
 export async function attachAttachmentsToEntity(
@@ -614,12 +738,6 @@ export async function markNotification(
   });
   return response.status == "success";
 }
-
-export async function markAllNotification(
-  user_shortname: string,
-  shortnames: string[],
-  markRead: boolean = true
-) {}
 
 export async function deleteNotification(shortname: string) {
   const response = await Dmart.request({
@@ -900,5 +1018,158 @@ export async function getChildrenAndSubChildren(
       );
       subpathsPTR.push(`${base}/${_subpath.shortname}`);
     }
+  }
+}
+
+export async function updateDmartEntity(
+  shortname: string,
+  space_name: string,
+  subpath: string,
+  resourceType: ResourceType,
+  data: any,
+  isReplace: boolean = false
+) {
+  try {
+    const response = await Dmart.request({
+      space_name: space_name,
+      request_type: isReplace ? RequestType.replace : RequestType.update,
+      records: [
+        {
+          resource_type: resourceType,
+          shortname: shortname,
+          subpath: subpath,
+          attributes: data,
+        },
+      ],
+    });
+    return response.status === "success" && response.records.length > 0
+      ? response.records[0].shortname
+      : null;
+  } catch (error) {
+    console.error("Error setting default user role:", error);
+    return false;
+  }
+}
+
+export async function setDefaultUserRole(
+  roleShortname: string
+): Promise<boolean> {
+  try {
+    const existingConfig = await getEntity(
+      "web_config",
+      "applications",
+      "public",
+      ResourceType.content,
+      "managed",
+      true,
+      false
+    );
+
+    if (existingConfig) {
+      const payload = existingConfig.payload.body;
+      let updatedItems = payload.items || [];
+
+      const existingItemIndex = updatedItems.findIndex(
+        (item) => item.key === "default_user_role"
+      );
+
+      if (existingItemIndex !== -1) {
+        updatedItems[existingItemIndex] = {
+          key: "default_user_role",
+          value: roleShortname,
+        };
+      } else {
+        updatedItems.push({
+          key: "default_user_role",
+          value: roleShortname,
+        });
+      }
+
+      const result = await updateDmartEntity(
+        "web_config",
+        "applications",
+        "public",
+        ResourceType.content,
+        {
+          payload: {
+            content_type: ContentType.json,
+            body: {
+              items: updatedItems,
+            },
+          },
+        },
+        true
+      );
+
+      return result !== null;
+    } else {
+      const result = await createEntity(
+        {
+          title: "Default User Role Configuration",
+          content: `Default role assigned to new users: ${roleShortname}`,
+          is_active: true,
+          tags: ["config", "user_role"],
+          shortname: "web_config",
+        },
+        "applications",
+        "configs",
+        ResourceType.content,
+        "",
+        ""
+      );
+      return result !== null;
+    }
+  } catch (error) {
+    console.error("Error setting default user role:", error);
+    return false;
+  }
+}
+
+export async function getAllUsers(): Promise<ApiQueryResponse> {
+  try {
+    const response = await Dmart.query({
+      type: QueryType.search,
+      space_name: "management",
+      subpath: "users",
+      search: "@resource_type:user",
+      limit: 100,
+      sort_by: "shortname",
+      sort_type: SortyType.ascending,
+      offset: 0,
+      retrieve_json_payload: true,
+      exact_subpath: false,
+    });
+    return response;
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    return null;
+  }
+}
+
+export async function updateUserRoles(
+  userShortname: string,
+  roles: string[]
+): Promise<boolean> {
+  try {
+    const actionRequest: ActionRequest = {
+      space_name: "management",
+      request_type: RequestType.update,
+      records: [
+        {
+          resource_type: ResourceType.user,
+          shortname: userShortname,
+          subpath: `users/${userShortname}`,
+          attributes: {
+            roles: roles,
+          },
+        },
+      ],
+    };
+
+    const response: ActionResponse = await Dmart.request(actionRequest);
+    return response.status === "success";
+  } catch (error) {
+    console.error("Error updating user roles:", error);
+    return false;
   }
 }

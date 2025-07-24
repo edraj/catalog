@@ -188,7 +188,6 @@
                   : 'dropdown-menu-ltr'}"
               >
                 <div class="dropdown-content">
-                  <!-- Admin Items -->
                   {#if $roles.includes("super_admin")}
                     <div class="menu-section">
                       <div class="menu-section-title">{$_("admin")}</div>
@@ -258,6 +257,26 @@
                           />
                         </svg>
                         <span>{$_("permissions")}</span>
+                      </button>
+                      <button
+                        onclick={() => handleMenuItemClick("/dashboard/roles")}
+                        class="menu-item"
+                      >
+                        <svg
+                          class="menu-icon"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M5.121 17.804A9 9 0 1112 21v-1a7 7 0 100-14v1m0 4a3 3 0 013 3 3 3 0 01-3 3 3 3 0 01-3-3 3 3 0 013-3z"
+                          />
+                        </svg>
+
+                        <span>{$_("roles")}</span>
                       </button>
                     </div>
                     <div class="menu-divider"></div>

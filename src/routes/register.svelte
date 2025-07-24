@@ -14,6 +14,8 @@
     LockSolid,
     PhoneSolid,
   } from "flowbite-svelte-icons";
+  import { getEntity } from "@/lib/dmart_services";
+  import { ResourceType } from "@edraj/tsdmart";
   $goto;
   let email = "";
   let phoneNumber = "";
@@ -156,8 +158,22 @@
 
     isVerifyingOtp = true;
     try {
-      await register(email, otpCode, password, confirmPassword);
-      $goto("/dashboard");
+      const defaultRole = await getEntity(
+        "web_config",
+        "applications",
+        "public",
+        ResourceType.content,
+        "public",
+        true,
+        false
+      );
+      const role =
+        defaultRole.payload.body.items.find(
+          (item) => item.key === "default_user_role"
+        )?.value || "catalog_user_role";
+
+      await register(email, otpCode, password, confirmPassword, role);
+      $goto("/entires");
     } catch (error: any) {
       console.error("OTP verification error:", error.message);
       errors.otp = error.message || $_("OtpVerificationFailed");
