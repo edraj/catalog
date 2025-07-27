@@ -89,15 +89,11 @@ export async function updateProfile(data: any) {
   return response.status == "success";
 }
 
-export async function getEntities() {
+export async function getEntities(search) {
   const result = await getSpaces();
   const spaces = result.records.map((space) => space.shortname);
 
   const promises = spaces.map(async (space) => {
-    const { search } = {
-      search: "",
-    };
-
     const queryRequest: QueryRequest = {
       filter_shortnames: [],
       type: QueryType.subpath,
@@ -106,7 +102,7 @@ export async function getEntities() {
       exact_subpath: false,
       sort_by: "shortname",
       sort_type: SortyType.ascending,
-      search,
+      search: search,
       retrieve_json_payload: true,
       retrieve_attachments: true,
     };
@@ -503,8 +499,9 @@ export async function getEntityAttachmentsCount(
     offset: 0,
     search: "",
     retrieve_json_payload: true,
+    retrieve_attachments: true,
   };
-  const response = await Dmart.query(query);
+  const response = await Dmart.query(query, "public");
 
   return response.records;
 }
@@ -579,6 +576,7 @@ export async function getSpaceContents(
       sort_type: SortyType.ascending,
       offset: 0,
       retrieve_json_payload: true,
+      retrieve_attachments: true,
       exact_subpath: true,
     },
     scope

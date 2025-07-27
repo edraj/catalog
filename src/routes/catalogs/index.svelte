@@ -7,9 +7,14 @@
   import { locale } from "@/i18n";
   import { derived } from "svelte/store";
   $goto;
+
   let isLoading = $state(true);
   let spaces = $state([]);
+  let filteredSpaces = $state([]);
   let error = $state(null);
+  let searchQuery = $state("");
+  let sortBy = $state("name");
+  let filterActive = $state("all");
 
   const isRTL = derived(
     locale,
@@ -20,6 +25,7 @@
     try {
       const response = await getSpaces(false, "public");
       spaces = response.records || [];
+      filteredSpaces = spaces;
     } catch (err) {
       console.error("Error fetching spaces:", err);
       error = $_("error.failed_load_catalogs");
@@ -62,40 +68,117 @@
 
   function formatDate(dateString: string): string {
     if (!dateString) return $_("common.not_available");
-    return new Date(dateString).toLocaleDateString($locale);
+    return new Date(dateString).toLocaleDateString($locale, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
   }
+
+  function applyFilters() {
+    let filtered = spaces;
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (space) =>
+          getDisplayName(space).toLowerCase().includes(query) ||
+          getDescription(space).toLowerCase().includes(query) ||
+          space.shortname.toLowerCase().includes(query)
+      );
+    }
+
+    if (filterActive !== "all") {
+      filtered = filtered.filter((space) =>
+        filterActive === "active"
+          ? space.attributes?.is_active
+          : !space.attributes?.is_active
+      );
+    }
+
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "created":
+          return (
+            new Date(b.attributes?.created_at || 0).getTime() -
+            new Date(a.attributes?.created_at || 0).getTime()
+          );
+        case "updated":
+          return (
+            new Date(b.attributes?.updated_at || 0).getTime() -
+            new Date(a.attributes?.updated_at || 0).getTime()
+          );
+        default:
+          return getDisplayName(a).localeCompare(getDisplayName(b));
+      }
+    });
+
+    filteredSpaces = filtered;
+  }
+
+  $effect(() => {
+    applyFilters();
+  });
 </script>
 
-<div class="min-h-screen bg-gray-50" class:rtl={$isRTL}>
-  <div class="bg-white border-b border-gray-200">
-    <div class="container mx-auto px-4 py-8 max-w-7xl">
-      <div class="text-center">
-        <h1 class="text-4xl font-bold text-gray-900 mb-4">
+<div class="catalog-page" class:rtl={$isRTL}>
+  <section class="hero-section">
+    <div class="hero-content">
+      <div class="hero-text">
+        <h1 class="hero-title">
           {$_("catalogs.explore_title")}
         </h1>
-        <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+        <p class="hero-description">
           {$_("catalogs.explore_description")}
         </p>
       </div>
     </div>
-  </div>
+  </section>
 
-  <div class="container mx-auto px-4 py-8 max-w-7xl">
+  <section class="search-section">
+    <div class="search-container">
+      <div class="search-bar">
+        <svg
+          class="search-icon"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+          ></path>
+        </svg>
+        <input
+          type="text"
+          placeholder="Search Spaces..."
+          bind:value={searchQuery}
+          class="search-input"
+        />
+      </div>
+
+      <div class="filters">
+        <select bind:value={sortBy} class="filter-select">
+          <option value="name">Sort by name</option>
+          <option value="created">Sort by created</option>
+          <option value="updated">Sort by updated</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <section class="content-section">
     {#if isLoading}
-      <div class="flex justify-center py-16">
-        <Diamonds color="#3b82f6" size="60" unit="px" />
+      <div class="loading-state">
+        <Diamonds color="#6366f1" size="60" unit="px" />
+        <p class="loading-text">{$_("common.loading")}</p>
       </div>
     {:else if error}
-      <div class="text-center py-16">
-        <div
-          class="mx-auto w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-6"
-        >
-          <svg
-            class="w-12 h-12 text-red-500"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
+      <div class="error-state">
+        <div class="error-icon">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -104,22 +187,13 @@
             ></path>
           </svg>
         </div>
-        <h3 class="text-xl font-semibold text-gray-900 mb-2">
-          {$_("error.loading_catalogs_title")}
-        </h3>
-        <p class="text-gray-600">{error}</p>
+        <h3 class="error-title">{$_("error.loading_catalogs_title")}</h3>
+        <p class="error-message">{error}</p>
       </div>
-    {:else if spaces.length === 0}
-      <div class="text-center py-16">
-        <div
-          class="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6"
-        >
-          <svg
-            class="w-12 h-12 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
+    {:else if filteredSpaces.length === 0}
+      <div class="empty-state">
+        <div class="empty-icon">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -128,332 +202,449 @@
             ></path>
           </svg>
         </div>
-        <h3 class="text-xl font-semibold text-gray-900 mb-2">
-          {$_("catalogs.no_catalogs_title")}
+        <h3 class="empty-title">
+          {searchQuery
+            ? $_("catalogs.no_results_title")
+            : $_("catalogs.no_catalogs_title")}
         </h3>
-        <p class="text-gray-600">
-          {$_("catalogs.no_catalogs_description")}
+        <p class="empty-message">
+          {searchQuery
+            ? $_("catalogs.no_results_description")
+            : $_("catalogs.no_catalogs_description")}
         </p>
       </div>
     {:else}
-      <div
-        class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
-      >
-        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-          <div class="flex items-center justify-between">
-            <h2 class="text-lg font-semibold text-gray-900">
-              {$_("catalogs.available_catalogs")}
-              {spaces.length}
-            </h2>
-            <div class="text-sm text-gray-500">
-              {$_("catalogs.public_spaces_subtitle")}
-            </div>
-          </div>
-        </div>
-
-        <div class="overflow-x-auto">
-          <table class="w-full" class:rtl={$isRTL}>
-            <thead class="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  class:text-right={$isRTL}
-                >
-                  {$_("table.space")}
-                </th>
-                <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  class:text-right={$isRTL}
-                >
-                  {$_("table.status")}
-                </th>
-                <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  class:text-right={$isRTL}
-                >
-                  {$_("table.owner")}
-                </th>
-                <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  class:text-right={$isRTL}
-                >
-                  {$_("table.created")}
-                </th>
-                <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  class:text-right={$isRTL}
-                >
-                  {$_("table.website")}
-                </th>
-              </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-              {#each spaces as space, index}
-                <tr
-                  class="hover:bg-gray-50 transition-colors duration-200 cursor-pointer"
-                  onclick={() => handleSpaceClick(space)}
-                  role="button"
-                  tabindex="0"
-                  onkeydown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      handleSpaceClick(space);
-                    }
-                  }}
-                >
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <div
-                      class="flex items-center"
-                      class:flex-row-reverse={$isRTL}
-                    >
-                      <div
-                        class="flex-shrink-0 h-12 w-12"
-                        class:ml-6={$isRTL}
-                        class:mr-6={!$isRTL}
-                      >
-                        <div
-                          class="h-12 w-12 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-md"
-                        >
-                          <span class="text-white font-bold text-lg">
-                            {space.shortname
-                              ? space.shortname.charAt(0).toUpperCase()
-                              : "S"}
-                          </span>
-                        </div>
-                      </div>
-                      <div class:mr-6={$isRTL} class:ml-6={!$isRTL}>
-                        <div class="text-sm font-semibold text-gray-900">
-                          {getDisplayName(space)}
-                        </div>
-                        <div class="text-sm text-gray-500 max-w-xs truncate">
-                          {getDescription(space)}
-                        </div>
-                        <div class="text-xs text-blue-600 font-medium mt-1">
-                          {space.shortname}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <span
-                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {space
-                        .attributes?.is_active
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'}"
-                      class:flex-row-reverse={$isRTL}
-                    >
-                      <div
-                        class="w-1.5 h-1.5 rounded-full {space.attributes
-                          ?.is_active
-                          ? 'bg-green-400'
-                          : 'bg-red-400'}"
-                        class:ml-1.5={$isRTL}
-                        class:mr-1.5={!$isRTL}
-                      ></div>
-                      {space.attributes?.is_active
-                        ? $_("status.active")
-                        : $_("status.inactive")}
-                    </span>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <div
-                      class="flex items-center"
-                      class:flex-row-reverse={$isRTL}
-                    >
-                      <div
-                        class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center"
-                        class:ml-2={$isRTL}
-                        class:mr-2={!$isRTL}
-                      >
-                        <span class="text-xs font-medium text-gray-600">
-                          {space.attributes?.owner_shortname
-                            ? space.attributes.owner_shortname
-                                .charAt(0)
-                                .toUpperCase()
-                            : "U"}
-                        </span>
-                      </div>
-                      <span class="text-sm text-gray-900">
-                        {space.attributes?.owner_shortname ||
-                          $_("common.unknown")}
-                      </span>
-                    </div>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(space.attributes?.created_at)}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {#if space.attributes?.primary_website}
-                      <a
-                        href={space.attributes.primary_website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="text-blue-600 hover:text-blue-800 transition-colors duration-200"
-                        onclick={(e) => e.stopPropagation()}
-                      >
-                        <svg
-                          class="w-4 h-4 inline {$isRTL ? 'ml-1' : 'mr-1'}"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                          ></path>
-                        </svg>
-                        {$_("actions.visit")}
-                      </a>
-                    {:else}
-                      <span class="text-gray-400"
-                        >{$_("common.no_website")}</span
-                      >
-                    {/if}
-                  </td>
-                </tr>
-              {/each}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div class="flex items-center" class:flex-row-reverse={$isRTL}>
-            <div class="flex-shrink-0">
-              <div
-                class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center"
-              >
-                <svg
-                  class="w-5 h-5 text-blue-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                  ></path>
-                </svg>
+      <div class="spaces-grid">
+        {#each filteredSpaces as space}
+          <div
+            class="space-card"
+            onclick={() => handleSpaceClick(space)}
+            role="button"
+            tabindex="0"
+            onkeydown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                handleSpaceClick(space);
+              }
+            }}
+          >
+            <div class="space-header">
+              <div class="space-avatar">
+                <div class="avatar-circle">
+                  {space.shortname
+                    ? space.shortname.charAt(0).toUpperCase()
+                    : "S"}
+                </div>
+              </div>
+              <div class="space-info">
+                <h3 class="space-title">{getDisplayName(space)}</h3>
+                <p class="space-shortname">@{space.shortname}</p>
               </div>
             </div>
-            <div class:mr-6={$isRTL} class:ml-6={!$isRTL}>
-              <p class="text-sm font-medium text-gray-500">
-                {$_("stats.total_spaces")}
-              </p>
-              <p class="text-2xl font-semibold text-gray-900">
-                {spaces.length}
-              </p>
-            </div>
-          </div>
-        </div>
 
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div class="flex items-center" class:flex-row-reverse={$isRTL}>
-            <div class="flex-shrink-0">
-              <div
-                class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center"
-              >
-                <svg
-                  class="w-5 h-5 text-green-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9 12l2 2 4-4m6 2a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9"
-                  ></path>
-                </svg>
-              </div>
+            <div class="space-content">
+              <p class="space-description">{getDescription(space)}</p>
             </div>
-            <div class:mr-6={$isRTL} class:ml-6={!$isRTL}>
-              <p class="text-sm font-medium text-gray-500">
-                {$_("stats.active_spaces")}
-              </p>
-              <p class="text-2xl font-semibold text-gray-900">
-                {spaces.filter((s) => s.attributes?.is_active).length}
-              </p>
-            </div>
-          </div>
-        </div>
 
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div class="flex items-center" class:flex-row-reverse={$isRTL}>
-            <div class="flex-shrink-0">
-              <div
-                class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center"
-              >
-                <svg
-                  class="w-5 h-5 text-purple-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9"
-                  ></path>
-                </svg>
+            <div class="space-footer">
+              <div class="space-meta">
+                <div class="meta-item">
+                  <svg
+                    class="meta-icon"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    ></path>
+                  </svg>
+                  <span
+                    >{space.attributes?.owner_shortname ||
+                      $_("common.unknown")}</span
+                  >
+                </div>
+                <div class="meta-item">
+                  <svg
+                    class="meta-icon"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    ></path>
+                  </svg>
+                  <span>{formatDate(space.attributes?.created_at)}</span>
+                </div>
               </div>
-            </div>
-            <div class:mr-6={$isRTL} class:ml-6={!$isRTL}>
-              <p class="text-sm font-medium text-gray-500">
-                {$_("stats.with_websites")}
-              </p>
-              <p class="text-2xl font-semibold text-gray-900">
-                {spaces.filter((s) => s.attributes?.primary_website).length}
-              </p>
+
+              {#if space.attributes?.primary_website}
+                <a
+                  href={space.attributes.primary_website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="website-link"
+                  onclick={(e) => e.stopPropagation()}
+                >
+                  <svg
+                    class="link-icon"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                    ></path>
+                  </svg>
+                  {$_("actions.visit")}
+                </a>
+              {/if}
             </div>
           </div>
-        </div>
+        {/each}
       </div>
     {/if}
-  </div>
+  </section>
 </div>
 
 <style>
-  table {
-    border-collapse: separate;
-    border-spacing: 0;
+  .catalog-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 50%, #e0e7ff 100%);
   }
 
   .rtl {
     direction: rtl;
   }
 
+  .hero-section {
+    padding: 4rem 1.5rem 2rem;
+    background: linear-gradient(
+      135deg,
+      rgba(99, 102, 241, 0.1) 0%,
+      rgba(168, 85, 247, 0.1) 100%
+    );
+  }
+
+  .hero-content {
+    max-width: 80rem;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+  }
+
+  .hero-text {
+    flex: 1;
+  }
+
+  .hero-title {
+    font-size: 3rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 1rem;
+    line-height: 1.1;
+  }
+
+  .hero-description {
+    font-size: 1.25rem;
+    color: #64748b;
+    line-height: 1.6;
+    max-width: 32rem;
+  }
+
+  .search-section {
+    padding: 2rem 1.5rem;
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+  }
+
+  .search-container {
+    max-width: 80rem;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .search-bar {
+    flex: 1;
+    position: relative;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1.25rem;
+    height: 1.25rem;
+    color: #94a3b8;
+  }
+
+  .search-input {
+    width: 100%;
+    padding: 0.875rem 1rem 0.875rem 3rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 0.75rem;
+    font-size: 1rem;
+    background: white;
+    transition: all 0.2s ease;
+  }
+
+  .search-input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  }
+
+  .filters {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .filter-select {
+    padding: 0.875rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .filter-select:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  }
+
+  .content-section {
+    padding: 2rem 1.5rem;
+    max-width: 80rem;
+    margin: 0 auto;
+  }
+
+  .loading-state,
+  .error-state,
+  .empty-state {
+    text-align: center;
+    padding: 4rem 0;
+  }
+
+  .loading-text {
+    margin-top: 1rem;
+    color: #64748b;
+    font-weight: 500;
+  }
+
+  .error-icon,
+  .empty-icon {
+    width: 4rem;
+    height: 4rem;
+    margin: 0 auto 1.5rem;
+    color: #ef4444;
+  }
+
+  .empty-icon {
+    color: #94a3b8;
+  }
+
+  .error-title,
+  .empty-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 0.5rem;
+  }
+
+  .error-message,
+  .empty-message {
+    color: #64748b;
+    font-size: 1rem;
+  }
+
+  .spaces-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .space-card {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(8px);
+    border-radius: 1rem;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    overflow: hidden;
+  }
+
+  .space-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.15);
+    border-color: #6366f1;
+  }
+
+  .space-card:focus {
+    outline: none;
+    ring: 2px;
+    ring-color: #6366f1;
+    ring-offset: 2px;
+  }
+
+  .space-header {
+    padding: 1.5rem 1.5rem 1rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .space-avatar {
+    flex-shrink: 0;
+  }
+
+  .avatar-circle {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 1.25rem;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  }
+
+  .space-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .space-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 0.25rem;
+    line-height: 1.3;
+  }
+
+  .space-shortname {
+    font-size: 0.875rem;
+    color: #6366f1;
+    font-weight: 500;
+    margin: 0;
+  }
+
+  .space-content {
+    padding: 0 1.5rem 1rem;
+  }
+
+  .space-description {
+    color: #64748b;
+    line-height: 1.5;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .space-footer {
+    padding: 1rem 1.5rem 1.5rem;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .space-meta {
+    display: flex;
+    gap: 1.5rem;
+  }
+
+  .meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: #64748b;
+  }
+
+  .meta-icon {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .website-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #6366f1;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .website-link:hover {
+    color: #4f46e5;
+  }
+
+  .link-icon {
+    width: 1rem;
+    height: 1rem;
+  }
+
   @media (max-width: 768px) {
-    .overflow-x-auto {
-      -webkit-overflow-scrolling: touch;
+    .hero-content {
+      flex-direction: column;
+      text-align: center;
     }
 
-    th,
-    td {
-      padding: 0.75rem 1rem;
+    .hero-title {
+      font-size: 2rem;
     }
 
-    th {
-      font-size: 0.75rem;
+    .hero-description {
+      font-size: 1rem;
     }
 
-    td {
-      font-size: 0.875rem;
+    .search-container {
+      flex-direction: column;
+      align-items: stretch;
     }
-  }
 
-  tbody tr:hover {
-    background-color: #f9fafb;
-  }
+    .filters {
+      justify-content: center;
+    }
 
-  tbody tr:focus {
-    outline: 2px solid #3b82f6;
-    outline-offset: -2px;
+    .spaces-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .space-footer {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
   }
 </style>
