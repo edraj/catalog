@@ -1,7 +1,6 @@
 <script lang="ts">
-  import { Button, Card, Input, Select } from "flowbite-svelte";
   import { goto, params } from "@roxi/routify";
-  import HtmlEditor from "@/components/HtmlEditor.svelte";
+  import HtmlEditor from "@/components/editors/HtmlEditor.svelte";
   import {
     attachAttachmentsToEntity,
     createEntity,

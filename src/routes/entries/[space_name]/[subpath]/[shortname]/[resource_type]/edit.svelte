@@ -2,7 +2,7 @@
   import { params } from "@roxi/routify";
   import { goto } from "@roxi/routify";
   import { onMount } from "svelte";
-  import HtmlEditor from "@/components/HtmlEditor.svelte";
+  import HtmlEditor from "@/components/editors/HtmlEditor.svelte";
   import Attachments from "@/components/Attachments.svelte";
   import {
     attachAttachmentsToEntity,
