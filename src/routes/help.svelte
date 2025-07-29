@@ -7,39 +7,33 @@
     MessagesSolid,
     QuestionCircleSolid,
   } from "flowbite-svelte-icons";
-  $goto;
+  import { _ } from "@/i18n";
   let openFaq = $state(null);
-
+  $goto;
   const faqs = [
     {
-      question: "How do I create my first catalog?",
-      answer:
-        "To create a catalog, navigate to your dashboard and click 'Create New Catalog'. Fill in the required information like title, description, and category. You can then start adding entries to organize your content.",
+      question: $_("help.faq.create_catalog.question"),
+      answer: $_("help.faq.create_catalog.answer"),
     },
     {
-      question: "Can I collaborate with others on catalogs?",
-      answer:
-        "Yes! You can invite other users to collaborate on your catalogs. Go to your catalog settings and use the 'Invite Collaborators' feature to add team members with different permission levels.",
+      question: $_("help.faq.collaborate.question"),
+      answer: $_("help.faq.collaborate.answer"),
     },
     {
-      question: "How do I make my catalog public?",
-      answer:
-        "In your catalog settings, you can change the visibility from 'Private' to 'Public'. Public catalogs can be discovered and viewed by anyone on the platform.",
+      question: $_("help.faq.make_public.question"),
+      answer: $_("help.faq.make_public.answer"),
     },
     {
-      question: "What types of content can I add to catalogs?",
-      answer:
-        "You can add various types of content including text entries, images, links, documents, and rich media. Each entry can have metadata, tags, and descriptions to help organize your content.",
+      question: $_("help.faq.content_types.question"),
+      answer: $_("help.faq.content_types.answer"),
     },
     {
-      question: "How do I search for specific content?",
-      answer:
-        "Use the search bar at the top of the page to find catalogs, entries, or users. You can filter results by category, date, or content type to narrow down your search.",
+      question: $_("help.faq.search.question"),
+      answer: $_("help.faq.search.answer"),
     },
     {
-      question: "Can I export my catalog data?",
-      answer:
-        "Yes, you can export your catalog data in various formats including JSON, CSV, or PDF. Go to your catalog settings and look for the 'Export' option.",
+      question: $_("help.faq.export.question"),
+      answer: $_("help.faq.export.answer"),
     },
   ];
 
@@ -65,11 +59,11 @@
     <div class="hero-content">
       <div class="hero-text">
         <h1 class="hero-title">
-          <span class="gradient-text">Help</span> Center
+          <span class="gradient-text">{$_("help.hero.title")}</span>
+          {$_("help.hero.center")}
         </h1>
         <p class="hero-description">
-          Find answers to common questions, learn how to use our platform, and
-          get the support you need.
+          {$_("help.hero.description")}
         </p>
       </div>
     </div>
@@ -77,36 +71,36 @@
 
   <section class="quick-help-section">
     <div class="quick-help-content">
-      <h2 class="section-title">Quick Help</h2>
+      <h2 class="section-title">{$_("help.quick_help.title")}</h2>
       <div class="help-cards">
         <div class="help-card">
           <div class="help-icon">
             <BookOpenSolid class="icon" color="white" />
           </div>
-          <h3>Getting Started</h3>
-          <p>Learn the basics of creating and managing your catalogs.</p>
+          <h3>{$_("help.quick_help.getting_started.title")}</h3>
+          <p>{$_("help.quick_help.getting_started.description")}</p>
           <button class="help-button" onclick={handleExploreCatalogs}>
-            Explore Catalogs
+            {$_("help.quick_help.getting_started.button")}
           </button>
         </div>
         <div class="help-card">
           <div class="help-icon">
             <MessagesSolid class="icon" color="white" />
           </div>
-          <h3>Community Support</h3>
-          <p>Connect with other users and get help from the community.</p>
+          <h3>{$_("help.quick_help.community_support.title")}</h3>
+          <p>{$_("help.quick_help.community_support.description")}</p>
           <button class="help-button" onclick={handleJoinCommunity}>
-            Join Community
+            {$_("help.quick_help.community_support.button")}
           </button>
         </div>
         <div class="help-card">
           <div class="help-icon">
             <EnvelopeSolid class="icon" color="white" />
           </div>
-          <h3>Contact Support</h3>
-          <p>Need direct help? Reach out to our support team.</p>
+          <h3>{$_("help.quick_help.contact_support.title")}</h3>
+          <p>{$_("help.quick_help.contact_support.description")}</p>
           <button class="help-button" onclick={handleContactSupport}>
-            Contact Us
+            {$_("help.quick_help.contact_support.button")}
           </button>
         </div>
       </div>
@@ -115,7 +109,7 @@
 
   <section class="faq-section">
     <div class="faq-content">
-      <h2 class="section-title">Frequently Asked Questions</h2>
+      <h2 class="section-title">{$_("help.faq.title")}</h2>
       <div class="faq-list">
         {#each faqs as faq, index}
           <div class="faq-item">
@@ -125,9 +119,7 @@
               class:active={openFaq === index}
             >
               <span>{faq.question}</span>
-              <ChevronDownOutline
-                class="chevron {openFaq === index ? 'rotated' : ''}"
-              />
+              <ChevronDownOutline class={openFaq === index ? "rotated" : ""} />
             </button>
             {#if openFaq === index}
               <div class="faq-answer">
@@ -143,14 +135,13 @@
   <section class="support-section">
     <div class="support-content">
       <div class="support-card">
-        <QuestionCircleSolid class="support-icon" />
-        <h3>Still Need Help?</h3>
+        <QuestionCircleSolid class="icon" />
+        <h3>{$_("help.support.title")}</h3>
         <p>
-          Can't find what you're looking for? Our support team is here to help
-          you with any questions or issues.
+          {$_("help.support.description")}
         </p>
         <button class="btn-support" onclick={handleContactSupport}>
-          Get Support
+          {$_("help.support.button")}
         </button>
       </div>
     </div>
@@ -336,17 +327,6 @@
     color: #3b82f6;
   }
 
-  .chevron {
-    width: 1.25rem;
-    height: 1.25rem;
-    transition: transform 0.3s ease;
-    color: #6b7280;
-  }
-
-  .chevron.rotated {
-    transform: rotate(180deg);
-  }
-
   .faq-answer {
     padding: 0 1.5rem 1.5rem 1.5rem;
     border-top: 1px solid #f3f4f6;
@@ -378,7 +358,7 @@
     color: white;
   }
 
-  .support-icon {
+  .icon {
     width: 4rem;
     height: 4rem;
     margin: 0 auto 1.5rem auto;

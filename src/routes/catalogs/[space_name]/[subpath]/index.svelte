@@ -3,8 +3,9 @@
   import { params, goto } from "@roxi/routify";
   import { getAvatar, getSpaceContents } from "@/lib/dmart_services";
   import { Diamonds } from "svelte-loading-spinners";
-  import { _ } from "@/i18n";
+  import { _, locale } from "@/i18n";
   import Avatar from "@/components/Avatar.svelte";
+  import { derived } from "svelte/store";
   $goto;
 
   let isLoading = $state(false);
@@ -23,10 +24,12 @@
   let filteredContents = $state([]);
 
   let searchQuery = $state("");
-  let selectedType = $state("all");
   let sortBy = $state("name");
   let sortOrder = $state("asc");
-
+  const isRTL = derived(
+    locale,
+    ($locale) => $locale === "ar" || $locale === "ku"
+  );
   const itemsPerPageOptions = [10, 25, 50, 100];
   function getResourceTypes() {
     const types = [...new Set(allContents.map((item) => item.resource_type))];
@@ -144,10 +147,6 @@
           owner.includes(query)
         );
       });
-    }
-
-    if (selectedType !== "all") {
-      filtered = filtered.filter((item) => item.resource_type === selectedType);
     }
 
     filtered.sort((a, b) => {
@@ -326,7 +325,6 @@
 
   function clearFilters() {
     searchQuery = "";
-    selectedType = "all";
     sortBy = "name";
     sortOrder = "asc";
   }
@@ -358,10 +356,6 @@
           owner.includes(query)
         );
       });
-    }
-
-    if (selectedType !== "all") {
-      filtered = filtered.filter((item) => item.resource_type === selectedType);
     }
 
     filtered.sort((a, b) => {
@@ -422,18 +416,19 @@
   });
 </script>
 
-<div
-  class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50"
->
+<div class="catalog-contents-page" class:rtl={$isRTL}>
   <div class="header-section">
     <div class="container mx-auto px-4 py-6 max-w-7xl">
-      <nav class="flex mb-4" aria-label="Breadcrumb">
+      <nav
+        class="flex mb-4"
+        aria-label={$_("catalog_contents.breadcrumb_label")}
+      >
         <ol class="inline-flex items-center space-x-1 md:space-x-3">
           {#each breadcrumbs as crumb, index}
             <li class="inline-flex items-center">
               {#if index > 0}
                 <svg
-                  class="w-4 h-4 text-gray-400 mx-2"
+                  class="breadcrumb-separator"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -462,20 +457,17 @@
         </ol>
       </nav>
 
-      <div
-        class="flex flex-col lg:flex-row items-center lg:justify-between gap-6"
-      >
-        <div class="flex-1">
-          <h1 class="text-3xl font-bold text-gray-900 mb-2">
+      <div class="header-content">
+        <div class="header-info">
+          <h1 class="page-title">
             {breadcrumbs[breadcrumbs.length - 1]?.name ||
               actualSubpath.split("/").pop()}
           </h1>
-          <p class="text-gray-600 text-lg">
-            Browse contents in <span class="font-semibold text-blue-600"
-              >{spaceName}</span
-            >
+          <p class="page-description">
+            {$_("catalog_contents.browse_contents")}
+            <span class="space-name">{spaceName}</span>
             {#if actualSubpath !== ""}
-              / <span class="font-medium">{actualSubpath}</span>
+              / <span class="subpath-name">{actualSubpath}</span>
             {/if}
           </p>
         </div>
@@ -487,7 +479,7 @@
     {#if isLoading}
       <div class="loading-state">
         <Diamonds color="#3b82f6" size="60" unit="px" />
-        <p class="text-gray-600 mt-4 text-lg">Loading content...</p>
+        <p class="loading-text">{$_("catalog_contents.loading")}</p>
       </div>
     {:else if error}
       <div class="error-state">
@@ -506,12 +498,12 @@
             ></path>
           </svg>
         </div>
-        <h3 class="text-2xl font-semibold text-gray-900 mb-2">
-          Error Loading Contents
+        <h3 class="error-title">
+          {$_("catalog_contents.error.title")}
         </h3>
-        <p class="text-gray-600 text-lg">{error}</p>
+        <p class="error-message">{error}</p>
         <button onclick={() => loadContents()} class="retry-button">
-          Try Again
+          {$_("catalog_contents.error.try_again")}
         </button>
       </div>
     {:else if totalItemsDerived === 0}
@@ -531,40 +523,33 @@
             ></path>
           </svg>
         </div>
-        <h3 class="text-2xl font-semibold text-gray-900 mb-2">
-          No Content Found
+        <h3 class="empty-title">
+          {$_("catalog_contents.empty.title")}
         </h3>
-        <p class="text-gray-600 text-lg">
+        <p class="empty-message">
           {searchQuery
-            ? "No content matches your search criteria."
-            : "This folder appears to be empty."}
+            ? $_("catalog_contents.empty.no_matches")
+            : $_("catalog_contents.empty.folder_empty")}
         </p>
-        {#if searchQuery || selectedType !== "all"}
-          <button onclick={clearFilters} class="clear-filters-button">
-            Clear Filters
-          </button>
-        {/if}
       </div>
     {:else}
       <div class="search-filter-section">
         <div class="search-filter-header">
-          <h2 class="text-lg font-semibold text-gray-900">Search & Filter</h2>
-          {#if searchQuery || selectedType !== "all"}
-            <button onclick={clearFilters} class="clear-filters-link">
-              Clear all filters
-            </button>
-          {/if}
+          <h2 class="section-title">{$_("catalog_contents.filters.title")}</h2>
         </div>
 
         <div class="search-filter-controls">
           <div class="filter-controls">
             <div class="filter-group">
-              <label class="filter-label">Sort By</label>
+              <label class="filter-label"
+                >{$_("catalog_contents.filters.sort_by")}</label
+              >
               <div class="sort-controls">
                 <select
                   bind:value={sortBy}
                   class="filter-select sort-select"
-                  aria-label="Sort by filter"
+                  aria-label={$_("catalog_contents.filters.sort_by")}
+                  onchange={applyFilters}
                 >
                   {#each sortOptions as option}
                     <option value={option.value}>{option.label}</option>
@@ -573,8 +558,8 @@
                 <button
                   onclick={toggleSortOrder}
                   class="sort-order-button"
-                  title="Toggle sort order"
-                  aria-label="Toggle sort order"
+                  title={$_("catalog_contents.filters.toggle_sort")}
+                  aria-label={$_("catalog_contents.filters.toggle_sort")}
                 >
                   <svg
                     class="w-4 h-4"
@@ -603,7 +588,9 @@
             </div>
 
             <div class="filter-group">
-              <label class="filter-label">Items Per Page</label>
+              <label class="filter-label"
+                >{$_("catalog_contents.pagination.items_per_page")}</label
+              >
               <select
                 bind:value={itemsPerPage}
                 onchange={(e) =>
@@ -611,7 +598,7 @@
                     parseInt((e.target as HTMLSelectElement).value)
                   )}
                 class="filter-select"
-                aria-label="Items per page filter"
+                aria-label={$_("catalog_contents.pagination.items_per_page")}
               >
                 {#each itemsPerPageOptions as option}
                   <option value={option}>{option}</option>
@@ -638,15 +625,19 @@
               <input
                 type="text"
                 bind:value={searchQuery}
-                placeholder="Search by name, description, or owner..."
+                placeholder={$_("catalog_contents.search.placeholder")}
                 class="search-input"
-                aria-label="Search input"
+                aria-label={$_("catalog_contents.search.label")}
+                oninput={applyFilters}
               />
               {#if searchQuery}
                 <button
-                  onclick={() => (searchQuery = "")}
+                  onclick={() => {
+                    searchQuery = "";
+                    applyFilters();
+                  }}
                   class="clear-search-button"
-                  aria-label="Clear search"
+                  aria-label={$_("catalog_contents.search.clear")}
                 >
                   <svg
                     class="w-4 h-4"
@@ -669,23 +660,17 @@
 
         <div class="results-summary">
           <div class="results-info">
-            Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(
-              currentPage * itemsPerPage,
-              totalItemsDerived
-            )} of {totalItemsDerived} items
+            {$_("catalog_contents.results.showing", {
+              values: {
+                start: (currentPage - 1) * itemsPerPage + 1,
+                end: Math.min(currentPage * itemsPerPage, totalItemsDerived),
+                total: totalItemsDerived,
+              },
+            })}
             {#if searchQuery}
-              for "<span class="font-medium text-gray-900">{searchQuery}</span>"
-            {/if}
-          </div>
-          <div class="active-filters">
-            {#if selectedType !== "all"}
-              <span class="filter-badge">
-                Type: {getResourceTypes().find((t) => t === selectedType)}
-                <button
-                  onclick={() => (selectedType = "all")}
-                  class="filter-badge-remove">×</button
-                >
-              </span>
+              {$_("catalog_contents.results.for_query", {
+                values: { query: searchQuery },
+              })}
             {/if}
           </div>
         </div>
@@ -727,15 +712,16 @@
               <div class="card-content">
                 <div class="card-header">
                   <h3 class="card-title">
-                    <span class="title-icon">{getItemIcon(item)}</span>
                     {getDisplayName(item)}
                   </h3>
                 </div>
 
                 <div class="card-meta">
-                  <span class="meta-text">posted by</span>
+                  <span class="meta-text"
+                    >{$_("catalog_contents.card.posted_by")}</span
+                  >
                   <span class="meta-author">
-                    {item.attributes?.owner_shortname || "Unknown"}
+                    {item.attributes?.owner_shortname || $_("common.unknown")}
                   </span>
                   <span class="meta-separator">•</span>
                   <span class="meta-time">
@@ -743,10 +729,11 @@
                   </span>
                 </div>
 
-                {#if item.attributes?.description?.ar || item.attributes?.description?.en}
+                {#if item.attributes?.description?.[$locale] || item.attributes?.description?.en || item.attributes?.description?.ar}
                   <div class="card-description">
-                    {item.attributes.description.ar ||
+                    {item.attributes.description[$locale] ||
                       item.attributes.description.en ||
+                      item.attributes.description.ar ||
                       ""}
                   </div>
                 {/if}
@@ -795,16 +782,21 @@
         {#if totalPagesDerived > 1}
           <div class="pagination-section">
             <div class="pagination-info">
-              Page {currentPage} of {totalPagesDerived}
+              {$_("catalog_contents.pagination.page_info", {
+                values: {
+                  current: currentPage,
+                  total: totalPagesDerived,
+                },
+              })}
             </div>
             <nav class="pagination-nav">
               <button
                 onclick={() => goToPage(currentPage - 1)}
                 disabled={currentPage === 1}
                 class="pagination-button pagination-prev"
-                aria-label="Previous page"
+                aria-label={$_("catalog_contents.pagination.previous")}
               >
-                Previous
+                {$_("catalog_contents.pagination.previous")}
               </button>
 
               {#each getPageNumbers() as page}
@@ -814,7 +806,9 @@
                     class="pagination-button {page === currentPage
                       ? 'pagination-current'
                       : 'pagination-number'}"
-                    aria-label={`Page ${page}`}
+                    aria-label={$_("catalog_contents.pagination.page", {
+                      values: { page },
+                    })}
                   >
                     {page}
                   </button>
@@ -829,9 +823,9 @@
                 onclick={() => goToPage(currentPage + 1)}
                 disabled={currentPage === totalPagesDerived}
                 class="pagination-button pagination-next"
-                aria-label="Next page"
+                aria-label={$_("catalog_contents.pagination.next")}
               >
-                Next
+                {$_("catalog_contents.pagination.next")}
               </button>
             </nav>
           </div>
@@ -842,7 +836,16 @@
 </div>
 
 <style>
-  /* Page Layout */
+  .catalog-contents-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 50%, #e0e7ff 100%);
+  }
+
+  .rtl {
+    direction: rtl;
+  }
+
+  /* Header Section */
   .header-section {
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(12px);
@@ -853,7 +856,54 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   }
 
+  .header-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .rtl .header-content {
+    text-align: right;
+  }
+
+  .header-info {
+    flex: 1;
+  }
+
+  .page-title {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 0.5rem;
+    line-height: 1.2;
+  }
+
+  .page-description {
+    color: #64748b;
+    font-size: 1.125rem;
+  }
+
+  .space-name {
+    font-weight: 600;
+    color: #2563eb;
+  }
+
+  .subpath-name {
+    font-weight: 500;
+  }
+
   /* Breadcrumb Styles */
+  .breadcrumb-separator {
+    width: 1rem;
+    height: 1rem;
+    color: #9ca3af;
+    margin: 0 0.5rem;
+  }
+
+  .rtl .breadcrumb-separator {
+    transform: rotate(180deg);
+  }
+
   .breadcrumb-link {
     color: #64748b;
     font-size: 0.875rem;
@@ -894,6 +944,13 @@
     text-align: center;
   }
 
+  .loading-text {
+    margin-top: 1rem;
+    color: #64748b;
+    font-size: 1.125rem;
+    font-weight: 500;
+  }
+
   .error-icon,
   .empty-icon {
     width: 6rem;
@@ -912,9 +969,22 @@
     border: 1px solid rgba(107, 114, 128, 0.2);
   }
 
-  .retry-button,
-  .clear-filters-button {
-    margin-top: 1.5rem;
+  .error-title,
+  .empty-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 0.5rem;
+  }
+
+  .error-message,
+  .empty-message {
+    color: #64748b;
+    font-size: 1.125rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .retry-button {
     padding: 0.75rem 1.5rem;
     background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
     color: white;
@@ -927,13 +997,6 @@
   }
 
   .retry-button:hover,
-  .clear-filters-button:hover {
-    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
-  }
-
-  /* Search and Filter Section */
   .search-filter-section {
     background: rgba(255, 255, 255, 0.9);
     backdrop-filter: blur(8px);
@@ -951,29 +1014,18 @@
     margin-bottom: 1.5rem;
   }
 
-  .clear-filters-link {
-    color: #2563eb;
-    font-weight: 500;
-    font-size: 0.875rem;
-    transition: all 0.2s ease;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
-    border: none;
-    background: none;
-    cursor: pointer;
-  }
-
-  .clear-filters-link:hover {
-    color: #1d4ed8;
-    background-color: rgba(37, 99, 235, 0.1);
-    text-decoration: underline;
+  .section-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1f2937;
   }
 
   .search-filter-controls {
     display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
   }
 
-  /* Search Input */
   .search-input-group {
     flex: 1;
   }
@@ -986,11 +1038,16 @@
 
   .search-icon {
     position: absolute;
-    left: 0.75rem;
     width: 1.25rem;
     height: 1.25rem;
     color: #9ca3af;
     z-index: 1;
+    left: 0.75rem;
+  }
+
+  .rtl .search-icon {
+    left: auto;
+    right: 0.75rem;
   }
 
   .search-input {
@@ -1004,6 +1061,11 @@
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   }
 
+  .rtl .search-input {
+    padding: 0.75rem 2.75rem 0.75rem 1rem;
+    text-align: right;
+  }
+
   .search-input:focus {
     outline: none;
     border-color: #2563eb;
@@ -1012,7 +1074,6 @@
 
   .clear-search-button {
     position: absolute;
-    right: 0.75rem;
     color: #9ca3af;
     transition: color 0.2s ease;
     border: none;
@@ -1020,6 +1081,12 @@
     cursor: pointer;
     padding: 0.25rem;
     border-radius: 0.25rem;
+    right: 0.75rem;
+  }
+
+  .rtl .clear-search-button {
+    right: auto;
+    left: 0.75rem;
   }
 
   .clear-search-button:hover {
@@ -1032,7 +1099,11 @@
     display: flex;
     flex-wrap: wrap;
     gap: 1rem;
-    align-items: center;
+    align-items: end;
+  }
+
+  .rtl .filter-controls {
+    flex-direction: row-reverse;
   }
 
   .filter-group {
@@ -1048,6 +1119,10 @@
     color: #374151;
   }
 
+  .rtl .filter-label {
+    text-align: right;
+  }
+
   .filter-select {
     padding: 0.75rem 1rem;
     border: 1px solid rgba(209, 213, 219, 0.8);
@@ -1056,6 +1131,10 @@
     font-size: 0.875rem;
     transition: all 0.2s ease;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  .rtl .filter-select {
+    text-align: right;
   }
 
   .filter-select:focus {
@@ -1067,6 +1146,10 @@
   .sort-controls {
     display: flex;
     gap: 0.5rem;
+  }
+
+  .rtl .sort-controls {
+    flex-direction: row-reverse;
   }
 
   .sort-select {
@@ -1110,47 +1193,6 @@
     color: #64748b;
   }
 
-  .active-filters {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-
-  .filter-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.25rem 0.75rem;
-    background: rgba(59, 130, 246, 0.1);
-    color: #2563eb;
-    border-radius: 9999px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    border: 1px solid rgba(59, 130, 246, 0.2);
-  }
-
-  .filter-badge-remove {
-    color: #2563eb;
-    font-weight: bold;
-    border: none;
-    background: none;
-    cursor: pointer;
-    padding: 0;
-    margin-left: 0.25rem;
-    border-radius: 50%;
-    width: 1rem;
-    height: 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color 0.2s ease;
-  }
-
-  .filter-badge-remove:hover {
-    background-color: rgba(59, 130, 246, 0.2);
-  }
-
-  /* Card List Styles */
   .card-list-container {
     background: rgba(255, 255, 255, 0.9);
     backdrop-filter: blur(8px);
@@ -1222,6 +1264,10 @@
     min-width: 0;
   }
 
+  .rtl .card-content {
+    text-align: right;
+  }
+
   .card-header {
     display: flex;
     align-items: flex-start;
@@ -1287,17 +1333,6 @@
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-  }
-
-  .card-shortname {
-    font-size: 0.75rem;
-    color: #2563eb;
-    font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas,
-      "Liberation Mono", Menlo, monospace;
-    background: rgba(59, 130, 246, 0.1);
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.375rem;
-    display: inline-block;
   }
 
   /* Stats Section */
@@ -1399,19 +1434,15 @@
     font-weight: 500;
     color: #64748b;
   }
-  .stat-item {
-    text-align: center;
-    padding: 1rem;
-    background: rgba(248, 250, 252, 0.5);
-    border-radius: 0.5rem;
-    border: 1px solid rgba(148, 163, 175, 0.1);
-  }
 
-  /* Responsive Design */
   @media (min-width: 640px) {
     .search-filter-controls {
-      flex-direction: column;
+      right: 0;
       gap: 1.5rem;
+    }
+
+    .rtl .search-filter-controls {
+      right: 0;
     }
 
     .search-input-group {
@@ -1420,6 +1451,10 @@
 
     .filter-controls {
       flex: 1;
+      justify-content: flex-start;
+    }
+
+    .rtl .filter-controls {
       justify-content: flex-end;
     }
 
@@ -1447,6 +1482,10 @@
       align-items: stretch;
     }
 
+    .rtl .filter-controls {
+      flex-direction: column;
+    }
+
     .filter-group {
       min-width: auto;
     }
@@ -1455,6 +1494,10 @@
       flex-direction: column;
       gap: 0.5rem;
       align-items: flex-start;
+    }
+
+    .rtl .results-summary {
+      align-items: flex-end;
     }
 
     .content-card {
@@ -1474,6 +1517,10 @@
       gap: 0.5rem;
     }
 
+    .rtl .card-header {
+      align-items: flex-end;
+    }
+
     .card-stats {
       flex-direction: row;
       align-items: center;
@@ -1482,6 +1529,10 @@
     .pagination-section {
       flex-direction: column;
       gap: 1rem;
+    }
+
+    .rtl .pagination-section {
+      flex-direction: column;
     }
 
     .pagination-nav {

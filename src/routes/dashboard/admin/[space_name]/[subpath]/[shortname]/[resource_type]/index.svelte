@@ -8,12 +8,19 @@
     getEntity,
   } from "@/lib/dmart_services";
   import { Diamonds } from "svelte-loading-spinners";
-  import { _ } from "@/i18n";
-  import { locale } from "@/i18n";
+  import { _, locale } from "@/i18n";
+  import { derived } from "svelte/store";
   import { ResourceType } from "@edraj/tsdmart";
   import { writable } from "svelte/store";
   import Attachment from "@/components/Attachments.svelte";
+
   $goto;
+
+  const isRTL = derived(
+    locale,
+    ($locale) => $locale === "ar" || $locale === "ku"
+  );
+
   const isLoading = writable(false);
   const itemData = writable(null);
   const error = writable(null);
@@ -47,6 +54,7 @@
     tagsString: "",
     is_active: true,
   });
+
   onMount(async () => {
     await initializeContent();
   });
@@ -72,7 +80,10 @@
         .split("/")
         .filter((part) => part.length > 0);
       breadcrumbsValue = [
-        { name: "Admin", path: "/dashboard/admin" },
+        {
+          name: $_("admin_item_detail.breadcrumb.admin"),
+          path: "/dashboard/admin",
+        },
         { name: spaceNameValue, path: `/dashboard/admin/${spaceNameValue}` },
       ];
 
@@ -149,15 +160,16 @@
         editForm.set(editFormValue);
       } else {
         console.error("No valid response found for item:", itemShortnameValue);
-        error.set("Item not found");
+        error.set($_("admin_item_detail.error.item_not_found"));
       }
     } catch (err) {
       console.error("Error fetching admin item data:", err);
-      error.set(err.message || "Failed to load item data");
+      error.set(err.message || $_("admin_item_detail.error.failed_load_item"));
     } finally {
       isLoading.set(false);
     }
   }
+
   async function handleUpdateItem(event) {
     event?.preventDefault();
     try {
@@ -188,16 +200,24 @@
         await loadItemData();
       } else {
         console.error("Update failed: No response received");
-        error.set("Failed to update item");
+        error.set($_("admin_item_detail.error.failed_update_item"));
       }
     } catch (err) {
       console.error("Error updating item:", err);
-      error.set(err.message || "Failed to update item");
+      error.set(
+        err.message || $_("admin_item_detail.error.failed_update_item")
+      );
     }
   }
 
   async function handleDeleteItem() {
-    if (!confirm(`Are you sure you want to delete "${itemShortnameValue}"?`)) {
+    if (
+      !confirm(
+        $_("admin_item_detail.confirm.delete_item", {
+          values: { name: itemShortnameValue },
+        })
+      )
+    ) {
       return;
     }
 
@@ -229,7 +249,7 @@
         item.shortname
       );
     }
-    return item?.shortname || "Unnamed Item";
+    return item?.shortname || $_("admin_item_detail.unnamed_item");
   }
 
   function getDescription(item) {
@@ -238,21 +258,26 @@
         item.description[$locale] ||
         item.description.en ||
         item.description.ar ||
-        "No description available"
+        $_("admin_item_detail.no_description")
       );
     }
-    return "No description available";
+    return $_("admin_item_detail.no_description");
   }
 
   function formatDate(dateString) {
-    if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleString();
+    if (!dateString) return $_("common.not_available");
+    return new Date(dateString).toLocaleString($locale);
   }
 
   function formatBytes(bytes) {
-    if (!bytes) return "0 Bytes";
+    if (!bytes) return $_("admin_item_detail.file_size.zero_bytes");
     const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const sizes = [
+      $_("admin_item_detail.file_size.bytes"),
+      $_("admin_item_detail.file_size.kb"),
+      $_("admin_item_detail.file_size.mb"),
+      $_("admin_item_detail.file_size.gb"),
+    ];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   }
@@ -275,16 +300,24 @@
   }
 </script>
 
-<div class="min-h-screen bg-gray-50">
+<div class="min-h-screen bg-gray-50" class:rtl={$isRTL}>
   <div class="bg-white border-b border-gray-200">
     <div class="container mx-auto px-6 py-4 max-w-7xl">
-      <nav class="flex mb-4" aria-label="Breadcrumb">
-        <ol class="inline-flex items-center space-x-1 md:space-x-3">
+      <nav
+        class="flex mb-4"
+        class:flex-row-reverse={$isRTL}
+        aria-label={$_("admin_item_detail.breadcrumb.label")}
+      >
+        <ol
+          class="inline-flex items-center space-x-1 md:space-x-3"
+          class:space-x-reverse={$isRTL}
+        >
           {#each $breadcrumbs as crumb, index}
             <li class="inline-flex items-center">
               {#if index > 0}
                 <svg
                   class="w-4 h-4 text-gray-400 mx-1"
+                  class:rotate-180={$isRTL}
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -312,14 +345,25 @@
         </ol>
       </nav>
 
-      <div class="flex items-center justify-between">
-        <div class="flex items-center space-x-4">
+      <div
+        class="flex items-center justify-between"
+        class:flex-row-reverse={$isRTL}
+      >
+        <div
+          class="flex items-center space-x-4"
+          class:space-x-reverse={$isRTL}
+          class:flex-row-reverse={$isRTL}
+        >
           <button
             onclick={goBack}
             class="flex items-center text-gray-600 hover:text-gray-900 transition-colors duration-200"
+            class:flex-row-reverse={$isRTL}
           >
             <svg
               class="w-5 h-5 mr-2"
+              class:mr-2={!$isRTL}
+              class:ml-2={$isRTL}
+              class:rotate-180={$isRTL}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -331,31 +375,35 @@
                 d="M15 19l-7-7 7-7"
               ></path>
             </svg>
-            Back
+            {$_("admin_item_detail.navigation.back")}
           </button>
           <div class="h-6 w-px bg-gray-300"></div>
-          <div>
+          <div class:text-right={$isRTL}>
             <h1 class="text-2xl font-bold text-gray-900">
               {itemDataValue
                 ? getDisplayName(itemDataValue)
                 : itemShortnameValue}
             </h1>
-            <p class="text-gray-600">Admin Management Panel</p>
+            <p class="text-gray-600">{$_("admin_item_detail.subtitle")}</p>
           </div>
         </div>
 
-        <div class="flex items-center space-x-3">
+        <div
+          class="flex items-center space-x-3"
+          class:space-x-reverse={$isRTL}
+          class:flex-row-reverse={$isRTL}
+        >
           <button
             onclick={() => showEditModal.set(true)}
             class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200"
           >
-            Edit Item
+            {$_("admin_item_detail.actions.edit_item")}
           </button>
           <button
             onclick={handleDeleteItem}
             class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200"
           >
-            Delete Item
+            {$_("admin_item_detail.actions.delete_item")}
           </button>
         </div>
       </div>
@@ -368,7 +416,7 @@
         <Diamonds color="#3b82f6" size="60" unit="px" />
       </div>
     {:else if $error}
-      <div class="text-center py-16">
+      <div class="text-center py-16" class:text-right={$isRTL}>
         <div
           class="mx-auto w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-6"
         >
@@ -387,14 +435,18 @@
           </svg>
         </div>
         <h3 class="text-xl font-semibold text-gray-900 mb-2">
-          Error Loading Item
+          {$_("admin_item_detail.error.title")}
         </h3>
         <p class="text-gray-600">{$error}</p>
       </div>
     {:else if $itemData}
       <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
         <div class="border-b border-gray-200">
-          <nav class="-mb-px flex space-x-8 px-6">
+          <nav
+            class="-mb-px flex space-x-8 px-6"
+            class:space-x-reverse={$isRTL}
+            class:flex-row-reverse={$isRTL}
+          >
             <button
               onclick={() => setActiveTab("overview")}
               class="py-4 px-1 border-b-2 font-medium text-sm {$activeTab ===
@@ -402,7 +454,7 @@
                 ? 'border-blue-500 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}"
             >
-              Overview
+              {$_("admin_item_detail.tabs.overview")}
             </button>
             <button
               onclick={() => setActiveTab("content")}
@@ -411,7 +463,7 @@
                 ? 'border-blue-500 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}"
             >
-              Content
+              {$_("admin_item_detail.tabs.content")}
             </button>
             <button
               onclick={() => setActiveTab("relationships")}
@@ -420,7 +472,7 @@
                 ? 'border-blue-500 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}"
             >
-              Relationships
+              {$_("admin_item_detail.tabs.relationships")}
             </button>
             <button
               onclick={() => setActiveTab("attachments")}
@@ -429,7 +481,7 @@
                 ? 'border-blue-500 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}"
             >
-              Attachments
+              {$_("admin_item_detail.tabs.attachments")}
             </button>
             {#if actualSubpathValue === "authors"}
               <button
@@ -439,7 +491,7 @@
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}"
               >
-                Author Related Entries
+                {$_("admin_item_detail.tabs.author_entries")}
               </button>
             {/if}
             <button
@@ -449,7 +501,7 @@
                 ? 'border-blue-500 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}"
             >
-              Metadata
+              {$_("admin_item_detail.tabs.metadata")}
             </button>
           </nav>
         </div>
@@ -458,46 +510,61 @@
           {#if $activeTab === "overview"}
             <div class="space-y-6">
               <div>
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                  Basic Information
+                <h3
+                  class="text-lg font-semibold text-gray-900 mb-4"
+                  class:text-right={$isRTL}
+                >
+                  {$_("admin_item_detail.overview.basic_info")}
                 </h3>
                 <div
                   class="bg-white border border-gray-200 rounded-lg overflow-hidden"
                 >
-                  <table class="min-w-full divide-y divide-gray-200">
+                  <table
+                    class="min-w-full divide-y divide-gray-200"
+                    class:rtl={$isRTL}
+                  >
                     <tbody class="bg-white divide-y divide-gray-200">
                       <tr>
                         <td
                           class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50 w-1/4"
-                          >UUID</td
+                          class:text-right={$isRTL}
+                          >{$_("admin_item_detail.fields.uuid")}</td
                         >
                         <td
                           class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono"
-                          >{itemDataValue.uuid}</td
+                          class:text-right={$isRTL}>{itemDataValue.uuid}</td
                         >
                       </tr>
                       <tr>
                         <td
                           class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50"
-                          >Shortname</td
+                          class:text-right={$isRTL}
+                          >{$_("admin_item_detail.fields.shortname")}</td
                         >
                         <td
                           class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                          class:text-right={$isRTL}
                           >{itemDataValue.shortname}</td
                         >
                       </tr>
                       <tr>
                         <td
                           class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50"
-                          >Display Name</td
+                          class:text-right={$isRTL}
+                          >{$_("admin_item_detail.fields.display_name")}</td
                         >
                         <td
                           class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                          class:text-right={$isRTL}
                         >
                           {#if itemDataValue.displayname}
                             <div class="space-y-1">
                               {#each Object.entries(itemDataValue.displayname) as [lang, name]}
-                                <div class="flex items-center space-x-2">
+                                <div
+                                  class="flex items-center space-x-2"
+                                  class:space-x-reverse={$isRTL}
+                                  class:flex-row-reverse={$isRTL}
+                                >
                                   <span
                                     class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"
                                     >{lang}</span
@@ -507,63 +574,92 @@
                               {/each}
                             </div>
                           {:else}
-                            <span class="text-gray-400">Not set</span>
+                            <span class="text-gray-400"
+                              >{$_("admin_item_detail.not_set")}</span
+                            >
                           {/if}
                         </td>
                       </tr>
                       <tr>
                         <td
                           class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50"
-                          >Description</td
+                          class:text-right={$isRTL}
+                          >{$_("admin_item_detail.fields.description")}</td
                         >
-                        <td class="px-6 py-4 text-sm text-gray-500">
+                        <td
+                          class="px-6 py-4 text-sm text-gray-500"
+                          class:text-right={$isRTL}
+                        >
                           {#if itemDataValue.description}
                             <div class="space-y-1">
                               {#each Object.entries(itemDataValue.description) as [lang, desc]}
-                                <div class="flex items-start space-x-2">
+                                <div
+                                  class="flex items-start space-x-2"
+                                  class:space-x-reverse={$isRTL}
+                                  class:flex-row-reverse={$isRTL}
+                                >
                                   <span
                                     class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mt-0.5"
                                     >{lang}</span
                                   >
-                                  <span class="flex-1">{desc || "Empty"}</span>
+                                  <span class="flex-1"
+                                    >{desc ||
+                                      $_("admin_item_detail.empty")}</span
+                                  >
                                 </div>
                               {/each}
                             </div>
                           {:else}
-                            <span class="text-gray-400">Not set</span>
+                            <span class="text-gray-400"
+                              >{$_("admin_item_detail.not_set")}</span
+                            >
                           {/if}
                         </td>
                       </tr>
                       <tr>
                         <td
                           class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50"
-                          >Status</td
+                          class:text-right={$isRTL}
+                          >{$_("admin_item_detail.fields.status")}</td
                         >
                         <td
                           class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                          class:text-right={$isRTL}
                         >
                           <span
                             class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {itemDataValue.is_active
                               ? 'bg-green-100 text-green-800'
                               : 'bg-red-100 text-red-800'}"
+                            class:flex-row-reverse={$isRTL}
                           >
                             <div
                               class="w-1.5 h-1.5 rounded-full mr-1.5 {itemDataValue.is_active
                                 ? 'bg-green-400'
                                 : 'bg-red-400'}"
+                              class:mr-1.5={!$isRTL}
+                              class:ml-1.5={$isRTL}
                             ></div>
-                            {itemDataValue.is_active ? "Active" : "Inactive"}
+                            {itemDataValue.is_active
+                              ? $_("admin_item_detail.status.active")
+                              : $_("admin_item_detail.status.inactive")}
                           </span>
                         </td>
                       </tr>
                       <tr>
                         <td
                           class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50"
-                          >Tags</td
+                          class:text-right={$isRTL}
+                          >{$_("admin_item_detail.fields.tags")}</td
                         >
-                        <td class="px-6 py-4 text-sm text-gray-500">
+                        <td
+                          class="px-6 py-4 text-sm text-gray-500"
+                          class:text-right={$isRTL}
+                        >
                           {#if itemDataValue.tags && itemDataValue.tags.length > 0}
-                            <div class="flex flex-wrap gap-1">
+                            <div
+                              class="flex flex-wrap gap-1"
+                              class:justify-end={$isRTL}
+                            >
                               {#each itemDataValue.tags as tag}
                                 {#if tag.trim()}
                                   <span
@@ -574,37 +670,45 @@
                               {/each}
                             </div>
                           {:else}
-                            <span class="text-gray-400">No tags</span>
+                            <span class="text-gray-400"
+                              >{$_("admin_item_detail.no_tags")}</span
+                            >
                           {/if}
                         </td>
                       </tr>
                       <tr>
                         <td
                           class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50"
-                          >Owner</td
+                          class:text-right={$isRTL}
+                          >{$_("admin_item_detail.fields.owner")}</td
                         >
                         <td
                           class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                          class:text-right={$isRTL}
                           >{itemDataValue.owner_shortname}</td
                         >
                       </tr>
                       <tr>
                         <td
                           class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50"
-                          >Created</td
+                          class:text-right={$isRTL}
+                          >{$_("admin_item_detail.fields.created")}</td
                         >
                         <td
                           class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                          class:text-right={$isRTL}
                           >{formatDate(itemDataValue.created_at)}</td
                         >
                       </tr>
                       <tr>
                         <td
                           class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50"
-                          >Updated</td
+                          class:text-right={$isRTL}
+                          >{$_("admin_item_detail.fields.updated")}</td
                         >
                         <td
                           class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                          class:text-right={$isRTL}
                           >{formatDate(itemDataValue.updated_at)}</td
                         >
                       </tr>
@@ -617,23 +721,31 @@
 
           {#if $activeTab === "content"}
             <div class="space-y-6">
-              <h3 class="text-lg font-semibold text-gray-900">
-                Content & Payload
+              <h3
+                class="text-lg font-semibold text-gray-900"
+                class:text-right={$isRTL}
+              >
+                {$_("admin_item_detail.content.title")}
               </h3>
 
               {#if itemDataValue.payload}
                 <div
                   class="bg-white border border-gray-200 rounded-lg overflow-hidden"
                 >
-                  <table class="min-w-full divide-y divide-gray-200">
+                  <table
+                    class="min-w-full divide-y divide-gray-200"
+                    class:rtl={$isRTL}
+                  >
                     <tbody class="bg-white divide-y divide-gray-200">
                       <tr>
                         <td
                           class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50 w-1/4"
-                          >Content Type</td
+                          class:text-right={$isRTL}
+                          >{$_("admin_item_detail.content.content_type")}</td
                         >
                         <td
                           class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                          class:text-right={$isRTL}
                         >
                           <span
                             class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
@@ -646,10 +758,12 @@
                         <tr>
                           <td
                             class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50"
-                            >Checksum</td
+                            class:text-right={$isRTL}
+                            >{$_("admin_item_detail.content.checksum")}</td
                           >
                           <td
                             class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono"
+                            class:text-right={$isRTL}
                             >{itemDataValue.payload.checksum}</td
                           >
                         </tr>
@@ -657,9 +771,13 @@
                       <tr>
                         <td
                           class="px-6 py-4 text-sm font-medium text-gray-900 bg-gray-50 align-top"
-                          >Content Body</td
+                          class:text-right={$isRTL}
+                          >{$_("admin_item_detail.content.content_body")}</td
                         >
-                        <td class="px-6 py-4 text-sm text-gray-500">
+                        <td
+                          class="px-6 py-4 text-sm text-gray-500"
+                          class:text-right={$isRTL}
+                        >
                           {#if itemDataValue.payload.content_type === "html"}
                             <div class="prose max-w-none">
                               {@html itemDataValue.payload.body}
@@ -684,7 +802,10 @@
                   </table>
                 </div>
               {:else}
-                <div class="text-center py-8 text-gray-500">
+                <div
+                  class="text-center py-8 text-gray-500"
+                  class:text-right={$isRTL}
+                >
                   <svg
                     class="mx-auto h-12 w-12 text-gray-400"
                     fill="none"
@@ -698,7 +819,9 @@
                       d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                     />
                   </svg>
-                  <p class="mt-2">No content available</p>
+                  <p class="mt-2">
+                    {$_("admin_item_detail.content.no_content")}
+                  </p>
                 </div>
               {/if}
             </div>
@@ -706,34 +829,57 @@
 
           {#if $activeTab === "relationships"}
             <div class="space-y-6">
-              <h3 class="text-lg font-semibold text-gray-900">Relationships</h3>
+              <h3
+                class="text-lg font-semibold text-gray-900"
+                class:text-right={$isRTL}
+              >
+                {$_("admin_item_detail.relationships.title")}
+              </h3>
 
               {#if itemDataValue.relationships && itemDataValue.relationships.length > 0}
                 <div
                   class="bg-white border border-gray-200 rounded-lg overflow-hidden"
                 >
-                  <table class="min-w-full divide-y divide-gray-200">
+                  <table
+                    class="min-w-full divide-y divide-gray-200"
+                    class:rtl={$isRTL}
+                  >
                     <thead class="bg-gray-50">
                       <tr>
                         <th
                           class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >Role</th
+                          class:text-right={$isRTL}
+                          >{$_(
+                            "admin_item_detail.relationships.headers.role"
+                          )}</th
                         >
                         <th
                           class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >Related To</th
+                          class:text-right={$isRTL}
+                          >{$_(
+                            "admin_item_detail.relationships.headers.related_to"
+                          )}</th
                         >
                         <th
                           class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >Type</th
+                          class:text-right={$isRTL}
+                          >{$_(
+                            "admin_item_detail.relationships.headers.type"
+                          )}</th
                         >
                         <th
                           class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >Space</th
+                          class:text-right={$isRTL}
+                          >{$_(
+                            "admin_item_detail.relationships.headers.space"
+                          )}</th
                         >
                         <th
                           class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >UUID</th
+                          class:text-right={$isRTL}
+                          >{$_(
+                            "admin_item_detail.relationships.headers.uuid"
+                          )}</th
                         >
                       </tr>
                     </thead>
@@ -742,38 +888,47 @@
                         <tr>
                           <td
                             class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
+                            class:text-right={$isRTL}
                           >
                             <span
                               class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
                             >
-                              {relationship.attributes?.role || "N/A"}
+                              {relationship.attributes?.role ||
+                                $_("common.not_available")}
                             </span>
                           </td>
                           <td
                             class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                            class:text-right={$isRTL}
                           >
-                            {relationship.related_to?.shortname || "N/A"}
+                            {relationship.related_to?.shortname ||
+                              $_("common.not_available")}
                           </td>
                           <td
                             class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                            class:text-right={$isRTL}
                           >
                             <span
                               class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800"
                             >
                               {relationship.related_to?.resource_type ||
                                 relationship.related_to?.type ||
-                                "N/A"}
+                                $_("common.not_available")}
                             </span>
                           </td>
                           <td
                             class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                            class:text-right={$isRTL}
                           >
-                            {relationship.related_to?.space_name || "N/A"}
+                            {relationship.related_to?.space_name ||
+                              $_("common.not_available")}
                           </td>
                           <td
                             class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono"
+                            class:text-right={$isRTL}
                           >
-                            {relationship.related_to?.uuid || "N/A"}
+                            {relationship.related_to?.uuid ||
+                              $_("common.not_available")}
                           </td>
                         </tr>
                       {/each}
@@ -781,7 +936,10 @@
                   </table>
                 </div>
               {:else}
-                <div class="text-center py-8 text-gray-500">
+                <div
+                  class="text-center py-8 text-gray-500"
+                  class:text-right={$isRTL}
+                >
                   <svg
                     class="mx-auto h-12 w-12 text-gray-400"
                     fill="none"
@@ -795,7 +953,9 @@
                       d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
                     />
                   </svg>
-                  <p class="mt-2">No relationships defined</p>
+                  <p class="mt-2">
+                    {$_("admin_item_detail.relationships.no_relationships")}
+                  </p>
                 </div>
               {/if}
             </div>
@@ -803,17 +963,31 @@
 
           {#if $activeTab === "attachments"}
             <div class="space-y-6">
-              <div class="flex items-center justify-between">
-                <h3 class="text-lg font-semibold text-gray-900">Attachments</h3>
-                <div class="text-sm text-gray-500">
+              <div
+                class="flex items-center justify-between"
+                class:flex-row-reverse={$isRTL}
+              >
+                <h3
+                  class="text-lg font-semibold text-gray-900"
+                  class:text-right={$isRTL}
+                >
+                  {$_("admin_item_detail.attachments.title")}
+                </h3>
+                <div class="text-sm text-gray-500" class:text-right={$isRTL}>
                   {#if itemDataValue.attachments}
-                    {Object.values(itemDataValue.attachments).reduce(
-                      (total: number, attachments) =>
-                        total + ((attachments as any[])?.length || 0),
-                      0
-                    )} total attachments
+                    {$_("admin_item_detail.attachments.total_count", {
+                      values: {
+                        count: Number(
+                          Object.values(itemDataValue.attachments).reduce(
+                            (total: number, attachments) =>
+                              total + ((attachments as any[])?.length || 0),
+                            0
+                          )
+                        ),
+                      },
+                    })}
                   {:else}
-                    0 attachments
+                    {$_("admin_item_detail.attachments.zero_count")}
                   {/if}
                 </div>
               </div>
@@ -829,14 +1003,20 @@
                       >
                         <h4
                           class="text-md font-medium text-gray-800 capitalize flex items-center gap-2"
+                          class:flex-row-reverse={$isRTL}
+                          class:text-right={$isRTL}
                         >
                           <span
                             class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
                           >
                             {type}
                           </span>
-                          {type} Attachments ({(attachmentsArr as any[])
-                            .length})
+                          {$_("admin_item_detail.attachments.type_count", {
+                            values: {
+                              type: type,
+                              count: (attachmentsArr as any[]).length,
+                            },
+                          })}
                         </h4>
                       </div>
                       <div class="p-6">
@@ -853,7 +1033,10 @@
                   {/if}
                 {/each}
               {:else}
-                <div class="text-center py-8 text-gray-500">
+                <div
+                  class="text-center py-8 text-gray-500"
+                  class:text-right={$isRTL}
+                >
                   <svg
                     class="mx-auto h-12 w-12 text-gray-400"
                     fill="none"
@@ -867,7 +1050,9 @@
                       d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
                     />
                   </svg>
-                  <p class="mt-2">No attachments found</p>
+                  <p class="mt-2">
+                    {$_("admin_item_detail.attachments.no_attachments")}
+                  </p>
                 </div>
               {/if}
             </div>
@@ -875,22 +1060,30 @@
 
           {#if $activeTab === "metadata"}
             <div class="space-y-6">
-              <h3 class="text-lg font-semibold text-gray-900">
-                System Metadata
+              <h3
+                class="text-lg font-semibold text-gray-900"
+                class:text-right={$isRTL}
+              >
+                {$_("admin_item_detail.metadata.title")}
               </h3>
 
               <div
                 class="bg-white border border-gray-200 rounded-lg overflow-hidden"
               >
-                <table class="min-w-full divide-y divide-gray-200">
+                <table
+                  class="min-w-full divide-y divide-gray-200"
+                  class:rtl={$isRTL}
+                >
                   <tbody class="bg-white divide-y divide-gray-200">
                     <tr>
                       <td
                         class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50 w-1/4"
-                        >Full Path</td
+                        class:text-right={$isRTL}
+                        >{$_("admin_item_detail.metadata.full_path")}</td
                       >
                       <td
                         class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono"
+                        class:text-right={$isRTL}
                       >
                         {spaceNameValue}/{actualSubpathValue}/{itemShortnameValue}
                       </td>
@@ -898,30 +1091,34 @@
                     <tr>
                       <td
                         class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50"
-                        >Space Name</td
+                        class:text-right={$isRTL}
+                        >{$_("admin_item_detail.metadata.space_name")}</td
                       >
                       <td
                         class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
-                        >{spaceNameValue}</td
+                        class:text-right={$isRTL}>{spaceNameValue}</td
                       >
                     </tr>
                     <tr>
                       <td
                         class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50"
-                        >Subpath</td
+                        class:text-right={$isRTL}
+                        >{$_("admin_item_detail.metadata.subpath")}</td
                       >
                       <td
                         class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
-                        >{actualSubpathValue}</td
+                        class:text-right={$isRTL}>{actualSubpathValue}</td
                       >
                     </tr>
                     <tr>
                       <td
                         class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50"
-                        >Resource Type</td
+                        class:text-right={$isRTL}
+                        >{$_("admin_item_detail.metadata.resource_type")}</td
                       >
                       <td
                         class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                        class:text-right={$isRTL}
                       >
                         <span
                           class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800"
@@ -934,22 +1131,30 @@
                       <tr>
                         <td
                           class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50"
-                          >ACL Entries</td
+                          class:text-right={$isRTL}
+                          >{$_("admin_item_detail.metadata.acl_entries")}</td
                         >
                         <td
                           class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                          class:text-right={$isRTL}
                         >
-                          {itemDataValue.acl.length} entries
+                          {$_("admin_item_detail.metadata.entries_count", {
+                            values: { count: itemDataValue.acl.length },
+                          })}
                         </td>
                       </tr>
                     {/if}
                     <tr>
                       <td
                         class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50"
-                        >Relationships Count</td
+                        class:text-right={$isRTL}
+                        >{$_(
+                          "admin_item_detail.metadata.relationships_count"
+                        )}</td
                       >
                       <td
                         class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                        class:text-right={$isRTL}
                       >
                         {itemDataValue.relationships
                           ? itemDataValue.relationships.length
@@ -959,10 +1164,14 @@
                     <tr>
                       <td
                         class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50"
-                        >Attachments Count</td
+                        class:text-right={$isRTL}
+                        >{$_(
+                          "admin_item_detail.metadata.attachments_count"
+                        )}</td
                       >
                       <td
                         class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                        class:text-right={$isRTL}
                       >
                         {#if itemDataValue.attachments}
                           {Object.values(itemDataValue.attachments).reduce(
@@ -980,8 +1189,11 @@
               </div>
 
               <div>
-                <h4 class="text-md font-medium text-gray-800 mb-3">
-                  Raw JSON Data
+                <h4
+                  class="text-md font-medium text-gray-800 mb-3"
+                  class:text-right={$isRTL}
+                >
+                  {$_("admin_item_detail.metadata.raw_json")}
                 </h4>
                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
                   <pre
@@ -996,46 +1208,66 @@
           {/if}
           {#if $activeTab === "author-entries"}
             <div class="space-y-6">
-              <h3 class="text-lg font-semibold text-gray-900">
-                Author Related Entries
+              <h3
+                class="text-lg font-semibold text-gray-900"
+                class:text-right={$isRTL}
+              >
+                {$_("admin_item_detail.author_entries.title")}
               </h3>
 
               {#if authorRelatedEntriesValue && authorRelatedEntriesValue.length > 0}
                 <div
                   class="bg-white border border-gray-200 rounded-lg overflow-hidden"
                 >
-                  <table class="min-w-full divide-y divide-gray-200">
+                  <table
+                    class="min-w-full divide-y divide-gray-200"
+                    class:rtl={$isRTL}
+                  >
                     <thead class="bg-gray-50">
                       <tr>
                         <th
                           class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          class:text-right={$isRTL}
                         >
-                          Shortname
+                          {$_(
+                            "admin_item_detail.author_entries.headers.shortname"
+                          )}
                         </th>
                         <th
                           class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          class:text-right={$isRTL}
                         >
-                          Display Name
+                          {$_(
+                            "admin_item_detail.author_entries.headers.display_name"
+                          )}
                         </th>
                         <th
                           class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          class:text-right={$isRTL}
                         >
-                          Space
+                          {$_("admin_item_detail.author_entries.headers.space")}
                         </th>
                         <th
                           class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          class:text-right={$isRTL}
                         >
-                          Type
+                          {$_("admin_item_detail.author_entries.headers.type")}
                         </th>
                         <th
                           class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          class:text-right={$isRTL}
                         >
-                          Status
+                          {$_(
+                            "admin_item_detail.author_entries.headers.status"
+                          )}
                         </th>
                         <th
                           class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          class:text-right={$isRTL}
                         >
-                          Created
+                          {$_(
+                            "admin_item_detail.author_entries.headers.created"
+                          )}
                         </th>
                       </tr>
                     </thead>
@@ -1044,21 +1276,25 @@
                         <tr>
                           <td
                             class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
+                            class:text-right={$isRTL}
                           >
                             {entry.shortname}
                           </td>
                           <td
                             class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                            class:text-right={$isRTL}
                           >
                             {getDisplayName(entry)}
                           </td>
                           <td
                             class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                            class:text-right={$isRTL}
                           >
-                            {entry.space_name || "N/A"}
+                            {entry.space_name || $_("common.not_available")}
                           </td>
                           <td
                             class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                            class:text-right={$isRTL}
                           >
                             <span
                               class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800"
@@ -1068,22 +1304,29 @@
                           </td>
                           <td
                             class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                            class:text-right={$isRTL}
                           >
                             <span
                               class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {entry.is_active
                                 ? 'bg-green-100 text-green-800'
                                 : 'bg-red-100 text-red-800'}"
+                              class:flex-row-reverse={$isRTL}
                             >
                               <div
                                 class="w-1.5 h-1.5 rounded-full mr-1.5 {entry.is_active
                                   ? 'bg-green-400'
                                   : 'bg-red-400'}"
+                                class:mr-1.5={!$isRTL}
+                                class:ml-1.5={$isRTL}
                               ></div>
-                              {entry.is_active ? "Active" : "Inactive"}
+                              {entry.is_active
+                                ? $_("admin_item_detail.status.active")
+                                : $_("admin_item_detail.status.inactive")}
                             </span>
                           </td>
                           <td
                             class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                            class:text-right={$isRTL}
                           >
                             {formatDate(entry.created_at)}
                           </td>
@@ -1093,7 +1336,10 @@
                   </table>
                 </div>
               {:else}
-                <div class="text-center py-8 text-gray-500">
+                <div
+                  class="text-center py-8 text-gray-500"
+                  class:text-right={$isRTL}
+                >
                   <svg
                     class="mx-auto h-12 w-12 text-gray-400"
                     fill="none"
@@ -1107,7 +1353,9 @@
                       d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                     />
                   </svg>
-                  <p class="mt-2">No author related entries found</p>
+                  <p class="mt-2">
+                    {$_("admin_item_detail.author_entries.no_entries")}
+                  </p>
                 </div>
               {/if}
             </div>
@@ -1115,7 +1363,7 @@
         </div>
       </div>
     {:else}
-      <div class="text-center py-16">
+      <div class="text-center py-16" class:text-right={$isRTL}>
         <div
           class="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6"
         >
@@ -1133,9 +1381,11 @@
             ></path>
           </svg>
         </div>
-        <h3 class="text-xl font-semibold text-gray-900 mb-2">Item Not Found</h3>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">
+          {$_("admin_item_detail.not_found.title")}
+        </h3>
         <p class="text-gray-600">
-          The requested item could not be found or you don't have access to it.
+          {$_("admin_item_detail.not_found.description")}
         </p>
       </div>
     {/if}
@@ -1143,22 +1393,32 @@
 </div>
 
 {#if $showEditModal}
-  <!-- svelte-ignore a11y_click_events_have_key_events -->
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <!-- svelte-ignore a11y_consider_explicit_label -->
   <div
     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
     onclick={() => showEditModal.set(false)}
+    role="dialog"
+    aria-modal="true"
+    tabindex="-1"
   >
     <div
       class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto"
+      class:rtl={$isRTL}
       onclick={(event) => event.stopPropagation()}
     >
-      <div class="flex justify-between items-center mb-6">
-        <h3 class="text-xl font-semibold text-gray-900">Edit Item</h3>
+      <div
+        class="flex justify-between items-center mb-6"
+        class:flex-row-reverse={$isRTL}
+      >
+        <h3
+          class="text-xl font-semibold text-gray-900"
+          class:text-right={$isRTL}
+        >
+          {$_("admin_item_detail.edit_modal.title")}
+        </h3>
         <button
           onclick={() => showEditModal.set(false)}
           class="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+          aria-label={$_("admin_item_detail.edit_modal.actions.cancel")}
         >
           <svg
             class="w-6 h-6"
@@ -1180,15 +1440,17 @@
           <label
             for="editTitle"
             class="block text-sm font-medium text-gray-700 mb-2"
+            class:text-right={$isRTL}
           >
-            Title
+            {$_("admin_item_detail.edit_modal.fields.title")}
           </label>
           <input
             id="editTitle"
             type="text"
             bind:value={editFormValue.title}
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Enter title"
+            class:text-right={$isRTL}
+            placeholder={$_("admin_item_detail.edit_modal.placeholders.title")}
             required
           />
         </div>
@@ -1197,15 +1459,19 @@
           <label
             for="editContent"
             class="block text-sm font-medium text-gray-700 mb-2"
+            class:text-right={$isRTL}
           >
-            Content
+            {$_("admin_item_detail.edit_modal.fields.content")}
           </label>
           <textarea
             id="editContent"
             bind:value={editFormValue.content}
             rows="4"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
-            placeholder="Enter content"
+            class:text-right={$isRTL}
+            placeholder={$_(
+              "admin_item_detail.edit_modal.placeholders.content"
+            )}
           ></textarea>
         </div>
 
@@ -1213,46 +1479,67 @@
           <label
             for="editTags"
             class="block text-sm font-medium text-gray-700 mb-2"
+            class:text-right={$isRTL}
           >
-            Tags (comma-separated)
+            {$_("admin_item_detail.edit_modal.fields.tags")}
           </label>
           <input
             id="editTags"
             type="text"
             bind:value={editFormValue.tagsString}
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="tag1, tag2, tag3"
+            class:text-right={$isRTL}
+            placeholder={$_("admin_item_detail.edit_modal.placeholders.tags")}
           />
         </div>
 
-        <div class="flex items-center">
+        <div
+          class="flex items-center"
+          class:flex-row-reverse={$isRTL}
+          class:justify-end={$isRTL}
+        >
           <input
             id="editIsActive"
             type="checkbox"
             bind:checked={editFormValue.is_active}
             class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
           />
-          <label for="editIsActive" class="ml-2 block text-sm text-gray-900">
-            Active
+          <label
+            for="editIsActive"
+            class="ml-2 block text-sm text-gray-900"
+            class:ml-2={!$isRTL}
+            class:mr-2={$isRTL}
+          >
+            {$_("admin_item_detail.edit_modal.fields.active")}
           </label>
         </div>
 
-        <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+        <div
+          class="flex justify-end space-x-3 pt-4 border-t border-gray-200"
+          class:space-x-reverse={$isRTL}
+          class:flex-row-reverse={$isRTL}
+        >
           <button
             type="button"
             onclick={() => showEditModal.set(false)}
             class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
           >
-            Cancel
+            {$_("admin_item_detail.edit_modal.actions.cancel")}
           </button>
           <button
             type="submit"
             class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
           >
-            Save Changes
+            {$_("admin_item_detail.edit_modal.actions.save")}
           </button>
         </div>
       </form>
     </div>
   </div>
 {/if}
+
+<style>
+  .rtl {
+    direction: rtl;
+  }
+</style>

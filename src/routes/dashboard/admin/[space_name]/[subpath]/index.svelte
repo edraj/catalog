@@ -3,9 +3,9 @@
   import { params, goto } from "@roxi/routify";
   import { getSpaceContents } from "@/lib/dmart_services";
   import { Diamonds } from "svelte-loading-spinners";
-  import { _ } from "@/i18n";
+  import { _, locale } from "@/i18n";
   import { Dmart, ResourceType, RequestType } from "@edraj/tsdmart";
-  import { writable } from "svelte/store";
+  import { derived, writable } from "svelte/store";
   import { deleteEntity } from "@/lib/dmart_services";
   import MetaForm from "@/components/forms/MetaForm.svelte";
   import FolderForm from "@/components/forms/FolderForm.svelte";
@@ -14,12 +14,12 @@
   let allContents = writable([]);
   let paginatedContents = writable([]);
   let error = writable(null);
-
+  const isRTL = derived(
+    locale,
+    ($locale) => $locale === "ar" || $locale === "ku"
+  );
   let actualSubpath = writable("");
   let breadcrumbs = writable([]);
-  let showCreateModal = writable(false);
-  let newItemName = writable("");
-  let newItemType = writable("content");
 
   let currentPage = writable(1);
   let itemsPerPage = writable(25);
@@ -41,7 +41,7 @@
       .split("/")
       .filter((part) => part.length > 0);
     breadcrumbs.set([
-      { name: "Admin", path: "/dashboard/admin" },
+      { name: $_("admin_content.breadcrumb.admin"), path: "/dashboard/admin" },
       { name: spaceName, path: `/dashboard/admin/${spaceName}` },
     ]);
 
@@ -98,7 +98,7 @@
       }
     } catch (err) {
       console.error("Error fetching space contents:", err);
-      error.set("Failed to load space contents");
+      error.set($_("admin_content.error.failed_load_contents"));
       allContents.set([]);
       totalItems.set(0);
       updatePagination();
@@ -160,7 +160,13 @@
   async function handleDeleteItem(item, event) {
     event.stopPropagation();
 
-    if (!confirm(`Are you sure you want to delete "${item.shortname}"?`)) {
+    if (
+      !confirm(
+        $_("admin_content.confirm.delete_item", {
+          values: { name: item.shortname },
+        })
+      )
+    ) {
       return;
     }
 
@@ -229,8 +235,8 @@
   }
 
   function formatDate(dateString) {
-    if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString();
+    if (!dateString) return $_("common.not_available");
+    return new Date(dateString).toLocaleDateString($locale);
   }
 
   function navigateToBreadcrumb(path) {
@@ -354,27 +360,35 @@
         showCreateFolderModal = false;
         await loadContents();
       } else {
-        alert("Failed to create folder");
+        alert($_("admin_content.error.create_folder_failed"));
       }
     } catch (err) {
       console.error("Error creating folder:", err);
-      alert("Error creating folder: " + err.message);
+      alert($_("admin_content.error.create_folder_error") + ": " + err.message);
     } finally {
       isCreatingFolder = false;
     }
   }
 </script>
 
-<div class="min-h-screen bg-gray-50">
+<div class="min-h-screen bg-gray-50" class:rtl={$isRTL}>
   <div class="bg-white border-b border-gray-200">
     <div class="container mx-auto px-4 py-6 max-w-7xl">
-      <nav class="flex mb-4" aria-label="Breadcrumb">
-        <ol class="inline-flex items-center space-x-1 md:space-x-3">
+      <nav
+        class="flex mb-4"
+        class:flex-row-reverse={$isRTL}
+        aria-label={$_("admin_content.breadcrumb.label")}
+      >
+        <ol
+          class="inline-flex items-center space-x-1 md:space-x-3"
+          class:space-x-reverse={$isRTL}
+        >
           {#each $breadcrumbs as crumb, index}
             <li class="inline-flex items-center">
               {#if index > 0}
                 <svg
                   class="w-4 h-4 text-gray-400 mx-1"
+                  class:rotate-180={$isRTL}
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -402,34 +416,56 @@
         </ol>
       </nav>
 
-      <div class="flex items-center justify-between">
-        <div>
+      <div
+        class="flex items-center justify-between"
+        class:flex-row-reverse={$isRTL}
+      >
+        <div class:text-right={$isRTL}>
           <h1 class="text-2xl font-bold text-gray-900">
-            Admin: {$breadcrumbs[$breadcrumbs.length - 1]?.name ||
-              $actualSubpath.split("/").pop()}
+            {$_("admin_content.title", {
+              values: {
+                name:
+                  $breadcrumbs[$breadcrumbs.length - 1]?.name ||
+                  $actualSubpath.split("/").pop(),
+              },
+            })}
           </h1>
           <p class="text-gray-600">
-            Managing contents in {spaceName}/{$actualSubpath}
+            {$_("admin_content.subtitle", {
+              values: { spaceName, subpath: $actualSubpath },
+            })}
           </p>
         </div>
 
-        <div class="flex items-center space-x-3">
+        <div
+          class="flex items-center space-x-3"
+          class:space-x-reverse={$isRTL}
+          class:flex-row-reverse={$isRTL}
+        >
           {#if !$isLoading && $totalItems > 0}
-            <div class="flex items-center space-x-2">
-              <span class="text-sm text-gray-700">Show:</span>
+            <div
+              class="flex items-center space-x-2"
+              class:space-x-reverse={$isRTL}
+              class:flex-row-reverse={$isRTL}
+            >
+              <span class="text-sm text-gray-700"
+                >{$_("admin_content.pagination.show")}:</span
+              >
               <select
                 bind:value={$itemsPerPage}
                 onchange={(e) =>
                   handleItemsPerPageChange(
                     parseInt((e.target as HTMLSelectElement).value)
                   )}
-                class="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="border border-gray-300 rounded-md px-3 pr-4 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {#each itemsPerPageOptions as option}
                   <option value={option}>{option}</option>
                 {/each}
               </select>
-              <span class="text-sm text-gray-700">per page</span>
+              <span class="text-sm text-gray-700"
+                >{$_("admin_content.pagination.per_page")}</span
+              >
             </div>
           {/if}
 
@@ -438,12 +474,13 @@
               onclick={() => handleCreateItem()}
               class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200"
             >
-              Create New Item
+              {$_("admin_content.actions.create_new_item")}
             </button>
 
             <button
               onclick={handleCreateFolder}
               class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+              class:flex-row-reverse={$isRTL}
             >
               <svg
                 class="w-4 h-4"
@@ -458,7 +495,7 @@
                   d="M12 4v16m8-8H4"
                 ></path>
               </svg>
-              Create Folder
+              {$_("admin_content.actions.create_folder")}
             </button>
           {/if}
         </div>
@@ -472,7 +509,7 @@
         <Diamonds color="#3b82f6" size="60" unit="px" />
       </div>
     {:else if $error}
-      <div class="text-center py-16">
+      <div class="text-center py-16" class:text-right={$isRTL}>
         <div
           class="mx-auto w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-6"
         >
@@ -491,12 +528,12 @@
           </svg>
         </div>
         <h3 class="text-xl font-semibold text-gray-900 mb-2">
-          Error Loading Contents
+          {$_("admin_content.error.title")}
         </h3>
         <p class="text-gray-600">{$error}</p>
       </div>
     {:else if $totalItems === 0}
-      <div class="text-center py-16">
+      <div class="text-center py-16" class:text-right={$isRTL}>
         <div
           class="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6"
         >
@@ -515,10 +552,10 @@
           </svg>
         </div>
         <h3 class="text-xl font-semibold text-gray-900 mb-2">
-          No Contents Found
+          {$_("admin_content.empty.title")}
         </h3>
         <p class="text-gray-600">
-          This folder appears to be empty. Create some content to get started.
+          {$_("admin_content.empty.description")}
         </p>
       </div>
     {:else}
@@ -526,52 +563,69 @@
         class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
       >
         <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-          <div class="flex items-center justify-between">
-            <h2 class="text-lg font-semibold text-gray-900">
-              Admin Contents ({$totalItems} items)
+          <div
+            class="flex items-center justify-between"
+            class:flex-row-reverse={$isRTL}
+          >
+            <h2
+              class="text-lg font-semibold text-gray-900"
+              class:text-right={$isRTL}
+            >
+              {$_("admin_content.table.title", {
+                values: { count: $totalItems },
+              })}
             </h2>
-            <div class="text-sm text-gray-500">
-              Showing {($currentPage - 1) * $itemsPerPage + 1} to {Math.min(
-                $currentPage * $itemsPerPage,
-                $totalItems
-              )} of {$totalItems} items
+            <div class="text-sm text-gray-500" class:text-right={$isRTL}>
+              {$_("admin_content.table.showing", {
+                values: {
+                  start: ($currentPage - 1) * $itemsPerPage + 1,
+                  end: Math.min($currentPage * $itemsPerPage, $totalItems),
+                  total: $totalItems,
+                },
+              })}
             </div>
           </div>
         </div>
 
         <div class="overflow-x-auto">
-          <table class="w-full">
+          <table class="w-full" class:rtl={$isRTL}>
             <thead class="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th
                   class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  class:text-right={$isRTL}
                 >
-                  Name
+                  {$_("admin_content.table.headers.name")}
                 </th>
                 <th
                   class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  class:text-right={$isRTL}
                 >
-                  Type
+                  {$_("admin_content.table.headers.type")}
                 </th>
                 <th
                   class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  class:text-right={$isRTL}
                 >
-                  Status
+                  {$_("admin_content.table.headers.status")}
                 </th>
                 <th
                   class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  class:text-right={$isRTL}
                 >
-                  Owner
+                  {$_("admin_content.table.headers.owner")}
                 </th>
                 <th
                   class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  class:text-right={$isRTL}
                 >
-                  Created
+                  {$_("admin_content.table.headers.created")}
                 </th>
                 <th
                   class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  class:text-right={$isRTL}
                 >
-                  Actions
+                  {$_("admin_content.table.headers.actions")}
                 </th>
               </tr>
             </thead>
@@ -589,7 +643,10 @@
                   }}
                 >
                   <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="flex items-center">
+                    <div
+                      class="flex items-center"
+                      class:flex-row-reverse={$isRTL}
+                    >
                       <div class="flex-shrink-0 h-10 w-10">
                         <div
                           class="h-10 w-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center"
@@ -599,24 +656,33 @@
                           </span>
                         </div>
                       </div>
-                      <div class="ml-6">
+                      <div
+                        class="ml-6"
+                        class:ml-6={!$isRTL}
+                        class:mr-6={$isRTL}
+                        class:text-right={$isRTL}
+                      >
                         <div class="text-sm font-medium text-gray-900">
                           {getDisplayName(item)}
                         </div>
                         <div class="text-xs text-purple-600 font-medium">
                           {item.shortname}
                         </div>
-                        {#if item.attributes?.description?.ar || item.attributes?.description?.en}
+                        {#if item.attributes?.description?.[$locale] || item.attributes?.description?.en || item.attributes?.description?.ar}
                           <div class="text-sm text-gray-500 max-w-xs truncate">
-                            {item.attributes.description.ar ||
+                            {item.attributes.description[$locale] ||
                               item.attributes.description.en ||
+                              item.attributes.description.ar ||
                               ""}
                           </div>
                         {/if}
                       </div>
                     </div>
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
+                  <td
+                    class="px-6 py-4 whitespace-nowrap"
+                    class:text-right={$isRTL}
+                  >
                     <span
                       class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {getResourceTypeColor(
                         item.resource_type
@@ -625,26 +691,42 @@
                       {item.resource_type}
                     </span>
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
+                  <td
+                    class="px-6 py-4 whitespace-nowrap"
+                    class:text-right={$isRTL}
+                  >
                     <span
                       class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {item
                         .attributes?.is_active
                         ? 'bg-green-100 text-green-800'
                         : 'bg-red-100 text-red-800'}"
+                      class:flex-row-reverse={$isRTL}
                     >
                       <div
                         class="w-1.5 h-1.5 rounded-full mr-1.5 {item.attributes
                           ?.is_active
                           ? 'bg-green-400'
                           : 'bg-red-400'}"
+                        class:mr-1.5={!$isRTL}
+                        class:ml-1.5={$isRTL}
                       ></div>
-                      {item.attributes?.is_active ? "Active" : "Inactive"}
+                      {item.attributes?.is_active
+                        ? $_("admin_content.status.active")
+                        : $_("admin_content.status.inactive")}
                     </span>
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <div class="flex items-center">
+                  <td
+                    class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                    class:text-right={$isRTL}
+                  >
+                    <div
+                      class="flex items-center"
+                      class:flex-row-reverse={$isRTL}
+                    >
                       <div
                         class="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center mr-2"
+                        class:mr-2={!$isRTL}
+                        class:ml-2={$isRTL}
                       >
                         <span class="text-xs font-medium text-gray-600">
                           {item.attributes?.owner_shortname
@@ -655,15 +737,26 @@
                         </span>
                       </div>
                       <span class="text-sm text-gray-900">
-                        {item.attributes?.owner_shortname || "Unknown"}
+                        {item.attributes?.owner_shortname ||
+                          $_("admin_content.unknown")}
                       </span>
                     </div>
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td
+                    class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                    class:text-right={$isRTL}
+                  >
                     {formatDate(item.attributes?.created_at)}
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div class="flex items-center space-x-2">
+                  <td
+                    class="px-6 py-4 whitespace-nowrap text-sm font-medium"
+                    class:text-right={$isRTL}
+                  >
+                    <div
+                      class="flex items-center space-x-2"
+                      class:space-x-reverse={$isRTL}
+                      class:flex-row-reverse={$isRTL}
+                    >
                       {#if item.resource_type === "folder"}
                         <button
                           onclick={(e) => {
@@ -672,7 +765,7 @@
                           }}
                           class="text-blue-600 hover:text-blue-900 transition-colors duration-200 mx-4"
                         >
-                          Open
+                          {$_("admin_content.actions.open")}
                         </button>
                       {:else}
                         <button
@@ -682,14 +775,14 @@
                           }}
                           class="text-green-600 hover:text-green-900 transition-colors duration-200"
                         >
-                          View
+                          {$_("admin_content.actions.view")}
                         </button>
                       {/if}
                       <button
                         onclick={(e) => handleDeleteItem(item, e)}
                         class="text-red-600 hover:text-red-900 transition-colors duration-200 mx-4"
                       >
-                        Delete
+                        {$_("admin_content.actions.delete")}
                       </button>
                     </div>
                   </td>
@@ -701,18 +794,27 @@
 
         {#if $totalPages > 1}
           <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
-            <div class="flex items-center justify-between">
-              <div class="text-sm text-gray-700">
-                Page {$currentPage} of {$totalPages}
+            <div
+              class="flex items-center justify-between"
+              class:flex-row-reverse={$isRTL}
+            >
+              <div class="text-sm text-gray-700" class:text-right={$isRTL}>
+                {$_("admin_content.pagination.page_info", {
+                  values: { current: $currentPage, total: $totalPages },
+                })}
               </div>
 
-              <nav class="flex items-center space-x-1">
+              <nav
+                class="flex items-center space-x-1"
+                class:space-x-reverse={$isRTL}
+                class:flex-row-reverse={$isRTL}
+              >
                 <button
                   onclick={() => goToPage($currentPage - 1)}
                   disabled={$currentPage === 1}
                   class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                 >
-                  Previous
+                  {$_("admin_content.pagination.previous")}
                 </button>
 
                 {#each getPageNumbers() as page}
@@ -738,7 +840,7 @@
                   disabled={$currentPage === $totalPages}
                   class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                 >
-                  Next
+                  {$_("admin_content.pagination.next")}
                 </button>
               </nav>
             </div>
@@ -749,82 +851,20 @@
   </div>
 </div>
 
-<!-- {#if $showCreateModal}
-  <div
-    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-  >
-    <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-      <h3 class="text-lg font-semibold mb-4">Create New Item</h3>
-
-      <div class="space-y-4">
-        <div>
-          <label
-            class="block text-sm font-medium text-gray-700 mb-1"
-            for="itemName"
-          >
-            Item Name
-          </label>
-          <input
-            id="itemName"
-            type="text"
-            bind:value={$newItemName}
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Enter item name"
-          />
-        </div>
-
-        <div>
-          <label
-            class="block text-sm font-medium text-gray-700 mb-1"
-            for="itemType"
-          >
-            Item Type
-          </label>
-          <select
-            id="itemType"
-            bind:value={$newItemType}
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="content">Content</option>
-            <option value="folder">Folder</option>
-            <option value="ticket">Ticket</option>
-            <option value="media">Media</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="flex justify-end space-x-3 mt-6">
-        <button
-          onclick={() => showCreateModal.set(false)}
-          class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors duration-200"
-        >
-          Cancel
-        </button>
-        <button
-          onclick={handleCreateItem}
-          class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors duration-200"
-        >
-          Create
-        </button>
-      </div>
-    </div>
-  </div>
-{/if} -->
-
 {#if showCreateFolderModal}
   <div class="modal-overlay">
-    <div class="modal-container">
+    <div class="modal-container" class:rtl={$isRTL}>
       <div class="modal-header">
-        <div class="modal-header-content">
-          <h3 class="modal-title">Create New Folder</h3>
+        <div class="modal-header-content" class:text-right={$isRTL}>
+          <h3 class="modal-title">{$_("admin_content.modal.create.title")}</h3>
           <p class="modal-subtitle">
-            Configure folder settings and permissions
+            {$_("admin_content.modal.create.subtitle")}
           </p>
         </div>
         <button
           onclick={() => (showCreateFolderModal = false)}
           class="modal-close-btn"
-          aria-label="Close modal"
+          aria-label={$_("admin_content.modal.close")}
         >
           <svg
             class="w-6 h-6"
@@ -844,10 +884,12 @@
 
       <div class="modal-content">
         <div class="form-section">
-          <div class="section-header">
-            <h4 class="section-title">Basic Information</h4>
+          <div class="section-header" class:text-right={$isRTL}>
+            <h4 class="section-title">
+              {$_("admin_content.modal.basic_info.title")}
+            </h4>
             <p class="section-description">
-              Set the folder name and description
+              {$_("admin_content.modal.basic_info.description")}
             </p>
           </div>
           <MetaForm
@@ -858,37 +900,36 @@
         </div>
 
         <div class="form-section">
-          <div class="section-header">
-            <h4 class="section-title">Folder Configuration</h4>
+          <div class="section-header" class:text-right={$isRTL}>
+            <h4 class="section-title">
+              {$_("admin_content.modal.folder_config.title")}
+            </h4>
             <p class="section-description">
-              Configure folder behavior and permissions
+              {$_("admin_content.modal.folder_config.description")}
             </p>
           </div>
           <FolderForm bind:content={folderContent} on:save={handleSaveFolder} />
         </div>
       </div>
 
-      <div class="modal-footer">
+      <div class="modal-footer" class:flex-row-reverse={$isRTL}>
         <button
           onclick={() => (showCreateFolderModal = false)}
           class="btn btn-secondary"
           disabled={isCreatingFolder}
         >
-          Cancel
+          {$_("admin_content.modal.cancel")}
         </button>
         <button
-          onclick={() => {
-            event.preventDefault();
-            handleSaveFolder({ detail: folderContent });
-          }}
+          onclick={handleSaveFolder}
           class="btn btn-primary"
           disabled={isCreatingFolder}
         >
           {#if isCreatingFolder}
             <div class="spinner"></div>
-            Creating...
+            {$_("admin_content.modal.creating")}
           {:else}
-            Create Folder
+            {$_("admin_content.modal.create_folder")}
           {/if}
         </button>
       </div>
@@ -897,6 +938,10 @@
 {/if}
 
 <style>
+  .rtl {
+    direction: rtl;
+  }
+
   .modal-overlay {
     position: fixed;
     inset: 0;
@@ -932,6 +977,10 @@
     background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
     border-radius: 16px 16px 0 0;
     flex-shrink: 0;
+  }
+
+  .rtl .modal-header {
+    flex-direction: row-reverse;
   }
 
   .modal-header-content {
@@ -1129,6 +1178,10 @@
       gap: 1rem;
     }
 
+    .rtl .modal-header {
+      align-items: flex-end;
+    }
+
     .modal-header-content {
       flex: none;
       width: 100%;
@@ -1140,6 +1193,11 @@
       right: 1rem;
     }
 
+    .rtl .modal-close-btn {
+      right: auto;
+      left: 1rem;
+    }
+
     .modal-content {
       padding: 1rem;
     }
@@ -1147,6 +1205,10 @@
     .modal-footer {
       padding: 1rem;
       flex-direction: column-reverse;
+    }
+
+    .rtl .modal-footer {
+      flex-direction: column;
     }
 
     .btn {

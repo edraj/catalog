@@ -5,7 +5,8 @@
   import { formatDate, renderStateString, truncateString } from "@/lib/helpers";
   import { errorToastMessage } from "@/lib/toasts_messages";
   import { user } from "@/stores/user";
-  import { _ } from "@/i18n";
+  import { _, locale } from "@/i18n";
+  import { derived } from "svelte/store";
   import {
     PlusOutline,
     EditOutline,
@@ -17,16 +18,19 @@
     SearchOutline,
     FilterOutline,
   } from "flowbite-svelte-icons";
-
   $goto;
-  $params;
-  let entities: any[] = $state([]);
-  let filteredEntities: any[] = $state([]);
+  let entities = $state([]);
+  let filteredEntities = $state([]);
   let isLoading = $state(true);
   let searchTerm = $state("");
   let statusFilter = $state("all");
   let sortBy = $state("updated_at");
   let sortOrder = $state("desc");
+
+  const isRTL = derived(
+    locale,
+    ($locale) => $locale === "ar" || $locale === "ku"
+  );
 
   onMount(async () => {
     await fetchEntities();
@@ -53,7 +57,7 @@
         title:
           entity.attributes?.payload?.body?.title ||
           entity.attributes?.displayname?.en ||
-          "Untitled",
+          $_("my_entries.untitled"),
         content: entity.attributes?.payload?.body?.content || "",
         tags: entity.attributes?.tags || [],
         state: entity.attributes?.state || "unknown",
@@ -74,7 +78,7 @@
       }));
     } catch (error) {
       console.error("Error fetching entities:", error);
-      errorToastMessage("An error occurred while fetching your entries");
+      errorToastMessage($_("my_entries.error.fetch_failed"));
       entities = [];
     } finally {
       isLoading = false;
@@ -159,7 +163,7 @@
     filterAndSortEntities();
   }
 
-  function viewEntity(entity: any) {
+  function viewEntity(entity) {
     $goto("/entries/[space_name]/[subpath]/[shortname]/[resource_type]", {
       shortname: entity.shortname,
       space_name: entity.space_name,
@@ -168,7 +172,7 @@
     });
   }
 
-  function editEntity(entity: any) {
+  function editEntity(entity) {
     $goto("/entries/[shortname]/edit", { shortname: entity.shortname });
   }
 
@@ -176,23 +180,39 @@
     $goto("/entries/create");
   }
 
-  function getStatusBadge(entity: any) {
+  function getStatusBadge(entity) {
     if (!entity.is_active) {
-      return { text: "Draft", class: "bg-gray-100 text-gray-800" };
+      return {
+        text: $_("my_entries.status.draft"),
+        class: "bg-gray-100 text-gray-800",
+      };
     } else if (entity.state === "pending") {
-      return { text: "Pending", class: "bg-yellow-100 text-yellow-800" };
+      return {
+        text: $_("my_entries.status.pending"),
+        class: "bg-yellow-100 text-yellow-800",
+      };
     } else if (entity.state === "approved") {
-      return { text: "Published", class: "bg-green-100 text-green-800" };
+      return {
+        text: $_("my_entries.status.published"),
+        class: "bg-green-100 text-green-800",
+      };
     } else if (entity.state === "rejected") {
-      return { text: "Rejected", class: "bg-red-100 text-red-800" };
+      return {
+        text: $_("my_entries.status.rejected"),
+        class: "bg-red-100 text-red-800",
+      };
     } else {
-      return { text: "Active", class: "bg-blue-100 text-blue-800" };
+      return {
+        text: $_("my_entries.status.active"),
+        class: "bg-blue-100 text-blue-800",
+      };
     }
   }
 </script>
 
 <div
   class="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50"
+  class:rtl={$isRTL}
 >
   <div class="container mx-auto px-6 py-8 max-w-7xl">
     <div class="mb-8">
@@ -200,9 +220,9 @@
         class="flex flex-col lg:flex-row lg:items-center justify-between gap-6"
       >
         <div>
-          <h1 class="text-4xl hero-title">My Entries</h1>
+          <h1 class="text-4xl hero-title">{$_("my_entries.title")}</h1>
           <p class="text-gray-600 text-lg">
-            Manage and track your content submissions
+            {$_("my_entries.subtitle")}
           </p>
         </div>
 
@@ -211,7 +231,7 @@
           class="btn-primary inline-flex items-center"
         >
           <PlusOutline class="mx-2 w-5 h-5" />
-          Create New Entry
+          {$_("my_entries.create_new")}
         </button>
       </div>
     </div>
@@ -221,31 +241,31 @@
         <!-- Search -->
         <div class="relative">
           <SearchOutline
-            class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+            class="absolute top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 search-icon"
           />
           <input
             type="text"
             bind:value={searchTerm}
-            placeholder="Search entries..."
-            class="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+            placeholder={$_("my_entries.search.placeholder")}
+            class="w-full search-input py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
           />
         </div>
 
         <!-- Status Filter -->
         <div class="relative">
           <FilterOutline
-            class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+            class="absolute top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 filter-icon"
           />
           <select
             bind:value={statusFilter}
             onchange={handleFilterChange}
-            class="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 appearance-none bg-white"
+            class="w-full filter-select py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 appearance-none bg-white"
           >
-            <option value="all">All Status</option>
-            <option value="active">Published</option>
-            <option value="inactive">Draft</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
+            <option value="all">{$_("my_entries.filter.all_status")}</option>
+            <option value="active">{$_("my_entries.filter.published")}</option>
+            <option value="inactive">{$_("my_entries.filter.draft")}</option>
+            <option value="pending">{$_("my_entries.filter.pending")}</option>
+            <option value="approved">{$_("my_entries.filter.approved")}</option>
           </select>
         </div>
 
@@ -253,23 +273,27 @@
         <select
           bind:value={sortBy}
           onchange={handleSortChange}
-          class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 appearance-none bg-white"
+          class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 appearance-none bg-white sort-select"
         >
-          <option value="updated_at">Last Updated</option>
-          <option value="created_at">Date Created</option>
-          <option value="title">Title</option>
-          <option value="reactions">Reactions</option>
-          <option value="comments">Comments</option>
+          <option value="updated_at"
+            >{$_("my_entries.sort.last_updated")}</option
+          >
+          <option value="created_at"
+            >{$_("my_entries.sort.date_created")}</option
+          >
+          <option value="title">{$_("my_entries.sort.title")}</option>
+          <option value="reactions">{$_("my_entries.sort.reactions")}</option>
+          <option value="comments">{$_("my_entries.sort.comments")}</option>
         </select>
 
         <!-- Sort Order -->
         <select
           bind:value={sortOrder}
           onchange={handleSortChange}
-          class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 appearance-none bg-white"
+          class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 appearance-none bg-white sort-order-select"
         >
-          <option value="desc">Newest First</option>
-          <option value="asc">Oldest First</option>
+          <option value="desc">{$_("my_entries.sort.newest_first")}</option>
+          <option value="asc">{$_("my_entries.sort.oldest_first")}</option>
         </select>
       </div>
     </div>
@@ -280,25 +304,27 @@
           <div
             class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"
           ></div>
-          <p class="text-gray-600 text-lg">Loading your entries...</p>
+          <p class="text-gray-600 text-lg">{$_("my_entries.loading")}</p>
         </div>
       </div>
     {:else if filteredEntities.length === 0}
       <div class="text-center py-20">
         <h3 class="text-2xl font-semibold text-gray-900 my-3">
-          {entities.length === 0 ? "No entries yet" : "No matching entries"}
+          {entities.length === 0
+            ? $_("my_entries.empty.no_entries")
+            : $_("my_entries.empty.no_matches")}
         </h3>
         <p class="text-gray-600 mb-8 max-w-md mx-auto">
           {entities.length === 0
-            ? "Start creating your first entry to share your ideas and content with the world."
-            : "Try adjusting your search or filter criteria to find what you're looking for."}
+            ? $_("my_entries.empty.no_entries_description")
+            : $_("my_entries.empty.no_matches_description")}
         </p>
         {#if entities.length === 0}
           <button
             onclick={createNewEntry}
             class="inline-flex items-center btn-primary"
           >
-            Create Your First Entry
+            {$_("my_entries.create_first")}
           </button>
         {/if}
       </div>
@@ -306,9 +332,11 @@
       <!-- Stats Summary -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between stats-item">
             <div>
-              <p class="text-sm font-medium text-gray-600">Total Entries</p>
+              <p class="text-sm font-medium text-gray-600">
+                {$_("my_entries.stats.total_entries")}
+              </p>
               <p class="text-3xl font-bold text-gray-900">{entities.length}</p>
             </div>
             <div
@@ -320,9 +348,11 @@
         </div>
 
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between stats-item">
             <div>
-              <p class="text-sm font-medium text-gray-600">Published</p>
+              <p class="text-sm font-medium text-gray-600">
+                {$_("my_entries.stats.published")}
+              </p>
               <p class="text-3xl font-bold text-green-600">
                 {entities.filter((e) => e.is_active && e.state === "approved")
                   .length}
@@ -337,9 +367,11 @@
         </div>
 
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between stats-item">
             <div>
-              <p class="text-sm font-medium text-gray-600">Total Reactions</p>
+              <p class="text-sm font-medium text-gray-600">
+                {$_("my_entries.stats.total_reactions")}
+              </p>
               <p class="text-3xl font-bold text-red-500">
                 {entities.reduce((sum, e) => sum + (e.reaction || 0), 0)}
               </p>
@@ -353,9 +385,11 @@
         </div>
 
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between stats-item">
             <div>
-              <p class="text-sm font-medium text-gray-600">Total Comments</p>
+              <p class="text-sm font-medium text-gray-600">
+                {$_("my_entries.stats.total_comments")}
+              </p>
               <p class="text-3xl font-bold text-blue-600">
                 {entities.reduce((sum, e) => sum + (e.comment || 0), 0)}
               </p>
@@ -374,33 +408,33 @@
         class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
       >
         <div class="overflow-x-auto">
-          <table class="w-full">
+          <table class="w-full entries-table">
             <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
               <tr>
                 <th
-                  class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                  class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider table-header"
                 >
-                  Entry
+                  {$_("my_entries.table.entry")}
                 </th>
                 <th
-                  class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                  class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider table-header"
                 >
-                  Status
+                  {$_("my_entries.table.status")}
                 </th>
                 <th
-                  class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                  class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider table-header"
                 >
-                  Engagement
+                  {$_("my_entries.table.engagement")}
                 </th>
                 <th
-                  class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                  class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider table-header"
                 >
-                  Updated
+                  {$_("my_entries.table.updated")}
                 </th>
                 <th
-                  class="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                  class="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider table-header-actions"
                 >
-                  Actions
+                  {$_("my_entries.table.actions")}
                 </th>
               </tr>
             </thead>
@@ -410,12 +444,12 @@
                   class="hover:bg-gray-50 transition-colors duration-150 group"
                 >
                   <td class="px-6 py-4">
-                    <div class="flex items-start space-x-4">
+                    <div class="flex items-start space-x-4 entry-content">
                       <div class="flex-1 min-w-0">
                         <h3
                           class="text-lg font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors duration-150 line-clamp-2"
                         >
-                          {entity.title || "Untitled"}
+                          {entity.title || $_("my_entries.untitled")}
                         </h3>
                         {#if entity.content}
                           <p class="text-sm text-gray-600 mt-1 line-clamp-2">
@@ -423,12 +457,12 @@
                           </p>
                         {/if}
                         {#if entity.tags && entity.tags.length > 0}
-                          <div class="flex flex-wrap gap-1 mt-2">
+                          <div class="flex flex-wrap gap-1 mt-2 tags-container">
                             {#each entity.tags.slice(0, 3) as tag}
                               <span
                                 class="inline-flex items-center px-2 py-1 bg-indigo-50 text-indigo-700 rounded-md text-xs font-medium"
                               >
-                                <TagOutline class="w-3 h-3 mr-1" />
+                                <TagOutline class="w-3 h-3 tag-icon-inline" />
                                 {tag}
                               </span>
                             {/each}
@@ -436,7 +470,9 @@
                               <span
                                 class="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-600 rounded-md text-xs font-medium"
                               >
-                                +{entity.tags.length - 3} more
+                                {$_("my_entries.tags.more", {
+                                  values: { count: entity.tags.length - 3 },
+                                })}
                               </span>
                             {/if}
                           </div>
@@ -456,40 +492,46 @@
                   </td>
 
                   <td class="px-6 py-4">
-                    <div class="flex items-center space-x-4 text-sm">
+                    <div
+                      class="flex items-center space-x-4 text-sm engagement-stats"
+                    >
                       <div class="flex items-center text-red-500">
-                        <HeartSolid class="w-4 h-4 mr-1" />
+                        <HeartSolid class="w-4 h-4 engagement-icon" />
                         <span class="font-medium">{entity.reaction || 0}</span>
                       </div>
                       <div class="flex items-center text-blue-500">
-                        <MessagesSolid class="w-4 h-4 mr-1" />
+                        <MessagesSolid class="w-4 h-4 engagement-icon" />
                         <span class="font-medium">{entity.comment || 0}</span>
                       </div>
                     </div>
                   </td>
 
                   <td class="px-6 py-4">
-                    <div class="flex items-center text-sm text-gray-600">
-                      <ClockOutline class="w-4 h-4 mr-2" />
+                    <div
+                      class="flex items-center text-sm text-gray-600 date-info"
+                    >
+                      <ClockOutline class="w-4 h-4 date-icon" />
                       {entity.updated_at}
                     </div>
                   </td>
 
                   <td class="px-6 py-4 text-right">
-                    <div class="flex items-center justify-end space-x-2">
+                    <div
+                      class="flex items-center justify-end space-x-2 action-buttons"
+                    >
                       <button
                         onclick={() => viewEntity(entity)}
                         class="inline-flex items-center px-3 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors duration-150"
                       >
-                        <EyeOutline class="w-4 h-4 mr-1" />
-                        View
+                        <EyeOutline class="w-4 h-4 action-icon" />
+                        {$_("my_entries.actions.view")}
                       </button>
                       <button
                         onclick={() => editEntity(entity)}
                         class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-150"
                       >
-                        <EditOutline class="w-4 h-4 mr-1" />
-                        Edit
+                        <EditOutline class="w-4 h-4 action-icon" />
+                        {$_("my_entries.actions.edit")}
                       </button>
                     </div>
                   </td>
@@ -502,13 +544,77 @@
 
       <!-- Results Summary -->
       <div class="mt-6 text-center text-sm text-gray-600">
-        Showing {filteredEntities.length} of {entities.length} entries
+        {$_("my_entries.results.showing", {
+          values: {
+            filtered: filteredEntities.length,
+            total: entities.length,
+          },
+        })}
       </div>
     {/if}
   </div>
 </div>
 
 <style>
+  .rtl {
+    direction: rtl;
+  }
+
+  .rtl .search-icon {
+    left: auto;
+    right: 0.75rem;
+  }
+
+  .rtl .filter-icon {
+    left: auto;
+    right: 0.75rem;
+  }
+
+  .rtl .search-input {
+    padding-left: 1rem;
+    padding-right: 2.75rem;
+    text-align: right;
+  }
+
+  .rtl .filter-select {
+    padding-left: 1rem;
+    padding-right: 2.75rem;
+    text-align: right;
+  }
+
+  .rtl .sort-select,
+  .rtl .sort-order-select {
+    text-align: right;
+  }
+
+  .rtl .table-header {
+    text-align: right;
+  }
+
+  .rtl .table-header-actions {
+    text-align: left;
+  }
+
+  .rtl .tag-icon-inline {
+    margin-right: 0;
+    margin-left: 0.25rem;
+  }
+
+  .rtl .engagement-icon {
+    margin-right: 0;
+    margin-left: 0.25rem;
+  }
+
+  .rtl .date-icon {
+    margin-right: 0;
+    margin-left: 0.5rem;
+  }
+
+  .rtl .action-icon {
+    margin-right: 0;
+    margin-left: 0.25rem;
+  }
+
   .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -542,5 +648,27 @@
   .btn-primary:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+  }
+
+  @media (max-width: 768px) {
+    .rtl .stats-item {
+      flex-direction: row;
+    }
+
+    .rtl .entry-content {
+      flex-direction: column;
+      space-x-reverse: 0;
+    }
+
+    .rtl .engagement-stats {
+      flex-direction: row;
+      space-x-reverse: 0;
+    }
+
+    .rtl .action-buttons {
+      flex-direction: row;
+      space-x-reverse: 0;
+      justify-content: flex-start;
+    }
   }
 </style>

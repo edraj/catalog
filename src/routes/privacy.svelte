@@ -6,7 +6,9 @@
     LockSolid,
     UsersSolid,
   } from "flowbite-svelte-icons";
+  import { _ } from "@/i18n";
   $goto;
+
   function handleContactUs() {
     $goto("/contact");
   }
@@ -17,11 +19,11 @@
     <div class="hero-content">
       <div class="hero-text">
         <h1 class="hero-title">
-          <span class="gradient-text">Privacy</span> Policy
+          <span class="gradient-text">{$_("privacy.hero.title")}</span>
+          {$_("privacy.hero.policy")}
         </h1>
         <p class="hero-description">
-          We value your privacy and are committed to protecting your personal
-          information. Learn how we collect, use, and safeguard your data.
+          {$_("privacy.hero.description")}
         </p>
       </div>
     </div>
@@ -30,46 +32,42 @@
   <section class="content-section">
     <div class="content-wrapper">
       <div class="privacy-principles">
-        <h2 class="section-title">Our Privacy Principles</h2>
+        <h2 class="section-title">{$_("privacy.principles.title")}</h2>
         <div class="principles-grid">
           <div class="principle-card">
             <div class="principle-icon">
               <ShieldCheckSolid class="icon" color="white" />
             </div>
-            <h3>Data Protection</h3>
+            <h3>{$_("privacy.principles.data_protection.title")}</h3>
             <p>
-              We use industry-standard security measures to protect your
-              personal information.
+              {$_("privacy.principles.data_protection.description")}
             </p>
           </div>
           <div class="principle-card">
             <div class="principle-icon">
               <EyeSlashSolid class="icon" color="white" />
             </div>
-            <h3>Minimal Collection</h3>
+            <h3>{$_("privacy.principles.minimal_collection.title")}</h3>
             <p>
-              We only collect data that is necessary to provide and improve our
-              services.
+              {$_("privacy.principles.minimal_collection.description")}
             </p>
           </div>
           <div class="principle-card">
             <div class="principle-icon">
               <LockSolid class="icon" color="white" />
             </div>
-            <h3>Secure Storage</h3>
+            <h3>{$_("privacy.principles.secure_storage.title")}</h3>
             <p>
-              Your data is encrypted and stored securely with limited access
-              controls.
+              {$_("privacy.principles.secure_storage.description")}
             </p>
           </div>
           <div class="principle-card">
             <div class="principle-icon">
               <UsersSolid class="icon" color="white" />
             </div>
-            <h3>User Control</h3>
+            <h3>{$_("privacy.principles.user_control.title")}</h3>
             <p>
-              You have control over your data and can request access, updates,
-              or deletion.
+              {$_("privacy.principles.user_control.description")}
             </p>
           </div>
         </div>
@@ -77,58 +75,56 @@
 
       <div class="privacy-details">
         <div class="detail-section">
-          <h3>Information We Collect</h3>
+          <h3>{$_("privacy.information_collect.title")}</h3>
           <ul>
-            <li>Account information (username, email, profile details)</li>
-            <li>Content you create and share on the platform</li>
-            <li>Usage data and analytics to improve our services</li>
-            <li>Communication data when you contact us</li>
+            <li>{$_("privacy.information_collect.account_info")}</li>
+            <li>{$_("privacy.information_collect.content")}</li>
+            <li>{$_("privacy.information_collect.usage_data")}</li>
+            <li>{$_("privacy.information_collect.communication")}</li>
           </ul>
         </div>
 
         <div class="detail-section">
-          <h3>How We Use Your Information</h3>
+          <h3>{$_("privacy.how_we_use.title")}</h3>
           <ul>
-            <li>To provide and maintain our catalog services</li>
-            <li>To personalize your experience on the platform</li>
-            <li>To communicate with you about updates and features</li>
-            <li>To improve our services and develop new features</li>
+            <li>{$_("privacy.how_we_use.provide_services")}</li>
+            <li>{$_("privacy.how_we_use.personalize")}</li>
+            <li>{$_("privacy.how_we_use.communicate")}</li>
+            <li>{$_("privacy.how_we_use.improve")}</li>
           </ul>
         </div>
 
         <div class="detail-section">
-          <h3>Data Sharing</h3>
+          <h3>{$_("privacy.data_sharing.title")}</h3>
           <p>
-            We do not sell your personal information. We may share data only in
-            these limited circumstances:
+            {$_("privacy.data_sharing.description")}
           </p>
           <ul>
-            <li>With your explicit consent</li>
-            <li>To comply with legal obligations</li>
-            <li>To protect our rights and prevent fraud</li>
-            <li>With service providers who help us operate the platform</li>
+            <li>{$_("privacy.data_sharing.consent")}</li>
+            <li>{$_("privacy.data_sharing.legal")}</li>
+            <li>{$_("privacy.data_sharing.protect_rights")}</li>
+            <li>{$_("privacy.data_sharing.service_providers")}</li>
           </ul>
         </div>
 
         <div class="detail-section">
-          <h3>Your Rights</h3>
+          <h3>{$_("privacy.your_rights.title")}</h3>
           <ul>
-            <li>Access your personal data</li>
-            <li>Correct inaccurate information</li>
-            <li>Delete your account and data</li>
-            <li>Export your data</li>
-            <li>Opt out of marketing communications</li>
+            <li>{$_("privacy.your_rights.access")}</li>
+            <li>{$_("privacy.your_rights.correct")}</li>
+            <li>{$_("privacy.your_rights.delete")}</li>
+            <li>{$_("privacy.your_rights.export")}</li>
+            <li>{$_("privacy.your_rights.opt_out")}</li>
           </ul>
         </div>
 
         <div class="contact-section">
-          <h3>Questions About Privacy?</h3>
+          <h3>{$_("privacy.questions.title")}</h3>
           <p>
-            If you have any questions about this privacy policy or how we handle
-            your data, please don't hesitate to contact us.
+            {$_("privacy.questions.description")}
           </p>
           <button class="btn-contact" onclick={handleContactUs}>
-            Contact Us
+            {$_("privacy.questions.button")}
           </button>
         </div>
       </div>
@@ -288,14 +284,6 @@
     margin-bottom: 0.5rem;
     padding-left: 1.5rem;
     position: relative;
-  }
-
-  .detail-section li::before {
-    content: "•";
-    color: #3b82f6;
-    font-weight: bold;
-    position: absolute;
-    left: 0;
   }
 
   .contact-section {

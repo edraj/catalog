@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { run } from "svelte/legacy";
+
   import MetaPermissionForm from "@/components/forms/MetaPermissionForm.svelte";
   import {
     successToastMessage,
@@ -14,6 +16,14 @@
     createPermission,
   } from "@/lib/dmart_services";
   import { ResourceType } from "@edraj/tsdmart";
+  import { _ } from "@/i18n";
+  import { locale } from "@/i18n";
+  import { derived } from "svelte/store";
+
+  const isRTL = derived(
+    locale,
+    ($locale) => $locale === "ar" || $locale === "ku"
+  );
 
   let formData = $state({});
   let validateFn = $state(() => true);
@@ -54,11 +64,11 @@
           `Loaded ${permissionTypes.length} permission types`
         );
       } else {
-        errorToastMessage("Failed to load permission types");
+        errorToastMessage($_("failed_to_load_permission_types"));
       }
     } catch (error) {
       console.error("Error loading permission types:", error);
-      errorToastMessage("Failed to load permission types");
+      errorToastMessage($_("failed_to_load_permission_types"));
     } finally {
       isLoadingPermissions = false;
     }
@@ -70,7 +80,7 @@
       spaces = spacesResponse.records || [];
     } catch (error) {
       console.error("Error loading spaces:", error);
-      errorToastMessage("Failed to load spaces");
+      errorToastMessage($_("failed_to_load_spaces"));
     }
   }
 
@@ -112,7 +122,7 @@
       }
     } catch (error) {
       console.error("Error loading permission data:", error);
-      errorToastMessage("Failed to load permission data");
+      errorToastMessage($_("failed_to_load_permission_data"));
     } finally {
       isLoading = false;
     }
@@ -163,14 +173,14 @@
       }
     } catch (error) {
       console.error("Error saving permissions:", error);
-      errorToastMessage("Failed to save permissions");
+      errorToastMessage($_("failed_to_save_permissions"));
     } finally {
       isSaving = false;
     }
   }
   async function createNewPermission() {
     if (!newPermissionName.trim()) {
-      errorToastMessage("Please enter a permission name");
+      errorToastMessage($_("enter_permission_name"));
       return;
     }
 
@@ -186,17 +196,6 @@
         restricted_fields: [],
         allowed_fields_values: {},
       };
-
-      // const permissionData = {
-      //   shortname: newPermissionName,
-      //   tags: payload.tags,
-      //   subpaths: payload.subpaths,
-      //   resource_types: payload.resource_types,
-      //   actions: payload.actions,
-      //   conditions: payload.conditions,
-      //   restricted_fields: payload.restricted_fields,
-      //   allowed_fields_values: payload.allowed_fields_values,
-      // };
 
       const result = await createPermission(
         permissionData,
@@ -220,7 +219,7 @@
       }
     } catch (error) {
       console.error("Error creating permission:", error);
-      errorToastMessage("Failed to create permission");
+      errorToastMessage($_("failed_to_create_permission"));
     } finally {
       isCreating = false;
     }
@@ -228,7 +227,7 @@
 
   async function deletePermission() {
     if (!currentPermissionShortname) {
-      errorToastMessage("No permission selected to delete");
+      errorToastMessage($_("no_permission_selected"));
       return;
     }
 
@@ -261,7 +260,7 @@
       }
     } catch (error) {
       console.error("Error deleting permission:", error);
-      errorToastMessage("Failed to delete permission");
+      errorToastMessage($_("failed_to_delete_permission"));
     } finally {
       isDeleting = false;
     }
@@ -272,28 +271,28 @@
     await loadPermissionTypes();
   });
 
-  $effect(() => {
+  run(() => {
     if (selectedPermissionType && !isLoadingPermissions) {
       loadPermissionData(selectedPermissionType);
     }
   });
 </script>
 
-<div class="container">
+<div class="container" class:rtl={$isRTL}>
   <div class="page-header">
-    <h1 class="page-title">User Permissions Management</h1>
+    <h1 class="page-title">{$_("user_permissions_management")}</h1>
     <p class="page-subtitle">
-      Configure access permissions for different user types
+      {$_("configure_access_permissions")}
     </p>
   </div>
 
   <div class="card">
     <div class="card-header">
-      <h2 class="card-title">Select Permission Type</h2>
+      <h2 class="card-title">{$_("select_permission_type")}</h2>
       <div class="header-actions">
         <button class="btn btn-success" onclick={() => (showAddModal = true)}>
           <span>+</span>
-          Add Permission
+          {$_("add_permission")}
         </button>
         {#if permissionExists}
           <button
@@ -306,7 +305,7 @@
             {:else}
               <span>🗑</span>
             {/if}
-            Delete
+            {$_("delete")}
           </button>
         {/if}
       </div>
@@ -330,12 +329,12 @@
         {#if permissionExists}
           <div class="status-indicator status-info">
             <span>ℹ</span>
-            <span>Existing configuration</span>
+            <span>{$_("existing_configuration")}</span>
           </div>
         {:else}
           <div class="status-indicator status-warning">
             <span>⚠</span>
-            <span>New configuration</span>
+            <span>{$_("new_configuration")}</span>
           </div>
         {/if}
       </div>
@@ -345,7 +344,7 @@
   <div class="alert alert-info">
     <div class="alert-icon">ℹ</div>
     <div>
-      <strong>Permission Info:</strong>
+      <strong>{$_("permission_info")}:</strong>
       {#if selectedPermissionType === "world"}
         World permissions apply to all guests and unauthenticated users. These
         are the most restrictive permissions.
@@ -360,7 +359,7 @@
     <div class="card">
       <div class="loading-card">
         <div class="spinner"></div>
-        <span>Loading permission data...</span>
+        <span>{$_("loading_permission_data")}</span>
       </div>
     </div>
   {:else}
@@ -379,15 +378,19 @@
                 class="spinner"
                 style="width: 16px; height: 16px; border-width: 2px; margin-right: 8px;"
               ></div>
-              Saving...
+              {$_("saving")}
             {:else}
-              {permissionExists ? "Update" : "Create"} Permissions
+              {permissionExists ? $_("update") : $_("create")}
+              {$_("permissions")}
             {/if}
           </button>
         </div>
 
         <div class="meta-info">
-          <div><strong>Permission Type:</strong> {selectedPermissionType}</div>
+          <div>
+            <strong>{$_("permission_type")}:</strong>
+            {selectedPermissionType}
+          </div>
           {#if currentPermissionShortname}
             <div>
               <strong>ID:</strong>
@@ -398,61 +401,39 @@
       </div>
     </div>
   {/if}
-
-  {#if spaces.length > 0}
-    <div class="card">
-      <h3 class="card-title">Available Spaces</h3>
-      <div class="spaces-grid">
-        {#each spaces as space}
-          <div class="space-item">
-            <div class="space-name">{space.shortname}</div>
-            {#if space.attributes?.displayname?.en}
-              <div class="space-display">{space.attributes.displayname.en}</div>
-            {/if}
-          </div>
-        {/each}
-      </div>
-    </div>
-  {/if}
 </div>
 
 <!-- Add Permission Modal -->
 {#if showAddModal}
+  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
   <div
     class="modal-overlay"
     role="dialog"
     aria-modal="true"
-    tabindex="-1"
     onkeydown={(e) => {
       if (e.key === "Escape") showAddModal = false;
     }}
   >
-    <div
-      class="modal"
-      role="document"
-      tabindex="0"
-      onkeydown={(e) => {
-        if (e.key === "Escape") showAddModal = false;
-      }}
-      onclick={(e) => e.stopPropagation()}
-    >
+    <div class="modal" role="document">
       <div class="modal-header">
-        <h3>Add New Permission</h3>
+        <h3>{$_("add_new_permission")}</h3>
         <button
           class="modal-close"
           onclick={() => (showAddModal = false)}
-          aria-label="Close"
+          aria-label={$_("close")}
         >
           ×
         </button>
       </div>
       <div class="modal-body">
-        <label class="form-label" for="permissionName">Permission Name</label>
+        <label class="form-label" for="permissionName"
+          >{$_("permission_name")}</label
+        >
         <input
           type="text"
           class="form-input"
           bind:value={newPermissionName}
-          placeholder="Enter permission name"
+          placeholder={$_("enter_permission_name")}
           id="permissionName"
         />
       </div>
@@ -461,7 +442,7 @@
           class="btn btn-secondary"
           onclick={() => (showAddModal = false)}
         >
-          Cancel
+          {$_("cancel")}
         </button>
         <button
           class="btn btn-primary"
@@ -470,9 +451,9 @@
         >
           {#if isCreating}
             <div class="spinner-small"></div>
-            Creating...
+            {$_("creating")}
           {:else}
-            Create Permission
+            {$_("create_permission")}
           {/if}
         </button>
       </div>
@@ -482,48 +463,39 @@
 
 <!-- Delete Confirmation Modal -->
 {#if showDeleteConfirm}
+  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
   <div
     class="modal-overlay"
     role="dialog"
     aria-modal="true"
-    tabindex="-1"
     onkeydown={(e) => {
       if (e.key === "Escape") showDeleteConfirm = false;
     }}
   >
-    <div
-      class="modal"
-      role="document"
-      tabindex="0"
-      onkeydown={(e) => {
-        if (e.key === "Escape") showDeleteConfirm = false;
-      }}
-      onclick={(e) => e.stopPropagation()}
-    >
+    <div class="modal" role="document">
       <div class="modal-header">
-        <h3>Delete Permission</h3>
+        <h3>{$_("delete_permission")}</h3>
         <button
           class="modal-close"
           onclick={() => (showDeleteConfirm = false)}
-          aria-label="Close"
+          aria-label={$_("close")}
         >
           ×
         </button>
       </div>
       <div class="modal-body">
         <p>
-          Are you sure you want to delete the permission <strong
-            >"{selectedPermissionType}"</strong
-          >?
+          {$_("are_you_sure_delete_permission")}
+          <strong>"{selectedPermissionType}"</strong>?
         </p>
-        <p class="text-danger">This action cannot be undone.</p>
+        <p class="text-danger">{$_("action_cannot_be_undone")}</p>
       </div>
       <div class="modal-footer">
         <button
           class="btn btn-secondary"
           onclick={() => (showDeleteConfirm = false)}
         >
-          Cancel
+          {$_("cancel")}
         </button>
         <button
           class="btn btn-danger"
@@ -532,9 +504,9 @@
         >
           {#if isDeleting}
             <div class="spinner-small"></div>
-            Deleting...
+            {$_("deleting")}
           {:else}
-            Delete Permission
+            {$_("delete_permission")}
           {/if}
         </button>
       </div>
@@ -543,6 +515,10 @@
 {/if}
 
 <style>
+  .rtl {
+    direction: rtl;
+  }
+
   .container {
     max-width: 1200px;
     margin: 0 auto;

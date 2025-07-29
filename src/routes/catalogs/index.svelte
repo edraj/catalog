@@ -3,8 +3,7 @@
   import { getSpaces } from "@/lib/dmart_services";
   import { Diamonds } from "svelte-loading-spinners";
   import { goto } from "@roxi/routify";
-  import { _ } from "@/i18n";
-  import { locale } from "@/i18n";
+  import { _, locale } from "@/i18n";
   import { derived } from "svelte/store";
   $goto;
 
@@ -28,7 +27,7 @@
       filteredSpaces = spaces;
     } catch (err) {
       console.error("Error fetching spaces:", err);
-      error = $_("error.failed_load_catalogs");
+      error = $_("catalogs.error.failed_load");
     } finally {
       isLoading = false;
     }
@@ -50,7 +49,7 @@
         space.shortname
       );
     }
-    return space.shortname || $_("common.unnamed_space");
+    return space.shortname || $_("catalogs.unnamed_space");
   }
 
   function getDescription(space: any): string {
@@ -60,10 +59,10 @@
         description[$locale] ||
         description.en ||
         description.ar ||
-        $_("common.no_description")
+        $_("catalogs.no_description")
       );
     }
-    return $_("common.no_description");
+    return $_("catalogs.no_description");
   }
 
   function formatDate(dateString: string): string {
@@ -126,10 +125,10 @@
     <div class="hero-content">
       <div class="hero-text">
         <h1 class="hero-title">
-          {$_("catalogs.explore_title")}
+          {$_("catalogs.hero.title")}
         </h1>
         <p class="hero-description">
-          {$_("catalogs.explore_description")}
+          {$_("catalogs.hero.description")}
         </p>
       </div>
     </div>
@@ -153,7 +152,7 @@
         </svg>
         <input
           type="text"
-          placeholder="Search Spaces..."
+          placeholder={$_("catalogs.search.placeholder")}
           bind:value={searchQuery}
           class="search-input"
         />
@@ -161,9 +160,9 @@
 
       <div class="filters">
         <select bind:value={sortBy} class="filter-select">
-          <option value="name">Sort by name</option>
-          <option value="created">Sort by created</option>
-          <option value="updated">Sort by updated</option>
+          <option value="name">{$_("catalogs.sort.name")}</option>
+          <option value="created">{$_("catalogs.sort.created")}</option>
+          <option value="updated">{$_("catalogs.sort.updated")}</option>
         </select>
       </div>
     </div>
@@ -187,7 +186,7 @@
             ></path>
           </svg>
         </div>
-        <h3 class="error-title">{$_("error.loading_catalogs_title")}</h3>
+        <h3 class="error-title">{$_("catalogs.error.title")}</h3>
         <p class="error-message">{error}</p>
       </div>
     {:else if filteredSpaces.length === 0}
@@ -204,13 +203,13 @@
         </div>
         <h3 class="empty-title">
           {searchQuery
-            ? $_("catalogs.no_results_title")
-            : $_("catalogs.no_catalogs_title")}
+            ? $_("catalogs.empty.no_results_title")
+            : $_("catalogs.empty.no_catalogs_title")}
         </h3>
         <p class="empty-message">
           {searchQuery
-            ? $_("catalogs.no_results_description")
-            : $_("catalogs.no_catalogs_description")}
+            ? $_("catalogs.empty.no_results_description")
+            : $_("catalogs.empty.no_catalogs_description")}
         </p>
       </div>
     {:else}
@@ -305,7 +304,7 @@
                       d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
                     ></path>
                   </svg>
-                  {$_("actions.visit")}
+                  {$_("catalogs.actions.visit")}
                 </a>
               {/if}
             </div>
@@ -388,12 +387,17 @@
 
   .search-icon {
     position: absolute;
-    left: 1rem;
     top: 50%;
     transform: translateY(-50%);
     width: 1.25rem;
     height: 1.25rem;
     color: #94a3b8;
+    left: 1rem;
+  }
+
+  .rtl .search-icon {
+    left: auto;
+    right: 1rem;
   }
 
   .search-input {
@@ -404,6 +408,11 @@
     font-size: 1rem;
     background: white;
     transition: all 0.2s ease;
+  }
+
+  .rtl .search-input {
+    padding: 0.875rem 3rem 0.875rem 1rem;
+    text-align: right;
   }
 
   .search-input:focus {
@@ -425,6 +434,10 @@
     background: white;
     cursor: pointer;
     transition: all 0.2s ease;
+  }
+
+  .rtl .filter-select {
+    text-align: right;
   }
 
   .filter-select:focus {
@@ -538,6 +551,10 @@
     min-width: 0;
   }
 
+  .rtl .space-info {
+    text-align: right;
+  }
+
   .space-title {
     font-size: 1.25rem;
     font-weight: 700;
@@ -565,6 +582,10 @@
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+
+  .rtl .space-description {
+    text-align: right;
   }
 
   .space-footer {
@@ -633,6 +654,10 @@
       align-items: stretch;
     }
 
+    .rtl .search-container {
+      flex-direction: column;
+    }
+
     .filters {
       justify-content: center;
     }
@@ -645,6 +670,10 @@
       flex-direction: column;
       align-items: flex-start;
       gap: 0.75rem;
+    }
+
+    .rtl .space-footer {
+      align-items: flex-end;
     }
   }
 </style>

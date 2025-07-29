@@ -3,19 +3,24 @@
   import { params, goto } from "@roxi/routify";
   import { getSpaceContents } from "@/lib/dmart_services";
   import { Diamonds } from "svelte-loading-spinners";
-  import { _ } from "@/i18n";
+  import { _, locale } from "@/i18n";
+  import { derived } from "svelte/store";
   import { Dmart, ResourceType, RequestType } from "@edraj/tsdmart";
   import { deleteEntity } from "@/lib/dmart_services";
   import FolderForm from "@/components/forms/FolderForm.svelte";
   import MetaForm from "@/components/forms/MetaForm.svelte";
   $goto;
+  const isRTL = derived(
+    locale,
+    ($locale) => $locale === "ar" || $locale === "ku"
+  );
 
   let isLoading = $state(true);
   let contents = $state([]);
   let error = $state(null);
   let spaceName = $state("");
   let showCreateFolderModal = $state(false);
-  let actualSubpath = $state("");
+  let actualSubpath = "";
   let folderContent = $state({
     title: "",
     content: "",
@@ -42,7 +47,7 @@
   let isCreatingFolder = $state(false);
 
   let metaContent: any = $state({});
-  let validateMetaForm;
+  let validateMetaForm = $state(null);
 
   onMount(async () => {
     spaceName = $params.space_name;
@@ -61,7 +66,7 @@
       }
     } catch (err) {
       console.error("Error fetching space contents:", err);
-      error = "Failed to load space contents";
+      error = $_("admin_space.error.failed_load_contents");
     } finally {
       isLoading = false;
     }
@@ -108,6 +113,7 @@
   }
 
   async function handleSaveFolder(event) {
+    event.preventDefault();
     isCreatingFolder = true;
 
     try {
@@ -135,11 +141,11 @@
         showCreateFolderModal = false;
         await loadContents();
       } else {
-        alert("Failed to create folder");
+        alert($_("admin_space.error.create_folder_failed"));
       }
     } catch (err) {
       console.error("Error creating folder:", err);
-      alert("Error creating folder: " + err.message);
+      alert($_("admin_space.error.create_folder_error") + ": " + err.message);
     } finally {
       isCreatingFolder = false;
     }
@@ -148,7 +154,13 @@
   async function handleDeleteItem(item: any, event: Event) {
     event.stopPropagation();
 
-    if (!confirm(`Are you sure you want to delete "${item.shortname}"?`)) {
+    if (
+      !confirm(
+        $_("admin_space.confirm.delete_item", {
+          values: { name: item.shortname },
+        })
+      )
+    ) {
       return;
     }
 
@@ -185,8 +197,8 @@
   }
 
   function formatDate(dateString: string): string {
-    if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString();
+    if (!dateString) return $_("common.not_available");
+    return new Date(dateString).toLocaleDateString($locale);
   }
 
   function goBack() {
@@ -194,18 +206,22 @@
   }
 </script>
 
-<div class="min-h-screen bg-gray-50">
+<div class="min-h-screen bg-gray-50" class:rtl={$isRTL}>
   <div class="bg-white border-b border-gray-200">
     <div class="container mx-auto px-4 py-6 max-w-7xl">
       <div class="flex items-center justify-between">
-        <div class="flex items-center space-x-4">
+        <div class="flex items-center space-x-4" class:space-x-reverse={$isRTL}>
           <button
             onclick={goBack}
             class="flex items-center text-gray-600 hover:text-gray-900 transition-colors duration-200"
-            aria-label="Go back"
+            class:flex-row-reverse={$isRTL}
+            aria-label={$_("admin_space.navigation.go_back")}
           >
             <svg
               class="w-5 h-5 mr-2"
+              class:mr-2={!$isRTL}
+              class:ml-2={$isRTL}
+              class:rotate-180={$isRTL}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -217,15 +233,15 @@
                 d="M15 19l-7-7 7-7"
               ></path>
             </svg>
-            Back to Admin
+            {$_("admin_space.navigation.back_to_admin")}
           </button>
           <div class="h-6 w-px bg-gray-300"></div>
-          <div>
+          <div class:text-right={$isRTL}>
             <h1 class="text-2xl font-bold text-gray-900 capitalize">
-              Admin: {spaceName} Space
+              {$_("admin_space.title", { values: { spaceName } })}
             </h1>
             <p class="text-gray-600">
-              Full administrative access to manage all content
+              {$_("admin_space.subtitle")}
             </p>
           </div>
         </div>
@@ -233,6 +249,7 @@
         <button
           onclick={handleCreateFolder}
           class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+          class:flex-row-reverse={$isRTL}
         >
           <svg
             class="w-4 h-4"
@@ -247,7 +264,7 @@
               d="M12 4v16m8-8H4"
             ></path>
           </svg>
-          Create Folder
+          {$_("admin_space.actions.create_folder")}
         </button>
       </div>
     </div>
@@ -259,7 +276,7 @@
         <Diamonds color="#3b82f6" size="60" unit="px" />
       </div>
     {:else if error}
-      <div class="text-center py-16">
+      <div class="text-center py-16" class:text-right={$isRTL}>
         <div
           class="mx-auto w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-6"
         >
@@ -278,12 +295,12 @@
           </svg>
         </div>
         <h3 class="text-xl font-semibold text-gray-900 mb-2">
-          Error Loading Contents
+          {$_("admin_space.error.title")}
         </h3>
         <p class="text-gray-600">{error}</p>
       </div>
     {:else if contents.length === 0}
-      <div class="text-center py-16">
+      <div class="text-center py-16" class:text-right={$isRTL}>
         <div
           class="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6"
         >
@@ -302,10 +319,10 @@
           </svg>
         </div>
         <h3 class="text-xl font-semibold text-gray-900 mb-2">
-          No Contents Found
+          {$_("admin_space.empty.title")}
         </h3>
         <p class="text-gray-600">
-          This space appears to be empty. Create some folders to get started.
+          {$_("admin_space.empty.description")}
         </p>
       </div>
     {:else}
@@ -322,12 +339,19 @@
               }
             }}
           >
-            <div class="flex items-start justify-between mb-3">
-              <div class="flex items-start space-x-3 flex-1 min-w-0">
+            <div
+              class="flex items-start justify-between mb-3"
+              class:flex-row-reverse={$isRTL}
+            >
+              <div
+                class="flex items-start space-x-3 flex-1 min-w-0"
+                class:space-x-reverse={$isRTL}
+                class:flex-row-reverse={$isRTL}
+              >
                 <div class="text-2xl">
                   {getItemIcon(item)}
                 </div>
-                <div class="flex-1 min-w-0">
+                <div class="flex-1 min-w-0" class:text-right={$isRTL}>
                   <h3 class="text-sm font-semibold text-gray-900 truncate">
                     {item.shortname}
                   </h3>
@@ -340,7 +364,7 @@
               <button
                 onclick={(e) => handleDeleteItem(item, e)}
                 class="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 transition-all duration-200 p-1"
-                aria-label="Delete item"
+                aria-label={$_("admin_space.actions.delete_item")}
               >
                 <svg
                   class="w-4 h-4"
@@ -359,12 +383,15 @@
             </div>
 
             {#if item.attributes?.created_at}
-              <p class="text-xs text-gray-400 mt-1">
+              <p class="text-xs text-gray-400 mt-1" class:text-right={$isRTL}>
                 {formatDate(item.attributes.created_at)}
               </p>
             {/if}
             {#if item.subpath && item.subpath !== "/"}
-              <p class="text-xs text-blue-600 mt-1 truncate">
+              <p
+                class="text-xs text-blue-600 mt-1 truncate"
+                class:text-right={$isRTL}
+              >
                 {item.subpath}
               </p>
             {/if}
@@ -377,18 +404,18 @@
 
 {#if showCreateFolderModal}
   <div class="modal-overlay">
-    <div class="modal-container">
+    <div class="modal-container" class:rtl={$isRTL}>
       <div class="modal-header">
-        <div class="modal-header-content">
-          <h3 class="modal-title">Create New Folder</h3>
+        <div class="modal-header-content" class:text-right={$isRTL}>
+          <h3 class="modal-title">{$_("admin_space.modal.create.title")}</h3>
           <p class="modal-subtitle">
-            Configure folder settings and permissions
+            {$_("admin_space.modal.create.subtitle")}
           </p>
         </div>
         <button
           onclick={() => (showCreateFolderModal = false)}
           class="modal-close-btn"
-          aria-label="Close modal"
+          aria-label={$_("admin_space.modal.close")}
         >
           <svg
             class="w-6 h-6"
@@ -408,10 +435,12 @@
 
       <div class="modal-content">
         <div class="form-section">
-          <div class="section-header">
-            <h4 class="section-title">Basic Information</h4>
+          <div class="section-header" class:text-right={$isRTL}>
+            <h4 class="section-title">
+              {$_("admin_space.modal.basic_info.title")}
+            </h4>
             <p class="section-description">
-              Set the folder name and description
+              {$_("admin_space.modal.basic_info.description")}
             </p>
           </div>
           <MetaForm
@@ -422,37 +451,36 @@
         </div>
 
         <div class="form-section">
-          <div class="section-header">
-            <h4 class="section-title">Folder Configuration</h4>
+          <div class="section-header" class:text-right={$isRTL}>
+            <h4 class="section-title">
+              {$_("admin_space.modal.folder_config.title")}
+            </h4>
             <p class="section-description">
-              Configure folder behavior and permissions
+              {$_("admin_space.modal.folder_config.description")}
             </p>
           </div>
-          <FolderForm bind:content={folderContent} on:save={handleSaveFolder} />
+          <FolderForm bind:content={folderContent} on:foo={handleSaveFolder} />
         </div>
       </div>
 
-      <div class="modal-footer">
+      <div class="modal-footer" class:flex-row-reverse={$isRTL}>
         <button
           onclick={() => (showCreateFolderModal = false)}
           class="btn btn-secondary"
           disabled={isCreatingFolder}
         >
-          Cancel
+          {$_("admin_space.modal.cancel")}
         </button>
         <button
-          onclick={() => {
-            event.preventDefault();
-            handleSaveFolder({ detail: folderContent });
-          }}
+          onclick={handleSaveFolder}
           class="btn btn-primary"
           disabled={isCreatingFolder}
         >
           {#if isCreatingFolder}
             <div class="spinner"></div>
-            Creating...
+            {$_("admin_space.modal.creating")}
           {:else}
-            Create Folder
+            {$_("admin_space.modal.create_folder")}
           {/if}
         </button>
       </div>
@@ -461,6 +489,10 @@
 {/if}
 
 <style>
+  .rtl {
+    direction: rtl;
+  }
+
   .modal-overlay {
     position: fixed;
     inset: 0;
@@ -496,6 +528,10 @@
     background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
     border-radius: 16px 16px 0 0;
     flex-shrink: 0;
+  }
+
+  .rtl .modal-header {
+    flex-direction: row-reverse;
   }
 
   .modal-header-content {
@@ -693,6 +729,10 @@
       gap: 1rem;
     }
 
+    .rtl .modal-header {
+      align-items: flex-end;
+    }
+
     .modal-header-content {
       flex: none;
       width: 100%;
@@ -704,6 +744,11 @@
       right: 1rem;
     }
 
+    .rtl .modal-close-btn {
+      right: auto;
+      left: 1rem;
+    }
+
     .modal-content {
       padding: 1rem;
     }
@@ -711,6 +756,10 @@
     .modal-footer {
       padding: 1rem;
       flex-direction: column-reverse;
+    }
+
+    .rtl .modal-footer {
+      flex-direction: column;
     }
 
     .btn {

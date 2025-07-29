@@ -35,7 +35,8 @@
     TrashBinSolid,
     UserCircleOutline,
   } from "flowbite-svelte-icons";
-  import { _ } from "@/i18n";
+  import { _, locale } from "@/i18n";
+  import { derived } from "svelte/store";
 
   $goto;
 
@@ -45,6 +46,11 @@
   let isOwner = $state(false);
   let userReactionEntry = $state(null);
   let counts: any = $state({});
+
+  const isRTL = derived(
+    locale,
+    ($locale) => $locale === "ar" || $locale === "ku"
+  );
 
   onMount(async () => {
     isLoadingPage = true;
@@ -76,11 +82,11 @@
       if (response) {
         await refreshCounts();
         await refreshIdea();
-        successToastMessage("Comment added successfully");
+        successToastMessage($_("entry_detail.comments.add_success"));
         comment = "";
         await refreshIdea();
       } else {
-        errorToastMessage("Failed to add comment!");
+        errorToastMessage($_("entry_detail.comments.add_error"));
       }
     }
   }
@@ -96,9 +102,9 @@
     if (response) {
       await refreshCounts();
       await refreshIdea();
-      successToastMessage("Comment deleted successfully");
+      successToastMessage($_("entry_detail.comments.delete_success"));
     } else {
-      errorToastMessage("Failed to delete comment!");
+      errorToastMessage($_("entry_detail.comments.delete_error"));
     }
   }
 
@@ -114,9 +120,9 @@
         userReactionEntry = null;
         await refreshCounts();
         await refreshIdea();
-        successToastMessage("Reaction removed successfully");
+        successToastMessage($_("entry_detail.reactions.remove_success"));
       } else {
-        errorToastMessage("Failed to remove reaction!");
+        errorToastMessage($_("entry_detail.reactions.remove_error"));
       }
     } else {
       const response = await createReaction(
@@ -127,9 +133,9 @@
       if (response) {
         await refreshCounts();
         await refreshIdea();
-        successToastMessage("Reaction added successfully");
+        successToastMessage($_("entry_detail.reactions.add_success"));
       } else {
-        errorToastMessage("Failed to add reaction!");
+        errorToastMessage($_("entry_detail.reactions.add_error"));
       }
     }
   }
@@ -166,39 +172,38 @@
   function getStatusInfo(entity: any) {
     if (!entity.is_active) {
       return {
-        text: "Draft",
+        text: $_("entry_detail.status.draft"),
         class: "status-draft",
         icon: EyeSlashSolid,
-        description: "This entry is saved as a draft and not visible to others",
+        description: $_("entry_detail.status.draft_description"),
       };
     } else if (entity.state === "pending") {
       return {
-        text: "Pending Review",
+        text: $_("entry_detail.status.pending"),
         class: "status-pending",
         icon: ClockOutline,
-        description:
-          "This entry is under review and will be published once approved",
+        description: $_("entry_detail.status.pending_description"),
       };
     } else if (entity.state === "approved") {
       return {
-        text: "Published",
+        text: $_("entry_detail.status.published"),
         class: "status-published",
         icon: CheckCircleSolid,
-        description: "This entry is live and visible to everyone",
+        description: $_("entry_detail.status.published_description"),
       };
     } else if (entity.state === "rejected") {
       return {
-        text: "Rejected",
+        text: $_("entry_detail.status.rejected"),
         class: "status-rejected",
         icon: CloseCircleSolid,
-        description: "This entry was rejected and needs revision",
+        description: $_("entry_detail.status.rejected_description"),
       };
     } else {
       return {
-        text: "Active",
+        text: $_("entry_detail.status.active"),
         class: "status-active",
         icon: EyeSolid,
-        description: "This entry is active",
+        description: $_("entry_detail.status.active_description"),
       };
     }
   }
@@ -208,23 +213,23 @@
   <div class="loading-container">
     <div class="loading-content">
       <Diamonds size="60" color="#2563eb" unit="px" duration="1s" />
-      <p class="loading-text">Loading your entry...</p>
+      <p class="loading-text">{$_("entry_detail.loading")}</p>
     </div>
   </div>
 {:else if entity}
-  <div class="page-container">
+  <div class="page-container" class:rtl={$isRTL}>
     <div class="content-wrapper">
       <!-- Header -->
       <div class="header">
         <button class="back-button" onclick={() => $goto("/entries")}>
           <ArrowLeftOutline class="w-5 h-5" />
-          Back to My Entries
+          {$_("entry_detail.back_to_entries")}
         </button>
 
         {#if isOwner}
           <button class="edit-button" onclick={() => handleEdit(entity)}>
             <EditOutline class="w-4 h-4" />
-            Edit Entry
+            {$_("entry_detail.edit_entry")}
           </button>
         {/if}
       </div>
@@ -236,18 +241,19 @@
             {#key entity.state}
               {#if getStatusInfo(entity).icon}
                 {@const SvelteComponent = getStatusInfo(entity).icon}
-                <svelte:component this={SvelteComponent} class="w-6 h-6" />
+                <SvelteComponent class="w-6 h-6" />
               {/if}
             {/key}
           {/if}
         </div>
-        <div class="status-info">
+        <div class="status-info" class:text-right={$isRTL}>
           <div class="status-header">
             <span class="status-badge {getStatusInfo(entity).class}">
               {getStatusInfo(entity).text}
             </span>
             <span class="created-date">
-              Created {formatDate(entity.created_at)}
+              {$_("entry_detail.created")}
+              {formatDate(entity.created_at)}
             </span>
           </div>
           <p class="status-description">
@@ -259,30 +265,35 @@
       <!-- Main Content -->
       <div class="main-card">
         <!-- Title -->
-        <h1 class="entry-title">
+        <h1 class="entry-title" class:text-right={$isRTL}>
           {entity.payload?.body?.title ||
             entity.displayname.en ||
-            "Untitled Entry"}
+            $_("entry_detail.untitled")}
         </h1>
 
         <!-- Meta Information -->
         <div class="meta-info">
-          <div class="meta-item">
+          <div class="meta-item" class:flex-row-reverse={$isRTL}>
             <UserCircleOutline class="w-5 h-5" />
             <span class="meta-text">{entity.owner_shortname}</span>
           </div>
-          <div class="meta-item">
+          <div class="meta-item" class:flex-row-reverse={$isRTL}>
             <ClockOutline class="w-5 h-5" />
-            <span class="meta-text"
-              >Updated {formatDate(entity.updated_at)}</span
-            >
+            <span class="meta-text">
+              {$_("entry_detail.updated")}
+              {formatDate(entity.updated_at)}
+            </span>
           </div>
-          <div class="engagement-stats">
-            <div class="stat-item likes">
+          <div
+            class="engagement-stats"
+            class:mr-auto={!$isRTL}
+            class:ml-auto={$isRTL}
+          >
+            <div class="stat-item likes" class:flex-row-reverse={$isRTL}>
               <HeartSolid class="w-5 h-5" />
               <span class="stat-count">{counts.reaction || 0}</span>
             </div>
-            <div class="stat-item comments">
+            <div class="stat-item comments" class:flex-row-reverse={$isRTL}>
               <MessagesSolid class="w-5 h-5" />
               <span class="stat-count">{counts.comment || 0}</span>
             </div>
@@ -292,13 +303,13 @@
         <!-- Tags -->
         {#if entity.tags && entity.tags.length > 0}
           <div class="tags-section">
-            <h3 class="section-title">
+            <h3 class="section-title" class:flex-row-reverse={$isRTL}>
               <TagOutline class="w-5 h-5" />
-              Tags
+              {$_("entry_detail.tags")}
             </h3>
-            <div class="tags-container">
+            <div class="tags-container" class:flex-row-reverse={$isRTL}>
               {#each entity.tags as tag}
-                <span class="tag">
+                <span class="tag" class:flex-row-reverse={$isRTL}>
                   <TagOutline class="w-3 h-3" />
                   {tag}
                 </span>
@@ -308,15 +319,15 @@
         {/if}
 
         <!-- Content -->
-        <div class="entry-content">
-          {@html entity.payload?.body?.content || "No content available"}
+        <div class="entry-content" class:text-right={$isRTL}>
+          {@html entity.payload?.body?.content || $_("entry_detail.no_content")}
         </div>
 
         <!-- Attachments -->
         {#if entity.attachments.media && Object.keys(entity.attachments.media).length > 0}
           <div class="attachments-section">
-            <h3 class="section-title">
-              {$_("Attachments")}
+            <h3 class="section-title" class:flex-row-reverse={$isRTL}>
+              {$_("entry_detail.attachments")}
             </h3>
             <Attachments
               resource_type={ResourceType.ticket}
@@ -337,16 +348,17 @@
             disabled={isLoading}
           >
             <HeartSolid class="w-5 h-5" />
-            {userReactionEntry ? "Unlike" : "Like"} ({counts.reaction || 0})
+            {userReactionEntry
+              ? $_("entry_detail.actions.unlike")
+              : $_("entry_detail.actions.like")} ({counts.reaction || 0})
           </button>
         </div>
       </div>
-
       <!-- Comments Section -->
       <div class="comments-section">
         <h3 class="comments-title">
           <MessagesSolid class="w-6 h-6" />
-          Comments ({counts.comment || 0})
+          {$_("entry_detail.comments.title")} ({counts.comment || 0})
         </h3>
 
         <!-- Add Comment -->
@@ -356,8 +368,8 @@
               <input
                 type="text"
                 bind:value={comment}
-                placeholder="Share your thoughts..."
-                class="comment-input mr-2"
+                placeholder={$_("entry_detail.comments.placeholder")}
+                class="comment-input"
                 onkeydown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
@@ -366,10 +378,10 @@
                 }}
               />
               <button
-                class="comment-submit ml-2"
+                class="comment-submit"
                 onclick={handleAddComment}
                 disabled={!comment.trim() || isLoading}
-                aria-label="Submit comment"
+                aria-label={$_("entry_detail.comments.submit")}
               >
                 <svg
                   class="w-4 h-4"
@@ -424,11 +436,14 @@
                 </div>
                 <div class="comment-content">
                   <div class="comment-header">
-                    <span class="comment-author">{comment.owner_shortname}</span
+                    <span class="comment-author"
+                      >{comment.attributes?.displayname?.en
+                        ? comment.attributes?.displayname?.en
+                        : comment.attributes?.owner_shortname}</span
                     >
-                    <span class="comment-date"
-                      >{formatDate(comment.attributes.created_at)}</span
-                    >
+                    <span class="comment-date">
+                      {formatDate(comment.attributes.created_at)}
+                    </span>
                     {#if comment.attributes.owner_shortname === $user.shortname}
                       <button
                         class="delete-comment"
@@ -448,9 +463,11 @@
         {:else}
           <div class="no-comments">
             <MessagesSolid class="w-12 h-12 no-comments-icon" />
-            <p class="no-comments-title">No comments yet</p>
+            <p class="no-comments-title">
+              {$_("entry_detail.comments.no_comments")}
+            </p>
             <p class="no-comments-subtitle">
-              Be the first to share your thoughts!
+              {$_("entry_detail.comments.be_first")}
             </p>
           </div>
         {/if}
@@ -463,18 +480,22 @@
       <div class="error-icon">
         <CloseCircleSolid class="w-12 h-12" />
       </div>
-      <h2 class="error-title">Entry Not Found</h2>
+      <h2 class="error-title">{$_("entry_detail.error.not_found_title")}</h2>
       <p class="error-message">
-        The entry you're looking for doesn't exist or has been removed.
+        {$_("entry_detail.error.not_found_message")}
       </p>
       <button class="error-button" onclick={() => $goto("/entries")}>
-        Back to My Entries
+        {$_("entry_detail.back_to_entries")}
       </button>
     </div>
   </div>
 {/if}
 
 <style>
+  .rtl {
+    direction: rtl;
+  }
+
   .page-container {
     min-height: 100vh;
     background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
@@ -802,7 +823,6 @@
     opacity: 0.5;
     cursor: not-allowed;
   }
-
   .comments-section {
     background: white;
     border-radius: 16px;
@@ -841,15 +861,20 @@
   .comment-input-wrapper {
     display: flex;
     flex: 1;
+    gap: 0.5rem;
   }
 
   .comment-input {
-    width: 100%;
+    flex: 1;
     padding: 0.75rem;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
-    margin-bottom: 0.75rem;
     transition: border-color 0.2s ease;
+  }
+
+  /* RTL support for comment input */
+  .rtl .comment-input {
+    text-align: right;
   }
 
   .comment-input:focus {
@@ -858,7 +883,7 @@
   }
 
   .comment-submit {
-    padding: 0.75rem 0.75rem;
+    padding: 0.75rem;
     background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
     border: none;
     border-radius: 8px;
@@ -866,7 +891,7 @@
     font-weight: 500;
     transition: all 0.2s ease;
     cursor: pointer;
-    height: 80%;
+    flex-shrink: 0;
   }
 
   .comment-submit:hover {
@@ -915,7 +940,6 @@
   }
 
   .delete-comment {
-    margin-left: auto;
     padding: 0.25rem;
     background: #fef2f2;
     border: 1px solid #fecaca;
@@ -923,6 +947,13 @@
     color: #ef4444;
     cursor: pointer;
     transition: all 0.2s ease;
+    margin-left: auto;
+  }
+
+  /* RTL support for delete button */
+  .rtl .delete-comment {
+    margin-left: 0;
+    margin-right: auto;
   }
 
   .delete-comment:hover {

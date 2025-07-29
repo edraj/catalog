@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { run } from "svelte/legacy";
-
   import { onMount } from "svelte";
   import { params, goto } from "@roxi/routify";
   import {
@@ -9,21 +7,22 @@
     getEntityAttachmentsCount,
   } from "@/lib/dmart_services";
   import { Diamonds } from "svelte-loading-spinners";
-  import { _ } from "@/i18n";
-  import { locale } from "@/i18n";
+  import { _, locale } from "@/i18n";
+  import { derived } from "svelte/store";
   $goto;
 
   let isLoading = $state(true);
-  let contents = $state([]);
+  let contents = [];
   let filteredContents = $state([]);
   let error = $state(null);
   let spaceName = $state("");
   let searchQuery = $state("");
   let sortBy = $state("created");
-  let filterType = $state("all");
 
-  const isRTL = $locale === "ar" || $locale === "ku";
-  const direction = isRTL ? "rtl" : "ltr";
+  const isRTL = derived(
+    locale,
+    ($locale) => $locale === "ar" || $locale === "ku"
+  );
 
   onMount(async () => {
     spaceName = $params.space_name;
@@ -80,7 +79,7 @@
       }
     } catch (err) {
       console.error("Error fetching space contents:", err);
-      error = $_("error.failed_load_space_contents");
+      error = $_("space.error.failed_load_contents");
     } finally {
       isLoading = false;
     }
@@ -158,14 +157,10 @@
       );
     }
 
-    if (filterType !== "all") {
-      filtered = filtered.filter((item) => item.resource_type === filterType);
-    }
-
     filtered.sort((a, b) => {
       switch (sortBy) {
         case "name":
-          return a.title.$localeCompare(b.title);
+          return a.title.localeCompare(b.title);
         case "updated":
           return (
             new Date(b.attributes?.updated_at || 0).getTime() -
@@ -188,18 +183,16 @@
     $goto("/catalogs");
   }
 
-  run(() => {
-    applyFilters();
-  });
+  $effect(applyFilters);
 </script>
 
-<div class="space-page" dir={direction}>
+<div class="space-page" class:rtl={$isRTL}>
   <section class="space-header">
     <div class="header-content">
       <div class="header-nav">
         <button onclick={goBack} class="back-button">
           <svg
-            class="back-icon {isRTL ? 'rotate-180' : ''}"
+            class="back-icon"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -211,7 +204,7 @@
               d="M15 19l-7-7 7-7"
             ></path>
           </svg>
-          <span>{$_("go_back")}</span>
+          <span>{$_("navigation.go_back")}</span>
         </button>
       </div>
 
@@ -224,8 +217,7 @@
         <div class="space-details">
           <h1 class="space-title">{spaceName}</h1>
           <p class="space-subtitle">
-            Browse through a variety of catalogs and posts to discover new
-            ideas, insights, and updates from the community.
+            {$_("space.subtitle")}
           </p>
         </div>
       </div>
@@ -250,25 +242,26 @@
         </svg>
         <input
           type="text"
-          placeholder="Search by name, description, or owner..."
+          placeholder={$_("space.search.placeholder")}
           bind:value={searchQuery}
           class="search-input"
+          oninput={(e) => {
+            searchQuery = (e.target as HTMLInputElement).value;
+            applyFilters();
+          }}
         />
       </div>
 
       <div class="filters">
-        <select bind:value={sortBy} class="filter-select">
-          <option value="created">Sort by created</option>
-          <option value="updated">Sort by updated</option>
-          <option value="name">Sort by name</option>
-          <option value="reactions">Sort by most reactions</option>
-        </select>
-
-        <select bind:value={filterType} class="filter-select">
-          <option value="all">All types</option>
-          {#each getResourceTypes() as type}
-            <option value={type}>{$_("resource_type." + type)}</option>
-          {/each}
+        <select
+          bind:value={sortBy}
+          class="filter-select"
+          onchange={applyFilters}
+        >
+          <option value="created">{$_("space.sort.created")}</option>
+          <option value="updated">{$_("space.sort.updated")}</option>
+          <option value="name">{$_("space.sort.name")}</option>
+          <option value="reactions">{$_("space.sort.reactions")}</option>
         </select>
       </div>
     </div>
@@ -288,11 +281,11 @@
               stroke-linecap="round"
               stroke-linejoin="round"
               stroke-width="2"
-              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0114 0z"
             ></path>
           </svg>
         </div>
-        <h3 class="error-title">{$_("error.loading_contents_title")}</h3>
+        <h3 class="error-title">{$_("space.error.title")}</h3>
         <p class="error-message">{error}</p>
       </div>
     {:else if filteredContents.length === 0}
@@ -307,16 +300,6 @@
             ></path>
           </svg>
         </div>
-        <h3 class="empty-title">
-          {searchQuery || filterType !== "all"
-            ? $_("search.no_results")
-            : $_("space.no_contents_title")}
-        </h3>
-        <p class="empty-message">
-          {searchQuery || filterType !== "all"
-            ? $_("search.try_different_terms")
-            : $_("space.no_contents_description")}
-        </p>
       </div>
     {:else}
       <div class="content-grid">
@@ -358,7 +341,7 @@
                 {#if item.ownerAvatar}
                   <img
                     src={item.ownerAvatar || "/placeholder.svg"}
-                    alt="Avatar"
+                    alt={$_("space.author_avatar_alt")}
                     class="author-avatar"
                   />
                 {:else}
@@ -423,6 +406,10 @@
     background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 50%, #e0e7ff 100%);
   }
 
+  .rtl {
+    direction: rtl;
+  }
+
   .space-header {
     background: rgba(255, 255, 255, 0.8);
     backdrop-filter: blur(8px);
@@ -464,8 +451,16 @@
     transition: transform 0.2s ease;
   }
 
+  .rtl .back-icon {
+    transform: rotate(180deg);
+  }
+
   .back-button:hover .back-icon {
     transform: translateX(-0.25rem);
+  }
+
+  .rtl .back-button:hover .back-icon {
+    transform: rotate(180deg) translateX(-0.25rem);
   }
 
   .space-info {
@@ -510,29 +505,6 @@
     margin-bottom: 1.5rem;
   }
 
-  .space-stats {
-    display: flex;
-    gap: 2rem;
-  }
-
-  .stat-item {
-    text-align: center;
-  }
-
-  .stat-number {
-    display: block;
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #6366f1;
-    line-height: 1;
-  }
-
-  .stat-label {
-    font-size: 0.875rem;
-    color: #64748b;
-    font-weight: 500;
-  }
-
   .filter-section {
     background: rgba(255, 255, 255, 0.6);
     backdrop-filter: blur(8px);
@@ -555,12 +527,17 @@
 
   .search-icon {
     position: absolute;
-    left: 1rem;
     top: 50%;
     transform: translateY(-50%);
     width: 1.25rem;
     height: 1.25rem;
     color: #94a3b8;
+    left: 1rem;
+  }
+
+  .rtl .search-icon {
+    left: auto;
+    right: 1rem;
   }
 
   .search-input {
@@ -571,6 +548,11 @@
     font-size: 1rem;
     background: white;
     transition: all 0.2s ease;
+  }
+
+  .rtl .search-input {
+    padding: 0.875rem 3rem 0.875rem 1rem;
+    text-align: right;
   }
 
   .search-input:focus {
@@ -592,6 +574,10 @@
     background: white;
     cursor: pointer;
     transition: all 0.2s ease;
+  }
+
+  .rtl .filter-select {
+    text-align: right;
   }
 
   .filter-select:focus {
@@ -709,9 +695,21 @@
     background: #fed7aa;
     color: #c2410c;
   }
+  .type-ticket {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  .type-user {
+    background: #e0e7ff;
+    color: #3730a3;
+  }
 
   .card-content {
     padding: 1rem 1.5rem;
+  }
+
+  .rtl .card-content {
+    text-align: right;
   }
 
   .item-title {
@@ -775,6 +773,10 @@
     flex-direction: column;
   }
 
+  .rtl .author-details {
+    text-align: right;
+  }
+
   .author-name {
     font-size: 0.875rem;
     font-weight: 600;
@@ -814,17 +816,21 @@
       gap: 1.5rem;
     }
 
-    .space-title {
-      font-size: 2rem;
+    .rtl .space-info {
+      text-align: center;
     }
 
-    .space-stats {
-      justify-content: center;
+    .space-title {
+      font-size: 2rem;
     }
 
     .filter-content {
       flex-direction: column;
       align-items: stretch;
+    }
+
+    .rtl .filter-content {
+      flex-direction: column;
     }
 
     .filters {
@@ -839,6 +845,10 @@
       flex-direction: column;
       align-items: flex-start;
       gap: 0.75rem;
+    }
+
+    .rtl .card-footer {
+      align-items: flex-end;
     }
   }
 </style>

@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { preventDefault } from "svelte/legacy";
+
   import MetaRoleForm from "@/components/forms/MetaRoleForm.svelte";
   import {
     successToastMessage,
@@ -15,6 +17,14 @@
     createRole,
   } from "@/lib/dmart_services";
   import { ResourceType } from "@edraj/tsdmart";
+  import { _ } from "@/i18n";
+  import { locale } from "@/i18n";
+  import { derived } from "svelte/store";
+
+  const isRTL = derived(
+    locale,
+    ($locale) => $locale === "ar" || $locale === "ku"
+  );
 
   let roleTypes = $state([]);
   let selectedRoleType = $state("");
@@ -54,11 +64,11 @@
 
         successToastMessage(`Loaded ${roleTypes.length} role types`);
       } else {
-        errorToastMessage("Failed to load role types");
+        errorToastMessage($_("failed_to_load_role_types"));
       }
     } catch (error) {
       console.error("Error loading role types:", error);
-      errorToastMessage("Failed to load role types");
+      errorToastMessage($_("failed_to_load_role_types"));
     } finally {
       isLoadingRoles = false;
     }
@@ -70,7 +80,7 @@
       spaces = spacesResponse.records || [];
     } catch (error) {
       console.error("Error loading spaces:", error);
-      errorToastMessage("Failed to load spaces");
+      errorToastMessage($_("failed_to_load_spaces"));
     }
   }
 
@@ -107,7 +117,7 @@
       }
     } catch (error) {
       console.error("Error loading role data:", error);
-      errorToastMessage("Failed to load role data");
+      errorToastMessage($_("failed_to_load_role_data"));
     } finally {
       isLoading = false;
     }
@@ -115,7 +125,7 @@
 
   async function saveRole() {
     if (!validateFn()) {
-      errorToastMessage("Please fix validation errors before saving");
+      errorToastMessage($_("fix_validation_errors"));
       return;
     }
 
@@ -140,7 +150,7 @@
       }
     } catch (error) {
       console.error("Error saving role:", error);
-      errorToastMessage("Failed to save role");
+      errorToastMessage($_("failed_to_save_role"));
     } finally {
       isSaving = false;
     }
@@ -148,7 +158,7 @@
 
   async function createNewRole() {
     if (!newRoleName.trim()) {
-      errorToastMessage("Please enter a role name");
+      errorToastMessage($_("enter_role_name"));
       return;
     }
 
@@ -181,7 +191,7 @@
       }
     } catch (error) {
       console.error("Error creating role:", error);
-      errorToastMessage("Failed to create role");
+      errorToastMessage($_("failed_to_create_role"));
     } finally {
       isCreating = false;
     }
@@ -189,7 +199,7 @@
 
   async function deleteRole() {
     if (!currentRoleShortname) {
-      errorToastMessage("No role selected to delete");
+      errorToastMessage($_("no_role_selected"));
       return;
     }
 
@@ -220,7 +230,7 @@
       }
     } catch (error) {
       console.error("Error deleting role:", error);
-      errorToastMessage("Failed to delete role");
+      errorToastMessage($_("failed_to_delete_role"));
     } finally {
       isDeleting = false;
     }
@@ -238,21 +248,21 @@
   });
 </script>
 
-<div class="container">
+<div class="container" class:rtl={$isRTL}>
   <div class="page-header">
-    <h1 class="page-title">Role Management</h1>
+    <h1 class="page-title">{$_("role_management")}</h1>
     <p class="page-subtitle">
-      Configure roles and their associated permissions
+      {$_("configure_roles_and_permissions")}
     </p>
   </div>
 
   <div class="card">
     <div class="card-header">
-      <h2 class="card-title">Select Role Type</h2>
+      <h2 class="card-title">{$_("select_role_type")}</h2>
       <div class="header-actions">
         <button class="btn btn-success" onclick={() => (showAddModal = true)}>
           <span>+</span>
-          Add Role
+          {$_("add_role")}
         </button>
         {#if roleExists}
           <button
@@ -265,7 +275,7 @@
             {:else}
               <span>🗑</span>
             {/if}
-            Delete
+            {$_("delete")}
           </button>
         {/if}
       </div>
@@ -274,13 +284,13 @@
     {#if isLoadingRoles}
       <div class="loading-card">
         <div class="spinner"></div>
-        <span>Loading role types...</span>
+        <span>{$_("loading_role_types")}</span>
       </div>
     {:else if roleTypes.length === 0}
       <div class="alert alert-warning">
         <div class="alert-icon">⚠</div>
         <div>
-          <strong>No Roles Found:</strong>
+          <strong>{$_("no_roles_found")}:</strong>
           No role types are available in the management/roles space.
         </div>
       </div>
@@ -303,12 +313,12 @@
           {#if roleExists}
             <div class="status-indicator status-info">
               <span>ℹ</span>
-              <span>Existing role</span>
+              <span>{$_("existing_role")}</span>
             </div>
           {:else}
             <div class="status-indicator status-warning">
               <span>⚠</span>
-              <span>New role</span>
+              <span>{$_("new_role")}</span>
             </div>
           {/if}
         </div>
@@ -320,7 +330,7 @@
     <div class="alert alert-info">
       <div class="alert-icon">ℹ</div>
       <div>
-        <strong>Role Info:</strong>
+        <strong>{$_("role_info")}:</strong>
         {#if selectedRoleType === "super_admin"}
           Super Admin has full system access and can manage all aspects of the
           platform.
@@ -343,7 +353,7 @@
       <div class="card">
         <div class="loading-card">
           <div class="spinner"></div>
-          <span>Loading role data...</span>
+          <span>{$_("loading_role_data")}</span>
         </div>
       </div>
     {:else}
@@ -354,10 +364,9 @@
           <div class="action-buttons">
             <button
               class="btn btn-primary"
-              onclick={(e) => {
-                e.preventDefault();
+              onclick={preventDefault((e) => {
                 saveRole();
-              }}
+              })}
               disabled={isSaving}
             >
               {#if isSaving}
@@ -365,15 +374,15 @@
                   class="spinner"
                   style="width: 16px; height: 16px; border-width: 2px; margin-right: 8px;"
                 ></div>
-                Saving...
+                {$_("saving")}
               {:else}
-                {roleExists ? "Update" : "Create"} Role
+                {roleExists ? $_("update") : $_("create")} {$_("role")}
               {/if}
             </button>
           </div>
 
           <div class="meta-info">
-            <div><strong>Role Type:</strong> {selectedRoleType}</div>
+            <div><strong>{$_("role_type")}:</strong> {selectedRoleType}</div>
             {#if currentRoleShortname}
               <div>
                 <strong>ID:</strong>
@@ -381,24 +390,6 @@
               </div>
             {/if}
           </div>
-        </div>
-      </div>
-    {/if}
-
-    {#if spaces.length > 0}
-      <div class="card">
-        <h3 class="card-title">Available Spaces</h3>
-        <div class="spaces-grid">
-          {#each spaces as space}
-            <div class="space-item">
-              <div class="space-name">{space.shortname}</div>
-              {#if space.attributes?.displayname?.en}
-                <div class="space-display">
-                  {space.attributes.displayname.en}
-                </div>
-              {/if}
-            </div>
-          {/each}
         </div>
       </div>
     {/if}
@@ -425,10 +416,10 @@
       }}
     >
       <div class="modal-header">
-        <h3 id="add-role-modal-title">Add New Role</h3>
+        <h3 id="add-role-modal-title">{$_("add_new_role")}</h3>
         <button
           class="modal-close"
-          aria-label="Close"
+          aria-label={$_("close")}
           onclick={() => (showAddModal = false)}
           onkeydown={(e) => {
             if (e.key === "Enter") showAddModal = false;
@@ -438,13 +429,13 @@
         </button>
       </div>
       <div class="modal-body">
-        <label class="form-label" for="new-role-name">Role Name</label>
+        <label class="form-label" for="new-role-name">{$_("role_name")}</label>
         <input
           type="text"
           class="form-input"
           id="new-role-name"
           bind:value={newRoleName}
-          placeholder="Enter role name"
+          placeholder={$_("enter_role_name")}
           onkeydown={(e) => {
             if (e.key === "Enter") createNewRole();
           }}
@@ -458,14 +449,13 @@
             if (e.key === "Enter") showAddModal = false;
           }}
         >
-          Cancel
+          {$_("cancel")}
         </button>
         <button
           class="btn btn-primary"
-          onclick={(e) => {
-            e.preventDefault();
+          onclick={preventDefault((e) => {
             createNewRole();
-          }}
+          })}
           disabled={isCreating || !newRoleName.trim()}
           onkeydown={(e) => {
             if (e.key === "Enter") createNewRole();
@@ -473,9 +463,9 @@
         >
           {#if isCreating}
             <div class="spinner-small"></div>
-            Creating...
+            {$_("creating")}
           {:else}
-            Create Role
+            {$_("create_role")}
           {/if}
         </button>
       </div>
@@ -503,10 +493,10 @@
       }}
     >
       <div class="modal-header">
-        <h3 id="delete-role-modal-title">Delete Role</h3>
+        <h3 id="delete-role-modal-title">{$_("delete_role")}</h3>
         <button
           class="modal-close"
-          aria-label="Close"
+          aria-label={$_("close")}
           onclick={() => (showDeleteConfirm = false)}
           onkeydown={(e) => {
             if (e.key === "Enter") showDeleteConfirm = false;
@@ -517,11 +507,10 @@
       </div>
       <div class="modal-body">
         <p>
-          Are you sure you want to delete the role <strong
-            >"{selectedRoleType}"</strong
-          >?
+          {$_("are_you_sure_delete_role")}
+          <strong>"{selectedRoleType}"</strong>?
         </p>
-        <p class="text-danger">This action cannot be undone.</p>
+        <p class="text-danger">{$_("action_cannot_be_undone")}</p>
       </div>
       <div class="modal-footer">
         <button
@@ -531,14 +520,13 @@
             if (e.key === "Enter") showDeleteConfirm = false;
           }}
         >
-          Cancel
+          {$_("cancel")}
         </button>
         <button
           class="btn btn-danger"
-          onclick={(e) => {
-            e.preventDefault();
+          onclick={preventDefault((e) => {
             deleteRole();
-          }}
+          })}
           disabled={isDeleting}
           onkeydown={(e) => {
             if (e.key === "Enter") deleteRole();
@@ -546,9 +534,9 @@
         >
           {#if isDeleting}
             <div class="spinner-small"></div>
-            Deleting...
+            {$_("deleting")}
           {:else}
-            Delete Role
+            {$_("delete_role")}
           {/if}
         </button>
       </div>
@@ -557,6 +545,10 @@
 {/if}
 
 <style>
+  .rtl {
+    direction: rtl;
+  }
+
   .container {
     max-width: 1200px;
     margin: 0 auto;

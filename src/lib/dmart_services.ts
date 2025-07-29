@@ -44,7 +44,7 @@ export async function getAvatar(shortname: string) {
     search: "@resource_type:media",
     retrieve_json_payload: false,
   };
-  const results = await Dmart.query(query);
+  const results = await Dmart.query(query, "public");
 
   if (results.records.length === 0) {
     return null;
@@ -55,7 +55,8 @@ export async function getAvatar(shortname: string) {
     "personal",
     `people/${shortname}/protected/`,
     "avatar",
-    results.records[0].attributes.payload.body
+    results.records[0].attributes.payload.body,
+    "public"
   );
 }
 

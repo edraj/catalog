@@ -336,5 +336,1031 @@
   "english": "الإنجليزية",
   "arabic": "العربية",
   "kurdish": "الكردية",
-  "roles": "الأدوار"
+  "roles": "الأدوار",
+  "my_entries": {
+    "title": "مقالاتي",
+    "subtitle": "إدارة وتتبع مساهماتك في المحتوى",
+    "create_new": "إنشاء مقال جديد",
+    "untitled": "بدون عنوان",
+    "loading": "جاري تحميل مقالاتك...",
+    "search": {
+      "placeholder": "البحث في المقالات..."
+    },
+    "filter": {
+      "all_status": "جميع الحالات",
+      "published": "منشور",
+      "draft": "مسودة",
+      "pending": "في الانتظار",
+      "approved": "موافق عليه"
+    },
+    "sort": {
+      "last_updated": "آخر تحديث",
+      "date_created": "تاريخ الإنشاء",
+      "title": "العنوان",
+      "reactions": "التفاعلات",
+      "comments": "التعليقات",
+      "newest_first": "الأحدث أولاً",
+      "oldest_first": "الأقدم أولاً"
+    },
+    "empty": {
+      "no_entries": "لا توجد مقالات بعد",
+      "no_matches": "لا توجد مقالات مطابقة",
+      "no_entries_description": "ابدأ بإنشاء مقالك الأول لمشاركة أفكارك ومحتواك مع العالم.",
+      "no_matches_description": "جرب تعديل معايير البحث أو التصفية للعثور على ما تبحث عنه."
+    },
+    "create_first": "إنشاء مقالك الأول",
+    "stats": {
+      "total_entries": "إجمالي المقالات",
+      "published": "منشور",
+      "total_reactions": "إجمالي التفاعلات",
+      "total_comments": "إجمالي التعليقات"
+    },
+    "table": {
+      "entry": "المقال",
+      "status": "الحالة",
+      "engagement": "التفاعل",
+      "updated": "محدث",
+      "actions": "الإجراءات"
+    },
+    "status": {
+      "draft": "مسودة",
+      "pending": "في الانتظار",
+      "published": "منشور",
+      "rejected": "مرفوض",
+      "active": "نشط"
+    },
+    "tags": {
+      "more": "+{count} أكثر"
+    },
+    "actions": {
+      "view": "عرض",
+      "edit": "تحرير"
+    },
+    "results": {
+      "showing": "عرض {filtered} من {total} مقال"
+    },
+    "error": {
+      "fetch_failed": "حدث خطأ أثناء جلب مقالاتك"
+    }
+  },
+  "create_entry": {
+    "navigation": {
+      "back_to_entries": "العودة إلى مقالاتي"
+    },
+    "action": {
+      "title": "مستعد لمشاركة أفكارك؟",
+      "description": "احفظ كمسودة أو انشر مقالك ليراه الجميع"
+    },
+    "buttons": {
+      "save_draft": "حفظ كمسودة",
+      "publish_now": "نشر الآن",
+      "saving": "جاري الحفظ...",
+      "publishing": "جاري النشر..."
+    },
+    "destination": {
+      "title": "الوجهة",
+      "space": "المساحة",
+      "loading_spaces": "جاري تحميل المساحات...",
+      "path_navigation": "التنقل في المسار",
+      "root": "الجذر",
+      "level": "المستوى {level}",
+      "select_folder": "-- اختر مجلد أو ابق هنا --",
+      "no_subfolders": "لا توجد مجلدات فرعية متاحة",
+      "can_create": "✓ يمكن إنشاء مقالات هنا",
+      "cannot_create": "⚠ يحتوي على مجلدات فقط - انتقل لمستوى أعمق",
+      "publishing_to": "النشر إلى",
+      "cannot_create_here": "لا يمكن إنشاء مقالات هنا",
+      "warning_message": "هذا الموقع يحتوي على مجلدات فقط. يرجى الانتقال إلى مستوى أعمق أو اختيار مسار مختلف."
+    },
+    "title": {
+      "section_title": "عنوان المقال",
+      "placeholder": "أدخل عنوان مقالك...",
+      "edit_aria": "تحرير العنوان",
+      "click_to_add": "انقر لإضافة عنوان جذاب..."
+    },
+    "shortname": {
+      "section_title": "الاسم المختصر (للمشرفين فقط)",
+      "placeholder": "أدخل اسم مختصر مخصص (اختياري)...",
+      "edit_aria": "تحرير الاسم المختصر",
+      "click_to_set": "انقر لتعيين اسم مختصر مخصص (اختياري)...",
+      "help_text": "اتركه فارغاً للإنشاء التلقائي من العنوان. يُسمح فقط بالأحرف والأرقام والشرطات السفلية."
+    },
+    "tags": {
+      "section_title": "العلامات",
+      "placeholder": "أضف علامة...",
+      "add_button": "إضافة",
+      "remove_aria": "إزالة العلامة",
+      "empty_message": "لم تتم إضافة علامات بعد. العلامات تساعد الآخرين في اكتشاف محتواك!"
+    },
+    "content": {
+      "section_title": "المحتوى"
+    },
+    "attachments": {
+      "section_title": "المرفقات ({count})",
+      "add_files": "إضافة ملفات",
+      "empty_title": "لا توجد مرفقات بعد",
+      "empty_description": "اسحب وأفلت الملفات هنا أو انقر على \"إضافة ملفات\" للرفع"
+    },
+    "success": {
+      "published": "تم نشر المقال بنجاح.",
+      "saved": "تم حفظ المقال بنجاح."
+    },
+    "error": {
+      "load_spaces_failed": "فشل في تحميل المساحات!",
+      "load_subpaths_failed": "فشل في تحميل المسارات الفرعية!",
+      "select_space": "يرجى اختيار مساحة!",
+      "cannot_create": "لا يمكن إنشاء مقالات في هذا الموقع. يرجى اختيار مسار لا يحتوي على مجلدات فقط.",
+      "attachment_failed": "فشل في إرفاق {name} بالمقال!",
+      "publish_failed": "فشل في نشر المقال!",
+      "save_failed": "فشل في حفظ المقال!"
+    }
+  },
+  "entry_detail": {
+    "loading": "جاري تحميل إدخالك...",
+    "back_to_entries": "العودة إلى إدخالاتي",
+    "edit_entry": "تحرير الإدخال",
+    "created": "تم الإنشاء",
+    "updated": "محدث",
+    "untitled": "إدخال بدون عنوان",
+    "tags": "العلامات",
+    "no_content": "لا يوجد محتوى متاح",
+    "attachments": "المرفقات",
+    "status": {
+      "draft": "مسودة",
+      "draft_description": "هذا الإدخال محفوظ كمسودة وغير مرئي للآخرين",
+      "pending": "في انتظار المراجعة",
+      "pending_description": "هذا الإدخال قيد المراجعة وسيتم نشره بمجرد الموافقة عليه",
+      "published": "منشور",
+      "published_description": "هذا الإدخال مباشر ومرئي للجميع",
+      "rejected": "مرفوض",
+      "rejected_description": "تم رفض هذا الإدخال ويحتاج إلى مراجعة",
+      "active": "نشط",
+      "active_description": "هذا الإدخال نشط"
+    },
+    "actions": {
+      "like": "إعجاب",
+      "unlike": "إلغاء الإعجاب"
+    },
+    "comments": {
+      "title": "التعليقات",
+      "placeholder": "شارك أفكارك...",
+      "submit": "إرسال التعليق",
+      "no_comments": "لا توجد تعليقات بعد",
+      "be_first": "كن أول من يشارك أفكاره!",
+      "add_success": "تم إضافة التعليق بنجاح",
+      "add_error": "فشل في إضافة التعليق!",
+      "delete_success": "تم حذف التعليق بنجاح",
+      "delete_error": "فشل في حذف التعليق!"
+    },
+    "reactions": {
+      "add_success": "تم إضافة التفاعل بنجاح",
+      "add_error": "فشل في إضافة التفاعل!",
+      "remove_success": "تم إزالة التفاعل بنجاح",
+      "remove_error": "فشل في إزالة التفاعل!"
+    },
+    "error": {
+      "not_found_title": "الإدخال غير موجود",
+      "not_found_message": "الإدخال الذي تبحث عنه غير موجود أو تم حذفه."
+    }
+  },
+  "entry_edit": {
+    "loading": "جاري تحميل الإدخال للتحرير...",
+    "back_to_entry": "العودة إلى الإدخال",
+    "back_to_entries": "العودة إلى إدخالاتي",
+    "editing_entry": "تحرير الإدخال",
+    "update_entry": "تحديث إدخالك",
+    "update_description": "احفظ تغييراتك أو انشر إدخالك المحدث",
+    "published": "منشور",
+    "updated": "محدث",
+    "saving": "جاري الحفظ...",
+    "publishing": "جاري النشر...",
+    "save_changes": "حفظ التغييرات",
+    "publish_changes": "نشر التغييرات",
+    "entry_title": "عنوان الإدخال",
+    "title_placeholder": "أدخل عنوان إدخالك...",
+    "edit_title": "تحرير العنوان",
+    "title_click_to_add": "انقر لإضافة عنوان جذاب...",
+    "tags": "العلامات",
+    "add_tag_placeholder": "إضافة علامة...",
+    "add": "إضافة",
+    "remove_tag": "إزالة العلامة",
+    "no_tags_message": "لم يتم إضافة علامات بعد. العلامات تساعد الآخرين في اكتشاف محتواك!",
+    "content": "المحتوى",
+    "loading_editor": "جاري تحميل المحرر...",
+    "current_attachments": "المرفقات الحالية",
+    "add_new_attachments": "إضافة مرفقات جديدة",
+    "add_files": "إضافة ملفات",
+    "no_new_attachments": "لا توجد مرفقات جديدة",
+    "add_files_description": "أضف ملفات جديدة لإرفاقها بإدخالك",
+    "status": {
+      "draft": "مسودة",
+      "draft_description": "هذا الإدخال محفوظ كمسودة",
+      "pending": "في انتظار المراجعة",
+      "pending_description": "هذا الإدخال قيد المراجعة",
+      "published": "منشور",
+      "published_description": "هذا الإدخال مباشر ومرئي للجميع",
+      "rejected": "مرفوض",
+      "rejected_description": "تم رفض هذا الإدخال ويحتاج إلى مراجعة",
+      "active": "نشط",
+      "active_description": "هذا الإدخال نشط"
+    },
+    "success": "تم الإدخال بنجاح.",
+    "error": "فشل في الإدخال!",
+    "attachment_error": "فشل في إرفاق المرفق بالإدخال!",
+    "error": {
+      "not_found_title": "الإدخال غير موجود",
+      "not_found_message": "الإدخال الذي تحاول تحريره غير موجود أو تم حذفه."
+    }
+  },
+  "post_detail": {
+    "breadcrumb": {
+      "label": "مسار التنقل",
+      "catalogs": "الكتالوجات"
+    },
+    "navigation": {
+      "back_to_contents": "العودة إلى المحتويات"
+    },
+    "loading": {
+      "content": "جاري تحميل المحتوى..."
+    },
+    "error": {
+      "title": "خطأ في تحميل المنشور",
+      "invalid_response": "هيكل الاستجابة غير صالح",
+      "failed_load": "فشل في تحميل بيانات المنشور"
+    },
+    "debug": {
+      "title": "معلومات التشخيص:",
+      "space": "المساحة",
+      "subpath": "المسار الفرعي",
+      "item": "العنصر"
+    },
+    "content_type": {
+      "content": "محتوى"
+    },
+    "status": {
+      "active": "نشط",
+      "inactive": "غير نشط"
+    },
+    "meta": {
+      "author": "المؤلف",
+      "created": "تاريخ الإنشاء",
+      "updated": "تاريخ التحديث",
+      "content_type": "نوع المحتوى"
+    },
+    "sections": {
+      "description": "الوصف",
+      "tags": "العلامات",
+      "content": "المحتوى",
+      "interactions": "التفاعلات",
+      "relationships": "العلاقات"
+    },
+    "reactions": {
+      "title": "التفاعلات"
+    },
+    "comments": {
+      "title": "التعليقات ({count})",
+      "no_content": "لا يوجد محتوى"
+    },
+    "media": {
+      "title": "الوسائط والملفات ({count})"
+    },
+    "relationships": {
+      "related": "مرتبط"
+    },
+    "no_data": {
+      "title": "لا توجد بيانات متاحة",
+      "message": "غير قادر على تحميل بيانات المنشور."
+    }
+  },
+  "catalog_contents": {
+    "breadcrumb_label": "مسار التنقل",
+    "browse_contents": "تصفح المحتويات في",
+    "loading": "جاري تحميل المحتوى...",
+    "error": {
+      "title": "خطأ في تحميل المحتويات",
+      "failed_load": "فشل في تحميل محتويات المساحة. يرجى المحاولة مرة أخرى.",
+      "try_again": "حاول مرة أخرى"
+    },
+    "empty": {
+      "title": "لم يتم العثور على محتوى",
+      "no_matches": "لا يوجد محتوى يطابق معايير البحث الخاصة بك.",
+      "folder_empty": "يبدو أن هذا المجلد فارغ."
+    },
+    "filters": {
+      "title": "البحث والتصفية",
+      "clear_all": "مسح جميع المرشحات",
+      "clear_filters": "مسح المرشحات",
+      "sort_by": "ترتيب حسب",
+      "toggle_sort": "تبديل ترتيب الفرز",
+      "type": "النوع",
+      "all_types": "جميع الأنواع",
+      "remove_filter": "إزالة المرشح"
+    },
+    "sort": {
+      "name": "الاسم",
+      "type": "النوع",
+      "owner": "المالك",
+      "created": "تاريخ الإنشاء"
+    },
+    "search": {
+      "placeholder": "البحث بالاسم أو الوصف أو المالك...",
+      "label": "البحث",
+      "clear": "مسح البحث"
+    },
+    "results": {
+      "showing": "عرض {start} إلى {end} من {total} عنصر",
+      "for_query": "لـ \"{query}\""
+    },
+    "card": {
+      "posted_by": "نشر بواسطة"
+    },
+    "time": {
+      "just_now": "الآن",
+      "minutes_ago": "{count}د مضت",
+      "hours_ago": "{count}س مضت",
+      "days_ago": "{count}ي مضت"
+    },
+    "pagination": {
+      "items_per_page": "عناصر لكل صفحة",
+      "page_info": "الصفحة {current} من {total}",
+      "previous": "السابق",
+      "next": "التالي",
+      "page": "الصفحة {page}"
+    }
+  },
+  "navigation": {
+    "go_back": "العودة"
+  },
+  "space": {
+    "subtitle": "تصفح مجموعة متنوعة من الكتالوجات والمنشورات لاكتشاف أفكار وآراء وتحديثات جديدة من المجتمع.",
+    "search": {
+      "placeholder": "البحث بالاسم أو الوصف أو المالك..."
+    },
+    "sort": {
+      "created": "ترتيب حسب تاريخ الإنشاء",
+      "updated": "ترتيب حسب تاريخ التحديث",
+      "name": "ترتيب حسب الاسم",
+      "reactions": "ترتيب حسب أكثر التفاعلات"
+    },
+    "filter": {
+      "all_types": "جميع الأنواع"
+    },
+    "error": {
+      "title": "خطأ في تحميل المحتويات",
+      "failed_load_contents": "فشل في تحميل محتويات المساحة. يرجى المحاولة مرة أخرى."
+    },
+    "empty": {
+      "no_results_title": "لا توجد نتائج",
+      "no_results_description": "جرب مصطلحات بحث مختلفة أو قم بتغيير المرشحات.",
+      "no_contents_title": "لا توجد محتويات",
+      "no_contents_description": "هذه المساحة فارغة حاليًا. تحقق مرة أخرى لاحقًا للحصول على محتوى جديد."
+    },
+    "author_avatar_alt": "صورة المؤلف الرمزية"
+  },
+  "resource_type": {
+    "folder": "مجلد",
+    "content": "محتوى",
+    "post": "منشور",
+    "ticket": "تذكرة",
+    "user": "مستخدم",
+    "media": "وسائط"
+  },
+  "catalogs": {
+    "hero": {
+      "title": "استكشف الكتالوجات",
+      "description": "اكتشف مجموعة واسعة من الكتالوجات المنظمة من قبل مجتمعنا. ابحث عن المحتوى الذي يهمك وتواصل مع المبدعين."
+    },
+    "search": {
+      "placeholder": "البحث في المساحات..."
+    },
+    "sort": {
+      "name": "ترتيب حسب الاسم",
+      "created": "ترتيب حسب تاريخ الإنشاء",
+      "updated": "ترتيب حسب تاريخ التحديث"
+    },
+    "error": {
+      "title": "خطأ في تحميل الكتالوجات",
+      "failed_load": "فشل في تحميل الكتالوجات. يرجى المحاولة مرة أخرى."
+    },
+    "empty": {
+      "no_results_title": "لا توجد نتائج",
+      "no_results_description": "لم نتمكن من العثور على أي كتالوجات تطابق بحثك. جرب مصطلحات بحث مختلفة.",
+      "no_catalogs_title": "لا توجد كتالوجات متاحة",
+      "no_catalogs_description": "لا توجد كتالوجات عامة متاحة حاليًا. تحقق مرة أخرى لاحقًا."
+    },
+    "actions": {
+      "visit": "زيارة"
+    },
+    "unnamed_space": "مساحة بدون اسم",
+    "no_description": "لا يوجد وصف متاح"
+  },
+  "common": {
+    "loading": "جاري التحميل...",
+    "not_available": "غير متاح",
+    "unknown": "غير معروف"
+  },
+  "help": {
+    "hero": {
+      "title": "مساعدة",
+      "center": "المركز",
+      "description": "اعثر على إجابات للأسئلة الشائعة، وتعلم كيفية استخدام منصتنا، واحصل على الدعم الذي تحتاجه."
+    },
+    "quick_help": {
+      "title": "مساعدة سريعة",
+      "getting_started": {
+        "title": "البدء",
+        "description": "تعلم أساسيات إنشاء وإدارة كتالوجاتك.",
+        "button": "استكشف الكتالوجات"
+      },
+      "community_support": {
+        "title": "دعم المجتمع",
+        "description": "تواصل مع المستخدمين الآخرين واحصل على المساعدة من المجتمع.",
+        "button": "انضم للمجتمع"
+      },
+      "contact_support": {
+        "title": "اتصل بالدعم",
+        "description": "تحتاج مساعدة مباشرة؟ تواصل مع فريق الدعم لدينا.",
+        "button": "اتصل بنا"
+      }
+    },
+    "faq": {
+      "title": "الأسئلة الشائعة",
+      "create_catalog": {
+        "question": "كيف أنشئ كتالوجي الأول؟",
+        "answer": "لإنشاء كتالوج، انتقل إلى لوحة التحكم الخاصة بك وانقر على 'إنشاء كتالوج جديد'. املأ المعلومات المطلوبة مثل العنوان والوصف والفئة. يمكنك بعد ذلك البدء في إضافة الإدخالات لتنظيم المحتوى الخاص بك."
+      },
+      "collaborate": {
+        "question": "هل يمكنني التعاون مع الآخرين في الكتالوجات؟",
+        "answer": "نعم! يمكنك دعوة مستخدمين آخرين للتعاون في كتالوجاتك. انتقل إلى إعدادات الكتالوج واستخدم ميزة 'دعوة المتعاونين' لإضافة أعضاء الفريق بمستويات أذونات مختلفة."
+      },
+      "make_public": {
+        "question": "كيف أجعل كتالوجي عامًا؟",
+        "answer": "في إعدادات الكتالوج، يمكنك تغيير الرؤية من 'خاص' إلى 'عام'. يمكن اكتشاف الكتالوجات العامة وعرضها من قبل أي شخص على المنصة."
+      },
+      "content_types": {
+        "question": "ما أنواع المحتوى التي يمكنني إضافتها للكتالوجات؟",
+        "answer": "يمكنك إضافة أنواع مختلفة من المحتوى بما في ذلك الإدخالات النصية والصور والروابط والمستندات والوسائط الغنية. يمكن أن يحتوي كل إدخال على بيانات وصفية وعلامات ووصف للمساعدة في تنظيم المحتوى الخاص بك."
+      },
+      "search": {
+        "question": "كيف أبحث عن محتوى محدد؟",
+        "answer": "استخدم شريط البحث في أعلى الصفحة للعثور على الكتالوجات أو الإدخالات أو المستخدمين. يمكنك تصفية النتائج حسب الفئة أو التاريخ أو نوع المحتوى لتضييق نطاق البحث."
+      },
+      "export": {
+        "question": "هل يمكنني تصدير بيانات الكتالوج الخاص بي؟",
+        "answer": "نعم، يمكنك تصدير بيانات الكتالوج بتنسيقات مختلفة بما في ذلك JSON و CSV أو PDF. انتقل إلى إعدادات الكتالوج وابحث عن خيار 'تصدير'."
+      }
+    },
+    "support": {
+      "title": "ما زلت تحتاج مساعدة؟",
+      "description": "لا تستطيع العثور على ما تبحث عنه؟ فريق الدعم لدينا هنا لمساعدتك في أي أسئلة أو مشاكل.",
+      "button": "احصل على الدعم"
+    }
+  },
+  "community": {
+    "hero": {
+      "join": "انضم إلى",
+      "community": "مجتمعنا",
+      "description": "تواصل مع الأشخاص ذوي التفكير المماثل، وشارك معرفتك، وكن جزءًا من مجتمع متنامٍ يقدر التعاون والإبداع.",
+      "join_button": "انضم للمجتمع",
+      "explore_button": "استكشف الكتالوجات"
+    },
+    "why_join": {
+      "title": "لماذا تنضم إلى مجتمعنا؟",
+      "description": "اكتشف فوائد كونك جزءًا من منصتنا التعاونية."
+    },
+    "features": {
+      "connect": {
+        "title": "تواصل مع الآخرين",
+        "description": "انضم إلى مجتمع نابض بالحياة من المبدعين والقيمين والمتحمسين الذين يتشاركون المعرفة والأفكار."
+      },
+      "discussions": {
+        "title": "مناقشات غنية",
+        "description": "شارك في محادثات هادفة حول المحتوى، وشارك التعليقات، وتعاون في المشاريع."
+      },
+      "support": {
+        "title": "الدعم والاعتراف",
+        "description": "أظهر التقدير للمحتوى عالي الجودة واحصل على الاعتراف بمساهماتك في المجتمع."
+      },
+      "global": {
+        "title": "شبكة عالمية",
+        "description": "تواصل مع أشخاص من جميع أنحاء العالم يشاركونك اهتماماتك وشغفك."
+      }
+    },
+    "guidelines": {
+      "title": "إرشادات المجتمع",
+      "respectful": {
+        "title": "كن محترمًا",
+        "description": "عامل جميع أعضاء المجتمع بالاحترام واللطف."
+      },
+      "quality": {
+        "title": "شارك محتوى عالي الجودة",
+        "description": "ساهم بمحتوى هادف ومنظم جيدًا في الكتالوجات."
+      },
+      "collaborate": {
+        "title": "تعاون",
+        "description": "اعملوا معًا لتحسين المحتوى ومساعدة الآخرين على النجاح."
+      },
+      "on_topic": {
+        "title": "ابق في الموضوع",
+        "description": "حافظ على المناقشات ذات صلة وبناءة."
+      }
+    }
+  },
+  "privacy": {
+    "hero": {
+      "title": "الخصوصية",
+      "policy": "السياسة",
+      "description": "نحن نقدر خصوصيتك ونلتزم بحماية معلوماتك الشخصية. تعرف على كيفية جمعنا واستخدامنا وحماية بياناتك."
+    },
+    "principles": {
+      "title": "مبادئ الخصوصية لدينا",
+      "data_protection": {
+        "title": "حماية البيانات",
+        "description": "نستخدم تدابير أمنية معيارية في الصناعة لحماية معلوماتك الشخصية."
+      },
+      "minimal_collection": {
+        "title": "جمع أدنى",
+        "description": "نجمع فقط البيانات الضرورية لتقديم وتحسين خدماتنا."
+      },
+      "secure_storage": {
+        "title": "تخزين آمن",
+        "description": "يتم تشفير بياناتك وتخزينها بأمان مع ضوابط وصول محدودة."
+      },
+      "user_control": {
+        "title": "تحكم المستخدم",
+        "description": "لديك السيطرة على بياناتك ويمكنك طلب الوصول أو التحديثات أو الحذف."
+      }
+    },
+    "information_collect": {
+      "title": "المعلومات التي نجمعها",
+      "account_info": "معلومات الحساب (اسم المستخدم، البريد الإلكتروني، تفاصيل الملف الشخصي)",
+      "content": "المحتوى الذي تنشئه وتشاركه على المنصة",
+      "usage_data": "بيانات الاستخدام والتحليلات لتحسين خدماتنا",
+      "communication": "بيانات التواصل عندما تتصل بنا"
+    },
+    "how_we_use": {
+      "title": "كيف نستخدم معلوماتك",
+      "provide_services": "لتقديم والحفاظ على خدمات الكتالوج لدينا",
+      "personalize": "لتخصيص تجربتك على المنصة",
+      "communicate": "للتواصل معك حول التحديثات والميزات",
+      "improve": "لتحسين خدماتنا وتطوير ميزات جديدة"
+    },
+    "data_sharing": {
+      "title": "مشاركة البيانات",
+      "description": "نحن لا نبيع معلوماتك الشخصية. قد نشارك البيانات فقط في هذه الظروف المحدودة:",
+      "consent": "بموافقتك الصريحة",
+      "legal": "للامتثال للالتزامات القانونية",
+      "protect_rights": "لحماية حقوقنا ومنع الاحتيال",
+      "service_providers": "مع مقدمي الخدمات الذين يساعدوننا في تشغيل المنصة"
+    },
+    "your_rights": {
+      "title": "حقوقك",
+      "access": "الوصول إلى بياناتك الشخصية",
+      "correct": "تصحيح المعلومات غير الدقيقة",
+      "delete": "حذف حسابك وبياناتك",
+      "export": "تصدير بياناتك",
+      "opt_out": "إلغاء الاشتراك في الاتصالات التسويقية"
+    },
+    "questions": {
+      "title": "أسئلة حول الخصوصية؟",
+      "description": "إذا كان لديك أي أسئلة حول سياسة الخصوصية هذه أو كيفية تعاملنا مع بياناتك، فلا تتردد في الاتصال بنا.",
+      "button": "اتصل بنا"
+    }
+  },
+  "admin_dashboard": "لوحة تحكم المدير",
+  "failed_to_load_spaces": "فشل في تحميل المساحات",
+  "error_loading_spaces": "خطأ في تحميل المساحات",
+  "no_spaces_available": "لا توجد مساحات متاحة",
+  "create_first_space": "إنشاء أول مساحة",
+  "total_spaces": "إجمالي المساحات",
+  "active_spaces": "المساحات النشطة",
+  "admin_access": "وصول المدير",
+  "full": "كامل",
+  "role": "الدور",
+  "super_admin": "مدير عام",
+  "create_space": "إنشاء مساحة",
+  "space": "المساحة",
+  "status": "الحالة",
+  "owner": "المالك",
+  "created": "تم الإنشاء",
+  "actions": "الإجراءات",
+  "active": "نشط",
+  "inactive": "غير نشط",
+  "unknown": "غير معروف",
+  "manage": "إدارة",
+  "edit": "تعديل",
+  "delete": "حذف",
+  "create_new_space": "إنشاء مساحة جديدة",
+  "edit_space": "تعديل المساحة",
+  "delete_space": "حذف المساحة",
+  "cancel": "إلغاء",
+  "creating": "جاري الإنشاء...",
+  "updating": "جاري التحديث...",
+  "deleting": "جاري الحذف...",
+  "update_space": "تحديث المساحة",
+  "delete_space": "حذف المساحة",
+  "are_you_sure": "هل أنت متأكد؟",
+  "action_cannot_be_undone": "لا يمكن التراجع عن هذا الإجراء.",
+  "shortname": "الاسم المختصر",
+  "space_is_active": "المساحة نشطة",
+  "fill_required_fields": "يرجى ملء جميع الحقول المطلوبة في النموذج.",
+  "invalid_shortname": "يرجى إدخال اسم مختصر صحيح للمساحة.",
+  "failed_to_create_space": "فشل في إنشاء المساحة. يرجى المحاولة مرة أخرى.",
+  "failed_to_update_space": "فشل في تحديث المساحة. يرجى المحاولة مرة أخرى.",
+  "unnamed_space": "مساحة بدون اسم",
+  "no_description_available": "لا يوجد وصف متاح",
+  "Users": "المستخدمون",
+  "user_management": "إدارة المستخدمين",
+  "manage_users_and_roles": "إدارة المستخدمين وتعيين الأدوار",
+  "users_overview": "نظرة عامة على المستخدمين",
+  "search_users": "البحث عن المستخدمين...",
+  "loading_users": "جاري تحميل المستخدمين...",
+  "no_users_found": "لم يتم العثور على مستخدمين في النظام",
+  "user": "المستخدم",
+  "email": "البريد الإلكتروني",
+  "roles": "الأدوار",
+  "statistics": "الإحصائيات",
+  "total_users": "إجمالي المستخدمين",
+  "active_users": "المستخدمون النشطون",
+  "available_roles": "الأدوار المتاحة",
+  "users_without_roles": "المستخدمون بدون أدوار",
+  "no_roles_assigned": "لم يتم تعيين أدوار",
+  "manage_roles": "إدارة الأدوار",
+  "close": "إغلاق",
+  "saving": "جاري الحفظ...",
+  "save_changes": "حفظ التغييرات",
+  "no_roles_available": "لا توجد أدوار متاحة. يرجى إنشاء الأدوار أولاً.",
+  "failed_to_load_users": "فشل في تحميل المستخدمين",
+  "failed_to_load_roles": "فشل في تحميل الأدوار",
+  "failed_to_update_user_roles": "فشل في تحديث أدوار المستخدم",
+
+  "user_permissions_management": "إدارة صلاحيات المستخدمين",
+  "configure_access_permissions": "تكوين صلاحيات الوصول لأنواع المستخدمين المختلفة",
+  "select_permission_type": "اختر نوع الصلاحية",
+  "add_permission": "إضافة صلاحية",
+  "existing_configuration": "تكوين موجود",
+  "new_configuration": "تكوين جديد",
+  "permission_info": "معلومات الصلاحية",
+  "loading_permission_data": "جاري تحميل بيانات الصلاحية...",
+  "permissions": "الصلاحيات",
+  "update": "تحديث",
+  "create": "إنشاء",
+  "permission_type": "نوع الصلاحية",
+  "available_spaces": "المساحات المتاحة",
+  "add_new_permission": "إضافة صلاحية جديدة",
+  "permission_name": "اسم الصلاحية",
+  "enter_permission_name": "أدخل اسم الصلاحية",
+  "create_permission": "إنشاء صلاحية",
+  "delete_permission": "حذف الصلاحية",
+  "are_you_sure_delete_permission": "هل أنت متأكد من حذف الصلاحية",
+  "failed_to_load_permission_types": "فشل في تحميل أنواع الصلاحيات",
+  "failed_to_load_permission_data": "فشل في تحميل بيانات الصلاحية",
+  "failed_to_save_permissions": "فشل في حفظ الصلاحيات",
+  "failed_to_create_permission": "فشل في إنشاء الصلاحية",
+  "failed_to_delete_permission": "فشل في حذف الصلاحية",
+  "no_permission_selected": "لم يتم اختيار صلاحية للحذف",
+
+  "role_management": "إدارة الأدوار",
+  "configure_roles_and_permissions": "تكوين الأدوار والصلاحيات المرتبطة بها",
+  "select_role_type": "اختر نوع الدور",
+  "add_role": "إضافة دور",
+  "loading_role_types": "جاري تحميل أنواع الأدوار...",
+  "no_roles_found": "لم يتم العثور على أدوار",
+  "existing_role": "دور موجود",
+  "new_role": "دور جديد",
+  "role_info": "معلومات الدور",
+  "loading_role_data": "جاري تحميل بيانات الدور...",
+  "role_type": "نوع الدور",
+  "add_new_role": "إضافة دور جديد",
+  "role_name": "اسم الدور",
+  "enter_role_name": "أدخل اسم الدور",
+  "create_role": "إنشاء دور",
+  "delete_role": "حذف الدور",
+  "are_you_sure_delete_role": "هل أنت متأكد من حذف الدور",
+  "failed_to_load_role_types": "فشل في تحميل أنواع الأدوار",
+  "failed_to_load_role_data": "فشل في تحميل بيانات الدور",
+  "failed_to_save_role": "فشل في حفظ الدور",
+  "failed_to_create_role": "فشل في إنشاء الدور",
+  "failed_to_delete_role": "فشل في حذف الدور",
+  "no_role_selected": "لم يتم اختيار دور للحذف",
+  "fix_validation_errors": "يرجى إصلاح أخطاء التحقق قبل الحفظ",
+  "admin_dashboard": {
+    "title": "لوحة تحكم المدير",
+    "welcome": "مرحباً {name}! إدارة جميع المساحات ومحتواها بصلاحية إدارية كاملة.",
+    "stats": {
+      "total_spaces": "إجمالي المساحات",
+      "active_spaces": "المساحات النشطة",
+      "admin_access": "الوصول الإداري",
+      "full": "كامل",
+      "role": "الدور",
+      "super_admin": "مدير عام"
+    },
+    "manage_spaces": "إدارة المساحات ({count})",
+    "admin_access_description": "وصول إداري لجميع المساحات",
+    "table": {
+      "space": "المساحة",
+      "status": "الحالة",
+      "owner": "المالك",
+      "created": "تاريخ الإنشاء",
+      "actions": "الإجراءات"
+    },
+    "status": {
+      "active": "نشط",
+      "inactive": "غير نشط"
+    },
+    "actions": {
+      "create_space": "إنشاء مساحة",
+      "create_first": "إنشاء أول مساحة",
+      "manage": "إدارة",
+      "edit": "تحرير",
+      "delete": "حذف"
+    },
+    "empty": {
+      "title": "لا توجد مساحات متاحة",
+      "description": "لا توجد مساحات حالياً للإدارة."
+    },
+    "error": {
+      "title": "خطأ في تحميل المساحات",
+      "failed_load_spaces": "فشل في تحميل المساحات",
+      "fill_required_fields": "يرجى ملء جميع الحقول المطلوبة في نموذج البيانات الوصفية.",
+      "invalid_shortname": "يرجى إعطاء اسم مختصر صالح للمساحة.",
+      "create_failed": "فشل في إنشاء المساحة. يرجى المحاولة مرة أخرى.",
+      "update_failed": "فشل في تحديث المساحة. يرجى المحاولة مرة أخرى."
+    },
+    "modal": {
+      "cancel": "إلغاء",
+      "creating": "جاري الإنشاء...",
+      "updating": "جاري التحديث...",
+      "deleting": "جاري الحذف...",
+      "create": {
+        "title": "إنشاء مساحة جديدة",
+        "description": "املأ التفاصيل لإنشاء مساحة جديدة",
+        "button": "إنشاء مساحة"
+      },
+      "edit": {
+        "title": "تحرير المساحة",
+        "description": "تحديث معلومات المساحة والترجمات",
+        "space_active": "المساحة نشطة",
+        "button": "تحديث المساحة"
+      },
+      "delete": {
+        "title": "حذف المساحة",
+        "confirm": "هل أنت متأكد؟",
+        "irreversible": "لا يمكن التراجع عن هذا الإجراء.",
+        "space_label": "المساحة",
+        "shortname_label": "الاسم المختصر",
+        "warning": "جميع البيانات في هذه المساحة ستُحذف نهائياً ولا يمكن استردادها.",
+        "button": "حذف المساحة"
+      }
+    },
+    "unnamed_space": "مساحة بدون اسم",
+    "no_description": "لا يوجد وصف متاح"
+  },
+  "admin_space": {
+    "title": "المدير: مساحة {spaceName}",
+    "subtitle": "وصول إداري كامل لإدارة جميع المحتويات",
+    "navigation": {
+      "back_to_admin": "العودة إلى المدير",
+      "go_back": "العودة"
+    },
+    "actions": {
+      "create_folder": "إنشاء مجلد",
+      "delete_item": "حذف العنصر"
+    },
+    "error": {
+      "title": "خطأ في تحميل المحتويات",
+      "failed_load_contents": "فشل في تحميل محتويات المساحة",
+      "create_folder_failed": "فشل في إنشاء المجلد",
+      "create_folder_error": "خطأ في إنشاء المجلد"
+    },
+    "empty": {
+      "title": "لم يتم العثور على محتويات",
+      "description": "تبدو هذه المساحة فارغة. أنشئ بعض المجلدات للبدء."
+    },
+    "confirm": {
+      "delete_item": "هل أنت متأكد من أنك تريد حذف \"{name}\"؟"
+    },
+    "modal": {
+      "close": "إغلاق النافذة",
+      "cancel": "إلغاء",
+      "creating": "جاري الإنشاء...",
+      "create_folder": "إنشاء مجلد",
+      "create": {
+        "title": "إنشاء مجلد جديد",
+        "subtitle": "تكوين إعدادات المجلد والأذونات"
+      },
+      "basic_info": {
+        "title": "المعلومات الأساسية",
+        "description": "تعيين اسم المجلد والوصف"
+      },
+      "folder_config": {
+        "title": "تكوين المجلد",
+        "description": "تكوين سلوك المجلد والأذونات"
+      }
+    }
+  },
+  "admin_content": {
+    "title": "المدير: {name}",
+    "subtitle": "إدارة المحتويات في {spaceName}/{subpath}",
+    "breadcrumb": {
+      "label": "مسار التنقل",
+      "admin": "المدير"
+    },
+    "pagination": {
+      "show": "عرض",
+      "per_page": "لكل صفحة",
+      "page_info": "الصفحة {current} من {total}",
+      "previous": "السابق",
+      "next": "التالي"
+    },
+    "actions": {
+      "create_new_item": "إنشاء عنصر جديد",
+      "create_folder": "إنشاء مجلد",
+      "open": "فتح",
+      "view": "عرض",
+      "delete": "حذف"
+    },
+    "table": {
+      "title": "محتويات المدير ({count} عنصر)",
+      "showing": "عرض {start} إلى {end} من {total} عنصر",
+      "headers": {
+        "name": "الاسم",
+        "type": "النوع",
+        "status": "الحالة",
+        "owner": "المالك",
+        "created": "تاريخ الإنشاء",
+        "actions": "الإجراءات"
+      }
+    },
+    "status": {
+      "active": "نشط",
+      "inactive": "غير نشط"
+    },
+    "error": {
+      "title": "خطأ في تحميل المحتويات",
+      "failed_load_contents": "فشل في تحميل محتويات المساحة",
+      "create_folder_failed": "فشل في إنشاء المجلد",
+      "create_folder_error": "خطأ في إنشاء المجلد"
+    },
+    "empty": {
+      "title": "لم يتم العثور على محتويات",
+      "description": "يبدو أن هذا المجلد فارغ. أنشئ بعض المحتوى للبدء."
+    },
+    "confirm": {
+      "delete_item": "هل أنت متأكد من أنك تريد حذف \"{name}\"؟"
+    },
+    "modal": {
+      "close": "إغلاق النافذة",
+      "cancel": "إلغاء",
+      "creating": "جاري الإنشاء...",
+      "create_folder": "إنشاء مجلد",
+      "create": {
+        "title": "إنشاء مجلد جديد",
+        "subtitle": "تكوين إعدادات المجلد والأذونات"
+      },
+      "basic_info": {
+        "title": "المعلومات الأساسية",
+        "description": "تعيين اسم المجلد والوصف"
+      },
+      "folder_config": {
+        "title": "تكوين المجلد",
+        "description": "تكوين سلوك المجلد والأذونات"
+      }
+    },
+    "unknown": "غير معروف"
+  },
+  "admin_item_detail": {
+    "breadcrumb": {
+      "label": "مسار التنقل",
+      "admin": "المدير"
+    },
+    "navigation": {
+      "back": "العودة"
+    },
+    "subtitle": "لوحة الإدارة",
+    "actions": {
+      "edit_item": "تعديل العنصر",
+      "delete_item": "حذف العنصر"
+    },
+    "tabs": {
+      "overview": "نظرة عامة",
+      "content": "المحتوى",
+      "relationships": "العلاقات",
+      "attachments": "المرفقات",
+      "author_entries": "مدخلات المؤلف",
+      "metadata": "البيانات الوصفية"
+    },
+    "overview": {
+      "basic_info": "المعلومات الأساسية"
+    },
+    "fields": {
+      "uuid": "المعرف الفريد",
+      "shortname": "الاسم المختصر",
+      "display_name": "اسم العرض",
+      "description": "الوصف",
+      "status": "الحالة",
+      "tags": "العلامات",
+      "owner": "المالك",
+      "created": "تاريخ الإنشاء",
+      "updated": "تاريخ التحديث"
+    },
+    "status": {
+      "active": "نشط",
+      "inactive": "غير نشط"
+    },
+    "content": {
+      "title": "المحتوى والحمولة",
+      "content_type": "نوع المحتوى",
+      "checksum": "المجموع الاختباري",
+      "content_body": "نص المحتوى",
+      "no_content": "لا يوجد محتوى متاح"
+    },
+    "relationships": {
+      "title": "العلاقات",
+      "headers": {
+        "role": "الدور",
+        "related_to": "مرتبط بـ",
+        "type": "النوع",
+        "space": "المساحة",
+        "uuid": "المعرف الفريد"
+      },
+      "no_relationships": "لا توجد علاقات محددة"
+    },
+    "attachments": {
+      "title": "المرفقات",
+      "total_count": "{count} مرفق إجمالي",
+      "zero_count": "0 مرفقات",
+      "type_count": "مرفقات {type} ({count})",
+      "no_attachments": "لم يتم العثور على مرفقات"
+    },
+    "metadata": {
+      "title": "البيانات الوصفية للنظام",
+      "full_path": "المسار الكامل",
+      "space_name": "اسم المساحة",
+      "subpath": "المسار الفرعي",
+      "resource_type": "نوع المورد",
+      "acl_entries": "مدخلات ACL",
+      "entries_count": "{count} مدخلات",
+      "relationships_count": "عدد العلاقات",
+      "attachments_count": "عدد المرفقات",
+      "raw_json": "بيانات JSON الخام"
+    },
+    "author_entries": {
+      "title": "مدخلات المؤلف ذات الصلة",
+      "headers": {
+        "shortname": "الاسم المختصر",
+        "display_name": "اسم العرض",
+        "space": "المساحة",
+        "type": "النوع",
+        "status": "الحالة",
+        "created": "تاريخ الإنشاء"
+      },
+      "no_entries": "لم يتم العثور على مدخلات مؤلف ذات صلة"
+    },
+    "edit_modal": {
+      "title": "تعديل العنصر",
+      "fields": {
+        "title": "العنوان",
+        "content": "المحتوى",
+        "tags": "العلامات (مفصولة بفواصل)",
+        "active": "نشط"
+      },
+      "placeholders": {
+        "title": "أدخل العنوان",
+        "content": "أدخل المحتوى",
+        "tags": "علامة1، علامة2، علامة3"
+      },
+      "actions": {
+        "cancel": "إلغاء",
+        "save": "حفظ التغييرات"
+      }
+    },
+    "error": {
+      "title": "خطأ في تحميل العنصر",
+      "item_not_found": "العنصر غير موجود",
+      "failed_load_item": "فشل في تحميل بيانات العنصر",
+      "failed_update_item": "فشل في تحديث العنصر"
+    },
+    "confirm": {
+      "delete_item": "هل أنت متأكد من أنك تريد حذف \"{name}\"؟"
+    },
+    "not_found": {
+      "title": "العنصر غير موجود",
+      "description": "لا يمكن العثور على العنصر المطلوب أو ليس لديك إذن للوصول إليه."
+    },
+    "unnamed_item": "عنصر بلا اسم",
+    "no_description": "لا يوجد وصف متاح",
+    "not_set": "غير محدد",
+    "empty": "فارغ",
+    "no_tags": "لا توجد علامات",
+    "file_size": {
+      "zero_bytes": "0 بايت",
+      "bytes": "بايت",
+      "kb": "كيلوبايت",
+      "mb": "ميجابايت",
+      "gb": "جيجابايت"
+    }
+  },
+  "no_users_match_filters": "لا يوجد مستخدمون يطابقون المرشحات المحددة",
+  "all_roles": "جميع الأدوار"
 }

@@ -8,30 +8,27 @@
   } from "flowbite-svelte-icons";
   import { _ } from "@/i18n";
   $goto;
+
   const communityFeatures = [
     {
       icon: UsersSolid,
-      title: "Connect with Others",
-      description:
-        "Join a vibrant community of creators, curators, and enthusiasts sharing knowledge and ideas.",
+      title: $_("community.features.connect.title"),
+      description: $_("community.features.connect.description"),
     },
     {
       icon: MessageCaptionSolid,
-      title: "Rich Discussions",
-      description:
-        "Engage in meaningful conversations about content, share feedback, and collaborate on projects.",
+      title: $_("community.features.discussions.title"),
+      description: $_("community.features.discussions.description"),
     },
     {
       icon: HeartSolid,
-      title: "Support & Recognition",
-      description:
-        "Show appreciation for quality content and get recognized for your contributions to the community.",
+      title: $_("community.features.support.title"),
+      description: $_("community.features.support.description"),
     },
     {
       icon: GlobeSolid,
-      title: "Global Network",
-      description:
-        "Connect with people from around the world who share your interests and passions.",
+      title: $_("community.features.global.title"),
+      description: $_("community.features.global.description"),
     },
   ];
 
@@ -49,18 +46,18 @@
     <div class="hero-content">
       <div class="hero-text">
         <h1 class="hero-title">
-          Join Our <span class="gradient-text">Community</span>
+          {$_("community.hero.join")}
+          <span class="gradient-text">{$_("community.hero.community")}</span>
         </h1>
         <p class="hero-description">
-          Connect with like-minded individuals, share your knowledge, and be
-          part of a growing community that values collaboration and creativity.
+          {$_("community.hero.description")}
         </p>
         <div class="hero-buttons">
           <button class="btn-primary" onclick={handleJoinCommunity}>
-            Join Community
+            {$_("community.hero.join_button")}
           </button>
           <button class="btn-secondary" onclick={handleExploreCatalogs}>
-            Explore Catalogs
+            {$_("community.hero.explore_button")}
           </button>
         </div>
       </div>
@@ -70,9 +67,9 @@
   <section class="features-section">
     <div class="features-content">
       <div class="features-header">
-        <h2 class="features-title">Why Join Our Community?</h2>
+        <h2 class="features-title">{$_("community.why_join.title")}</h2>
         <p class="features-description">
-          Discover the benefits of being part of our collaborative platform.
+          {$_("community.why_join.description")}
         </p>
       </div>
 
@@ -92,25 +89,23 @@
 
   <section class="guidelines-section">
     <div class="guidelines-content">
-      <h2 class="guidelines-title">Community Guidelines</h2>
+      <h2 class="guidelines-title">{$_("community.guidelines.title")}</h2>
       <div class="guidelines-grid">
         <div class="guideline-item">
-          <h3>Be Respectful</h3>
-          <p>Treat all community members with respect and kindness.</p>
+          <h3>{$_("community.guidelines.respectful.title")}</h3>
+          <p>{$_("community.guidelines.respectful.description")}</p>
         </div>
         <div class="guideline-item">
-          <h3>Share Quality Content</h3>
-          <p>
-            Contribute meaningful and well-organized content to the catalogs.
-          </p>
+          <h3>{$_("community.guidelines.quality.title")}</h3>
+          <p>{$_("community.guidelines.quality.description")}</p>
         </div>
         <div class="guideline-item">
-          <h3>Collaborate</h3>
-          <p>Work together to improve content and help others succeed.</p>
+          <h3>{$_("community.guidelines.collaborate.title")}</h3>
+          <p>{$_("community.guidelines.collaborate.description")}</p>
         </div>
         <div class="guideline-item">
-          <h3>Stay On Topic</h3>
-          <p>Keep discussions relevant and constructive.</p>
+          <h3>{$_("community.guidelines.on_topic.title")}</h3>
+          <p>{$_("community.guidelines.on_topic.description")}</p>
         </div>
       </div>
     </div>

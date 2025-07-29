@@ -278,6 +278,27 @@
 
                         <span>{$_("roles")}</span>
                       </button>
+                      <button
+                        onclick={() =>
+                          handleMenuItemClick("/dashboard/admin/users")}
+                        class="menu-item"
+                      >
+                        <svg
+                          class="menu-icon"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M15 17h5v-1a4 4 0 00-4-4h-1M9 17H4v-1a4 4 0 014-4h1m3-4a3 3 0 11-6 0 3 3 0 016 0zm6 0a3 3 0 11-6 0 3 3 0 016 0z"
+                          />
+                        </svg>
+
+                        <span>{$_("Users")}</span>
+                      </button>
                     </div>
                     <div class="menu-divider"></div>
                   {/if}
@@ -736,7 +757,6 @@
   .dropdown-menu-rtl {
     left: 0;
   }
-
   @media (max-width: 640px) {
     .dropdown-menu-ltr {
       right: -1rem;

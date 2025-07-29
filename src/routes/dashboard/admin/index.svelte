@@ -12,11 +12,15 @@
   import { locale } from "@/i18n";
   import { user } from "@/stores/user";
   import MetaForm from "@/components/forms/MetaForm.svelte";
+  import { derived } from "svelte/store";
   $goto;
   let isLoading = $state(true);
   let spaces = $state([]);
   let error = $state(null);
-
+  const isRTL = derived(
+    locale,
+    ($locale) => $locale === "ar" || $locale === "ku"
+  );
   let showCreateModal = $state(false);
   let newSpaceName = $state("");
   let newDisplayName = $state("");
@@ -237,14 +241,17 @@
   }
 </script>
 
-<div class="min-h-screen bg-gray-50">
+<div class="min-h-screen bg-gray-50" class:rtl={$isRTL}>
   <div class="bg-white border-b border-gray-200">
     <div class="container mx-auto px-4 py-8 max-w-7xl">
       <div class="text-center">
-        <h1 class="text-4xl font-bold text-gray-900 mb-4">Admin Dashboard</h1>
+        <h1 class="text-4xl font-bold text-gray-900 mb-4">
+          {$_("admin_dashboard.title")}
+        </h1>
         <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-          Welcome {$user.localized_displayname}! Manage all spaces and their
-          content with full administrative access.
+          {$_("admin_dashboard.welcome", {
+            values: { name: $user.localized_displayname },
+          })}
         </p>
       </div>
     </div>
@@ -255,7 +262,7 @@
       <div class="flex justify-center py-16">
         <Diamonds color="#3b82f6" size="60" unit="px" />
       </div>
-    {:else if error}
+    {:else if $error}
       <div class="text-center py-16">
         <div
           class="mx-auto w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-6"
@@ -275,9 +282,9 @@
           </svg>
         </div>
         <h3 class="text-xl font-semibold text-gray-900 mb-2">
-          Error Loading Spaces
+          {$_("admin_dashboard.error.title")}
         </h3>
-        <p class="text-gray-600">{error}</p>
+        <p class="text-gray-600">{$error}</p>
       </div>
     {:else if spaces.length === 0}
       <div class="text-center py-16">
@@ -299,14 +306,15 @@
           </svg>
         </div>
         <h3 class="text-xl font-semibold text-gray-900 mb-2">
-          No Spaces Available
+          {$_("admin_dashboard.empty.title")}
         </h3>
         <p class="text-gray-600 mb-6">
-          There are currently no spaces to manage.
+          {$_("admin_dashboard.empty.description")}
         </p>
         <button
           onclick={openCreateModal}
           class="inline-flex items-center px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors duration-200"
+          aria-label={$_("admin_dashboard.actions.create_first")}
         >
           <svg
             class="w-5 h-5 mr-2"
@@ -321,7 +329,7 @@
               d="M12 4v16m8-8H4"
             ></path>
           </svg>
-          Create First Space
+          {$_("admin_dashboard.actions.create_first")}
         </button>
       </div>
     {:else}
@@ -347,8 +355,10 @@
                 </svg>
               </div>
             </div>
-            <div class="ml-6">
-              <p class="text-sm font-medium text-gray-500">Total Spaces</p>
+            <div class="ml-6" class:mr-6={$isRTL} class:ml-0={$isRTL}>
+              <p class="text-sm font-medium text-gray-500">
+                {$_("admin_dashboard.stats.total_spaces")}
+              </p>
               <p class="text-2xl font-semibold text-gray-900">
                 {spaces.length}
               </p>
@@ -377,8 +387,10 @@
                 </svg>
               </div>
             </div>
-            <div class="ml-6">
-              <p class="text-sm font-medium text-gray-500">Active Spaces</p>
+            <div class="ml-6" class:mr-6={$isRTL} class:ml-0={$isRTL}>
+              <p class="text-sm font-medium text-gray-500">
+                {$_("admin_dashboard.stats.active_spaces")}
+              </p>
               <p class="text-2xl font-semibold text-gray-900">
                 {spaces.filter((s) => s.attributes?.is_active).length}
               </p>
@@ -407,9 +419,13 @@
                 </svg>
               </div>
             </div>
-            <div class="ml-6">
-              <p class="text-sm font-medium text-gray-500">Admin Access</p>
-              <p class="text-2xl font-semibold text-gray-900">Full</p>
+            <div class="ml-6" class:mr-6={$isRTL} class:ml-0={$isRTL}>
+              <p class="text-sm font-medium text-gray-500">
+                {$_("admin_dashboard.stats.admin_access")}
+              </p>
+              <p class="text-2xl font-semibold text-gray-900">
+                {$_("admin_dashboard.stats.full")}
+              </p>
             </div>
           </div>
         </div>
@@ -435,9 +451,13 @@
                 </svg>
               </div>
             </div>
-            <div class="ml-6">
-              <p class="text-sm font-medium text-gray-500">Role</p>
-              <p class="text-2xl font-semibold text-gray-900">Super Admin</p>
+            <div class="ml-6" class:mr-6={$isRTL} class:ml-0={$isRTL}>
+              <p class="text-sm font-medium text-gray-500">
+                {$_("admin_dashboard.stats.role")}
+              </p>
+              <p class="text-2xl font-semibold text-gray-900">
+                {$_("admin_dashboard.stats.super_admin")}
+              </p>
             </div>
           </div>
         </div>
@@ -448,18 +468,23 @@
         <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
           <div class="flex items-center justify-between">
             <h2 class="text-lg font-semibold text-gray-900">
-              Manage Spaces ({spaces.length})
+              {$_("admin_dashboard.manage_spaces", {
+                values: { count: spaces.length },
+              })}
             </h2>
             <div class="flex items-center gap-4">
               <div class="text-sm text-gray-500">
-                Administrative access to all spaces
+                {$_("admin_dashboard.admin_access_description")}
               </div>
               <button
                 onclick={openCreateModal}
                 class="inline-flex items-center px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors duration-200"
+                aria-label={$_("admin_dashboard.actions.create_space")}
               >
                 <svg
                   class="w-4 h-4 mr-2"
+                  class:ml-2={$isRTL}
+                  class:mr-0={$isRTL}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -471,7 +496,7 @@
                     d="M12 4v16m8-8H4"
                   ></path>
                 </svg>
-                Create Space
+                {$_("admin_dashboard.actions.create_space")}
               </button>
             </div>
           </div>
@@ -483,28 +508,33 @@
               <tr>
                 <th
                   class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  class:text-right={$isRTL}
                 >
-                  Space
+                  {$_("admin_dashboard.table.space")}
                 </th>
                 <th
                   class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  class:text-right={$isRTL}
                 >
-                  Status
+                  {$_("admin_dashboard.table.status")}
                 </th>
                 <th
                   class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  class:text-right={$isRTL}
                 >
-                  Owner
+                  {$_("admin_dashboard.table.owner")}
                 </th>
                 <th
                   class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  class:text-right={$isRTL}
                 >
-                  Created
+                  {$_("admin_dashboard.table.created")}
                 </th>
                 <th
                   class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  class:text-right={$isRTL}
                 >
-                  Actions
+                  {$_("admin_dashboard.table.actions")}
                 </th>
               </tr>
             </thead>
@@ -522,7 +552,10 @@
                   }}
                 >
                   <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="flex items-center">
+                    <div
+                      class="flex items-center"
+                      class:flex-row-reverse={$isRTL}
+                    >
                       <div class="flex-shrink-0 h-12 w-12">
                         <div
                           class="h-12 w-12 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-md"
@@ -534,7 +567,7 @@
                           </span>
                         </div>
                       </div>
-                      <div class="ml-6">
+                      <div class="ml-6" class:mr-6={$isRTL} class:ml-0={$isRTL}>
                         <div class="text-sm font-semibold text-gray-900">
                           {getDisplayName(space)}
                         </div>
@@ -559,14 +592,23 @@
                           ?.is_active
                           ? 'bg-green-400'
                           : 'bg-red-400'}"
+                        class:ml-1.5={$isRTL}
+                        class:mr-0={$isRTL}
                       ></div>
-                      {space.attributes?.is_active ? "Active" : "Inactive"}
+                      {space.attributes?.is_active
+                        ? $_("admin_dashboard.status.active")
+                        : $_("admin_dashboard.status.inactive")}
                     </span>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="flex items-center">
+                    <div
+                      class="flex items-center"
+                      class:flex-row-reverse={$isRTL}
+                    >
                       <div
                         class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center mr-2"
+                        class:ml-2={$isRTL}
+                        class:mr-0={$isRTL}
                       >
                         <span class="text-xs font-medium text-gray-600">
                           {space.attributes?.owner_shortname
@@ -577,7 +619,8 @@
                         </span>
                       </div>
                       <span class="text-sm text-gray-900">
-                        {space.attributes?.owner_shortname || "Unknown"}
+                        {space.attributes?.owner_shortname ||
+                          $_("common.unknown")}
                       </span>
                     </div>
                   </td>
@@ -591,8 +634,9 @@
                         handleSpaceClick(space);
                       }}
                       class="text-purple-600 hover:text-purple-900 transition-colors duration-200 mx-2"
+                      aria-label={$_("admin_dashboard.actions.manage")}
                     >
-                      Manage
+                      {$_("admin_dashboard.actions.manage")}
                     </button>
                     <button
                       onclick={(e) => {
@@ -600,8 +644,9 @@
                         openEditModal(space);
                       }}
                       class="text-blue-600 hover:text-blue-900 transition-colors duration-200 mx-2"
+                      aria-label={$_("admin_dashboard.actions.edit")}
                     >
-                      Edit
+                      {$_("admin_dashboard.actions.edit")}
                     </button>
                     <button
                       onclick={(e) => {
@@ -609,8 +654,9 @@
                         openDeleteModal(space);
                       }}
                       class="text-red-600 hover:text-red-900 transition-colors duration-200 mx-2"
+                      aria-label={$_("admin_dashboard.actions.delete")}
                     >
-                      Delete
+                      {$_("admin_dashboard.actions.delete")}
                     </button>
                   </td>
                 </tr>
@@ -626,10 +672,12 @@
 <!-- Create Space Modal -->
 {#if showCreateModal}
   <div class="modal-overlay">
-    <div class="modal-container">
+    <div class="modal-container" class:rtl={$isRTL}>
       <div class="modal-header">
         <div class="flex items-center justify-between">
-          <h3 class="modal-title create">Create New Space</h3>
+          <h3 class="modal-title create">
+            {$_("admin_dashboard.modal.create.title")}
+          </h3>
           <button onclick={closeCreateModal} class="modal-close">
             <svg
               class="w-6 h-6"
@@ -647,20 +695,20 @@
           </button>
         </div>
         <p class="text-sm text-gray-600 mt-2">
-          Fill in the details to create a new space
+          {$_("admin_dashboard.modal.create.description")}
         </p>
       </div>
 
       <div class="modal-content">
         <MetaForm
-          bind:formData={metaContent}
-          bind:validateFn={validateMetaForm}
+          bind:formData={$metaContent}
+          bind:validateFn={$validateMetaForm}
           isCreate={true}
         />
 
-        {#if createError}
+        {#if $createError}
           <div class="error-message">
-            <p class="error-text">{createError}</p>
+            <p class="error-text">{$createError}</p>
           </div>
         {/if}
       </div>
@@ -671,18 +719,18 @@
           class="btn btn-secondary"
           disabled={isCreating}
         >
-          Cancel
+          {$_("admin_dashboard.modal.cancel")}
         </button>
         <button
           onclick={handleCreateSpace}
-          disabled={isCreating || !metaContent.shortname}
+          disabled={isCreating || !$metaContent.get().shortname}
           class="btn btn-primary"
         >
           {#if isCreating}
             <div class="spinner"></div>
-            Creating...
+            {$_("admin_dashboard.modal.creating")}
           {:else}
-            Create Space
+            {$_("admin_dashboard.modal.create.button")}
           {/if}
         </button>
       </div>
@@ -693,10 +741,12 @@
 <!-- Edit Space Modal -->
 {#if showEditModal}
   <div class="modal-overlay">
-    <div class="modal-container">
+    <div class="modal-container" class:rtl={$isRTL}>
       <div class="modal-header">
         <div class="flex items-center justify-between">
-          <h3 class="modal-title edit">Edit Space</h3>
+          <h3 class="modal-title edit">
+            {$_("admin_dashboard.modal.edit.title")}
+          </h3>
           <button onclick={closeEditModal} class="modal-close">
             <svg
               class="w-6 h-6"
@@ -714,14 +764,14 @@
           </button>
         </div>
         <p class="text-sm text-gray-600 mt-2">
-          Update space information and translations
+          {$_("admin_dashboard.modal.edit.description")}
         </p>
       </div>
 
       <div class="modal-content">
         <MetaForm
-          bind:formData={editMetaContent}
-          bind:validateFn={validateEditMetaForm}
+          bind:formData={$editMetaContent}
+          bind:validateFn={$validateEditMetaForm}
           isCreate={false}
         />
 
@@ -732,13 +782,15 @@
               bind:checked={editIsActive}
               id="editIsActive"
             />
-            <label for="editIsActive">Space is active</label>
+            <label for="editIsActive">
+              {$_("admin_dashboard.modal.edit.space_active")}
+            </label>
           </div>
         </div>
 
-        {#if editError}
+        {#if $editError}
           <div class="error-message">
-            <p class="error-text">{editError}</p>
+            <p class="error-text">{$editError}</p>
           </div>
         {/if}
       </div>
@@ -749,18 +801,18 @@
           class="btn btn-secondary"
           disabled={isEditing}
         >
-          Cancel
+          {$_("admin_dashboard.modal.cancel")}
         </button>
         <button
           onclick={handleEditSpace}
-          disabled={isEditing || !editMetaContent.shortname}
+          disabled={isEditing || !$editMetaContent.get().shortname}
           class="btn btn-edit"
         >
           {#if isEditing}
             <div class="spinner"></div>
-            Updating...
+            {$_("admin_dashboard.modal.updating")}
           {:else}
-            Update Space
+            {$_("admin_dashboard.modal.edit.button")}
           {/if}
         </button>
       </div>
@@ -771,10 +823,12 @@
 <!-- Delete Space Modal -->
 {#if showDeleteModal}
   <div class="modal-overlay">
-    <div class="modal-container">
+    <div class="modal-container" class:rtl={$isRTL}>
       <div class="modal-header">
         <div class="flex items-center justify-between">
-          <h3 class="modal-title delete">Delete Space</h3>
+          <h3 class="modal-title delete">
+            {$_("admin_dashboard.modal.delete.title")}
+          </h3>
           <button onclick={closeDeleteModal} class="modal-close">
             <svg
               class="w-6 h-6"
@@ -798,26 +852,27 @@
           <div class="delete-warning-header">
             <div class="delete-icon">⚠️</div>
             <div>
-              <h4>Are you sure?</h4>
-              <p>This action cannot be undone.</p>
+              <h4>{$_("admin_dashboard.modal.delete.confirm")}</h4>
+              <p>{$_("admin_dashboard.modal.delete.irreversible")}</p>
             </div>
           </div>
         </div>
 
         <div class="space-details">
           <p>
-            <strong>Space:</strong>
-            {deletingSpace ? getDisplayName(deletingSpace) : ""}
+            <strong>{$_("admin_dashboard.modal.delete.space_label")}:</strong>
+            {$deletingSpace ? getDisplayName($deletingSpace) : ""}
           </p>
           <p>
-            <strong>Shortname:</strong>
-            {deletingSpace ? deletingSpace.shortname : ""}
+            <strong
+              >{$_("admin_dashboard.modal.delete.shortname_label")}:</strong
+            >
+            {$deletingSpace ? $deletingSpace.shortname : ""}
           </p>
         </div>
 
         <div class="delete-final-warning">
-          All data in this space will be permanently deleted and cannot be
-          recovered.
+          {$_("admin_dashboard.modal.delete.warning")}
         </div>
 
         <div class="modal-actions">
@@ -826,7 +881,7 @@
             class="btn btn-secondary"
             disabled={isDeleting}
           >
-            Cancel
+            {$_("admin_dashboard.modal.cancel")}
           </button>
           <button
             onclick={handleDeleteSpace}
@@ -835,9 +890,9 @@
           >
             {#if isDeleting}
               <div class="spinner"></div>
-              Deleting...
+              {$_("admin_dashboard.modal.deleting")}
             {:else}
-              Delete Space
+              {$_("admin_dashboard.modal.delete.button")}
             {/if}
           </button>
         </div>
@@ -847,6 +902,10 @@
 {/if}
 
 <style>
+  .rtl {
+    direction: rtl;
+  }
+
   .modal-overlay {
     position: fixed;
     inset: 0;
@@ -943,6 +1002,10 @@
     transition: all 0.2s ease;
   }
 
+  .rtl .form-checkbox {
+    flex-direction: row-reverse;
+  }
+
   .form-checkbox:hover {
     background: #f1f5f9;
     border-color: #cbd5e1;
@@ -982,6 +1045,10 @@
     gap: 0.5rem;
   }
 
+  .rtl .error-text {
+    flex-direction: row-reverse;
+  }
+
   .error-text::before {
     content: "⚠️";
     font-size: 1rem;
@@ -1000,6 +1067,10 @@
     align-items: center;
     gap: 0.75rem;
     margin-bottom: 0.75rem;
+  }
+
+  .rtl .delete-warning-header {
+    flex-direction: row-reverse;
   }
 
   .delete-icon {
@@ -1062,6 +1133,11 @@
     border-top: 1px solid #f3f4f6;
     margin-top: 1.5rem;
     margin: 22px;
+  }
+
+  .rtl .modal-actions {
+    flex-direction: row-reverse;
+    justify-content: flex-start;
   }
 
   .btn {
@@ -1185,6 +1261,10 @@
     }
 
     .modal-actions {
+      flex-direction: column-reverse;
+    }
+
+    .rtl .modal-actions {
       flex-direction: column-reverse;
     }
 

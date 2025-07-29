@@ -29,39 +29,44 @@
     TrashBinSolid,
     UploadOutline,
   } from "flowbite-svelte-icons";
-  import { _ } from "@/i18n";
-  import { dir } from "@/i18n";
+  import { _, locale } from "@/i18n";
+  import { derived } from "svelte/store";
   import { onMount } from "svelte";
   import { ResourceType } from "@edraj/tsdmart";
   import { roles } from "@/stores/user";
-
   $goto;
-
   let isLoading = $state(false);
   let content = "";
-  let resource_type: ResourceType = $state(ResourceType.content);
-  let isRTL = $dir === "rtl";
+  let resource_type = ResourceType.content;
   let itemResourceType;
-  let isAdmin = false;
+  let isAdmin = $state(false);
 
-  if ($roles) {
-    isAdmin = $roles.includes("super_admin");
-  }
+  const isRTL = derived(
+    locale,
+    ($locale) => $locale === "ar" || $locale === "ku"
+  );
+
+  let rolesValue;
+  roles.subscribe((value) => {
+    rolesValue = value;
+    isAdmin = value.includes("super_admin");
+  });
 
   let title = $state("");
   let shortname = $state("");
   let isEditing = $state(false);
   let isEditingShortname = $state(false);
   let selectedSpace = $state("catalog");
-  let selectedSubpath = $state("posts");
+  let selectedSubpath = "posts";
   let spaces = $state([]);
   let subpathHierarchy = $state([]);
   let currentPath = $state("");
   let loadingSpaces = $state(false);
   let loadingSubpaths = $state(false);
   let canCreateEntry = $state(true);
-  let workflow_shortname = $state("");
-  let schema_shortname = $state("");
+  let workflow_shortname = "";
+  let schema_shortname = "";
+
   onMount(async () => {
     await loadSpaces();
   });
@@ -80,25 +85,21 @@
         await initializeSubpathHierarchy(selectedSpace);
       }
     } catch (error) {
-      errorToastMessage("Failed to load spaces!");
+      errorToastMessage($_("create_entry.error.load_spaces_failed"));
       console.error("Error loading spaces:", error);
     } finally {
       loadingSpaces = false;
     }
   }
 
-  async function initializeSubpathHierarchy(spaceName: string) {
+  async function initializeSubpathHierarchy(spaceName) {
     subpathHierarchy = [];
     currentPath = "";
     selectedSubpath = "";
     await loadSubpathLevel(spaceName, "", 0);
   }
 
-  async function loadSubpathLevel(
-    spaceName: string,
-    parentPath: string,
-    level: number
-  ) {
+  async function loadSubpathLevel(spaceName, parentPath, level) {
     if (!spaceName) return;
 
     loadingSubpaths = true;
@@ -144,7 +145,7 @@
 
       updateCanCreateEntry();
     } catch (error) {
-      errorToastMessage("Failed to load subpaths!");
+      errorToastMessage($_("create_entry.error.load_subpaths_failed"));
       console.error("Error loading subpaths:", error);
     } finally {
       loadingSubpaths = false;
@@ -166,7 +167,7 @@
     selectedSubpath = currentPath;
   }
 
-  async function handleSubpathChange(level: number, folderValue: string) {
+  async function handleSubpathChange(level, folderValue) {
     const levelData = subpathHierarchy[level];
     if (!levelData) return;
 
@@ -198,6 +199,7 @@
   function handleInputBlur() {
     isEditing = false;
   }
+
   function handleShortnameClick() {
     isEditingShortname = true;
   }
@@ -205,6 +207,7 @@
   function handleShortnameBlur() {
     isEditingShortname = false;
   }
+
   let tags = $state([]);
   let newTag = $state("");
 
@@ -215,24 +218,24 @@
     }
   }
 
-  function removeTag(index: number) {
+  function removeTag(index) {
     tags = tags.filter((_, i) => i !== index);
   }
 
   let attachments = $state([]);
 
-  function handleFileChange(event: Event) {
-    const input = event.target as HTMLInputElement;
+  function handleFileChange(event) {
+    const input = event.target;
     if (input.files) {
       attachments = [...attachments, ...Array.from(input.files)];
     }
   }
 
-  function removeAttachment(index: number) {
+  function removeAttachment(index) {
     attachments = attachments.filter((_, i) => i !== index);
   }
 
-  function getPreviewUrl(file: File) {
+  function getPreviewUrl(file) {
     if (
       file.type.startsWith("image/") ||
       file.type.startsWith("video/") ||
@@ -245,14 +248,12 @@
 
   async function handlePublish(isPublish) {
     if (!selectedSpace) {
-      errorToastMessage("Please select a space!");
+      errorToastMessage($_("create_entry.error.select_space"));
       return;
     }
 
     if (!canCreateEntry) {
-      errorToastMessage(
-        "Cannot create entries in this location. Please select a path that doesn't contain only folders."
-      );
+      errorToastMessage($_("create_entry.error.cannot_create"));
       return;
     }
 
@@ -277,10 +278,12 @@
       workflow_shortname,
       schema_shortname
     );
-    const msg = isPublish ? "published" : "saved";
+    const msg = isPublish
+      ? $_("create_entry.success.published")
+      : $_("create_entry.success.saved");
 
     if (response) {
-      successToastMessage(`Entry ${msg} successfully.`);
+      successToastMessage(msg);
       for (const attachment of attachments) {
         const r = await attachAttachmentsToEntity(
           response,
@@ -289,19 +292,27 @@
           attachment
         );
         if (r === false) {
-          errorToastMessage(`Failed to attach ${attachment.name} to entry!`);
+          errorToastMessage(
+            $_("create_entry.error.attachment_failed", {
+              values: { name: attachment.name },
+            })
+          );
         }
       }
       setTimeout(() => {
         window.history.back();
       }, 500);
     } else {
-      errorToastMessage(`Failed to ${msg} entry!`);
+      errorToastMessage(
+        isPublish
+          ? $_("create_entry.error.publish_failed")
+          : $_("create_entry.error.save_failed")
+      );
       isLoading = false;
     }
   }
 
-  let htmlEditor: any = $state(null);
+  let htmlEditor = $state(null);
 
   function getContent() {
     return htmlEditor.getHtml(true);
@@ -356,12 +367,12 @@
   });
 </script>
 
-<div class="page-container">
+<div class="page-container" class:rtl={$isRTL}>
   <div class="content-wrapper">
     <div class="header">
       <button class="back-button" onclick={() => $goto("/entries")}>
-        <ArrowLeftOutline class="icon" />
-        <span>Back to My Entries</span>
+        <ArrowLeftOutline class="icon back-icon" />
+        <span>{$_("create_entry.navigation.back_to_entries")}</span>
       </button>
     </div>
 
@@ -372,8 +383,8 @@
             <FileCheckSolid class="icon" />
           </div>
           <div class="action-text">
-            <h3>Ready to Share Your Ideas?</h3>
-            <p>Save as draft or publish your entry for everyone to see</p>
+            <h3>{$_("create_entry.action.title")}</h3>
+            <p>{$_("create_entry.action.description")}</p>
           </div>
         </div>
         <div class="action-buttons">
@@ -382,16 +393,24 @@
             onclick={() => handlePublish(false)}
             disabled={isLoading || !canCreateEntry}
           >
-            <FloppyDiskSolid class="icon" />
-            <span>{isLoading ? "Saving..." : "Save Draft"}</span>
+            <FloppyDiskSolid class="icon button-icon" />
+            <span
+              >{isLoading
+                ? $_("create_entry.buttons.saving")
+                : $_("create_entry.buttons.save_draft")}</span
+            >
           </button>
           <button
             class="publish-button"
             onclick={() => handlePublish(true)}
             disabled={isLoading || !canCreateEntry}
           >
-            <PaperPlaneSolid class="icon" />
-            <span>{isLoading ? "Publishing..." : "Publish Now"}</span>
+            <PaperPlaneSolid class="icon button-icon" />
+            <span
+              >{isLoading
+                ? $_("create_entry.buttons.publishing")
+                : $_("create_entry.buttons.publish_now")}</span
+            >
           </button>
         </div>
       </div>
@@ -401,12 +420,14 @@
     <div class="section">
       <div class="section-header">
         <TagOutline class="section-icon" />
-        <h2>Destination</h2>
+        <h2>{$_("create_entry.destination.title")}</h2>
       </div>
       <div class="section-content">
         <div class="destination-selectors">
           <div class="selector-group">
-            <label for="space-select" class="selector-label">Space</label>
+            <label for="space-select" class="selector-label"
+              >{$_("create_entry.destination.space")}</label
+            >
             <select
               id="space-select"
               bind:value={selectedSpace}
@@ -415,7 +436,9 @@
               disabled={loadingSpaces}
             >
               {#if loadingSpaces}
-                <option value="">Loading spaces...</option>
+                <option value=""
+                  >{$_("create_entry.destination.loading_spaces")}</option
+                >
               {:else}
                 {#each spaces as space}
                   <option value={space.value}>{space.name}</option>
@@ -428,13 +451,19 @@
         <!-- Hierarchical Subpath Navigation -->
         {#if subpathHierarchy.length > 0}
           <div class="subpath-hierarchy">
-            <label class="selector-label">Path Navigation</label>
+            <label class="selector-label"
+              >{$_("create_entry.destination.path_navigation")}</label
+            >
             <div class="hierarchy-levels">
               {#each subpathHierarchy as levelData, index}
                 <div class="hierarchy-level">
                   <div class="level-info">
                     <span class="level-label">
-                      {index === 0 ? "Root" : `Level ${index}`}
+                      {index === 0
+                        ? $_("create_entry.destination.root")
+                        : $_("create_entry.destination.level", {
+                            values: { level: index },
+                          })}
                       {#if levelData.path}
                         <span class="level-path">({levelData.path})</span>
                       {/if}
@@ -452,7 +481,9 @@
                       class="destination-select level-select"
                       disabled={loadingSubpaths}
                     >
-                      <option value="">-- Select folder or stay here --</option>
+                      <option value=""
+                        >{$_("create_entry.destination.select_folder")}</option
+                      >
                       {#each levelData.folders as folder}
                         <option value={folder.value}>{folder.name}</option>
                       {/each}
@@ -460,17 +491,19 @@
                   {:else}
                     <div class="no-folders">
                       <span class="no-folders-text"
-                        >No subfolders available</span
+                        >{$_("create_entry.destination.no_subfolders")}</span
                       >
                     </div>
                   {/if}
 
                   <div class="level-status">
                     {#if levelData.canCreateEntry}
-                      <span class="can-create">✓ Can create entries here</span>
+                      <span class="can-create"
+                        >{$_("create_entry.destination.can_create")}</span
+                      >
                     {:else}
                       <span class="cannot-create"
-                        >⚠ Contains only folders - navigate deeper</span
+                        >{$_("create_entry.destination.cannot_create")}</span
                       >
                     {/if}
                   </div>
@@ -484,9 +517,11 @@
         {#if selectedSpace}
           <div class="destination-preview">
             <div class="preview-header">
-              <strong>Publishing to:</strong>
+              <strong>{$_("create_entry.destination.publishing_to")}:</strong>
               {#if !canCreateEntry}
-                <span class="warning-badge">Cannot create entries here</span>
+                <span class="warning-badge"
+                  >{$_("create_entry.destination.cannot_create_here")}</span
+                >
               {/if}
             </div>
             <div class="preview-path">
@@ -494,8 +529,7 @@
             </div>
             {#if !canCreateEntry}
               <div class="preview-warning">
-                This location contains only folders. Please navigate to a deeper
-                level or select a different path.
+                {$_("create_entry.destination.warning_message")}
               </div>
             {/if}
           </div>
@@ -506,7 +540,7 @@
     <div class="section">
       <div class="section-header">
         <TextUnderlineOutline class="section-icon" />
-        <h2>Entry Title</h2>
+        <h2>{$_("create_entry.title.section_title")}</h2>
       </div>
       <div class="section-content">
         {#if isEditing}
@@ -515,7 +549,7 @@
             bind:value={title}
             onblur={handleInputBlur}
             class="title-input"
-            placeholder="Enter your entry title..."
+            placeholder={$_("create_entry.title.placeholder")}
           />
         {:else}
           <div
@@ -525,25 +559,26 @@
               if (e.key === "Enter") handleLabelClick();
             }}
             role="button"
-            aria-label="Edit title"
+            aria-label={$_("create_entry.title.edit_aria")}
             onclick={handleLabelClick}
           >
             {#if title}
               {title}
             {:else}
               <span class="title-placeholder"
-                >Click to add a compelling title...</span
+                >{$_("create_entry.title.click_to_add")}</span
               >
             {/if}
           </div>
         {/if}
       </div>
     </div>
+
     {#if isAdmin}
       <div class="section">
         <div class="section-header">
           <TagOutline class="section-icon" />
-          <h2>Shortname (Admin Only)</h2>
+          <h2>{$_("create_entry.shortname.section_title")}</h2>
         </div>
         <div class="section-content">
           {#if isEditingShortname}
@@ -552,7 +587,7 @@
               bind:value={shortname}
               onblur={handleShortnameBlur}
               class="shortname-input"
-              placeholder="Enter custom shortname (optional)..."
+              placeholder={$_("create_entry.shortname.placeholder")}
             />
           {:else}
             <div
@@ -562,38 +597,40 @@
                 if (e.key === "Enter") handleShortnameClick();
               }}
               role="button"
-              aria-label="Edit shortname"
+              aria-label={$_("create_entry.shortname.edit_aria")}
               onclick={handleShortnameClick}
             >
               {#if shortname}
                 {shortname}
               {:else}
                 <span class="shortname-placeholder"
-                  >Click to set custom shortname (optional)...</span
+                  >{$_("create_entry.shortname.click_to_set")}</span
                 >
               {/if}
             </div>
           {/if}
           <div class="shortname-help">
-            <small
-              >Leave empty to auto-generate from title. Only alphanumeric
-              characters and underscores allowed.</small
-            >
+            <small>{$_("create_entry.shortname.help_text")}</small>
           </div>
         </div>
       </div>
     {/if}
+
     <div class="section">
       <div class="section-header">
         <TagOutline class="section-icon" />
-        <h2>Tags</h2>
+        <h2>{$_("create_entry.tags.section_title")}</h2>
       </div>
       <div class="section-content">
         <div class="tag-input-container">
+          <label for="tag-input" class="tag-label"
+            >{$_("create_entry.tags.placeholder")}</label
+          >
           <input
             type="text"
+            id="tag-input"
             bind:value={newTag}
-            placeholder="Add a tag..."
+            placeholder={$_("create_entry.tags.placeholder")}
             class="tag-input"
             onkeydown={(e) => {
               if (e.key === "Enter") addTag();
@@ -604,8 +641,8 @@
             onclick={addTag}
             disabled={!newTag.trim()}
           >
-            <PlusOutline class="icon" />
-            <span>Add</span>
+            <PlusOutline class="icon button-icon" />
+            <span>{$_("create_entry.tags.add_button")}</span>
           </button>
         </div>
 
@@ -618,7 +655,7 @@
                 <button
                   class="tag-remove"
                   onclick={() => removeTag(index)}
-                  aria-label="Remove tag"
+                  aria-label={$_("create_entry.tags.remove_aria")}
                 >
                   <CloseCircleOutline class="icon" />
                 </button>
@@ -628,7 +665,7 @@
         {:else}
           <div class="empty-state">
             <TagOutline class="empty-icon" />
-            <p>No tags added yet. Tags help others discover your content!</p>
+            <p>{$_("create_entry.tags.empty_message")}</p>
           </div>
         {/if}
       </div>
@@ -637,7 +674,7 @@
     <div class="section">
       <div class="section-header">
         <FileCheckSolid class="section-icon" />
-        <h2>Content</h2>
+        <h2>{$_("create_entry.content.section_title")}</h2>
       </div>
       <div class="section-content">
         <div class="editor-container">
@@ -649,7 +686,11 @@
     <div class="section">
       <div class="section-header">
         <PaperClipOutline class="section-icon" />
-        <h2>Attachments ({attachments.length})</h2>
+        <h2>
+          {$_("create_entry.attachments.section_title", {
+            values: { count: attachments.length },
+          })}
+        </h2>
         <input
           type="file"
           id="fileInput"
@@ -661,8 +702,8 @@
           class="add-files-button"
           onclick={() => document.getElementById("fileInput").click()}
         >
-          <UploadOutline class="icon" />
-          <span>Add Files</span>
+          <UploadOutline class="icon button-icon" />
+          <span>{$_("create_entry.attachments.add_files")}</span>
         </button>
       </div>
       <div class="section-content">
@@ -722,8 +763,8 @@
         {:else}
           <div class="empty-attachments">
             <CloudArrowUpOutline class="empty-icon" />
-            <h3>No attachments yet</h3>
-            <p>Drag and drop files here or click "Add Files" to upload</p>
+            <h3>{$_("create_entry.attachments.empty_title")}</h3>
+            <p>{$_("create_entry.attachments.empty_description")}</p>
           </div>
         {/if}
       </div>
@@ -732,6 +773,28 @@
 </div>
 
 <style>
+  .rtl {
+    direction: rtl;
+  }
+
+  .rtl .selector-label {
+    text-align: right;
+  }
+
+  .rtl .destination-select,
+  .rtl .level-select {
+    text-align: right;
+  }
+
+  .rtl .tag-input {
+    text-align: right;
+  }
+
+  .rtl .tag-remove {
+    margin-left: 0;
+    margin-right: 0.25rem;
+  }
+
   .destination-selectors {
     display: flex;
     gap: 1rem;
@@ -860,11 +923,6 @@
     border-left: 4px solid #3b82f6;
   }
 
-  .destination-preview.warning {
-    border-left-color: #dc2626;
-    background-color: #fef2f2;
-  }
-
   .preview-header {
     display: flex;
     align-items: center;
@@ -898,19 +956,6 @@
     font-weight: 500;
   }
 
-  @media (max-width: 640px) {
-    .destination-selectors {
-      flex-direction: column;
-    }
-
-    .hierarchy-levels {
-      gap: 0.75rem;
-    }
-
-    .hierarchy-level {
-      padding: 0.5rem;
-    }
-  }
   :root {
     --primary-color: #2563eb;
     --primary-light: #3b82f6;
@@ -1131,10 +1176,12 @@
     transition: all 0.2s ease;
     outline: none;
   }
+
   .shortname-input {
     font-size: 1rem;
     font-weight: 500;
   }
+
   .title-input:focus,
   .shortname-input:focus {
     border-color: var(--primary-color);
@@ -1170,11 +1217,14 @@
     transform: translateY(-1px);
     box-shadow: var(--shadow-md);
   }
+
   .shortname-help {
     margin-top: 0.5rem;
     color: var(--gray-500);
   }
-  .title-placeholder {
+
+  .title-placeholder,
+  .shortname-placeholder {
     color: var(--gray-400);
   }
 
@@ -1439,62 +1489,18 @@
     margin: 0;
     font-size: 0.875rem;
   }
-  .destination-selectors {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  .selector-group {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .selector-label {
-    font-weight: 600;
-    color: #374151;
-    font-size: 0.875rem;
-  }
-
-  .destination-select {
-    padding: 0.75rem;
-    border: 1px solid #d1d5db;
-    border-radius: 0.5rem;
-    background: white;
-    font-size: 0.875rem;
-    transition: border-color 0.2s;
-  }
-
-  .destination-select:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
-
-  .destination-select:disabled {
-    background-color: #f9fafb;
-    color: #6b7280;
-    cursor: not-allowed;
-  }
-
-  .destination-preview {
-    padding: 0.75rem;
-    background-color: #f3f4f6;
-    border-radius: 0.5rem;
-    border-left: 4px solid #3b82f6;
-  }
-
-  .destination-preview p {
-    margin: 0;
-    font-size: 0.875rem;
-    color: #374151;
-  }
 
   @media (max-width: 640px) {
     .destination-selectors {
       flex-direction: column;
+    }
+
+    .hierarchy-levels {
+      gap: 0.75rem;
+    }
+
+    .hierarchy-level {
+      padding: 0.5rem;
     }
   }
 

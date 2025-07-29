@@ -3,22 +3,26 @@
   import { params, goto } from "@roxi/routify";
   import { getEntity } from "@/lib/dmart_services";
   import { Diamonds } from "svelte-loading-spinners";
-  import { _ } from "@/i18n";
-  import { locale } from "@/i18n";
+  import { _, locale } from "@/i18n";
+  import { derived } from "svelte/store";
   import { ResourceType } from "@edraj/tsdmart/dmart.model";
   import Attachments from "@/components/Attachments.svelte";
   import { user } from "@/stores/user";
 
-  $goto;
-  let isLoading = false;
+  let isLoading = $state(false);
   let postData = $state(null);
-  let error = null;
-  let spaceName = "";
+  let error = $state(null);
+  let spaceName = $state("");
   let subpath = "";
-  let itemShortname = "";
-  let actualSubpath = "";
-  let breadcrumbs = [];
+  let itemShortname = $state("");
+  let actualSubpath = $state("");
+  let breadcrumbs = $state([]);
   let isOwner = $state(false);
+
+  const isRTL = derived(
+    locale,
+    ($locale) => $locale === "ar" || $locale === "ku"
+  );
 
   onMount(async () => {
     isOwner = $user.shortname === itemShortname;
@@ -26,13 +30,7 @@
     await initializeContent();
   });
 
-  $effect(() => {
-    if ($params.space_name && $params.subpath && $params.shortname) {
-      initializeContent();
-    }
-  });
-
-  async function initializeContent() {
+  function initializeContent() {
     spaceName = $params.space_name;
     subpath = $params.subpath;
     itemShortname = $params.shortname;
@@ -43,7 +41,7 @@
       .split("/")
       .filter((part) => part.length > 0);
     breadcrumbs = [
-      { name: "Catalogs", path: "/catalogs" },
+      { name: $_("post_detail.breadcrumb.catalogs"), path: "/catalogs" },
       { name: spaceName, path: `/catalog/${spaceName}` },
     ];
 
@@ -61,7 +59,7 @@
       path: null,
     });
 
-    await loadPostData();
+    loadPostData();
   }
 
   async function loadPostData() {
@@ -83,11 +81,11 @@
         postData = response;
       } else {
         console.error("Invalid response structure:", response);
-        error = "Invalid response structure";
+        error = $_("post_detail.error.invalid_response");
       }
     } catch (err) {
       console.error("Error fetching post data:", err);
-      error = err.message || "Failed to load post data";
+      error = err.message || $_("post_detail.error.failed_load");
     } finally {
       isLoading = false;
     }
@@ -100,7 +98,7 @@
   }
 
   function goBack() {
-    history.back();
+    window.history.back();
   }
 
   function getDisplayName(item) {
@@ -128,8 +126,12 @@
   }
 
   function formatDate(dateString) {
-    if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString();
+    if (!dateString) return $_("common.not_available");
+    return new Date(dateString).toLocaleDateString($locale, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
   }
 
   function getAuthorInfo(item) {
@@ -137,7 +139,11 @@
     const author = relationships.find(
       (rel) => rel.attributes?.role === "author"
     );
-    return author?.related_to?.shortname || item.owner_shortname || "Unknown";
+    return (
+      author?.related_to?.shortname ||
+      item.owner_shortname ||
+      $_("common.unknown")
+    );
   }
 
   function getPostTitle(postData) {
@@ -207,7 +213,7 @@
     return (
       comment?.attributes?.payload?.body?.body ||
       comment?.payload?.body?.body ||
-      "No content"
+      $_("post_detail.comments.no_content")
     );
   }
 
@@ -225,26 +231,16 @@
         return "👍";
       case "love":
         return "❤️";
-      case "laugh":
-        return "😂";
-      case "wow":
-        return "😮";
-      case "sad":
-        return "😢";
-      case "angry":
-        return "😠";
       default:
-        return "👍";
+        return "❤️";
     }
   }
 </script>
 
-<div class="page-container">
-  <!-- Header Section -->
+<div class="page-container" class:rtl={$isRTL}>
   <header class="page-header">
     <div class="header-content">
-      <!-- Breadcrumbs -->
-      <nav class="breadcrumbs" aria-label="Breadcrumb">
+      <nav class="breadcrumbs" aria-label={$_("post_detail.breadcrumb.label")}>
         <ol class="breadcrumb-list">
           {#each breadcrumbs as crumb, index}
             <li class="breadcrumb-item">
@@ -286,18 +282,17 @@
           <line x1="19" y1="12" x2="5" y2="12" />
           <polyline points="12 19 5 12 12 5" />
         </svg>
-        <span>Back to Contents</span>
+        <span>{$_("post_detail.navigation.back_to_contents")}</span>
       </button>
     </div>
   </header>
 
-  <!-- Main Content -->
   <main class="main-content">
     {#if isLoading}
       <div class="loading-container">
         <div class="loading-content">
           <Diamonds color="#4f46e5" size="60" unit="px" />
-          <p class="loading-text">Loading content...</p>
+          <p class="loading-text">{$_("post_detail.loading.content")}</p>
         </div>
       </div>
     {:else if error}
@@ -312,13 +307,22 @@
             ></path>
           </svg>
         </div>
-        <h3 class="error-title">Error Loading Post</h3>
+        <h3 class="error-title">{$_("post_detail.error.title")}</h3>
         <p class="error-message">{error}</p>
         <div class="debug-info">
-          <p class="debug-title">Debug Information:</p>
-          <p>Space: <span class="debug-value">{spaceName}</span></p>
-          <p>Subpath: <span class="debug-value">{actualSubpath}</span></p>
-          <p>Item: <span class="debug-value">{itemShortname}</span></p>
+          <p class="debug-title">{$_("post_detail.debug.title")}</p>
+          <p>
+            {$_("post_detail.debug.space")}:
+            <span class="debug-value">{spaceName}</span>
+          </p>
+          <p>
+            {$_("post_detail.debug.subpath")}:
+            <span class="debug-value">{actualSubpath}</span>
+          </p>
+          <p>
+            {$_("post_detail.debug.item")}:
+            <span class="debug-value">{itemShortname}</span>
+          </p>
         </div>
       </div>
     {:else if postData}
@@ -326,9 +330,7 @@
         {@const { reactions, comments, mediaFiles } =
           categorizeAttachments(postData)}
 
-        <!-- Post Content Card -->
         <article class="post-card">
-          <!-- Post Header -->
           <header class="post-header">
             <div class="post-title-section">
               <div class="post-icon">
@@ -338,7 +340,8 @@
                 <h1 class="post-title">{getPostTitle(postData)}</h1>
                 <div class="post-badges">
                   <span class="badge badge-primary">
-                    {postData.payload?.schema_shortname || "Content"}
+                    {postData.payload?.schema_shortname ||
+                      $_("post_detail.content_type.content")}
                   </span>
                   <span
                     class="badge {postData.is_active
@@ -350,13 +353,14 @@
                         ? 'status-active'
                         : 'status-inactive'}"
                     ></div>
-                    {postData.is_active ? "Active" : "Inactive"}
+                    {postData.is_active
+                      ? $_("post_detail.status.active")
+                      : $_("post_detail.status.inactive")}
                   </span>
                 </div>
               </div>
             </div>
 
-            <!-- Post Meta Grid -->
             <div class="meta-grid">
               <div class="meta-item">
                 <svg
@@ -369,7 +373,7 @@
                   <circle cx="12" cy="7" r="4" />
                 </svg>
                 <div class="meta-content">
-                  <p class="meta-label">Author</p>
+                  <p class="meta-label">{$_("post_detail.meta.author")}</p>
                   <p class="meta-value">{getAuthorInfo(postData)}</p>
                 </div>
               </div>
@@ -386,7 +390,7 @@
                   <line x1="3" y1="10" x2="21" y2="10" />
                 </svg>
                 <div class="meta-content">
-                  <p class="meta-label">Created</p>
+                  <p class="meta-label">{$_("post_detail.meta.created")}</p>
                   <p class="meta-value">{formatDate(postData.created_at)}</p>
                 </div>
               </div>
@@ -403,7 +407,7 @@
                   <line x1="3" y1="10" x2="21" y2="10" />
                 </svg>
                 <div class="meta-content">
-                  <p class="meta-label">Updated</p>
+                  <p class="meta-label">{$_("post_detail.meta.updated")}</p>
                   <p class="meta-value">{formatDate(postData.updated_at)}</p>
                 </div>
               </div>
@@ -419,9 +423,11 @@
                   />
                 </svg>
                 <div class="meta-content">
-                  <p class="meta-label">Content Type</p>
+                  <p class="meta-label">
+                    {$_("post_detail.meta.content_type")}
+                  </p>
                   <p class="meta-value">
-                    {postData.payload?.content_type || "Unknown"}
+                    {postData.payload?.content_type || $_("common.unknown")}
                   </p>
                 </div>
               </div>
@@ -436,13 +442,12 @@
                     />
                     <circle cx="7.5" cy="7.5" r="1.5" />
                   </svg>
-                  Description
+                  {$_("post_detail.sections.description")}
                 </h3>
                 <p class="description-text">{getDescription(postData)}</p>
               </div>
             {/if}
 
-            <!-- Tags -->
             {#if postData.tags && postData.tags.length > 0 && postData.tags[0] !== ""}
               <div class="tags-section">
                 <h3 class="section-title">
@@ -452,7 +457,7 @@
                     />
                     <circle cx="7.5" cy="7.5" r="1.5" />
                   </svg>
-                  Tags
+                  {$_("post_detail.sections.tags")}
                 </h3>
                 <div class="tags-container">
                   {#each postData.tags as tag}
@@ -465,12 +470,11 @@
             {/if}
           </header>
 
-          <!-- Post Content -->
           {#if getPostContent(postData)}
             <section class="content-section">
               <h3 class="content-title">
                 <span class="title-accent"></span>
-                Content
+                {$_("post_detail.sections.content")}
               </h3>
 
               <div class="post-content">
@@ -481,18 +485,18 @@
             </section>
           {/if}
 
-          <!-- Interactions Section -->
           {#if reactions.length > 0 || comments.length > 0}
             <section class="interactions-section">
               <h3 class="section-title-large">
                 <span class="title-accent"></span>
-                Interactions
+                {$_("post_detail.sections.interactions")}
               </h3>
 
-              <!-- Reactions Summary -->
               {#if reactions.length > 0}
                 <div class="reactions-summary">
-                  <h4 class="simple-subtitle">Reactions</h4>
+                  <h4 class="simple-subtitle">
+                    {$_("post_detail.reactions.title")}
+                  </h4>
                   <div class="reactions-simple">
                     {#each Object.entries(reactions.reduce((acc, reaction) => {
                         const type = getReactionType(reaction);
@@ -508,10 +512,13 @@
                 </div>
               {/if}
 
-              <!-- Comments List -->
               {#if comments.length > 0}
                 <div class="comments-simple">
-                  <h4 class="simple-subtitle">Comments ({comments.length})</h4>
+                  <h4 class="simple-subtitle">
+                    {$_("post_detail.comments.title", {
+                      values: { count: comments.length },
+                    })}
+                  </h4>
                   <div class="comments-list-simple">
                     {#each comments as comment}
                       <div class="comment-simple">
@@ -524,12 +531,13 @@
             </section>
           {/if}
 
-          <!-- Media Attachments -->
           {#if mediaFiles.length > 0}
             <section class="media-section">
               <h3 class="section-title-large">
                 <span class="title-accent-green"></span>
-                Media & Files ({mediaFiles.length})
+                {$_("post_detail.media.title", {
+                  values: { count: mediaFiles.length },
+                })}
               </h3>
               <Attachments
                 attachments={mediaFiles}
@@ -546,17 +554,19 @@
             <section class="relationships-section">
               <h3 class="section-title-large">
                 <span class="title-accent-purple"></span>
-                Relationships
+                {$_("post_detail.sections.relationships")}
               </h3>
               <div class="relationships-grid">
                 {#each postData.relationships as relationship}
                   <div class="relationship-item">
                     <div class="relationship-content">
                       <span class="relationship-role">
-                        {relationship.attributes?.role || "Related"}
+                        {relationship.attributes?.role ||
+                          $_("post_detail.relationships.related")}
                       </span>
                       <span class="relationship-name">
-                        {relationship.related_to?.shortname || "Unknown"}
+                        {relationship.related_to?.shortname ||
+                          $_("common.unknown")}
                       </span>
                       {#if relationship.related_to?.space_name}
                         <span class="relationship-space">
@@ -575,7 +585,6 @@
         </article>
       {/if}
     {:else}
-      <!-- No data state -->
       <div class="no-data-container">
         <div class="no-data-icon">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -587,8 +596,8 @@
             ></path>
           </svg>
         </div>
-        <h3 class="no-data-title">No Data Available</h3>
-        <p class="no-data-message">Unable to load post data.</p>
+        <h3 class="no-data-title">{$_("post_detail.no_data.title")}</h3>
+        <p class="no-data-message">{$_("post_detail.no_data.message")}</p>
       </div>
     {/if}
   </main>
@@ -598,6 +607,10 @@
   .page-container {
     min-height: 100vh;
     background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 50%, #e0e7ff 100%);
+  }
+
+  .rtl {
+    direction: rtl;
   }
 
   .page-header {
@@ -613,6 +626,10 @@
     max-width: 80rem;
     margin: 0 auto;
     padding: 1rem 1.5rem;
+  }
+
+  .rtl .header-content {
+    text-align: right;
   }
 
   .breadcrumbs {
@@ -638,6 +655,10 @@
     height: 1rem;
     color: #94a3b8;
     margin: 0 0.5rem;
+  }
+
+  .rtl .breadcrumb-separator {
+    transform: rotate(180deg);
   }
 
   .breadcrumb-link {
@@ -671,7 +692,6 @@
     font-weight: 500;
     transition: all 0.2s ease;
   }
-
   .back-button:hover {
     color: #4f46e5;
   }
@@ -684,6 +704,10 @@
 
   .back-button:hover .back-icon {
     transform: translateX(-0.25rem);
+  }
+
+  .rtl .back-button:hover .back-icon {
+    transform: translateX(0.25rem);
   }
 
   .main-content {
@@ -711,6 +735,10 @@
   .error-container {
     text-align: center;
     padding: 5rem 0;
+  }
+
+  .rtl .error-container {
+    text-align: center;
   }
 
   .error-icon {
@@ -752,6 +780,10 @@
     margin: 0 auto;
   }
 
+  .rtl .debug-info {
+    text-align: right;
+  }
+
   .debug-title {
     font-weight: 500;
     margin-bottom: 0.5rem;
@@ -774,6 +806,10 @@
     padding: 2rem;
     background: linear-gradient(135deg, #f0f9ff 0%, #dbeafe 100%);
     border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+  }
+
+  .rtl .post-header {
+    text-align: right;
   }
 
   .post-title-section {
@@ -840,6 +876,11 @@
     margin-right: 0.5rem;
   }
 
+  .rtl .status-dot {
+    margin-right: 0;
+    margin-left: 0.5rem;
+  }
+
   .status-active {
     background: #10b981;
   }
@@ -893,6 +934,10 @@
     margin-bottom: 1.5rem;
   }
 
+  .rtl .description-section {
+    text-align: right;
+  }
+
   .section-title {
     display: flex;
     align-items: center;
@@ -916,6 +961,10 @@
 
   .tags-section {
     margin-top: 1.5rem;
+  }
+
+  .rtl .tags-section {
+    text-align: right;
   }
 
   .tags-container {
@@ -942,6 +991,10 @@
 
   .content-section {
     padding: 2rem;
+  }
+
+  .rtl .content-section {
+    text-align: right;
   }
 
   .content-title {
@@ -975,6 +1028,16 @@
     border-radius: 9999px;
   }
 
+  .section-title-large {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 1.5rem;
+  }
+
   .post-content {
     background: #f8fafc;
     border-radius: 0.75rem;
@@ -991,6 +1054,10 @@
 
   .interactions-section {
     padding: 0 2rem 1.5rem;
+  }
+
+  .rtl .interactions-section {
+    text-align: right;
   }
 
   .reactions-summary {
@@ -1046,8 +1113,16 @@
     padding: 0 2rem 2rem;
   }
 
+  .rtl .media-section {
+    text-align: right;
+  }
+
   .relationships-section {
     padding: 0 2rem 2rem;
+  }
+
+  .rtl .relationships-section {
+    text-align: right;
   }
 
   .relationships-grid {
@@ -1135,5 +1210,63 @@
   .no-data-message {
     color: #64748b;
     margin: 0;
+  }
+
+  /* Mobile Responsive */
+  @media (max-width: 768px) {
+    .header-content {
+      padding: 1rem;
+    }
+
+    .main-content {
+      padding: 1rem;
+    }
+
+    .post-header {
+      padding: 1.5rem;
+    }
+
+    .content-section {
+      padding: 1.5rem;
+    }
+
+    .interactions-section,
+    .media-section,
+    .relationships-section {
+      padding: 0 1.5rem 1.5rem;
+    }
+
+    .meta-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .post-title {
+      font-size: 1.5rem;
+    }
+
+    .post-title-section {
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .rtl .post-title-section {
+      flex-direction: column;
+    }
+
+    .relationships-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .relationship-item {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    .rtl .relationship-item {
+      flex-direction: column;
+      align-items: flex-end;
+    }
   }
 </style>

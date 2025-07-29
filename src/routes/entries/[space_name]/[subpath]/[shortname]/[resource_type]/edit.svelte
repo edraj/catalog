@@ -33,20 +33,26 @@
     StarOutline,
   } from "flowbite-svelte-icons";
   import { Diamonds } from "svelte-loading-spinners";
-  import { _ } from "@/i18n";
+  import { _, locale } from "@/i18n";
+  import { derived } from "svelte/store";
 
   $goto;
-  let entity = null;
-  let isLoading = false;
-  let isLoadingPage = true;
-  let content = "";
-  let title = "";
-  let isEditing = false;
-  let tags = [];
-  let newTag = "";
-  let attachments = [];
-  let htmlEditor: any = null;
-  let editorReady = false;
+  let entity = $state(null);
+  let isLoading = $state(false);
+  let isLoadingPage = $state(true);
+  let content = $state("");
+  let title = $state("");
+  let isEditing = $state(false);
+  let tags = $state([]);
+  let newTag = $state("");
+  let attachments = $state([]);
+  let htmlEditor: any = $state(null);
+  let editorReady = $state(false);
+
+  const isRTL = derived(
+    locale,
+    ($locale) => $locale === "ar" || $locale === "ku"
+  );
 
   function handleLabelClick() {
     isEditing = true;
@@ -108,10 +114,12 @@
       entity.workflow_shortname,
       entity.attributes?.payload?.schema_shortname
     );
-    const msg = isPublish ? "published" : "updated";
+    const msg = isPublish
+      ? $_("entry_edit.published")
+      : $_("entry_edit.updated");
 
     if (response) {
-      successToastMessage(`Entry ${msg} successfully.`);
+      successToastMessage($_("entry_edit.success"));
       for (const attachment of attachments) {
         const r = await attachAttachmentsToEntity(
           response,
@@ -120,14 +128,16 @@
           attachment
         );
         if (r === false) {
-          errorToastMessage(`Failed to attach ${attachment.name} to entry!`);
+          errorToastMessage(
+            $_("entry_edit.attachment_error") + { name: attachment.name }
+          );
         }
       }
       setTimeout(() => {
         $goto("/entries/");
       }, 500);
     } else {
-      errorToastMessage(`Failed to ${msg} entry!`);
+      errorToastMessage($_("entry_edit.error"));
       isLoading = false;
     }
   }
@@ -159,33 +169,33 @@
   function getStatusInfo(entity: any) {
     if (!entity.is_active) {
       return {
-        text: "Draft",
+        text: $_("entry_edit.status.draft"),
         class: "status-draft",
-        description: "This entry is saved as a draft",
+        description: $_("entry_edit.status.draft_description"),
       };
     } else if (entity.state === "pending") {
       return {
-        text: "Pending Review",
+        text: $_("entry_edit.status.pending"),
         class: "status-pending",
-        description: "This entry is under review",
+        description: $_("entry_edit.status.pending_description"),
       };
     } else if (entity.state === "approved") {
       return {
-        text: "Published",
+        text: $_("entry_edit.status.published"),
         class: "status-published",
-        description: "This entry is live and visible to everyone",
+        description: $_("entry_edit.status.published_description"),
       };
     } else if (entity.state === "rejected") {
       return {
-        text: "Rejected",
+        text: $_("entry_edit.status.rejected"),
         class: "status-rejected",
-        description: "This entry was rejected and needs revision",
+        description: $_("entry_edit.status.rejected_description"),
       };
     } else {
       return {
-        text: "Active",
+        text: $_("entry_edit.status.active"),
         class: "status-active",
-        description: "This entry is active",
+        description: $_("entry_edit.status.active_description"),
       };
     }
   }
@@ -212,29 +222,29 @@
   <div class="loading-page">
     <div class="loading-content">
       <Diamonds size="60" color="#2563eb" unit="px" duration="1s" />
-      <p>Loading entry for editing...</p>
+      <p>{$_("entry_edit.loading")}</p>
     </div>
   </div>
 {:else if entity}
-  <div class="page-container">
+  <div class="page-container" class:rtl={$isRTL}>
     <div class="content-wrapper">
       <!-- Header -->
       <div class="header">
         <button
           class="back-button"
-          on:click={() =>
+          onclick={() =>
             $goto(
               "/entries/[space_name]/[subpath]/[shortname]/[resource_type]",
               { shortname: $params.shortname }
             )}
         >
           <ArrowLeftOutline class="icon" />
-          <span>Back to Entry</span>
+          <span>{$_("entry_edit.back_to_entry")}</span>
         </button>
 
         <div class="status-badge">
           <StarOutline class="icon" />
-          <span>Editing Entry</span>
+          <span>{$_("entry_edit.editing_entry")}</span>
         </div>
       </div>
 
@@ -246,7 +256,7 @@
             <div class="status-icon">
               <FileCheckSolid class="icon" />
             </div>
-            <div class="status-info">
+            <div class="status-info" class:text-right={$isRTL}>
               <div class="status-badge-container">
                 <span class="status-badge {statusInfo.class}">
                   {statusInfo.text}
@@ -265,27 +275,35 @@
             <div class="action-icon">
               <FileCheckSolid class="icon" />
             </div>
-            <div class="action-text">
-              <h3>Update Your Entry</h3>
-              <p>Save your changes or publish your updated entry</p>
+            <div class="action-text" class:text-right={$isRTL}>
+              <h3>{$_("entry_edit.update_entry")}</h3>
+              <p>{$_("entry_edit.update_description")}</p>
             </div>
           </div>
           <div class="action-buttons">
             <button
               class="draft-button"
-              on:click={() => handleUpdate(false)}
+              onclick={() => handleUpdate(false)}
               disabled={isLoading}
             >
               <FloppyDiskSolid class="icon" />
-              <span>{isLoading ? "Saving..." : "Save Changes"}</span>
+              <span
+                >{isLoading
+                  ? $_("entry_edit.saving")
+                  : $_("entry_edit.save_changes")}</span
+              >
             </button>
             <button
               class="publish-button"
-              on:click={() => handleUpdate(true)}
+              onclick={() => handleUpdate(true)}
               disabled={isLoading}
             >
               <PaperPlaneSolid class="icon" />
-              <span>{isLoading ? "Publishing..." : "Publish Changes"}</span>
+              <span
+                >{isLoading
+                  ? $_("entry_edit.publishing")
+                  : $_("entry_edit.publish_changes")}</span
+              >
             </button>
           </div>
         </div>
@@ -295,33 +313,34 @@
       <div class="section">
         <div class="section-header">
           <TextUnderlineOutline class="section-icon" />
-          <h2>Entry Title</h2>
+          <h2>{$_("entry_edit.entry_title")}</h2>
         </div>
         <div class="section-content">
           {#if isEditing}
             <input
               type="text"
               bind:value={title}
-              on:blur={handleInputBlur}
+              onblur={handleInputBlur}
               class="title-input"
-              placeholder="Enter your entry title..."
+              class:text-right={$isRTL}
+              placeholder={$_("entry_edit.title_placeholder")}
             />
           {:else}
             <div
               class="title-display"
               tabindex="0"
-              on:keydown={(e) => {
+              onkeydown={(e) => {
                 if (e.key === "Enter") handleLabelClick();
               }}
               role="button"
-              aria-label="Edit title"
-              on:click={handleLabelClick}
+              aria-label={$_("entry_edit.edit_title")}
+              onclick={handleLabelClick}
             >
               {#if title}
                 {title}
               {:else}
                 <span class="title-placeholder"
-                  >Click to add a compelling title...</span
+                  >{$_("entry_edit.title_click_to_add")}</span
                 >
               {/if}
             </div>
@@ -333,39 +352,40 @@
       <div class="section">
         <div class="section-header">
           <TagOutline class="section-icon" />
-          <h2>Tags</h2>
+          <h2>{$_("entry_edit.tags")}</h2>
         </div>
         <div class="section-content">
           <div class="tag-input-container">
             <input
               type="text"
               bind:value={newTag}
-              placeholder="Add a tag..."
+              placeholder={$_("entry_edit.add_tag_placeholder")}
               class="tag-input"
-              on:keydown={(e) => {
+              class:text-right={$isRTL}
+              onkeydown={(e) => {
                 if (e.key === "Enter") addTag();
               }}
             />
             <button
               class="add-tag-button"
-              on:click={addTag}
+              onclick={addTag}
               disabled={!newTag.trim()}
             >
               <PlusOutline class="icon" />
-              <span>Add</span>
+              <span>{$_("entry_edit.add")}</span>
             </button>
           </div>
 
           {#if tags.length > 0}
-            <div class="tags-container">
+            <div class="tags-container" class:flex-row-reverse={$isRTL}>
               {#each tags as tag, index}
                 <div class="tag-item">
                   <TagOutline class="tag-icon" />
                   <span class="tag-text">{tag}</span>
                   <button
                     class="tag-remove"
-                    on:click={() => removeTag(index)}
-                    aria-label="Remove tag"
+                    onclick={() => removeTag(index)}
+                    aria-label={$_("entry_edit.remove_tag")}
                   >
                     <CloseCircleOutline class="icon" />
                   </button>
@@ -375,7 +395,7 @@
           {:else}
             <div class="empty-state">
               <TagOutline class="empty-icon" />
-              <p>No tags added yet. Tags help others discover your content!</p>
+              <p>{$_("entry_edit.no_tags_message")}</p>
             </div>
           {/if}
         </div>
@@ -385,7 +405,7 @@
       <div class="section">
         <div class="section-header">
           <FileCheckSolid class="section-icon" />
-          <h2>Content</h2>
+          <h2>{$_("entry_edit.content")}</h2>
         </div>
         <div class="section-content">
           <div class="editor-container">
@@ -394,7 +414,7 @@
             {:else}
               <div class="editor-loading">
                 <Diamonds size="40" color="#2563eb" unit="px" duration="1s" />
-                <p>Loading editor...</p>
+                <p>{$_("entry_edit.loading_editor")}</p>
               </div>
             {/if}
           </div>
@@ -406,7 +426,10 @@
         <div class="section">
           <div class="section-header">
             <PaperClipOutline class="section-icon" />
-            <h2>Current Attachments ({getExistingAttachments().length})</h2>
+            <h2>
+              {$_("entry_edit.current_attachments")} ({getExistingAttachments()
+                .length})
+            </h2>
           </div>
           <div class="section-content">
             <Attachments
@@ -425,20 +448,20 @@
       <div class="section">
         <div class="section-header">
           <PaperClipOutline class="section-icon" />
-          <h2>Add New Attachments ({attachments.length})</h2>
+          <h2>{$_("entry_edit.add_new_attachments")} ({attachments.length})</h2>
           <input
             type="file"
             id="fileInput"
             multiple
-            on:change={handleFileChange}
+            onchange={handleFileChange}
             style="display: none;"
           />
           <button
             class="add-files-button"
-            on:click={() => document.getElementById("fileInput").click()}
+            onclick={() => document.getElementById("fileInput").click()}
           >
             <UploadOutline class="icon" />
-            <span>Add Files</span>
+            <span>{$_("entry_edit.add_files")}</span>
           </button>
         </div>
         <div class="section-content">
@@ -480,7 +503,7 @@
                       </div>
                     {/if}
                   </div>
-                  <div class="attachment-info">
+                  <div class="attachment-info" class:text-right={$isRTL}>
                     <p class="attachment-name">{attachment.name}</p>
                     <p class="attachment-size">
                       {(attachment.size / 1024).toFixed(1)} KB
@@ -488,7 +511,7 @@
                   </div>
                   <button
                     class="remove-attachment"
-                    on:click={() => removeAttachment(index)}
+                    onclick={() => removeAttachment(index)}
                   >
                     <TrashBinSolid class="icon" />
                   </button>
@@ -498,8 +521,8 @@
           {:else}
             <div class="empty-attachments">
               <CloudArrowUpOutline class="empty-icon" />
-              <h3>No new attachments</h3>
-              <p>Add new files to attach to your entry</p>
+              <h3>{$_("entry_edit.no_new_attachments")}</h3>
+              <p>{$_("entry_edit.add_files_description")}</p>
             </div>
           {/if}
         </div>
@@ -512,16 +535,20 @@
       <div class="error-icon">
         <CloseCircleOutline class="icon" />
       </div>
-      <h2>Entry Not Found</h2>
-      <p>The entry you're trying to edit doesn't exist or has been removed.</p>
-      <button class="back-button" on:click={() => $goto("/entries")}>
-        Back to My Entries
+      <h2>{$_("entry_edit.error.not_found_title")}</h2>
+      <p>{$_("entry_edit.error.not_found_message")}</p>
+      <button class="back-button" onclick={() => $goto("/entries")}>
+        {$_("entry_edit.back_to_entries")}
       </button>
     </div>
   </div>
 {/if}
 
 <style>
+  .rtl {
+    direction: rtl;
+  }
+
   :root {
     --primary-color: #2563eb;
     --primary-light: #3b82f6;
@@ -1069,42 +1096,6 @@
   .editor-loading p {
     margin-top: 1rem;
     font-size: 0.875rem;
-  }
-
-  .existing-attachments-info {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1.5rem;
-    background: var(--gray-50);
-    border-radius: var(--radius-lg);
-    margin-bottom: 1.5rem;
-    border: 1px solid var(--gray-200);
-  }
-
-  .info-icon {
-    width: 2.5rem;
-    height: 2.5rem;
-    background: var(--primary-color);
-    color: var(--white);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-
-  .info-text h4 {
-    margin: 0 0 0.25rem 0;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--gray-800);
-  }
-
-  .info-text p {
-    margin: 0;
-    font-size: 0.875rem;
-    color: var(--gray-600);
   }
 
   .add-files-button {
