@@ -18,7 +18,7 @@
   let isLoading = $state(true);
   let spaces = $state([]);
   let displayedSpaces = $state([]);
-
+  let debounceTimer;
   let error = $state(null);
   const isRTL = derived(
     locale,
@@ -76,6 +76,7 @@
     try {
       const response = await getSpaces(false, "managed");
       spaces = response.records || [];
+      performSearch("");
     } catch (err) {
       console.error("Error fetching spaces:", err);
       error = "Failed to load spaces";
@@ -158,13 +159,12 @@
   }
 
   function handleSearchInput() {
-    if (searchTimeout) {
-      clearTimeout(searchTimeout);
-    }
+    performSearch(searchQuery);
+  }
 
-    searchTimeout = setTimeout(() => {
-      performSearch(searchQuery);
-    }, 500);
+  export function debounce(fn: () => void, delay = 1000) {
+    clearTimeout(debounceTimer);
+    debounceTimer = window.setTimeout(fn, delay);
   }
 
   function applyFilters() {
@@ -240,13 +240,13 @@
     }
   });
 
-  $effect(() => {
-    if (searchQuery.trim()) {
-      performSearch(searchQuery);
-    } else {
-      applyFilters();
-    }
-  });
+  // $effect(() => {
+  //   if (searchQuery.trim()) {
+  //     performSearch(searchQuery);
+  //   } else {
+  //     applyFilters();
+  //   }
+  // });
 
   function handleSpaceClick(space: any) {
     $goto(`/dashboard/admin/[space_name]`, {
@@ -779,8 +779,8 @@
                     id="search"
                     type="text"
                     bind:value={searchQuery}
+                    oninput={() => debounce(handleSearchInput)}
                     placeholder={$_("search_filters.search_placeholder")}
-                    oninput={handleSearchInput}
                     class="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
                   />
                   {#if isSearching}

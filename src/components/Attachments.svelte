@@ -25,6 +25,8 @@
     isOwner: boolean;
   } = $props();
 
+  console.log("Attachments I n the attachment componant:", attachments);
+
   let previewModal = $state(false);
   let currentPreview = $state(null);
 

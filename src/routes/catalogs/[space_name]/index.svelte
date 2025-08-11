@@ -771,176 +771,141 @@
         </div>
       {/if}
 
-      {#if totalDisplayed === 0}
-        <div class="empty-state">
-          <div class="empty-icon">
-            <svg
-              class="w-12 h-12 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              ></path>
-            </svg>
-          </div>
-          <h3 class="empty-title">
-            {$_("catalog_contents.empty.title")}
-          </h3>
-          <p class="empty-message">
-            {searchQuery || selectedContentTags.length > 0
-              ? $_("catalog_contents.empty.no_matches")
-              : $_("catalog_contents.empty.space_empty")}
-          </p>
+      <div class="search-filter-section">
+        <div class="search-filter-header">
+          <h2 class="section-title">
+            {$_("catalog_contents.filters.title")}
+          </h2>
           {#if searchQuery || selectedContentTags.length > 0}
-            <button onclick={clearAllFilters} class="clear-filters-button">
+            <button onclick={clearAllFilters} class="clear-all-filters-button">
               {$_("catalog_contents.filters.clear_all")}
             </button>
           {/if}
         </div>
-      {:else}
-        <div class="search-filter-section">
-          <div class="search-filter-header">
-            <h2 class="section-title">
-              {$_("catalog_contents.filters.title")}
-            </h2>
-            {#if searchQuery || selectedContentTags.length > 0}
-              <button
-                onclick={clearAllFilters}
-                class="clear-all-filters-button"
+
+        <div class="search-filter-controls">
+          <div class="search-input-group">
+            <div class="search-input-wrapper">
+              <label class="filter-label" for="sort-by"
+                >{$_("catalog_contents.search.label")}</label
               >
-                {$_("catalog_contents.filters.clear_all")}
-              </button>
-            {/if}
-          </div>
-
-          <div class="search-filter-controls">
-            <div class="search-input-group">
-              <div class="search-input-wrapper">
-                <label class="filter-label" for="sort-by"
-                  >{$_("catalog_contents.search.label")}</label
+              <input
+                type="text"
+                bind:value={searchQuery}
+                placeholder={$_("catalog_contents.search.placeholder")}
+                oninput={handleSearchInput}
+                class="search-input"
+                aria-label={$_("catalog_contents.search.label")}
+              />
+              {#if searchQuery}
+                <button
+                  onclick={() => {
+                    searchQuery = "";
+                    searchResults = [];
+                    applyFiltersAndSort();
+                  }}
+                  class="clear-search-button"
+                  aria-label={$_("catalog_contents.search.clear")}
                 >
-                <input
-                  type="text"
-                  bind:value={searchQuery}
-                  placeholder={$_("catalog_contents.search.placeholder")}
-                  oninput={handleSearchInput}
-                  class="search-input"
-                  aria-label={$_("catalog_contents.search.label")}
-                />
-                {#if searchQuery}
-                  <button
-                    onclick={() => {
-                      searchQuery = "";
-                      searchResults = [];
-                      applyFiltersAndSort();
-                    }}
-                    class="clear-search-button"
-                    aria-label={$_("catalog_contents.search.clear")}
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    <svg
-                      class="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M6 18L18 6M6 6l12 12"
-                      ></path>
-                    </svg>
-                  </button>
-                {/if}
-                {#if isSearching}
-                  <div class="search-loading-indicator">
-                    <Diamonds color="#3b82f6" size="16" unit="px" />
-                  </div>
-                {/if}
-              </div>
-            </div>
-            <div class="filter-controls">
-              <div class="filter-group">
-                <label class="filter-label" for="sort-by"
-                  >{$_("catalog_contents.filters.sort_by")}</label
-                >
-                <select
-                  bind:value={sortBy}
-                  class="filter-select sort-select"
-                  aria-label={$_("catalog_contents.filters.sort_by")}
-                  id="sort-by"
-                  onchange={() => {
-                    if (searchQuery.trim()) {
-                      performSearch(searchQuery);
-                    } else {
-                      applyFiltersAndSort();
-                    }
-                  }}
-                >
-                  {#each sortOptions as option}
-                    <option value={option.value}>{option.label}</option>
-                  {/each}
-                </select>
-              </div>
-
-              <div class="filter-group">
-                <label class="filter-label" for="items-per-load"
-                  >{$_("catalog_contents.pagination.items_per_load")}</label
-                >
-                <select
-                  bind:value={itemsPerLoad}
-                  onchange={(e) => {
-                    e.preventDefault();
-                    handleItemsPerLoadChange(
-                      parseInt((e.target as HTMLSelectElement).value)
-                    );
-                  }}
-                  class="filter-select"
-                  aria-label={$_("catalog_contents.pagination.items_per_load")}
-                  id="items-per-load"
-                >
-                  {#each itemsPerLoadOptions as option}
-                    <option value={option}>{option}</option>
-                  {/each}
-                </select>
-              </div>
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    ></path>
+                  </svg>
+                </button>
+              {/if}
+              {#if isSearching}
+                <div class="search-loading-indicator">
+                  <Diamonds color="#3b82f6" size="16" unit="px" />
+                </div>
+              {/if}
             </div>
           </div>
+          <div class="filter-controls">
+            <div class="filter-group">
+              <label class="filter-label" for="sort-by"
+                >{$_("catalog_contents.filters.sort_by")}</label
+              >
+              <select
+                bind:value={sortBy}
+                class="filter-select sort-select"
+                aria-label={$_("catalog_contents.filters.sort_by")}
+                id="sort-by"
+                onchange={() => {
+                  if (searchQuery.trim()) {
+                    performSearch(searchQuery);
+                  } else {
+                    applyFiltersAndSort();
+                  }
+                }}
+              >
+                {#each sortOptions as option}
+                  <option value={option.value}>{option.label}</option>
+                {/each}
+              </select>
+            </div>
 
-          <div class="results-summary">
-            <div class="results-info">
-              {#if searchQuery.trim()}
-                {$_("catalog_contents.pagination.showing_items", {
-                  values: {
-                    displayed: totalDisplayed,
-                    total: totalFiltered,
-                  },
-                })}
-                {$_("catalog_contents.results.for_query", {
-                  values: { query: searchQuery },
-                })}
-              {:else}
-                {$_("catalog_contents.pagination.showing_items", {
-                  values: {
-                    displayed: totalDisplayed,
-                    total: totalFiltered,
-                  },
-                })}
-                {#if selectedContentTags.length > 0}
-                  {$_("catalog_contents.results.with_tags", {
-                    values: { count: selectedContentTags.length },
-                  })}
-                {/if}
-              {/if}
+            <div class="filter-group">
+              <label class="filter-label" for="items-per-load"
+                >{$_("catalog_contents.pagination.items_per_load")}</label
+              >
+              <select
+                bind:value={itemsPerLoad}
+                onchange={(e) => {
+                  e.preventDefault();
+                  handleItemsPerLoadChange(
+                    parseInt((e.target as HTMLSelectElement).value)
+                  );
+                }}
+                class="filter-select"
+                aria-label={$_("catalog_contents.pagination.items_per_load")}
+                id="items-per-load"
+              >
+                {#each itemsPerLoadOptions as option}
+                  <option value={option}>{option}</option>
+                {/each}
+              </select>
             </div>
           </div>
         </div>
 
+        <div class="results-summary">
+          <div class="results-info">
+            {#if searchQuery.trim()}
+              {$_("catalog_contents.pagination.showing_items", {
+                values: {
+                  displayed: totalDisplayed,
+                  total: totalFiltered,
+                },
+              })}
+              {$_("catalog_contents.results.for_query", {
+                values: { query: searchQuery },
+              })}
+            {:else}
+              {$_("catalog_contents.pagination.showing_items", {
+                values: {
+                  displayed: totalDisplayed,
+                  total: totalFiltered,
+                },
+              })}
+              {#if selectedContentTags.length > 0}
+                {$_("catalog_contents.results.with_tags", {
+                  values: { count: selectedContentTags.length },
+                })}
+              {/if}
+            {/if}
+          </div>
+        </div>
+      </div>
+      {#if totalDisplayed !== 0}
         <div class="card-list-container">
           <div class="card-list">
             {#each displayedContents as item, index}
@@ -1318,6 +1283,37 @@
                     })}
               </p>
             </div>
+          {/if}
+        </div>
+      {:else}
+        <div class="empty-state">
+          <div class="empty-icon">
+            <svg
+              class="w-12 h-12 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              ></path>
+            </svg>
+          </div>
+          <h3 class="empty-title">
+            {$_("catalog_contents.empty.title")}
+          </h3>
+          <p class="empty-message">
+            {searchQuery || selectedContentTags.length > 0
+              ? $_("catalog_contents.empty.no_matches")
+              : $_("catalog_contents.empty.space_empty")}
+          </p>
+          {#if searchQuery || selectedContentTags.length > 0}
+            <button onclick={clearAllFilters} class="clear-filters-button">
+              {$_("catalog_contents.filters.clear_all")}
+            </button>
           {/if}
         </div>
       {/if}
