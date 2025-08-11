@@ -40,7 +40,7 @@
   const authorRelatedEntries = writable([]);
   let authorRelatedEntriesValue = $state([]);
   let itemDataValue = $state(null);
-  let htmlEditor: any = $state(null);
+  let htmlEditor: any = $state("");
 
   const editForm = writable({
     title: "",
@@ -58,6 +58,7 @@
     is_active: true,
   });
 
+  // ... existing functions remain the same ...
   onMount(async () => {
     await initializeContent();
   });
@@ -127,7 +128,6 @@
   async function loadItemData() {
     isLoading.set(true);
     error.set(null);
-    itemData.set(null);
 
     try {
       const response = await getEntity(
@@ -135,18 +135,18 @@
         spaceNameValue,
         actualSubpathValue,
         $params.resource_type,
-        "managed"
+        $params.workflow_shortname,
+        $params.schema_shortname
       );
-      console.log(response);
 
-      if (response && response.uuid) {
+      if (response) {
         itemDataValue = response;
         itemData.set(response);
 
         const title =
           response.payload?.body?.title ||
-          response.displayname ||
-          response.shortname ||
+          response.payload?.title ||
+          response.title ||
           "";
         const content =
           response.payload?.body?.content || response.description || "";
@@ -162,6 +162,9 @@
           is_active: response.is_active,
         };
         editForm.set(editFormValue);
+
+        // Initialize htmlEditor with current content
+        htmlEditor = editFormValue.content;
       } else {
         console.error("No valid response found for item:", itemShortnameValue);
         error.set($_("admin_item_detail.error.item_not_found"));
@@ -178,7 +181,7 @@
     event?.preventDefault();
 
     try {
-      const htmlContent = htmlEditor?.getHtml(true) || editFormValue.content;
+      const htmlContent = htmlEditor || editFormValue.content;
 
       const tagsArray = editFormValue.tagsString
         .split(",")
@@ -188,7 +191,7 @@
       const entityData = {
         title: editFormValue.title,
         tags: tagsArray,
-        content: htmlContent, // Use the HTML content from the editor
+        content: htmlContent,
         is_active: editFormValue.is_active,
       };
 
@@ -205,9 +208,6 @@
       if (response) {
         showEditModal.set(false);
         await loadItemData();
-
-        // Optional: Show success message
-        // successMessage.set($_("admin_item_detail.success.item_updated"));
       } else {
         console.error("Update failed: No response received");
         error.set($_("admin_item_detail.error.failed_update_item"));
@@ -219,6 +219,7 @@
       );
     }
   }
+
   async function handleDeleteItem() {
     if (
       !confirm(
@@ -276,19 +277,6 @@
   function formatDate(dateString) {
     if (!dateString) return $_("common.not_available");
     return new Date(dateString).toLocaleString($locale);
-  }
-
-  function formatBytes(bytes) {
-    if (!bytes) return $_("admin_item_detail.file_size.zero_bytes");
-    const k = 1024;
-    const sizes = [
-      $_("admin_item_detail.file_size.bytes"),
-      $_("admin_item_detail.file_size.kb"),
-      $_("admin_item_detail.file_size.mb"),
-      $_("admin_item_detail.file_size.gb"),
-    ];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   }
 
   function navigateToBreadcrumb(path) {
@@ -807,7 +795,6 @@
                           {/if}
                         </td>
                       </tr>
-                      <!-- New row for readable content -->
                       <tr>
                         <td
                           class="px-6 py-4 text-sm font-medium text-gray-900 bg-gray-50 align-top"
@@ -820,11 +807,12 @@
                           class="px-6 py-4 text-sm text-gray-500"
                           class:text-right={$isRTL}
                         >
+                          {console.log(itemDataValue.payload)}
                           {#if itemDataValue.payload.content_type === "html"}
                             <div class="bg-gray-50 p-4 rounded-lg">
-                              <div class="text-sm whitespace-pre-wrap">
-                                {itemDataValue.payload.body
-                                  .replace(/<[^>]*>/g, "")
+                              <!-- Render HTML content directly -->
+                              <div class="text-sm prose max-w-none">
+                                {@html itemDataValue.payload.body
                                   .replace(/&nbsp;/g, " ")
                                   .replace(/&amp;/g, "&")
                                   .replace(/&lt;/g, "<")
@@ -850,14 +838,16 @@
                                 <div
                                   class="mt-1 pl-4 border-l-2 border-blue-200"
                                 >
-                                  {itemDataValue.payload.body.content
-                                    .replace(/<[^>]*>/g, "")
-                                    .replace(/&nbsp;/g, " ")
-                                    .replace(/&amp;/g, "&")
-                                    .replace(/&lt;/g, "<")
-                                    .replace(/&gt;/g, ">")
-                                    .replace(/&quot;/g, '"')
-                                    .trim()}
+                                  <!-- Render HTML content with @html instead of stripping tags -->
+                                  <div class="prose max-w-none">
+                                    {@html itemDataValue.payload.body.content
+                                      .replace(/&nbsp;/g, " ")
+                                      .replace(/&amp;/g, "&")
+                                      .replace(/&lt;/g, "<")
+                                      .replace(/&gt;/g, ">")
+                                      .replace(/&quot;/g, '"')
+                                      .trim()}
+                                  </div>
                                 </div>
                               {/if}
 
@@ -1504,17 +1494,20 @@
 {#if $showEditModal}
   <div
     class="modal-overlay"
-    onclick={() => showEditModal.set(false)}
     role="dialog"
     aria-modal="true"
     tabindex="-1"
+    onkeydown={(e) => {
+      if (e.key === "Escape") showEditModal.set(false);
+    }}
   >
     <div
       class="modal-container"
       class:rtl={$isRTL}
       onclick={(event) => event.stopPropagation()}
+      role="document"
+      tabindex="0"
     >
-      <!-- Header -->
       <div class="modal-header" class:rtl={$isRTL}>
         <div class="header-content">
           <div class="header-text">
@@ -1547,7 +1540,6 @@
         </div>
       </div>
 
-      <!-- Content -->
       <div class="modal-content">
         <form class="modal-form" onsubmit={handleUpdateItem}>
           <div class="form-grid">
@@ -1589,7 +1581,6 @@
                 />
               </div>
 
-              <!-- Tags Field -->
               <div class="form-group">
                 <label
                   for="editTags"
@@ -1627,7 +1618,6 @@
                 </p>
               </div>
 
-              <!-- Active Status -->
               <div class="status-container">
                 <div class="status-toggle" class:rtl-toggle={$isRTL}>
                   <div class="toggle-wrapper">
@@ -1637,15 +1627,25 @@
                       bind:checked={editFormValue.is_active}
                       class="toggle-input"
                     />
-                    <div
+                    <!-- Fixed accessibility issues with toggle switch -->
+                    <button
+                      type="button"
                       class="toggle-switch {editFormValue.is_active
                         ? 'active'
                         : ''}"
                       onclick={() =>
                         (editFormValue.is_active = !editFormValue.is_active)}
+                      onkeydown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          editFormValue.is_active = !editFormValue.is_active;
+                        }
+                      }}
+                      aria-pressed={editFormValue.is_active}
+                      aria-label="Toggle active status"
                     >
                       <div class="toggle-slider"></div>
-                    </div>
+                    </button>
                   </div>
                   <div class="status-info" class:rtl-info={$isRTL}>
                     <label
@@ -1678,7 +1678,6 @@
               </div>
             </div>
 
-            <!-- Right Column - Content Editor -->
             <div class="editor-column">
               <div class="editor-group">
                 <label
@@ -1704,18 +1703,21 @@
                 </label>
                 <div class="editor-container">
                   <HtmlEditor
-                    bind:editor={htmlEditor}
-                    bind:content={editFormValue.content}
-                    onContentChange={(html) => {
-                      editFormValue.content = html;
-                    }}
+                    bind:content={htmlEditor}
+                    resource_type={$params.resource_type}
+                    space_name={spaceNameValue}
+                    subpath={actualSubpathValue}
+                    parent_shortname={itemShortnameValue}
+                    uid="main-editor"
+                    isEditMode={true}
+                    attachments={itemDataValue?.attachments || []}
+                    changed={() => {}}
                   />
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Action Buttons -->
           <div class="modal-actions">
             <div class="actions-container" class:rtl-actions={$isRTL}>
               <button
@@ -1762,6 +1764,7 @@
   </div>
 {/if}
 
+<!-- ... existing styles ... -->
 <style>
   .modal-overlay {
     position: fixed;
@@ -1969,10 +1972,16 @@
     transition: background-color 0.2s ease;
     cursor: pointer;
     position: relative;
+    border: none;
+    outline: none;
   }
 
   .toggle-switch.active {
     background: #3b82f6;
+  }
+
+  .toggle-switch:focus {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
   }
 
   .toggle-slider {

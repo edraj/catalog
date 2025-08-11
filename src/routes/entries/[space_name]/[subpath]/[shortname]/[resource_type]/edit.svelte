@@ -46,7 +46,7 @@
   let tags = $state([]);
   let newTag = $state("");
   let attachments = $state([]);
-  let htmlEditor: any = $state(null);
+  let htmlEditor: any = $state("");
   let editorReady = $state(false);
 
   const isRTL = derived(
@@ -143,7 +143,7 @@
   }
 
   function getContent() {
-    return htmlEditor?.getHtml(true) || content;
+    return htmlEditor;
   }
 
   onMount(async () => {
@@ -412,11 +412,7 @@
         <div class="section-content">
           <div class="editor-container">
             {#if editorReady}
-              <HtmlEditor
-                bind:editor={htmlEditor}
-                {content}
-                onContentChange={(newContent) => (content = newContent)}
-              />
+              <HtmlEditor bind:content={htmlEditor} uid="main-editor" />
             {:else}
               <div class="editor-loading">
                 <Diamonds size="40" color="#2563eb" unit="px" duration="1s" />
@@ -427,7 +423,6 @@
         </div>
       </div>
 
-      <!-- Existing Attachments Section -->
       {#if getExistingAttachments().length > 0}
         <div class="section">
           <div class="section-header">

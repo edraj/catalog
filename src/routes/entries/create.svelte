@@ -277,8 +277,6 @@
       is_active: isPublish,
       ...(isAdmin && shortname ? { shortname } : {}),
     };
-    console.log("Entity to create:", entity);
-    console.log(workflow_shortname, schema_shortname);
 
     const response = await createEntity(
       entity,
@@ -322,11 +320,11 @@
     }
   }
 
-  let htmlEditor = $state(null);
+  let htmlEditor = $state("");
 
   function getContent() {
     if (selectedEditorType === "html") {
-      return htmlEditor.getHtml(true);
+      return htmlEditor;
     } else {
       return markdownEditor.getContent();
     }
@@ -718,9 +716,12 @@
       <div class="section-content">
         <div class="editor-container">
           {#if selectedEditorType === "html"}
-            <HtmlEditor bind:editor={htmlEditor} {content} />
+            <HtmlEditor bind:content={htmlEditor} uid="main-editor" />
           {:else}
-            <MarkdownEditor bind:content bind:this={markdownEditor} />
+            <MarkdownEditor
+              bind:content={markdownEditor}
+              bind:this={markdownEditor}
+            />
           {/if}
         </div>
       </div>
