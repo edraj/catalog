@@ -327,7 +327,6 @@
   "admin": "الإدارة",
   "dashboard": "لوحة التحكم",
   "contact_messages": "رسائل التواصل",
-  "permissions": "الصلاحيات",
   "entries": "المُدخلات",
   "notifications": "الإشعارات",
   "my_profile": "ملفي الشخصي",
@@ -572,16 +571,17 @@
       "not_found_message": "الإدخال الذي تحاول تحريره غير موجود أو تم حذفه."
     }
   },
+
   "post_detail": {
     "breadcrumb": {
-      "label": "مسار التنقل",
+      "label": "شريط التنقل",
       "catalogs": "الكتالوجات"
     },
     "navigation": {
-      "back_to_contents": "العودة إلى المحتويات"
+      "back_to_contents": "العودة إلى المحتوى"
     },
     "loading": {
-      "content": "جاري تحميل المحتوى..."
+      "content": "جارٍ تحميل المحتوى..."
     },
     "error": {
       "title": "خطأ في تحميل المنشور",
@@ -589,13 +589,13 @@
       "failed_load": "فشل في تحميل بيانات المنشور"
     },
     "debug": {
-      "title": "معلومات التشخيص:",
-      "space": "المساحة",
+      "title": "معلومات التصحيح:",
+      "space": "المجال",
       "subpath": "المسار الفرعي",
       "item": "العنصر"
     },
     "content_type": {
-      "content": "محتوى"
+      "content": "المحتوى"
     },
     "status": {
       "active": "نشط",
@@ -607,31 +607,57 @@
       "updated": "تاريخ التحديث",
       "content_type": "نوع المحتوى"
     },
+    "media": {
+      "title": "الوسائط والملفات ({count})"
+    },
+    "relationships": {
+      "related": "ذو صلة"
+    },
+    "no_data": {
+      "title": "لا توجد بيانات",
+      "message": "تعذر تحميل بيانات المنشور."
+    },
     "sections": {
+      "interact": "تفاعل مع هذا المحتوى",
       "description": "الوصف",
-      "tags": "العلامات",
+      "tags": "الوسوم",
       "content": "المحتوى",
       "interactions": "التفاعلات",
       "relationships": "العلاقات"
     },
     "reactions": {
-      "title": "التفاعلات"
+      "like": "إعجاب",
+      "unlike": "إلغاء الإعجاب",
+      "reacting": "جارٍ التفاعل...",
+      "liked": "تم الإعجاب",
+      "processing": "جارٍ المعالجة...",
+      "added_successfully": "تمت إضافة التفاعل بنجاح!",
+      "removed_successfully": "تمت إزالة التفاعل بنجاح!",
+      "add_failed": "فشل في إضافة التفاعل. حاول مرة أخرى.",
+      "remove_failed": "فشل في إزالة التفاعل. حاول مرة أخرى.",
+      "toggle_error": "حدث خطأ أثناء معالجة تفاعلك.",
+      "title": "ردود الفعل"
     },
     "comments": {
+      "add_comment": "أضف تعليقًا",
+      "placeholder": "شارك أفكارك...",
+      "submit": "نشر التعليق",
+      "submitting": "جارٍ النشر...",
+      "empty_comment": "يرجى إدخال تعليق قبل الإرسال.",
+      "added_successfully": "تمت إضافة التعليق بنجاح!",
+      "add_failed": "فشل في إضافة التعليق. حاول مرة أخرى.",
+      "add_error": "حدث خطأ أثناء إضافة تعليقك.",
       "title": "التعليقات ({count})",
       "no_content": "لا يوجد محتوى"
     },
-    "media": {
-      "title": "الوسائط والملفات ({count})"
-    },
-    "relationships": {
-      "related": "مرتبط"
-    },
-    "no_data": {
-      "title": "لا توجد بيانات متاحة",
-      "message": "غير قادر على تحميل بيانات المنشور."
+    "login_prompt": {
+      "title": "تسجيل الدخول مطلوب",
+      "message": "يرجى تسجيل الدخول للتفاعل مع هذا المحتوى. يمكنك الإعجاب، التعليق، والتفاعل مع المجتمع بمجرد تسجيل الدخول.",
+      "login": "اذهب لتسجيل الدخول",
+      "cancel": "إلغاء"
     }
   },
+
   "catalog_contents": {
     "breadcrumb_label": "مسار التنقل",
     "browse_contents": "تصفح المحتويات في",
@@ -665,33 +691,74 @@
     "search": {
       "placeholder": "البحث بالاسم أو الوصف أو المالك...",
       "label": "البحث",
-      "clear": "مسح البحث"
+      "clear": "مسح البحث",
+      "end_of_results": "لقد وصلت إلى النهاية!",
+      "total_found": "إجمالي العناصر: {count}"
     },
     "results": {
       "showing": "عرض {start} إلى {end} من {total} عنصر",
-      "for_query": "لـ \"{query}\""
+      "for_query": "لـ \"{query}\"",
+      "with_tags": "مع الوسوم "
     },
     "card": {
-      "posted_by": "نشر بواسطة"
+      "posted_by": "نشر بواسطة",
+      "read_more": "قراءة المزيد",
+      "share": "مشاركة",
+      "report": "تقرير"
     },
     "time": {
       "just_now": "الآن",
-      "minutes_ago": "{count}د مضت",
-      "hours_ago": "{count}س مضت",
-      "days_ago": "{count}ي مضت"
+      "minutes_ago": "دقائق مضت",
+      "hours_ago": "ساعات مضت",
+      "days_ago": "ايام مضت"
     },
     "pagination": {
-      "items_per_page": "عناصر لكل صفحة",
+      "load_more": "تحميل المزيد",
+      "loading": "جارٍ التحميل...",
+      "end_of_results": "لقد وصلت إلى النهاية!",
+      "total_loaded": "إجمالي العناصر المحملة: {count}",
+      "loaded_items": "تم تحميل {loaded} عنصر",
+      "items_per_load": "عناصر لكل تحميل",
+      "showing_items": "عرض {displayed} من {total} عنصر",
       "page_info": "الصفحة {current} من {total}",
       "previous": "السابق",
       "next": "التالي",
       "page": "الصفحة {page}"
+    },
+    "tags": {
+      "available_tags": "الوسوم المتاحة",
+      "show_all": "عرض الكل",
+      "show_less": "عرض أقل",
+      "selected_tags": "الوسوم المحددة",
+      "clear_all": "مسح الكل",
+      "remove_tag": "إزالة الوسم {tag}"
+    },
+    "infinite_scroll": {
+      "items_per_load": "عدد العناصر لكل تحميل",
+      "showing_items": "عرض {displayed} من {total} عنصر",
+      "showing_of": "عرض {displayed} من {total} عنصر",
+      "load_more": "تحميل المزيد",
+      "loading": "جارٍ التحميل...",
+      "end_of_results": "لقد وصلت إلى النهاية!",
+      "total_items": "المجموع: {count} عنصر"
     }
   },
   "navigation": {
     "go_back": "العودة"
   },
   "space": {
+    "showing_with_tags": "عرض عناصر مع الوسوم",
+    "clear_filters": "مسح المرشحات",
+    "all_content_subtitle": "جميع العناصر من جميع المجلدات",
+    "total_folders": "إجمالي المجلدات",
+    "total_tags": "إجمالي الوسوم",
+    "total_items": "إجمالي العناصر",
+    "filter_by_folder": "تصفية حسب المجلد",
+    "filter_by_tags": "تصفية حسب الوسوم",
+    "show_all_folders": "عرض جميع المجلدات",
+    "show_less_folders": "عرض مجلدات أقل",
+    "show_all_tags": "عرض جميع الوسوم",
+    "show_less_tags": "عرض وسوم أقل",
     "subtitle": "تصفح مجموعة متنوعة من الكتالوجات والمنشورات لاكتشاف أفكار وآراء وتحديثات جديدة من المجتمع.",
     "search": {
       "placeholder": "البحث بالاسم أو الوصف أو المالك..."
@@ -726,12 +793,17 @@
     "media": "وسائط"
   },
   "catalogs": {
+    "root_folder": "المجلد الرئيسي",
+
     "hero": {
       "title": "استكشف الكتالوجات",
       "description": "اكتشف مجموعة واسعة من الكتالوجات المنظمة من قبل مجتمعنا. ابحث عن المحتوى الذي يهمك وتواصل مع المبدعين."
     },
     "search": {
-      "placeholder": "البحث في المساحات..."
+      "placeholder": "البحث في المساحات...",
+      "results_subtitle": "نتائج البحث بناءً على استفسارك",
+      "results_title": "نتائج البحث",
+      "clear": "مسح البحث"
     },
     "sort": {
       "name": "ترتيب حسب الاسم",
@@ -760,6 +832,10 @@
     "unknown": "غير معروف"
   },
   "help": {
+    "shortname": "اسم مختصر (استخدم 'تلقائي' للحصول على اسم مختصر مُولد تلقائياً)",
+    "json_editor": "تحرير كائن JSON مباشرة",
+    "active": "ما إذا كان هذا العنصر نشطاً حالياً",
+    "slug": "نسخة مناسبة للرابط من الاسم المختصر",
     "hero": {
       "title": "مساعدة",
       "center": "المركز",
@@ -939,7 +1015,6 @@
   "role": "الدور",
   "super_admin": "مدير عام",
   "create_space": "إنشاء مساحة",
-  "space": "المساحة",
   "status": "الحالة",
   "owner": "المالك",
   "created": "تم الإنشاء",
@@ -1002,13 +1077,15 @@
   "new_configuration": "تكوين جديد",
   "permission_info": "معلومات الصلاحية",
   "loading_permission_data": "جاري تحميل بيانات الصلاحية...",
-  "permissions": "الصلاحيات",
+  "permission": "الصلاحيات",
   "update": "تحديث",
   "create": "إنشاء",
   "permission_type": "نوع الصلاحية",
   "available_spaces": "المساحات المتاحة",
   "add_new_permission": "إضافة صلاحية جديدة",
   "permission_name": "اسم الصلاحية",
+  "world_permissions_info": "صلاحيات العالم تنطبق على جميع الضيوف والمستخدمين غير المسجلين. هذه هي أكثر الصلاحيات تقييدًا.",
+  "catalog_user_permissions_info": "صلاحيات المستخدم في الكتالوج تنطبق على المستخدمين المسجلين الذين لديهم حق الوصول إلى الكتالوج. يمكن لهؤلاء المستخدمين التفاعل مع المحتوى.",
   "enter_permission_name": "أدخل اسم الصلاحية",
   "create_permission": "إنشاء صلاحية",
   "delete_permission": "حذف الصلاحية",
@@ -1113,6 +1190,23 @@
         "button": "حذف المساحة"
       }
     },
+    "filters": {
+      "all": "الكل",
+      "folder": "مجلد",
+      "content": "محتوى",
+      "post": "منشور",
+      "ticket": "تذكرة",
+      "user": "مستخدم",
+      "media": "وسائط",
+      "active": "نشط",
+      "inactive": "غير نشط"
+    },
+    "sort": {
+      "name": "الاسم",
+      "created": "تاريخ الإنشاء",
+      "updated": "تاريخ التحديث",
+      "owner": "المالك"
+    },
     "unnamed_space": "مساحة بدون اسم",
     "no_description": "لا يوجد وصف متاح"
   },
@@ -1160,18 +1254,27 @@
     }
   },
   "admin_content": {
-    "title": "المدير: {name}",
-    "subtitle": "إدارة المحتويات في {spaceName}/{subpath}",
+    "title": "محتويات {name}",
+    "subtitle": "إدارة المحتويات في {spaceName} في {subpath}",
+    "loading": "جاري تحميل المحتويات...",
+    "error": {
+      "title": "خطأ في تحميل المحتويات",
+      "failed_load_contents": "فشل تحميل المحتويات. يرجى المحاولة مرة أخرى.",
+      "try_again": "حاول مرة أخرى",
+      "create_folder_failed": "فشل إنشاء المجلد",
+      "create_folder_error": "خطأ في إنشاء المجلد"
+    },
+    "confirm": {
+      "delete_item": "هل أنت متأكد أنك تريد حذف '{name}'؟"
+    },
+    "empty": {
+      "title": "لا توجد محتويات",
+      "description": "هذا المكان فارغ. قم بإنشاء عناصر أو مجلدات جديدة للبدء.",
+      "no_matches": "لا توجد عناصر تطابق معايير البحث الخاصة بك."
+    },
     "breadcrumb": {
       "label": "مسار التنقل",
-      "admin": "المدير"
-    },
-    "pagination": {
-      "show": "عرض",
-      "per_page": "لكل صفحة",
-      "page_info": "الصفحة {current} من {total}",
-      "previous": "السابق",
-      "next": "التالي"
+      "admin": "الإدارة"
     },
     "actions": {
       "create_new_item": "إنشاء عنصر جديد",
@@ -1180,54 +1283,76 @@
       "view": "عرض",
       "delete": "حذف"
     },
-    "table": {
-      "title": "محتويات المدير ({count} عنصر)",
-      "showing": "عرض {start} إلى {end} من {total} عنصر",
-      "headers": {
-        "name": "الاسم",
-        "type": "النوع",
-        "status": "الحالة",
-        "owner": "المالك",
-        "created": "تاريخ الإنشاء",
-        "actions": "الإجراءات"
-      }
+    "filters": {
+      "title": "الفلاتر",
+      "clear_all": "مسح جميع الفلاتر",
+      "sort_by": "ترتيب حسب",
+      "toggle_sort": "تبديل اتجاه الترتيب"
+    },
+    "infinite_scroll": {
+      "items_per_load": "عناصر لكل تحميل",
+      "showing_items": "عرض {displayed} من {total} عنصر",
+      "showing_of": "عرض {displayed} من {total} عنصر",
+      "load_more": "تحميل المزيد",
+      "loading": "جاري التحميل...",
+      "end_of_results": "لقد وصلت إلى النهاية",
+      "total_items": "إجمالي العناصر: {count}"
+    },
+    "results": {
+      "for_query": "لـ '{query}'"
     },
     "status": {
       "active": "نشط",
       "inactive": "غير نشط"
     },
-    "error": {
-      "title": "خطأ في تحميل المحتويات",
-      "failed_load_contents": "فشل في تحميل محتويات المساحة",
-      "create_folder_failed": "فشل في إنشاء المجلد",
-      "create_folder_error": "خطأ في إنشاء المجلد"
+    "card": {
+      "managed_by": "يديره",
+      "path": "المسار"
     },
-    "empty": {
-      "title": "لم يتم العثور على محتويات",
-      "description": "يبدو أن هذا المجلد فارغ. أنشئ بعض المحتوى للبدء."
+    "search": {
+      "placeholder": "البحث بالاسم أو الوصف أو المالك...",
+      "label": "بحث المحتويات",
+      "clear": "مسح البحث"
     },
-    "confirm": {
-      "delete_item": "هل أنت متأكد من أنك تريد حذف \"{name}\"؟"
+    "common": {
+      "not_available": "غير متاح",
+      "unknown": "غير معروف"
     },
     "modal": {
-      "close": "إغلاق النافذة",
-      "cancel": "إلغاء",
-      "creating": "جاري الإنشاء...",
-      "create_folder": "إنشاء مجلد",
       "create": {
         "title": "إنشاء مجلد جديد",
-        "subtitle": "تكوين إعدادات المجلد والأذونات"
+        "subtitle": "تكوين إعدادات المجلد الجديد"
       },
       "basic_info": {
         "title": "المعلومات الأساسية",
-        "description": "تعيين اسم المجلد والوصف"
+        "description": "تقديم التفاصيل الأساسية حول هذا المجلد"
       },
       "folder_config": {
         "title": "تكوين المجلد",
-        "description": "تكوين سلوك المجلد والأذونات"
-      }
-    },
-    "unknown": "غير معروف"
+        "description": "تكوين كيفية تصرف هذا المجلد"
+      },
+      "close": "إغلاق",
+      "cancel": "إلغاء",
+      "creating": "جاري الإنشاء...",
+      "create_folder": "إنشاء مجلد"
+    }
+  },
+
+  "search_filters": {
+    "search_label": "ابحث في المساحات",
+    "search_placeholder": "ابحث بالاسم، الوصف، الاسم المختصر أو المالك...",
+    "clear_search": "مسح البحث",
+    "status_label": "الحالة",
+    "sort_label": "ترتيب حسب",
+    "toggle_sort": "تبديل اتجاه الترتيب",
+    "results_count": "عرض {displayed} من {total} مساحة",
+    "results_for": "لـ \"{query}\"",
+    "clear_filters": "مسح الفلاتر",
+    "no_results": {
+      "title": "لم يتم العثور على مساحات",
+      "description": "حاول تعديل مصطلحات البحث أو الفلاتر.",
+      "action": "مسح الفلاتر"
+    }
   },
   "admin_item_detail": {
     "breadcrumb": {
@@ -1269,6 +1394,7 @@
       "inactive": "غير نشط"
     },
     "content": {
+      "readable_content": "محتوى قابل للقراءة",
       "title": "المحتوى والحمولة",
       "content_type": "نوع المحتوى",
       "checksum": "المجموع الاختباري",
@@ -1362,5 +1488,120 @@
     }
   },
   "no_users_match_filters": "لا يوجد مستخدمون يطابقون المرشحات المحددة",
-  "all_roles": "جميع الأدوار"
+  "all_roles": "جميع الأدوار",
+  "editor": {
+    "title": "محرر مخطط المجلد"
+  },
+  "sections": {
+    "subpaths": "المسارات الفرعية",
+    "conditions": "الشروط",
+    "restricted_fields": "الحقول المقيدة",
+    "allowed_fields_values": "قيم الحقول المسموحة",
+    "translations": "ترجمات اسم العرض والوصف",
+    "index_attributes": {
+      "title": "سمات الفهرس",
+      "description": "السمات من المخطط التي يجب عرضها في صفحة الفهرس"
+    },
+    "content_resource_types": {
+      "title": "أنواع موارد المحتوى"
+    },
+    "schema_shortnames": {
+      "title": "أسماء المخططات المختصرة"
+    },
+    "workflow_shortnames": {
+      "title": "أسماء سير العمل المختصرة"
+    }
+  },
+  "placeholders": {
+    "key": "المفتاح",
+    "name": "الاسم",
+    "sort_by": "اسم الحقل للترتيب",
+    "shortname": "اسم مختصر",
+    "slug": "اسم-مناسب-للرابط",
+    "restricted_field": "إضافة حقل مقيد"
+  },
+  "options": {
+    "select_sort_order": "اختر ترتيب الفرز...",
+    "ascending": "تصاعدي",
+    "descending": "تنازلي",
+    "select_type": "اختر نوعاً...",
+    "select_schema_to_add": "اختر مخطط للإضافة...",
+    "select_workflow_to_add": "اختر سير عمل للإضافة...",
+    "select_resource_type": "اختر نوع المورد",
+    "select_action": "اختر إجراء",
+    "select_space": "اختر مساحة",
+    "select_subpath": "اختر مسار فرعي",
+    "select_condition": "اختر شرط"
+  },
+  "resource_types": {
+    "ticket": "تذكرة",
+    "content": "محتوى"
+  },
+  "conditions": {
+    "own": "مملوك",
+    "is_active": "نشط"
+  },
+  "loading": {
+    "spaces": "جاري تحميل المساحات...",
+    "subpaths": "جاري تحميل المسارات الفرعية..."
+  },
+  "empty_states": {
+    "no_resource_types": "لم يتم إضافة أنواع موارد",
+    "no_actions": "لم يتم إضافة إجراءات",
+    "no_subpaths": "لم يتم إضافة مساحات أو مسارات فرعية",
+    "no_conditions": "لم يتم إضافة شروط",
+    "no_restricted_fields": "لم يتم إضافة حقول مقيدة"
+  },
+
+  "fields": {
+    "sort_by": "ترتيب حسب",
+    "sort_order": "ترتيب الفرز",
+    "shortname": "الاسم المختصر",
+    "active": "نشط",
+    "slug": "الرابط",
+    "displayname": "اسم العرض",
+    "description": "الوصف",
+    "space": "المساحة",
+    "subpath": "المسار الفرعي",
+    "json_editor": "محرر JSON"
+  },
+  "buttons": {
+    "remove": "إزالة",
+    "add_index_attribute": "إضافة سمة فهرس",
+    "auto": "تلقائي",
+    "update": "تحديث",
+    "cancel": "إلغاء",
+    "updating": "جاري التحديث...",
+    "update_shortname": "تحديث الاسم المختصر",
+    "apply_changes": "تطبيق التغييرات"
+  },
+  "languages": {
+    "english": "الإنجليزية",
+    "arabic": "العربية",
+    "kurdish": "الكردية"
+  },
+  "modal": {
+    "update_shortname": {
+      "title": "تحديث الاسم المختصر",
+      "warning": "تغيير الاسم المختصر سينقل هذا المورد إلى موقع جديد. قد يؤثر هذا على المراجع الموجودة لهذا العنصر.",
+      "new_shortname": "الاسم المختصر الجديد"
+    }
+  },
+  "validation": {
+    "shortname_format": "يمكن أن يحتوي الاسم المختصر على أحرف أبجدية رقمية وشرطات سفلية فقط.",
+    "index_attributes_required": "سمات الفهرس مطلوبة",
+    "json_syntax_error": "يرجى تصحيح بناء جملة JSON.\nتنسيق JSON غير صحيح في قيم الحقول المسموحة"
+  },
+  "errors": {
+    "loading_schemas": "خطأ في تحميل المخططات",
+    "loading_workflows": "خطأ في تحميل سير العمل",
+    "shortname_update_failed": "حدث خطأ أثناء تحديث الاسم المختصر.",
+    "invalid_json": "تنسيق JSON غير صحيح"
+  },
+  "permissions": {
+    "title": "إعدادات الصلاحيات",
+    "resource_types": "أنواع الموارد",
+    "actions": "الإجراءات"
+  },
+  "related_content": "المحتوى ذي الصلة"
 }

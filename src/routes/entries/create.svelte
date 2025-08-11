@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Button, Card, Input, Select } from "flowbite-svelte";
   import { goto, params } from "@roxi/routify";
   import HtmlEditor from "@/components/editors/HtmlEditor.svelte";
   import {
@@ -6,6 +7,7 @@
     createEntity,
     getSpaces,
     getSpaceContents,
+    getSpaceFolders,
   } from "@/lib/dmart_services";
   import {
     errorToastMessage,
@@ -33,12 +35,14 @@
   import { onMount } from "svelte";
   import { ResourceType } from "@edraj/tsdmart";
   import { roles } from "@/stores/user";
+  import MarkdownEditor from "@/components/editors/MarkdownEditor.svelte";
   $goto;
   let isLoading = $state(false);
-  let content = "";
+  let content = $state("");
   let resource_type = ResourceType.content;
   let itemResourceType;
   let isAdmin = $state(false);
+  let selectedEditorType = $state("html");
 
   const isRTL = derived(
     locale,
@@ -65,6 +69,7 @@
   let canCreateEntry = $state(true);
   let workflow_shortname = "";
   let schema_shortname = "";
+  let markdownEditor = $state(null);
 
   onMount(async () => {
     await loadSpaces();
@@ -103,7 +108,7 @@
 
     loadingSubpaths = true;
     try {
-      const response = await getSpaceContents(
+      const response = await getSpaceFolders(
         spaceName,
         parentPath || "/",
         "managed"
@@ -120,6 +125,7 @@
           response?.records[0]?.attributes?.payload?.body
             .content_resource_types[0];
       }
+      console.log("------------", response);
 
       const levelData = {
         level,
@@ -133,7 +139,8 @@
         })),
         resource_type: itemResourceType,
         workflow_shortname:
-          response.records[0]?.attributes?.workflow_shortname || "",
+          response.records[0]?.attributes?.payload?.body
+            ?.workflow_shortnames[0] || "",
         schema_shortname:
           response.records[0]?.attributes?.payload?.schema_shortname || "",
         canCreateEntry: hasNonFolderContent || folders.length === 0,
@@ -141,6 +148,7 @@
       };
 
       subpathHierarchy = [...subpathHierarchy.slice(0, level), levelData];
+      console.log("Subpath hierarchy:", subpathHierarchy);
 
       updateCanCreateEntry();
     } catch (error) {
@@ -158,9 +166,11 @@
     }
 
     const lastLevel = subpathHierarchy[subpathHierarchy.length - 1];
+    console.log("Last level:", lastLevel);
+
     canCreateEntry = lastLevel.canCreateEntry;
     resource_type = lastLevel.resource_type;
-    workflow_shortname = lastLevel.workflow_shortname;
+    workflow_shortname = subpathHierarchy[0].workflow_shortname;
     schema_shortname = lastLevel.schema_shortname;
     currentPath = lastLevel.path;
     selectedSubpath = currentPath;
@@ -259,15 +269,16 @@
     isLoading = true;
 
     const entity = {
-      title: title,
-      content: getContent(),
+      body: {
+        title: title,
+        content: getContent(),
+      },
       tags: tags,
-      resource_type,
-      workflow_shortname,
-      schema_shortname,
       is_active: isPublish,
-      ...(isAdmin && shortname ? { shortname: shortname } : {}),
+      ...(isAdmin && shortname ? { shortname } : {}),
     };
+    console.log("Entity to create:", entity);
+    console.log(workflow_shortname, schema_shortname);
 
     const response = await createEntity(
       entity,
@@ -314,7 +325,11 @@
   let htmlEditor = $state(null);
 
   function getContent() {
-    return htmlEditor.getHtml(true);
+    if (selectedEditorType === "html") {
+      return htmlEditor.getHtml(true);
+    } else {
+      return markdownEditor.getContent();
+    }
   }
 
   async function loadPrefilledData() {
@@ -549,6 +564,7 @@
             onblur={handleInputBlur}
             class="title-input"
             placeholder={$_("create_entry.title.placeholder")}
+            id="title-input"
           />
         {:else}
           <div
@@ -587,6 +603,7 @@
               onblur={handleShortnameBlur}
               class="shortname-input"
               placeholder={$_("create_entry.shortname.placeholder")}
+              id="shortname-input"
             />
           {:else}
             <div
@@ -674,10 +691,37 @@
       <div class="section-header">
         <FileCheckSolid class="section-icon" />
         <h2>{$_("create_entry.content.section_title")}</h2>
+        <div class="editor-selector">
+          <label class="editor-selector-label"
+            >{$_("create_entry.content.editor_type")}</label
+          >
+          <div class="editor-toggle">
+            <button
+              class="editor-toggle-btn"
+              class:active={selectedEditorType === "html"}
+              onclick={() => (selectedEditorType = "html")}
+            >
+              <span class="editor-icon">🎨</span>
+              <span>{$_("create_entry.content.html_editor")}</span>
+            </button>
+            <button
+              class="editor-toggle-btn"
+              class:active={selectedEditorType === "markdown"}
+              onclick={() => (selectedEditorType = "markdown")}
+            >
+              <span class="editor-icon">📝</span>
+              <span>{$_("create_entry.content.markdown_editor")}</span>
+            </button>
+          </div>
+        </div>
       </div>
       <div class="section-content">
         <div class="editor-container">
-          <HtmlEditor bind:editor={htmlEditor} {content} />
+          {#if selectedEditorType === "html"}
+            <HtmlEditor bind:editor={htmlEditor} {content} />
+          {:else}
+            <MarkdownEditor bind:content bind:this={markdownEditor} />
+          {/if}
         </div>
       </div>
     </div>
@@ -1229,6 +1273,7 @@
 
   .tag-input-container {
     display: flex;
+    align-items: center;
     gap: 1rem;
     margin-bottom: 1.5rem;
   }
@@ -1325,6 +1370,9 @@
 
   .empty-state {
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     padding: 3rem 1rem;
     color: var(--gray-500);
   }
@@ -1332,6 +1380,7 @@
   .empty-state p {
     margin: 0;
     font-size: 0.875rem;
+    margin-top: 12px;
   }
 
   .editor-container {
@@ -1475,6 +1524,9 @@
     border: 2px dashed var(--gray-200);
     border-radius: var(--radius-lg);
     color: var(--gray-500);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
   .empty-attachments h3 {
@@ -1535,6 +1587,74 @@
     .attachments-grid {
       grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
       gap: 1rem;
+    }
+  }
+
+  .editor-selector {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-left: auto;
+  }
+
+  .editor-selector-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--gray-600);
+  }
+
+  .editor-toggle {
+    display: flex;
+    background: var(--gray-100);
+    border-radius: var(--radius-lg);
+    padding: 0.25rem;
+    border: 1px solid var(--gray-200);
+  }
+
+  .editor-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-md);
+    color: var(--gray-600);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .editor-toggle-btn:hover {
+    color: var(--gray-800);
+  }
+
+  .editor-toggle-btn.active {
+    background: var(--white);
+    color: var(--primary-color);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .editor-icon {
+    font-size: 1rem;
+  }
+
+  @media (max-width: 768px) {
+    .editor-selector {
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-left: 0;
+      margin-top: 1rem;
+    }
+
+    .editor-toggle-btn {
+      padding: 0.375rem 0.75rem;
+      font-size: 0.75rem;
+    }
+
+    .editor-icon {
+      font-size: 0.875rem;
     }
   }
 </style>

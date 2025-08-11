@@ -10,18 +10,54 @@
   import FolderForm from "@/components/forms/FolderForm.svelte";
   import MetaForm from "@/components/forms/MetaForm.svelte";
   $goto;
+
   const isRTL = derived(
     locale,
     ($locale) => $locale === "ar" || $locale === "ku"
   );
 
-  let isLoading = $state(true);
-  let contents = $state([]);
+  let isLoading = $state(false);
+  let allContents = $state([]);
+  let displayedContents = $state([]);
   let error = $state(null);
   let spaceName = $state("");
+  let actualSubpath = $state("");
+
+  // Search and Filter State
+  let searchQuery = $state("");
+  let selectedType = $state("all");
+  let selectedStatus = $state("all");
+  let sortBy = $state("name");
+  let sortOrder = $state("asc");
+  let isSearchActive = $state(false);
+
+  // Filter Options
+  const typeOptions = [
+    { value: "all", label: $_("admin_dashboard.filters.all") },
+    { value: "folder", label: $_("admin_dashboard.filters.folder") },
+    { value: "content", label: $_("admin_dashboard.filters.content") },
+    { value: "post", label: $_("admin_dashboard.filters.post") },
+    { value: "ticket", label: $_("admin_dashboard.filters.ticket") },
+    { value: "user", label: $_("admin_dashboard.filters.user") },
+    { value: "media", label: $_("admin_dashboard.filters.media") },
+  ];
+
+  const statusOptions = [
+    { value: "all", label: $_("admin_dashboard.filters.all") },
+    { value: "active", label: $_("admin_dashboard.filters.active") },
+    { value: "inactive", label: $_("admin_dashboard.filters.inactive") },
+  ];
+
+  const sortOptions = [
+    { value: "name", label: $_("admin_dashboard.sort.name") },
+    { value: "created", label: $_("admin_dashboard.sort.created") },
+    { value: "updated", label: $_("admin_dashboard.sort.updated") },
+    { value: "owner", label: $_("admin_dashboard.sort.owner") },
+  ];
+
+  // Modal States
   let showCreateFolderModal = $state(false);
-  let actualSubpath = "";
-  let folderContent = $state({
+  let folderContent = {
     title: "",
     content: "",
     is_active: true,
@@ -43,11 +79,11 @@
     stream: false,
     expand_children: false,
     disable_filter: false,
-  });
-  let isCreatingFolder = $state(false);
+  };
+  let isCreatingFolder = false;
 
-  let metaContent: any = $state({});
-  let validateMetaForm = $state(null);
+  let metaContent: any = {};
+  let validateMetaForm = null;
 
   onMount(async () => {
     spaceName = $params.space_name;
@@ -58,11 +94,13 @@
   async function loadContents() {
     isLoading = true;
     try {
-      const response = await getSpaceContents(spaceName, "/", "managed");
+      const response = await getSpaceContents(spaceName, "/", "managed", true);
       if (response && response.records) {
-        contents = response.records;
+        allContents = response.records;
+        applyFilters();
       } else {
-        contents = [];
+        allContents = [];
+        displayedContents = [];
       }
     } catch (err) {
       console.error("Error fetching space contents:", err);
@@ -71,6 +109,96 @@
       isLoading = false;
     }
   }
+
+  function applyFilters() {
+    let filtered = [...allContents];
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter((item) => {
+        const shortname = item.shortname?.toLowerCase() || "";
+        const displayName = getDisplayName(item).toLowerCase();
+        const description = getDescription(item).toLowerCase();
+        const owner = item.attributes?.owner_shortname?.toLowerCase() || "";
+
+        return (
+          shortname.includes(query) ||
+          displayName.includes(query) ||
+          description.includes(query) ||
+          owner.includes(query)
+        );
+      });
+    }
+
+    if (selectedType !== "all") {
+      filtered = filtered.filter((item) => item.resource_type === selectedType);
+    }
+
+    if (selectedStatus !== "all") {
+      filtered = filtered.filter((item) => {
+        const isActive = item.attributes?.is_active;
+        return selectedStatus === "active" ? isActive : !isActive;
+      });
+    }
+
+    filtered.sort((a, b) => {
+      let aValue, bValue;
+
+      switch (sortBy) {
+        case "name":
+          aValue = getDisplayName(a).toLowerCase();
+          bValue = getDisplayName(b).toLowerCase();
+          break;
+        case "type":
+          aValue = a.resource_type || "";
+          bValue = b.resource_type || "";
+          break;
+        case "created":
+          aValue = new Date(a.attributes?.created_at || 0);
+          bValue = new Date(b.attributes?.updated_at || 0);
+          break;
+        case "updated":
+          aValue = new Date(a.attributes?.updated_at || 0);
+          bValue = new Date(b.attributes?.updated_at || 0);
+          break;
+        case "owner":
+          aValue = (a.attributes?.owner_shortname || "").toLowerCase();
+          bValue = (b.attributes?.owner_shortname || "").toLowerCase();
+          break;
+        default:
+          aValue = getDisplayName(a).toLowerCase();
+          bValue = getDisplayName(b).toLowerCase();
+      }
+
+      if (aValue < bValue) return sortOrder === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortOrder === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    displayedContents = filtered;
+    isSearchActive =
+      searchQuery.trim() !== "" ||
+      selectedType !== "all" ||
+      selectedStatus !== "all";
+  }
+
+  function clearFilters() {
+    searchQuery = "";
+    selectedType = "all";
+    selectedStatus = "all";
+    sortBy = "name";
+    sortOrder = "asc";
+    applyFilters();
+  }
+
+  function toggleSortOrder() {
+    sortOrder = sortOrder === "asc" ? "desc" : "asc";
+    applyFilters();
+  }
+
+  $effect(() => {
+    applyFilters();
+  });
 
   function handleItemClick(item: any) {
     if (item.resource_type === "folder" || item.subpath !== "/") {
@@ -185,6 +313,8 @@
         return "📁";
       case "content":
         return "📄";
+      case "post":
+        return "📝";
       case "ticket":
         return "🎫";
       case "user":
@@ -194,6 +324,49 @@
       default:
         return "📋";
     }
+  }
+
+  function getResourceTypeColor(resourceType: string): string {
+    switch (resourceType) {
+      case "folder":
+        return "bg-blue-100 text-blue-800";
+      case "content":
+        return "bg-green-100 text-green-800";
+      case "post":
+        return "bg-purple-100 text-purple-800";
+      case "ticket":
+        return "bg-orange-100 text-orange-800";
+      case "user":
+        return "bg-indigo-100 text-indigo-800";
+      case "media":
+        return "bg-pink-100 text-pink-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  }
+
+  function getDisplayName(item: any): string {
+    if (item.attributes?.displayname) {
+      return (
+        item.attributes.displayname[$locale] ||
+        item.attributes.displayname.en ||
+        item.attributes.displayname.ar ||
+        item.shortname
+      );
+    }
+    return item.shortname || "Unnamed Item";
+  }
+
+  function getDescription(item: any): string {
+    if (item.attributes?.description) {
+      return (
+        item.attributes.description[$locale] ||
+        item.attributes.description.en ||
+        item.attributes.description.ar ||
+        "No description available"
+      );
+    }
+    return "No description available";
   }
 
   function formatDate(dateString: string): string {
@@ -299,7 +472,7 @@
         </h3>
         <p class="text-gray-600">{error}</p>
       </div>
-    {:else if contents.length === 0}
+    {:else if allContents.length === 0}
       <div class="text-center py-16" class:text-right={$isRTL}>
         <div
           class="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6"
@@ -314,7 +487,7 @@
               stroke-linecap="round"
               stroke-linejoin="round"
               stroke-width="2"
-              d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              d="M9 13h6m-3-3v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
             ></path>
           </svg>
         </div>
@@ -326,48 +499,196 @@
         </p>
       </div>
     {:else}
-      <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {#each contents as item}
+      <!-- Search and Filter Section -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
+        <div class="p-6 border-b border-gray-200">
           <div
-            class="bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md cursor-pointer transition-all duration-200 p-4 group"
-            onclick={() => handleItemClick(item)}
-            role="button"
-            tabindex="0"
-            onkeydown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                handleItemClick(item);
-              }
-            }}
+            class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4"
           >
-            <div
-              class="flex items-start justify-between mb-3"
-              class:flex-row-reverse={$isRTL}
-            >
-              <div
-                class="flex items-start space-x-3 flex-1 min-w-0"
-                class:space-x-reverse={$isRTL}
-                class:flex-row-reverse={$isRTL}
-              >
-                <div class="text-2xl">
-                  {getItemIcon(item)}
-                </div>
-                <div class="flex-1 min-w-0" class:text-right={$isRTL}>
-                  <h3 class="text-sm font-semibold text-gray-900 truncate">
-                    {item.shortname}
-                  </h3>
-                  <p class="text-xs text-gray-500 mt-1">
-                    {item.resource_type}
-                  </p>
-                </div>
-              </div>
+            <div class="flex-1">
+              <h2 class="text-lg font-semibold text-gray-900 mb-2">
+                {$_("admin_dashboard.manage_spaces", {
+                  values: { count: displayedContents.length },
+                })}
+              </h2>
+              <p class="text-sm text-gray-600">
+                {#if isSearchActive}
+                  Showing {displayedContents.length} of {allContents.length} spaces
+                {:else}
+                  {$_("admin_dashboard.admin_access_description")}
+                {/if}
+              </p>
+            </div>
+          </div>
+        </div>
 
+        <!-- Search and Filter Controls -->
+        <div class="p-6 bg-gray-50 border-b border-gray-200">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <!-- Search Input -->
+            <div class="lg:col-span-2">
+              <label
+                for="search"
+                class="block text-sm font-medium text-gray-700 mb-2"
+              >
+                {$_("search_filters.search_label")}
+              </label>
+              <div class="relative">
+                <div
+                  class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+                >
+                  <svg
+                    class="h-5 w-5 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    ></path>
+                  </svg>
+                </div>
+                <input
+                  id="search"
+                  type="text"
+                  bind:value={searchQuery}
+                  placeholder={$_("search_filters.search_placeholder")}
+                  class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+                />
+                {#if searchQuery}
+                  <button
+                    onclick={() => {
+                      searchQuery = "";
+                    }}
+                    class="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    aria-label={$_("search_filters.clear_search")}
+                  >
+                    <svg
+                      class="h-4 w-4 text-gray-400 hover:text-gray-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      ></path>
+                    </svg>
+                  </button>
+                {/if}
+              </div>
+            </div>
+
+            <!-- Type Filter -->
+            <div>
+              <label
+                for="type-filter"
+                class="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Type
+              </label>
+              <select
+                id="type-filter"
+                bind:value={selectedType}
+                class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              >
+                {#each typeOptions as option}
+                  <option value={option.value}>{option.label}</option>
+                {/each}
+              </select>
+            </div>
+
+            <!-- Status Filter -->
+            <div>
+              <label
+                for="status-filter"
+                class="block text-sm font-medium text-gray-700 mb-2"
+              >
+                {$_("search_filters.status_label")}
+              </label>
+              <select
+                id="status-filter"
+                bind:value={selectedStatus}
+                class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              >
+                {#each statusOptions as option}
+                  <option value={option.value}>{option.label}</option>
+                {/each}
+              </select>
+            </div>
+
+            <!-- Sort Options -->
+            <div>
+              <label
+                for="sort-by"
+                class="block text-sm font-medium text-gray-700 mb-2"
+              >
+                {$_("search_filters.sort_label")}
+              </label>
+              <div class="flex gap-2">
+                <select
+                  id="sort-by"
+                  bind:value={sortBy}
+                  class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                >
+                  {#each sortOptions as option}
+                    <option value={option.value}>{option.label}</option>
+                  {/each}
+                </select>
+                <button
+                  onclick={toggleSortOrder}
+                  class="px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  title={$_("search_filters.toggle_sort")}
+                  aria-label={$_("search_filters.toggle_sort")}
+                >
+                  <svg
+                    class="w-4 h-4 text-gray-600 {sortOrder === 'desc'
+                      ? 'rotate-180'
+                      : ''}"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                    ></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Clear Filters -->
+          {#if isSearchActive}
+            <div class="mt-4 flex items-center justify-between">
+              <div class="text-sm text-gray-600">
+                {$_("search_filters.results_count", {
+                  values: {
+                    displayed: displayedContents.length,
+                    total: allContents.length,
+                  },
+                })}
+                {#if searchQuery}
+                  {$_("search_filters.results_for", {
+                    values: { query: searchQuery },
+                  })}
+                {/if}
+              </div>
               <button
-                onclick={(e) => handleDeleteItem(item, e)}
-                class="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 transition-all duration-200 p-1"
-                aria-label={$_("admin_space.actions.delete_item")}
+                onclick={clearFilters}
+                class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                aria-label={$_("search_filters.clear_filters")}
               >
                 <svg
-                  class="w-4 h-4"
+                  class="w-4 h-4 mr-1.5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -376,27 +697,177 @@
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     stroke-width="2"
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    d="M6 18L18 6M6 6l12 12"
                   ></path>
                 </svg>
+                {$_("search_filters.clear_filters")}
               </button>
             </div>
+          {/if}
+        </div>
 
-            {#if item.attributes?.created_at}
-              <p class="text-xs text-gray-400 mt-1" class:text-right={$isRTL}>
-                {formatDate(item.attributes.created_at)}
-              </p>
-            {/if}
-            {#if item.subpath && item.subpath !== "/"}
-              <p
-                class="text-xs text-blue-600 mt-1 truncate"
-                class:text-right={$isRTL}
-              >
-                {item.subpath}
-              </p>
-            {/if}
+        <!-- Results -->
+        {#if displayedContents.length === 0 && isSearchActive}
+          <div class="text-center py-12">
+            <svg
+              class="mx-auto w-12 h-12 text-gray-300 mb-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.291-1.007-5.691-2.709M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+              ></path>
+            </svg>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">
+              No items found
+            </h3>
+            <p class="text-gray-500 mb-4">
+              Try adjusting your search terms or filters.
+            </p>
+            <button
+              onclick={clearFilters}
+              class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-600 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Clear Filters
+            </button>
           </div>
-        {/each}
+        {:else}
+          <div
+            class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 p-6"
+          >
+            {#each displayedContents as item}
+              <div
+                class="bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md cursor-pointer transition-all duration-200 p-4 group"
+                onclick={() => handleItemClick(item)}
+                role="button"
+                tabindex="0"
+                onkeydown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    handleItemClick(item);
+                  }
+                }}
+              >
+                <div
+                  class="flex items-start justify-between mb-3"
+                  class:flex-row-reverse={$isRTL}
+                >
+                  <div
+                    class="flex items-start space-x-3 flex-1 min-w-0"
+                    class:space-x-reverse={$isRTL}
+                    class:flex-row-reverse={$isRTL}
+                  >
+                    <div class="text-2xl">
+                      {getItemIcon(item)}
+                    </div>
+                    <div class="flex-1 min-w-0" class:text-right={$isRTL}>
+                      <h3 class="text-sm font-semibold text-gray-900 truncate">
+                        {getDisplayName(item)}
+                      </h3>
+                      <p class="text-xs text-gray-500 mt-1">
+                        <span
+                          class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {getResourceTypeColor(
+                            item.resource_type
+                          )}"
+                        >
+                          {item.resource_type}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onclick={(e) => handleDeleteItem(item, e)}
+                    class="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 transition-all duration-200 p-1"
+                    aria-label={$_("admin_space.actions.delete_item")}
+                  >
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      ></path>
+                    </svg>
+                  </button>
+                </div>
+
+                <div class="space-y-2">
+                  {#if getDescription(item) !== "No description available"}
+                    <p
+                      class="text-xs text-gray-600 line-clamp-2"
+                      class:text-right={$isRTL}
+                    >
+                      {getDescription(item)}
+                    </p>
+                  {/if}
+
+                  <div
+                    class="flex items-center justify-between text-xs text-gray-500"
+                  >
+                    <div
+                      class="flex items-center space-x-2"
+                      class:space-x-reverse={$isRTL}
+                    >
+                      <span
+                        class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {item
+                          .attributes?.is_active
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'}"
+                      >
+                        {item.attributes?.is_active
+                          ? $_("status.active")
+                          : $_("status.inactive")}
+                      </span>
+                    </div>
+
+                    {#if item.attributes?.created_at}
+                      <span class:text-right={$isRTL}>
+                        {formatDate(item.attributes.created_at)}
+                      </span>
+                    {/if}
+                  </div>
+
+                  {#if item.attributes?.owner_shortname}
+                    <div
+                      class="flex items-center space-x-2 text-xs text-gray-500"
+                      class:space-x-reverse={$isRTL}
+                      class:flex-row-reverse={$isRTL}
+                    >
+                      <div
+                        class="w-4 h-4 bg-gray-200 rounded-full flex items-center justify-center"
+                      >
+                        <span class="text-xs font-medium text-gray-600">
+                          {item.attributes.owner_shortname
+                            .charAt(0)
+                            .toUpperCase()}
+                        </span>
+                      </div>
+                      <span>{item.attributes.owner_shortname}</span>
+                    </div>
+                  {/if}
+
+                  {#if item.subpath && item.subpath !== "/"}
+                    <p
+                      class="text-xs text-blue-600 mt-1 truncate"
+                      class:text-right={$isRTL}
+                    >
+                      {item.subpath}
+                    </p>
+                  {/if}
+                </div>
+              </div>
+            {/each}
+          </div>
+        {/if}
       </div>
     {/if}
   </div>
@@ -491,6 +962,13 @@
 <style>
   .rtl {
     direction: rtl;
+  }
+
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
   .modal-overlay {

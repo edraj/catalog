@@ -55,8 +55,7 @@ export async function getAvatar(shortname: string) {
     "personal",
     `people/${shortname}/protected/`,
     "avatar",
-    results.records[0].attributes.payload.body,
-    "public"
+    results.records[0].attributes.payload.body
   );
 }
 
@@ -69,6 +68,8 @@ export async function setAvatar(shortname: string, attachment: File) {
     attachment,
     ContentType.image
   );
+  console.log("Avatar upload response:", response);
+
   return response.status == "success" && response.records.length > 0;
 }
 
@@ -84,6 +85,21 @@ export async function updateProfile(data: any) {
       description: {
         en: data.description,
       },
+      msisdn: data.msisdn,
+      email: data.email,
+    },
+  };
+  const response = await Dmart.update_user(request);
+  return response.status == "success";
+}
+
+export async function updatePassword(data: any) {
+  const request = {
+    resource_type: ResourceType.user,
+    shortname: data.shortname,
+    subpath: "users",
+    attributes: {
+      password: data.password,
     },
   };
   const response = await Dmart.update_user(request);
@@ -131,7 +147,7 @@ export async function getMyEntities(shortname: string = "") {
       space_name: space,
       subpath: "/",
       exact_subpath: false,
-      sort_by: "Created_at",
+      sort_by: "created_at",
       sort_type: SortyType.ascending,
       search,
       retrieve_json_payload: true,
@@ -183,7 +199,7 @@ export async function createEntity(
   data: any,
   spaceName: string,
   subpath: string,
-  resourceType: ResourceType,
+  resourceType: ResourceType = ResourceType.content,
   workflow_shortname: string,
   schema_shortname: string
 ) {
@@ -226,10 +242,7 @@ export async function createEntity(
             tags: data.tags,
             payload: {
               content_type: "json",
-              body: {
-                title: data.title,
-                content: data.content,
-              },
+              body: data.body,
             },
           },
         },
@@ -539,7 +552,7 @@ export async function getSpaces(
       type: QueryType.spaces,
       space_name: "management",
       subpath: "/",
-      search: "",
+      search: "-@shortname:applications",
       limit: 100,
     },
     scope
@@ -564,7 +577,10 @@ export async function getSpaces(
 export async function getSpaceContents(
   spaceName: string,
   subpath = "/",
-  scope: string
+  scope: string,
+  limit = 100,
+  offset = 0,
+  exact_subpath = false
 ): Promise<ApiQueryResponse> {
   const response = await Dmart.query(
     {
@@ -572,16 +588,133 @@ export async function getSpaceContents(
       space_name: spaceName,
       subpath: subpath,
       search: "-@shortname:schema",
-      limit: 100,
+      limit: limit,
       sort_by: "shortname",
+      sort_type: SortyType.ascending,
+      offset: offset,
+      retrieve_json_payload: true,
+      retrieve_attachments: true,
+      exact_subpath: exact_subpath,
+    },
+    scope
+  );
+  return response;
+}
+
+export async function getRelatedContents(
+  spaceName: string,
+  subpath = "/",
+  scope: string,
+  currentTags: string[] = [],
+  editorShortname?: string,
+  limit = 10,
+  offset = 0
+): Promise<ApiQueryResponse> {
+  let searchQuery = "-@shortname:" + editorShortname;
+
+  const response = await Dmart.query(
+    {
+      type: QueryType.search,
+      space_name: spaceName,
+      subpath: subpath,
+      search: searchQuery,
+      limit: limit,
+      sort_by: "updated_at",
+      sort_type: SortyType.descending,
+      offset: offset,
+      retrieve_json_payload: true,
+      retrieve_attachments: false,
+      exact_subpath: false,
+    },
+    scope
+  );
+  return response;
+}
+
+export async function getSpaceFolders(
+  spaceName: string,
+  subpath = "/",
+  scope: string,
+  limit = 100,
+  offset = 0
+): Promise<ApiQueryResponse> {
+  const response = await Dmart.query(
+    {
+      type: QueryType.search,
+      space_name: spaceName,
+      subpath: subpath,
+      search: "-@shortname:schema",
+      limit: limit,
+      sort_by: "shortname",
+      sort_type: SortyType.ascending,
+      offset: offset,
+      retrieve_json_payload: true,
+      retrieve_attachments: true,
+      exact_subpath: false,
+      filter_types: [ResourceType.folder],
+    },
+    scope
+  );
+  return response;
+}
+
+export async function getSpaceContentsByTags(
+  spaceName: string,
+  subpath = "/",
+  scope: string,
+  limit = 100,
+  offset = 0,
+  tags: string[] = []
+): Promise<ApiQueryResponse> {
+  let searchQuery = "";
+  if (tags.length > 0) {
+    const tagQuery = tags.map((tag) => `${tag}`).join(" OR ");
+    searchQuery = `@tags:${tagQuery}`;
+  }
+
+  console.log("Search Query:", searchQuery);
+
+  const response = await Dmart.query(
+    {
+      type: QueryType.search,
+      space_name: spaceName,
+      subpath: subpath,
+      search: searchQuery,
+      limit: limit,
+      sort_by: "shortname",
+      sort_type: SortyType.ascending,
+      offset: offset,
+      retrieve_json_payload: true,
+      retrieve_attachments: true,
+      exact_subpath: false,
+    },
+    scope
+  );
+
+  return response;
+}
+
+export async function getSpaceTags(
+  spaceName: string
+): Promise<ApiQueryResponse> {
+  const response = await Dmart.query(
+    {
+      type: QueryType.tags,
+      space_name: spaceName,
+      subpath: "/",
+      search: "",
+      limit: 1000,
+      sort_by: "",
       sort_type: SortyType.ascending,
       offset: 0,
       retrieve_json_payload: true,
       retrieve_attachments: true,
-      exact_subpath: true,
+      exact_subpath: false,
     },
-    scope
+    "public"
   );
+  console.log("Space Tags Response:", response);
+
   return response;
 }
 
@@ -1171,4 +1304,34 @@ export async function updateUserRoles(
     console.error("Error updating user roles:", error);
     return false;
   }
+}
+
+export async function searchInCatalog(search: string = "") {
+  const result = await getSpaces(false, "public");
+  const spaces = result.records.map((space) => space.shortname);
+
+  const promises = spaces.map(async (space) => {
+    const queryRequest: QueryRequest = {
+      filter_shortnames: [],
+      type: QueryType.subpath,
+      space_name: space,
+      subpath: "/",
+      exact_subpath: false,
+      sort_by: "created_at",
+      sort_type: SortyType.ascending,
+      search,
+      retrieve_json_payload: true,
+      retrieve_attachments: false,
+    };
+
+    const response: ApiQueryResponse = await Dmart.query(
+      queryRequest,
+      "public"
+    );
+    return response?.records ?? [];
+  });
+
+  const allRecordsArrays = await Promise.all(promises);
+
+  return allRecordsArrays.flat();
 }

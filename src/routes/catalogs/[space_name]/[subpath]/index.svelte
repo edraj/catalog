@@ -9,37 +9,42 @@
   $goto;
 
   let isLoading = $state(false);
+  let isLoadingMore = $state(false);
   let allContents = $state([]);
-  let paginatedContents = $state([]);
+  let displayedContents = $state([]);
   let error = null;
   let spaceName = "";
   let subpath = "";
   let actualSubpath = "";
   let breadcrumbs = [];
 
-  let currentPage = $state(1);
-  let itemsPerPage = $state(10);
-  let totalPages = $state(1);
-  let totalItems = $state(0);
+  let itemsPerLoad = $state(10);
+  let currentDisplayCount = $state(10);
   let filteredContents = $state([]);
 
   let searchQuery = $state("");
   let sortBy = $state("name");
   let sortOrder = $state("asc");
+  let selectedTags = $state([]);
+  let availableTags = $state([]);
+  let showAllTags = $state(false);
+
   const isRTL = derived(
     locale,
     ($locale) => $locale === "ar" || $locale === "ku"
   );
-  const itemsPerPageOptions = [10, 25, 50, 100];
+  const itemsPerLoadOptions = [10, 25, 50];
+
   function getResourceTypes() {
     const types = [...new Set(allContents.map((item) => item.resource_type))];
     return types;
   }
+
   const sortOptions = [
-    { value: "name", label: "Name" },
-    { value: "type", label: "Type" },
-    { value: "owner", label: "Owner" },
-    { value: "created", label: "Created Date" },
+    { value: "name", label: $_("admin_dashboard.sort.name") },
+    { value: "created", label: $_("admin_dashboard.sort.created") },
+    { value: "updated", label: $_("admin_dashboard.sort.updated") },
+    { value: "owner", label: $_("admin_dashboard.sort.owner") },
   ];
 
   async function initializeContent() {
@@ -69,7 +74,7 @@
       });
     });
 
-    currentPage = 1;
+    currentDisplayCount = itemsPerLoad;
     await loadContents();
   }
 
@@ -100,7 +105,6 @@
             let avatarUrl = "";
             try {
               const result = getAvatar(item.attributes?.owner_shortname);
-
               avatarUrl = result instanceof Promise ? await result : result;
             } catch {
               avatarUrl = "";
@@ -108,21 +112,41 @@
             return { ...item, avatarUrl };
           })
         );
+
+        extractAvailableTags();
         applyFilters();
       } else {
         allContents = [];
         filteredContents = [];
-        updatePaginationDerived();
+        availableTags = [];
+        updateDisplayedContents();
       }
     } catch (err) {
       console.error("Error fetching space contents:", err);
       error = "Failed to load space contents";
       allContents = [];
       filteredContents = [];
-      updatePaginationDerived();
+      availableTags = [];
+      updateDisplayedContents();
     } finally {
       isLoading = false;
     }
+  }
+
+  function extractAvailableTags() {
+    const tagSet = new Set();
+
+    allContents.forEach((item) => {
+      if (item.attributes?.tags && Array.isArray(item.attributes?.tags)) {
+        item.attributes?.tags.forEach((tag) => {
+          if (tag && tag.trim() && tag !== "") {
+            tagSet.add(tag.trim());
+          }
+        });
+      }
+    });
+
+    availableTags = Array.from(tagSet).sort();
   }
 
   function applyFilters() {
@@ -145,6 +169,21 @@
           shortname.includes(query) ||
           description.includes(query) ||
           owner.includes(query)
+        );
+      });
+    }
+
+    if (selectedTags.length > 0) {
+      filtered = filtered.filter((item) => {
+        if (!item.attributes?.tags || !Array.isArray(item.attributes?.tags))
+          return false;
+
+        return selectedTags.every((selectedTag) =>
+          item.attributes?.tags.some(
+            (itemTag) =>
+              itemTag &&
+              itemTag.trim().toLowerCase() === selectedTag.toLowerCase()
+          )
         );
       });
     }
@@ -183,36 +222,30 @@
     });
 
     filteredContents = filtered;
-    totalItems = filtered.length;
-    currentPage = 1;
-    updatePaginationDerived();
+    currentDisplayCount = itemsPerLoad;
+    updateDisplayedContents();
   }
 
-  function updatePaginationDerived() {
-    totalPages = Math.ceil(totalItems / itemsPerPage);
-    if (currentPage > totalPages && totalPages > 0) {
-      currentPage = totalPages;
-    }
-    if (currentPage < 1) {
-      currentPage = 1;
-    }
-
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    paginatedContents = filteredContents.slice(startIndex, endIndex);
+  function updateDisplayedContents() {
+    displayedContents = filteredContents.slice(0, currentDisplayCount);
   }
 
-  function handleItemsPerPageChange(newItemsPerPage) {
-    itemsPerPage = newItemsPerPage;
-    currentPage = 1;
-    updatePaginationDerived();
+  function loadMoreItems() {
+    if (isLoadingMore) return;
+
+    isLoadingMore = true;
+
+    setTimeout(() => {
+      currentDisplayCount += itemsPerLoad;
+      updateDisplayedContents();
+      isLoadingMore = false;
+    }, 300);
   }
 
-  function goToPage(page) {
-    if (page >= 1 && page <= totalPages) {
-      currentPage = page;
-      updatePaginationDerived();
-    }
+  function handleItemsPerLoadChange(newItemsPerLoad) {
+    itemsPerLoad = newItemsPerLoad;
+    currentDisplayCount = itemsPerLoad;
+    updateDisplayedContents();
   }
 
   function handleItemClick(item) {
@@ -223,7 +256,7 @@
         subpath: newSubpath,
       });
     } else {
-      $goto("/catalogs/[space_name]/[subpath]/[shortname]", {
+      $goto("/catalogs/[space_name]/[subpath]/[shortname]/[resource_type]", {
         space_name: spaceName,
         subpath: subpath,
         shortname: item.shortname,
@@ -260,7 +293,7 @@
         item.shortname
       );
     }
-    return item.attributes?.payload?.body?.title;
+    return item.attributes?.payload?.body?.title || item.shortname;
   }
 
   function formatDate(dateString) {
@@ -289,49 +322,37 @@
     }
   }
 
-  function getPageNumbers() {
-    const pages = [];
-    const maxVisiblePages = 7;
-
-    if (totalPages <= maxVisiblePages) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      pages.push(1);
-
-      if (currentPage > 4) {
-        pages.push("...");
-      }
-
-      const start = Math.max(2, currentPage - 2);
-      const end = Math.min(totalPages - 1, currentPage + 2);
-
-      for (let i = start; i <= end; i++) {
-        pages.push(i);
-      }
-
-      if (currentPage < totalPages - 3) {
-        pages.push("...");
-      }
-
-      if (totalPages > 1) {
-        pages.push(totalPages);
-      }
-    }
-
-    return pages;
-  }
-
   function clearFilters() {
     searchQuery = "";
+    selectedTags = [];
     sortBy = "name";
     sortOrder = "asc";
+    currentDisplayCount = itemsPerLoad;
+    applyFilters();
   }
 
   function toggleSortOrder() {
     sortOrder = sortOrder === "asc" ? "desc" : "asc";
     applyFilters();
+  }
+
+  function toggleTag(tag) {
+    if (selectedTags.includes(tag)) {
+      selectedTags = selectedTags.filter((t) => t !== tag);
+    } else {
+      selectedTags = [...selectedTags, tag];
+    }
+    applyFilters();
+  }
+
+  function removeTag(tag) {
+    selectedTags = selectedTags.filter((t) => t !== tag);
+    applyFilters();
+  }
+
+  function handleCardTagClick(event, tag) {
+    event.stopPropagation();
+    toggleTag(tag);
   }
 
   const filteredContentsDerived = $derived.by(() => {
@@ -358,6 +379,21 @@
       });
     }
 
+    if (selectedTags.length > 0) {
+      filtered = filtered.filter((item) => {
+        if (!item.attributes?.tags || !Array.isArray(item.attributes?.tags))
+          return false;
+
+        return selectedTags.every((selectedTag) =>
+          item.attributes.tags.some(
+            (itemTag) =>
+              itemTag &&
+              itemTag.trim().toLowerCase() === selectedTag.toLowerCase()
+          )
+        );
+      });
+    }
+
     filtered.sort((a, b) => {
       let aValue, bValue;
 
@@ -380,7 +416,7 @@
           break;
         default:
           aValue = a.shortname.toLowerCase();
-          bValue = b.shortname.toLowerCase();
+          bValue = b.shortname.toLowerCase;
       }
 
       let result;
@@ -394,25 +430,51 @@
     return filtered;
   });
 
-  const paginatedContentsDerived = $derived.by(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return filteredContentsDerived.slice(startIndex, endIndex);
+  const displayedContentsDerived = $derived.by(() => {
+    return filteredContentsDerived.slice(0, currentDisplayCount);
   });
 
   const totalItemsDerived = $derived.by(() => filteredContentsDerived.length);
 
-  const totalPagesDerived = $derived.by(() =>
-    Math.ceil(totalItemsDerived / itemsPerPage)
+  const hasMoreItems = $derived.by(
+    () => currentDisplayCount < totalItemsDerived
   );
 
-  $effect(() => {
-    if (currentPage > totalPagesDerived && totalPagesDerived > 0) {
-      currentPage = totalPagesDerived;
+  function shareItem(item) {
+    const url = `${window.location.origin}/catalogs/${spaceName}/${subpath}/${item.shortname}?resource_type=${item.resource_type}`;
+    const title = getDisplayName(item);
+
+    if (navigator.share) {
+      navigator
+        .share({
+          title: title,
+          text: `Check out this content: ${title}`,
+          url: url,
+        })
+        .catch(console.error);
+    } else {
+      navigator.clipboard
+        .writeText(url)
+        .then(() => {
+          alert($_("catalog_contents.share.copied_to_clipboard"));
+        })
+        .catch(() => {
+          prompt($_("catalog_contents.share.copy_link"), url);
+        });
     }
-    if (currentPage < 1) {
-      currentPage = 1;
+  }
+
+  function reportItem(item) {
+    const reason = prompt($_("catalog_contents.report.reason_prompt"));
+    if (reason && reason.trim()) {
+      console.log("Reporting item:", item.shortname, "Reason:", reason);
+      alert($_("catalog_contents.report.submitted"));
     }
+  }
+
+  const displayedTags = $derived.by(() => {
+    if (showAllTags) return availableTags;
+    return availableTags.slice(0, 10);
   });
 </script>
 
@@ -506,331 +568,598 @@
           {$_("catalog_contents.error.try_again")}
         </button>
       </div>
-    {:else if totalItemsDerived === 0}
-      <div class="empty-state">
-        <div class="empty-icon">
-          <svg
-            class="w-12 h-12 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-            ></path>
-          </svg>
-        </div>
-        <h3 class="empty-title">
-          {$_("catalog_contents.empty.title")}
-        </h3>
-        <p class="empty-message">
-          {searchQuery
-            ? $_("catalog_contents.empty.no_matches")
-            : $_("catalog_contents.empty.folder_empty")}
-        </p>
-      </div>
     {:else}
-      <div class="search-filter-section">
-        <div class="search-filter-header">
-          <h2 class="section-title">{$_("catalog_contents.filters.title")}</h2>
-        </div>
-
-        <div class="search-filter-controls">
-          <div class="filter-controls">
-            <div class="filter-group">
-              <label class="filter-label"
-                >{$_("catalog_contents.filters.sort_by")}</label
+      {#if availableTags.length > 0}
+        <div class="tags-filter-section">
+          <div class="tags-header">
+            <h3 class="tags-title">
+              {$_("catalog_contents.tags.available_tags")}
+            </h3>
+            {#if availableTags.length > 10}
+              <button
+                onclick={() => (showAllTags = !showAllTags)}
+                class="show-all-tags-button"
               >
-              <div class="sort-controls">
-                <select
-                  bind:value={sortBy}
-                  class="filter-select sort-select"
-                  aria-label={$_("catalog_contents.filters.sort_by")}
-                  onchange={applyFilters}
-                >
-                  {#each sortOptions as option}
-                    <option value={option.value}>{option.label}</option>
-                  {/each}
-                </select>
-                <button
-                  onclick={toggleSortOrder}
-                  class="sort-order-button"
-                  title={$_("catalog_contents.filters.toggle_sort")}
-                  aria-label={$_("catalog_contents.filters.toggle_sort")}
-                >
-                  <svg
-                    class="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    {#if sortOrder === "asc"}
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
-                      ></path>
-                    {:else}
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l-4-4"
-                      ></path>
-                    {/if}
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <div class="filter-group">
-              <label class="filter-label"
-                >{$_("catalog_contents.pagination.items_per_page")}</label
-              >
-              <select
-                bind:value={itemsPerPage}
-                onchange={(e) =>
-                  handleItemsPerPageChange(
-                    parseInt((e.target as HTMLSelectElement).value)
-                  )}
-                class="filter-select"
-                aria-label={$_("catalog_contents.pagination.items_per_page")}
-              >
-                {#each itemsPerPageOptions as option}
-                  <option value={option}>{option}</option>
-                {/each}
-              </select>
-            </div>
-          </div>
-
-          <div class="search-input-group">
-            <div class="search-input-wrapper">
-              <svg
-                class="search-icon"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                ></path>
-              </svg>
-              <input
-                type="text"
-                bind:value={searchQuery}
-                placeholder={$_("catalog_contents.search.placeholder")}
-                class="search-input"
-                aria-label={$_("catalog_contents.search.label")}
-                oninput={applyFilters}
-              />
-              {#if searchQuery}
-                <button
-                  onclick={() => {
-                    searchQuery = "";
-                    applyFilters();
-                  }}
-                  class="clear-search-button"
-                  aria-label={$_("catalog_contents.search.clear")}
-                >
-                  <svg
-                    class="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M6 18L18 6M6 6l12 12"
-                    ></path>
-                  </svg>
-                </button>
-              {/if}
-            </div>
-          </div>
-        </div>
-
-        <div class="results-summary">
-          <div class="results-info">
-            {$_("catalog_contents.results.showing", {
-              values: {
-                start: (currentPage - 1) * itemsPerPage + 1,
-                end: Math.min(currentPage * itemsPerPage, totalItemsDerived),
-                total: totalItemsDerived,
-              },
-            })}
-            {#if searchQuery}
-              {$_("catalog_contents.results.for_query", {
-                values: { query: searchQuery },
-              })}
+                {showAllTags
+                  ? $_("catalog_contents.tags.show_less")
+                  : $_("catalog_contents.tags.show_all")}
+                ({availableTags.length})
+              </button>
             {/if}
           </div>
-        </div>
-      </div>
 
-      <div class="card-list-container">
-        <div class="card-list">
-          {#each paginatedContentsDerived as item, index}
-            <div
-              class="content-card"
-              onclick={() => handleItemClick(item)}
-              role="button"
-              tabindex="0"
-              onkeydown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  handleItemClick(item);
-                }
-              }}
-            >
-              <div class="card-avatar">
-                {#if item.attributes?.owner_shortname}
-                  {#await getAvatar(item.attributes?.owner_shortname) then avatar}
-                    <Avatar
-                      src={avatar}
-                      size="40"
-                      alt={item.attributes?.owner_shortname}
-                    />
-                  {/await}
-                  <div class="avatar-fallback">
-                    {item.attributes?.owner_shortname.charAt(0).toUpperCase()}
-                  </div>
-                {:else}
-                  <div class="avatar-unknown">
-                    <span class="text-sm font-medium text-gray-600">?</span>
-                  </div>
-                {/if}
-              </div>
-
-              <div class="card-content">
-                <div class="card-header">
-                  <h3 class="card-title">
-                    {getDisplayName(item)}
-                  </h3>
-                </div>
-
-                <div class="card-meta">
-                  <span class="meta-text"
-                    >{$_("catalog_contents.card.posted_by")}</span
-                  >
-                  <span class="meta-author">
-                    {item.attributes?.owner_shortname || $_("common.unknown")}
-                  </span>
-                  <span class="meta-separator">•</span>
-                  <span class="meta-time">
-                    {formatRelativeTime(item.attributes?.created_at)}
-                  </span>
-                </div>
-
-                {#if item.attributes?.description?.[$locale] || item.attributes?.description?.en || item.attributes?.description?.ar}
-                  <div class="card-description">
-                    {item.attributes.description[$locale] ||
-                      item.attributes.description.en ||
-                      item.attributes.description.ar ||
-                      ""}
-                  </div>
-                {/if}
-              </div>
-
-              <div class="card-stats">
-                <div class="stat-item">
+          <div class="tags-container">
+            {#each displayedTags as tag}
+              <button
+                onclick={() => toggleTag(tag)}
+                class="tag-filter-button {selectedTags.includes(tag)
+                  ? 'tag-selected'
+                  : 'tag-unselected'}"
+              >
+                #{tag}
+                {#if selectedTags.includes(tag)}
                   <svg
-                    class="stat-icon"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                    ></path>
-                  </svg>
-                  <span class="stat-number">
-                    {item.attachments?.comment?.length || 0}
-                  </span>
-                </div>
-                <div class="stat-item stat-reactions">
-                  <svg
-                    class="stat-icon"
+                    class="tag-check-icon"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
                     <path
                       fill-rule="evenodd"
-                      d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
                       clip-rule="evenodd"
                     ></path>
                   </svg>
-                  <span class="stat-number"
-                    >{item.attachments?.reaction?.length || 0}</span
-                  >
-                </div>
+                {/if}
+              </button>
+            {/each}
+          </div>
+
+          {#if selectedTags.length > 0}
+            <div class="selected-tags-section">
+              <div class="selected-tags-header">
+                <span class="selected-tags-title"
+                  >{$_("catalog_contents.tags.selected_tags")}:</span
+                >
+                <button
+                  onclick={() => {
+                    selectedTags = [];
+                    applyFilters();
+                  }}
+                  class="clear-tags-button"
+                >
+                  {$_("catalog_contents.tags.clear_all")}
+                </button>
+              </div>
+              <div class="selected-tags-container">
+                {#each selectedTags as tag}
+                  <div class="selected-tag">
+                    #{tag}
+                    <button
+                      onclick={() => removeTag(tag)}
+                      class="remove-tag-button"
+                      aria-label={$_("catalog_contents.tags.remove_tag", {
+                        values: { tag },
+                      })}
+                    >
+                      <svg
+                        class="remove-tag-icon"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M6 18L18 6M6 6l12 12"
+                        ></path>
+                      </svg>
+                    </button>
+                  </div>
+                {/each}
               </div>
             </div>
-          {/each}
+          {/if}
         </div>
+      {/if}
 
-        {#if totalPagesDerived > 1}
-          <div class="pagination-section">
-            <div class="pagination-info">
-              {$_("catalog_contents.pagination.page_info", {
+      {#if totalItemsDerived === 0}
+        <div class="empty-state">
+          <div class="empty-icon">
+            <svg
+              class="w-12 h-12 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              ></path>
+            </svg>
+          </div>
+          <h3 class="empty-title">
+            {$_("catalog_contents.empty.title")}
+          </h3>
+          <p class="empty-message">
+            {searchQuery || selectedTags.length > 0
+              ? $_("catalog_contents.empty.no_matches")
+              : $_("catalog_contents.empty.folder_empty")}
+          </p>
+          {#if searchQuery || selectedTags.length > 0}
+            <button onclick={clearFilters} class="clear-filters-button">
+              {$_("catalog_contents.filters.clear_all")}
+            </button>
+          {/if}
+        </div>
+      {:else}
+        <div class="search-filter-section">
+          <div class="search-filter-header">
+            <h2 class="section-title">
+              {$_("catalog_contents.filters.title")}
+            </h2>
+            {#if searchQuery || selectedTags.length > 0}
+              <button onclick={clearFilters} class="clear-all-filters-button">
+                {$_("catalog_contents.filters.clear_all")}
+              </button>
+            {/if}
+          </div>
+
+          <div class="search-filter-controls">
+            <div class="filter-controls">
+              <div class="filter-group">
+                <label class="filter-label"
+                  >{$_("catalog_contents.filters.sort_by")}</label
+                >
+                <div class="sort-controls">
+                  <select
+                    bind:value={sortBy}
+                    class="filter-select sort-select"
+                    aria-label={$_("catalog_contents.filters.sort_by")}
+                    onchange={applyFilters}
+                  >
+                    {#each sortOptions as option}
+                      <option value={option.value}>{option.label}</option>
+                    {/each}
+                  </select>
+                  <button
+                    onclick={toggleSortOrder}
+                    class="sort-order-button"
+                    title={$_("catalog_contents.filters.toggle_sort")}
+                    aria-label={$_("catalog_contents.filters.toggle_sort")}
+                  >
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      {#if sortOrder === "asc"}
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
+                        ></path>
+                      {:else}
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l-4-4"
+                        ></path>
+                      {/if}
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="filter-group">
+                <label class="filter-label"
+                  >{$_(
+                    "catalog_contents.infinite_scroll.items_per_load"
+                  )}</label
+                >
+                <select
+                  bind:value={itemsPerLoad}
+                  onchange={(e) =>
+                    handleItemsPerLoadChange(
+                      parseInt((e.target as HTMLSelectElement).value)
+                    )}
+                  class="filter-select"
+                  aria-label={$_(
+                    "catalog_contents.infinite_scroll.items_per_load"
+                  )}
+                >
+                  {#each itemsPerLoadOptions as option}
+                    <option value={option}>{option}</option>
+                  {/each}
+                </select>
+              </div>
+            </div>
+
+            <div class="search-input-group">
+              <div class="search-input-wrapper">
+                <svg
+                  class="search-icon"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  ></path>
+                </svg>
+                <input
+                  type="text"
+                  bind:value={searchQuery}
+                  placeholder={$_("catalog_contents.search.placeholder")}
+                  class="search-input"
+                  aria-label={$_("catalog_contents.search.label")}
+                  oninput={applyFilters}
+                />
+                {#if searchQuery}
+                  <button
+                    onclick={() => {
+                      searchQuery = "";
+                      applyFilters();
+                    }}
+                    class="clear-search-button"
+                    aria-label={$_("catalog_contents.search.clear")}
+                  >
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      ></path>
+                    </svg>
+                  </button>
+                {/if}
+              </div>
+            </div>
+          </div>
+
+          <div class="results-summary">
+            <div class="results-info">
+              {$_("catalog_contents.infinite_scroll.showing_items", {
                 values: {
-                  current: currentPage,
-                  total: totalPagesDerived,
+                  displayed: displayedContentsDerived.length,
+                  total: totalItemsDerived,
                 },
               })}
+              {#if searchQuery}
+                {$_("catalog_contents.results.for_query", {
+                  values: { query: searchQuery },
+                })}
+              {/if}
+              {#if selectedTags.length > 0}
+                {$_("catalog_contents.results.with_tags", {
+                  values: { count: selectedTags.length },
+                })}
+              {/if}
             </div>
-            <nav class="pagination-nav">
-              <button
-                onclick={() => goToPage(currentPage - 1)}
-                disabled={currentPage === 1}
-                class="pagination-button pagination-prev"
-                aria-label={$_("catalog_contents.pagination.previous")}
-              >
-                {$_("catalog_contents.pagination.previous")}
-              </button>
-
-              {#each getPageNumbers() as page}
-                {#if typeof page === "number"}
-                  <button
-                    onclick={() => goToPage(page)}
-                    class="pagination-button {page === currentPage
-                      ? 'pagination-current'
-                      : 'pagination-number'}"
-                    aria-label={$_("catalog_contents.pagination.page", {
-                      values: { page },
-                    })}
-                  >
-                    {page}
-                  </button>
-                {:else}
-                  <span class="pagination-ellipsis">
-                    {page}
-                  </span>
-                {/if}
-              {/each}
-
-              <button
-                onclick={() => goToPage(currentPage + 1)}
-                disabled={currentPage === totalPagesDerived}
-                class="pagination-button pagination-next"
-                aria-label={$_("catalog_contents.pagination.next")}
-              >
-                {$_("catalog_contents.pagination.next")}
-              </button>
-            </nav>
           </div>
-        {/if}
-      </div>
+        </div>
+
+        <div class="card-list-container">
+          <div class="card-list">
+            {#each displayedContentsDerived as item, index}
+              <div
+                class="content-card"
+                onclick={() => handleItemClick(item)}
+                role="button"
+                tabindex="0"
+                onkeydown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    handleItemClick(item);
+                  }
+                }}
+              >
+                <div class="card-avatar">
+                  {#if item.attributes?.owner_shortname}
+                    {#await getAvatar(item.attributes?.owner_shortname) then avatar}
+                      <Avatar
+                        src={avatar}
+                        size="40"
+                        alt={item.attributes?.owner_shortname}
+                      />
+                    {/await}
+                    <div class="avatar-fallback">
+                      {item.attributes?.owner_shortname.charAt(0).toUpperCase()}
+                    </div>
+                  {:else}
+                    <div class="avatar-unknown">
+                      <span class="text-sm font-medium text-gray-600">?</span>
+                    </div>
+                  {/if}
+                </div>
+
+                <div class="card-content">
+                  <div class="card-header">
+                    <h3 class="card-title">
+                      {getDisplayName(item)}
+                    </h3>
+                  </div>
+
+                  <div class="card-meta">
+                    <span class="meta-text"
+                      >{$_("catalog_contents.card.posted_by")}</span
+                    >
+                    <span class="meta-author">
+                      {item.attributes?.owner_shortname || $_("common.unknown")}
+                    </span>
+                    <span class="meta-separator">•</span>
+                    <span class="meta-time">
+                      {formatRelativeTime(item.attributes?.created_at)}
+                    </span>
+                  </div>
+
+                  {#if item.attributes?.payload?.body?.content || (typeof item.attributes?.payload?.body === "string" && item.attributes?.payload?.body)}
+                    {@const content =
+                      item.attributes?.payload?.body?.content ||
+                      (typeof item.attributes?.payload?.body === "string"
+                        ? item.attributes?.payload?.body
+                        : "")}
+                    {@const isLongContent = content.length > 150}
+
+                    <div class="card-preview">
+                      {#if item.attributes?.payload?.content_type === "html"}
+                        <div class="prose max-w-none preview-text">
+                          {@html isLongContent
+                            ? content.substring(0, 150) + "..."
+                            : content}
+                        </div>
+                      {:else if item.attributes?.payload?.content_type === "json"}
+                        {@const jsonContent = JSON.stringify(
+                          item.attributes.payload.body?.content ||
+                            item.attributes.payload.body,
+                          null,
+                          2
+                        )}
+                        {@const isLongJson = jsonContent.length > 150}
+                        <pre
+                          class="bg-gray-50 p-2 rounded text-xs overflow-x-auto preview-text">{isLongJson
+                            ? jsonContent.substring(0, 150) + "..."
+                            : jsonContent}</pre>
+                      {:else}
+                        <div class="bg-gray-50 p-2 rounded">
+                          <pre
+                            class="text-xs whitespace-pre-wrap preview-text">{isLongContent
+                              ? content.substring(0, 150) + "..."
+                              : content}</pre>
+                        </div>
+                      {/if}
+
+                      {#if isLongContent || (item.attributes?.payload?.content_type === "json" && JSON.stringify(item.attributes.payload.body?.content || item.attributes.payload.body, null, 2).length > 150)}
+                        <button
+                          onclick={() => handleItemClick(item)}
+                          class="read-more-button"
+                        >
+                          {$_("catalog_contents.card.read_more")}
+                        </button>
+                      {/if}
+                    </div>
+                  {/if}
+
+                  {#if item.attributes?.tags && item.attributes?.tags.length > 0 && item.attributes?.tags[0] !== ""}
+                    <div class="card-tags">
+                      {#each item.attributes?.tags.slice(0, 3) as tag}
+                        {#if tag && tag.trim()}
+                          <button
+                            class="card-tag {selectedTags.includes(tag)
+                              ? 'card-tag-selected'
+                              : ''}"
+                            onclick={(e) => handleCardTagClick(e, tag)}
+                          >
+                            #{tag}
+                          </button>
+                        {/if}
+                      {/each}
+                      {#if item.attributes?.tags.length > 3}
+                        <span class="card-tag-more"
+                          >+{item.attributes?.tags.length - 3} more</span
+                        >
+                      {/if}
+                    </div>
+                  {/if}
+                </div>
+
+                <div class="card-stats">
+                  <div class="stats-left">
+                    <div class="stat-item">
+                      <svg
+                        class="stat-icon"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                        ></path>
+                      </svg>
+                      <span class="stat-number">
+                        {item.attachments?.comment?.length || 0}
+                      </span>
+                    </div>
+                    <div class="stat-item stat-reactions">
+                      <svg
+                        class="stat-icon"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fill-rule="evenodd"
+                          d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                          clip-rule="evenodd"
+                        ></path>
+                      </svg>
+                      <span class="stat-number"
+                        >{item.attachments?.reaction?.length || 0}</span
+                      >
+                    </div>
+                    <div class="stat-item stat-media">
+                      <svg
+                        class="stat-icon"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.586-6.586a2 2 0 000-2.828z"
+                        ></path>
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M9 12l2 2 4-4"
+                        ></path>
+                      </svg>
+                      <span class="stat-number">
+                        {item.attachments?.media?.length || 0}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="stats-right">
+                    <button
+                      class="action-button share-button"
+                      onclick={(e) => {
+                        e.stopPropagation();
+                        shareItem(item);
+                      }}
+                      title={$_("catalog_contents.card.share")}
+                    >
+                      <svg
+                        class="action-icon"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367 2.684z"
+                        ></path>
+                      </svg>
+                    </button>
+
+                    <button
+                      class="action-button report-button"
+                      onclick={(e) => {
+                        e.stopPropagation();
+                        reportItem(item);
+                      }}
+                      title={$_("catalog_contents.card.report")}
+                    >
+                      <svg
+                        class="action-icon"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
+                        ></path>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            {/each}
+          </div>
+
+          {#if hasMoreItems}
+            <div class="load-more-section">
+              <div class="load-more-info">
+                <span class="load-more-text">
+                  {$_("catalog_contents.infinite_scroll.showing_of", {
+                    values: {
+                      displayed: displayedContentsDerived.length,
+                      total: totalItemsDerived,
+                    },
+                  })}
+                </span>
+              </div>
+              <button
+                onclick={loadMoreItems}
+                disabled={isLoadingMore}
+                class="load-more-button"
+                aria-label={$_("catalog_contents.infinite_scroll.load_more")}
+              >
+                {#if isLoadingMore}
+                  <div class="load-more-spinner">
+                    <Diamonds color="#ffffff" size="20" unit="px" />
+                  </div>
+                  {$_("catalog_contents.infinite_scroll.loading")}
+                {:else}
+                  <svg
+                    class="load-more-icon"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                    ></path>
+                  </svg>
+                  {$_("catalog_contents.infinite_scroll.load_more")}
+                {/if}
+              </button>
+            </div>
+          {:else if displayedContentsDerived.length > 0}
+            <div class="end-of-results">
+              <div class="end-of-results-icon">
+                <svg
+                  class="w-8 h-8 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  ></path>
+                </svg>
+              </div>
+              <p class="end-of-results-text">
+                {$_("catalog_contents.infinite_scroll.end_of_results")}
+              </p>
+              <p class="end-of-results-count">
+                {$_("catalog_contents.infinite_scroll.total_items", {
+                  values: { count: totalItemsDerived },
+                })}
+              </p>
+            </div>
+          {/if}
+        </div>
+      {/if}
     {/if}
   </div>
 </div>
@@ -932,6 +1261,163 @@
     border: 1px solid rgba(59, 130, 246, 0.2);
   }
 
+  /* Tags Filter Section */
+  .tags-filter-section {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(8px);
+    border-radius: 0.75rem;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+
+  .tags-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+
+  .tags-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1f2937;
+  }
+
+  .show-all-tags-button {
+    font-size: 0.875rem;
+    color: #2563eb;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    transition: color 0.2s ease;
+  }
+
+  .show-all-tags-button:hover {
+    color: #1d4ed8;
+    text-decoration: underline;
+  }
+
+  .tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .tag-filter-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: 1px solid;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .tag-unselected {
+    background: rgba(255, 255, 255, 0.8);
+    color: #64748b;
+    border-color: rgba(148, 163, 184, 0.3);
+  }
+
+  .tag-unselected:hover {
+    background: rgba(59, 130, 246, 0.1);
+    color: #2563eb;
+    border-color: rgba(59, 130, 246, 0.3);
+  }
+
+  .tag-selected {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: white;
+    border-color: #2563eb;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+  }
+
+  .tag-check-icon {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .selected-tags-section {
+    border-top: 1px solid rgba(148, 163, 184, 0.2);
+    padding-top: 1rem;
+  }
+
+  .selected-tags-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+  }
+
+  .selected-tags-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+  }
+
+  .clear-tags-button {
+    font-size: 0.75rem;
+    color: #ef4444;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    transition: color 0.2s ease;
+  }
+
+  .clear-tags-button:hover {
+    color: #dc2626;
+    text-decoration: underline;
+  }
+
+  .selected-tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .selected-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+    color: #1e40af;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+  }
+
+  .remove-tag-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1rem;
+    height: 1rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #64748b;
+    transition: color 0.2s ease;
+  }
+
+  .remove-tag-button:hover {
+    color: #ef4444;
+  }
+
+  .remove-tag-icon {
+    width: 0.75rem;
+    height: 0.75rem;
+  }
+
   /* State Components */
   .loading-state,
   .error-state,
@@ -984,7 +1470,8 @@
     margin-bottom: 1.5rem;
   }
 
-  .retry-button {
+  .retry-button,
+  .clear-filters-button {
     padding: 0.75rem 1.5rem;
     background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
     color: white;
@@ -997,6 +1484,11 @@
   }
 
   .retry-button:hover,
+  .clear-filters-button:hover {
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+  }
+
   .search-filter-section {
     background: rgba(255, 255, 255, 0.9);
     backdrop-filter: blur(8px);
@@ -1018,6 +1510,21 @@
     font-size: 1.125rem;
     font-weight: 600;
     color: #1f2937;
+  }
+
+  .clear-all-filters-button {
+    font-size: 0.875rem;
+    color: #ef4444;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    transition: color 0.2s ease;
+  }
+
+  .clear-all-filters-button:hover {
+    color: #dc2626;
+    text-decoration: underline;
   }
 
   .search-filter-controls {
@@ -1335,13 +1842,96 @@
     overflow: hidden;
   }
 
+  /* Card Preview Styles */
+  .card-preview {
+    margin-bottom: 0.75rem;
+  }
+
+  .preview-text {
+    font-size: 0.875rem;
+    color: #64748b;
+    line-height: 1.5;
+    margin-bottom: 0.5rem;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .read-more-button {
+    font-size: 0.75rem;
+    color: #2563eb;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    transition: color 0.2s ease;
+  }
+
+  .read-more-button:hover {
+    color: #1d4ed8;
+    text-decoration: underline;
+  }
+
+  .card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .card-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.625rem;
+    font-weight: 500;
+    background: #e0e7ff;
+    color: #3730a3;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    cursor: pointer;
+  }
+
+  .card-tag:hover {
+    background: #c7d2fe;
+    transform: translateY(-1px);
+  }
+
+  .card-tag-selected {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: white;
+    border-color: #2563eb;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+  }
+
+  .card-tag-more {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.625rem;
+    font-weight: 500;
+    background: #f1f5f9;
+    color: #64748b;
+  }
+
   /* Stats Section */
   .card-stats {
     display: flex;
-    flex-direction: row;
-    gap: 0.75rem;
-    align-items: flex-end;
+    justify-content: space-between;
+    align-items: center;
     flex-shrink: 0;
+  }
+
+  .stats-left {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .stats-right {
+    display: flex;
+    gap: 0.5rem;
   }
 
   .stat-item {
@@ -1362,6 +1952,12 @@
     border-color: rgba(254, 202, 202, 0.5);
   }
 
+  .stat-media {
+    color: #8b5cf6;
+    background: rgba(245, 243, 255, 0.8);
+    border-color: rgba(196, 181, 253, 0.5);
+  }
+
   .stat-icon {
     width: 1rem;
     height: 1rem;
@@ -1374,65 +1970,137 @@
     text-align: center;
   }
 
-  /* Pagination */
-  .pagination-section {
+  .action-button {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 1.5rem;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.375rem;
+    border: 1px solid rgba(148, 163, 175, 0.3);
+    background: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .action-icon {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .share-button:hover {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: #3b82f6;
+    color: #3b82f6;
+  }
+
+  .report-button:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: #ef4444;
+    color: #ef4444;
+  }
+
+  /* Load More Section */
+  .load-more-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 2rem;
     border-top: 1px solid rgba(148, 163, 184, 0.2);
     background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   }
 
-  .pagination-info {
-    font-size: 0.875rem;
-    color: #64748b;
+  .load-more-info {
+    text-align: center;
   }
 
-  .pagination-nav {
+  .load-more-text {
+    font-size: 0.875rem;
+    color: #64748b;
+    font-weight: 500;
+  }
+
+  .load-more-button {
     display: flex;
     align-items: center;
-    gap: 0.25rem;
-  }
-
-  .pagination-button {
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    border-radius: 0.5rem;
-    transition: all 0.2s ease;
-    border: 1px solid rgba(209, 213, 219, 0.8);
-    background: rgba(255, 255, 255, 0.9);
-    color: #64748b;
-    cursor: pointer;
-  }
-
-  .pagination-button:hover:not(:disabled) {
-    background: rgba(249, 250, 251, 0.9);
-    border-color: rgba(156, 163, 175, 0.8);
-  }
-
-  .pagination-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  .pagination-current {
+    gap: 0.5rem;
+    padding: 0.875rem 2rem;
     background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
     color: white;
-    border-color: #2563eb;
-    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
-  }
-
-  .pagination-number {
-    color: #374151;
-  }
-
-  .pagination-ellipsis {
-    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
     font-size: 0.875rem;
-    font-weight: 500;
+    border: 1px solid rgba(37, 99, 235, 0.3);
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+    cursor: pointer;
+    min-width: 140px;
+    justify-content: center;
+  }
+
+  .load-more-button:hover:not(:disabled) {
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+    transform: translateY(-1px);
+  }
+
+  .load-more-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .load-more-spinner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .load-more-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    transition: transform 0.2s ease;
+  }
+
+  .load-more-button:hover:not(:disabled) .load-more-icon {
+    transform: translateY(2px);
+  }
+
+  /* End of Results */
+  .end-of-results {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 2rem;
+    border-top: 1px solid rgba(148, 163, 184, 0.2);
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    text-align: center;
+  }
+
+  .end-of-results-icon {
+    width: 4rem;
+    height: 4rem;
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(34, 197, 94, 0.2);
+  }
+
+  .end-of-results-text {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #374151;
+    margin: 0;
+  }
+
+  .end-of-results-count {
+    font-size: 0.875rem;
     color: #64748b;
+    margin: 0;
   }
 
   @media (min-width: 640px) {
@@ -1459,10 +2127,6 @@
     }
 
     .results-summary {
-      flex-direction: row;
-    }
-
-    .pagination-section {
       flex-direction: row;
     }
   }
@@ -1522,22 +2186,46 @@
     }
 
     .card-stats {
-      flex-direction: row;
-      align-items: center;
-    }
-
-    .pagination-section {
       flex-direction: column;
-      gap: 1rem;
+      gap: 0.75rem;
+      align-items: stretch;
     }
 
-    .rtl .pagination-section {
-      flex-direction: column;
+    .stats-left {
+      justify-content: space-between;
     }
 
-    .pagination-nav {
-      flex-wrap: wrap;
+    .stats-right {
       justify-content: center;
+    }
+
+    .load-more-button {
+      padding: 0.75rem 1.5rem;
+      font-size: 0.875rem;
+    }
+
+    .tags-container {
+      gap: 0.375rem;
+    }
+
+    .tags-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    .rtl .tags-header {
+      align-items: flex-end;
+    }
+
+    .selected-tags-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    .rtl .selected-tags-header {
+      align-items: flex-end;
     }
   }
 </style>

@@ -8,6 +8,7 @@
     getEntities,
     updateProfile,
     getMyEntities,
+    updatePassword,
   } from "@/lib/dmart_services";
   import {
     errorToastMessage,
@@ -19,6 +20,7 @@
   import { Diamonds } from "svelte-loading-spinners";
   $goto;
   import { _ } from "@/i18n";
+  import { loginBy } from "@/stores/user";
 
   // let profileSection: string = $state("ME");
 
@@ -35,15 +37,27 @@
   let entities = $state([]);
   let displayname = $state("");
   let description = $state("");
+  let email = $state("");
+  let msisdn = $state("");
   let fileInput: HTMLInputElement;
+
+  let oldPassword = $state("");
+  let newPassword = $state("");
+  let confirmPassword = $state("");
+  let isChangingPassword = $state(false);
+  let showChangePassword = $state(false);
 
   onMount(async () => {
     isLoading = true;
     user = await getProfile();
     displayname = user?.attributes?.displayname?.en ?? user.attributes.email;
     description = user.attributes?.description?.en ?? "";
+    email = user.attributes?.email ?? "";
+    msisdn = user.attributes?.msisdn ?? "";
 
     avatar = await getAvatar(user.shortname);
+
+    console.log("Fetched avatar:", avatar);
 
     await fetchEntities();
     isLoading = false;
@@ -87,6 +101,58 @@
     }
   }
 
+  async function handlePasswordChange(event) {
+    event.preventDefault();
+
+    if (newPassword !== confirmPassword) {
+      errorToastMessage("New passwords do not match");
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      errorToastMessage("New password must be at least 8 characters long");
+      return;
+    }
+
+    if (oldPassword === newPassword) {
+      errorToastMessage(
+        "New password must be different from the current password"
+      );
+      return;
+    }
+
+    isChangingPassword = true;
+
+    try {
+      const loginResult = await loginBy(user.attributes.email, oldPassword);
+      console.log("Login result:", loginResult);
+
+      if (!loginResult) {
+        errorToastMessage("Current password is incorrect");
+        return;
+      }
+      const response = await updatePassword({
+        shortname: user.shortname,
+        password: newPassword,
+      });
+
+      if (response) {
+        successToastMessage("Password changed successfully");
+        oldPassword = "";
+        newPassword = "";
+        confirmPassword = "";
+        showChangePassword = false;
+      } else {
+        errorToastMessage("Failed to change password");
+      }
+    } catch (error) {
+      console.error("Error changing password:", error);
+      errorToastMessage("An error occurred while changing your password");
+    } finally {
+      isChangingPassword = false;
+    }
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
 
@@ -94,6 +160,8 @@
       shortname: user.shortname,
       displayname,
       description,
+      // msisdn,
+      email,
     });
     if (response) {
       successToastMessage("Profile updated successfully");
@@ -141,6 +209,9 @@
     isUploadingAvatar = true;
 
     try {
+      console.log("Uploading avatar:", file);
+      console.log("User shortname:", user.shortname);
+
       const success = await setAvatar(user.shortname, file);
 
       if (success) {
@@ -310,6 +381,37 @@
 
             <div>
               <label
+                for="email"
+                class="block text-sm font-medium text-gray-700 mb-2"
+              >
+                {$_("EmailAddress")}
+              </label>
+              <input
+                id="email"
+                type="email"
+                bind:value={email}
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
+                placeholder="Enter your email address"
+              />
+            </div>
+
+            <div>
+              <label
+                for="msisdn"
+                class="block text-sm font-medium text-gray-700 mb-2"
+              >
+                {$_("MobileNumber")}
+              </label>
+              <input
+                id="msisdn"
+                type="tel"
+                bind:value={msisdn}
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
+                placeholder="Enter your mobile number"
+              />
+            </div>
+            <div>
+              <label
                 for="description"
                 class="block text-sm font-medium text-gray-700 mb-2"
               >
@@ -345,16 +447,16 @@
               >
                 <div>
                   <h4 class="font-medium text-gray-900">
-                    {$_("EmailAddress")}
+                    {$_("AccountStatus")}
                   </h4>
                   <p class="text-gray-600 text-sm mt-1">
-                    {user.attributes?.email ?? "Not provided"}
+                    Your account is active and verified
                   </p>
                 </div>
                 <span
                   class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
                 >
-                  {user.attributes?.email ? $_("Verified") : $_("NotSet")}
+                  {$_("Active")}
                 </span>
               </div>
 
@@ -362,44 +464,117 @@
                 class="flex justify-between items-start py-3 border-b border-gray-100"
               >
                 <div>
-                  <h4 class="font-medium text-gray-900">
-                    {$_("MobileNumber")}
-                  </h4>
+                  <h4 class="font-medium text-gray-900">Member Since</h4>
                   <p class="text-gray-600 text-sm mt-1">
-                    {user.attributes?.msisdn ?? "Not provided"}
+                    {user.attributes?.created_at
+                      ? formatDate(user.attributes.created_at)
+                      : "Unknown"}
                   </p>
                 </div>
-                <span
-                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
-                >
-                  {user.attributes?.msisdn ? $_("Verified") : $_("NotSet")}
-                </span>
               </div>
-
-              <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div class="flex">
-                  <svg
-                    class="w-5 h-5 text-blue-600 mt-0.5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+              <!-- Change Password Section -->
+              <div class="pt-4">
+                <div class="flex justify-between items-center mb-4">
+                  <h4 class="font-medium text-gray-900">Password</h4>
+                  <button
+                    type="button"
+                    class="text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200"
+                    onclick={() => (showChangePassword = !showChangePassword)}
                   >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    ></path>
-                  </svg>
-                  <div class="ms-3">
-                    <h4 class="text-sm font-medium text-blue-800">
-                      {$_("ContactAdmin")}
-                    </h4>
-                    <p class="text-sm text-blue-700 mt-1">
-                      {$_("ContactAdmin2")}
-                    </p>
-                  </div>
+                    {showChangePassword ? "Cancel" : "Change Password"}
+                  </button>
                 </div>
+
+                {#if showChangePassword}
+                  <form onsubmit={handlePasswordChange} class="space-y-4">
+                    <div>
+                      <label
+                        for="oldPassword"
+                        class="block text-sm font-medium text-gray-700 mb-2"
+                      >
+                        Current Password
+                      </label>
+                      <input
+                        id="oldPassword"
+                        type="password"
+                        required
+                        bind:value={oldPassword}
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
+                        placeholder="Enter your current password"
+                        disabled={isChangingPassword}
+                      />
+                    </div>
+
+                    <div>
+                      <label
+                        for="newPassword"
+                        class="block text-sm font-medium text-gray-700 mb-2"
+                      >
+                        New Password
+                      </label>
+                      <input
+                        id="newPassword"
+                        type="password"
+                        required
+                        minlength="8"
+                        bind:value={newPassword}
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
+                        placeholder="Enter your new password"
+                        disabled={isChangingPassword}
+                      />
+                      <p class="text-xs text-gray-500 mt-1">
+                        Password must be at least 8 characters long
+                      </p>
+                    </div>
+
+                    <div>
+                      <label
+                        for="confirmPassword"
+                        class="block text-sm font-medium text-gray-700 mb-2"
+                      >
+                        Confirm New Password
+                      </label>
+                      <input
+                        id="confirmPassword"
+                        type="password"
+                        required
+                        bind:value={confirmPassword}
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
+                        placeholder="Confirm your new password"
+                        disabled={isChangingPassword}
+                      />
+                    </div>
+
+                    <div class="flex gap-3 pt-2">
+                      <button
+                        type="submit"
+                        disabled={isChangingPassword}
+                        class="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
+                      >
+                        {#if isChangingPassword}
+                          <Diamonds color="#ffffff" size="16" unit="px" />
+                          Changing...
+                        {:else}
+                          Change Password
+                        {/if}
+                      </button>
+                      <button
+                        type="button"
+                        onclick={() => {
+                          showChangePassword = false;
+                          oldPassword = "";
+                          newPassword = "";
+                          confirmPassword = "";
+                        }}
+                        class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors duration-200"
+                        disabled={isChangingPassword}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>{:else}
+                  <p class="text-gray-600 text-sm">••••••••••••</p>
+                {/if}
               </div>
             </div>
           </div>

@@ -173,7 +173,12 @@
   }
 
   function editEntity(entity) {
-    $goto("/entries/[shortname]/edit", { shortname: entity.shortname });
+    $goto("/entries/[space_name]/[subpath]/[shortname]/[resource_type]/edit", {
+      shortname: entity.shortname,
+      space_name: entity.space_name,
+      subpath: entity.subpath,
+      resource_type: entity.resource_type,
+    });
   }
 
   function createNewEntry() {
@@ -241,25 +246,25 @@
         <!-- Search -->
         <div class="relative">
           <SearchOutline
-            class="absolute top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 search-icon"
+            class="absolute top-1/2 transform -translate-y-1/2 w-5 h-5 ms-2 text-gray-400 search-icon"
           />
           <input
             type="text"
             bind:value={searchTerm}
             placeholder={$_("my_entries.search.placeholder")}
-            class="w-full search-input py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+            class="w-full search-input py-3 pl-8 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
           />
         </div>
 
         <!-- Status Filter -->
         <div class="relative">
           <FilterOutline
-            class="absolute top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 filter-icon"
+            class="absolute top-1/2 transform -translate-y-1/2 w-5 h-5 ms-2 text-gray-400 filter-icon"
           />
           <select
             bind:value={statusFilter}
             onchange={handleFilterChange}
-            class="w-full filter-select py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 appearance-none bg-white"
+            class="w-full filter-select py-3 pl-8 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 appearance-none bg-white"
           >
             <option value="all">{$_("my_entries.filter.all_status")}</option>
             <option value="active">{$_("my_entries.filter.published")}</option>

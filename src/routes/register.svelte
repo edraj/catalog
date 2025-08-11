@@ -173,7 +173,7 @@
         )?.value || "catalog_user_role";
 
       await register(email, otpCode, password, confirmPassword, role);
-      $goto("/entires");
+      $goto("/entries");
     } catch (error: any) {
       console.error("OTP verification error:", error.message);
       errors.otp = error.message || $_("OtpVerificationFailed");

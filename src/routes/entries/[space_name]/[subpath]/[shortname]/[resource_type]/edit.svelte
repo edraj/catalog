@@ -158,10 +158,12 @@
     if (entity) {
       title = entity.payload?.body?.title || "";
       content = entity.payload?.body?.content || "";
+      console.log("Loaded entity:", entity);
+
       tags = entity.tags || [];
       setTimeout(() => {
         editorReady = true;
-      }, 100);
+      }, 200);
     }
     isLoadingPage = false;
   });
@@ -410,7 +412,11 @@
         <div class="section-content">
           <div class="editor-container">
             {#if editorReady}
-              <HtmlEditor bind:editor={htmlEditor} {content} />
+              <HtmlEditor
+                bind:editor={htmlEditor}
+                {content}
+                onContentChange={(newContent) => (content = newContent)}
+              />
             {:else}
               <div class="editor-loading">
                 <Diamonds size="40" color="#2563eb" unit="px" duration="1s" />
@@ -1248,6 +1254,9 @@
     border: 2px dashed var(--gray-200);
     border-radius: var(--radius-lg);
     color: var(--gray-500);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
   .empty-attachments h3 {
