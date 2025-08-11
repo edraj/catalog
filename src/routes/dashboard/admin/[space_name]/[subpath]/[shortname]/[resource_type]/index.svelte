@@ -13,6 +13,7 @@
   import { ResourceType } from "@edraj/tsdmart";
   import { writable } from "svelte/store";
   import Attachment from "@/components/Attachments.svelte";
+  import HtmlEditor from "@/components/editors/HtmlEditor.svelte";
 
   $goto;
 
@@ -39,6 +40,8 @@
   const authorRelatedEntries = writable([]);
   let authorRelatedEntriesValue = $state([]);
   let itemDataValue = $state(null);
+  let htmlEditor: any = $state(null);
+
   const editForm = writable({
     title: "",
     content: "",
@@ -134,6 +137,7 @@
         $params.resource_type,
         "managed"
       );
+      console.log(response);
 
       if (response && response.uuid) {
         itemDataValue = response;
@@ -172,7 +176,10 @@
 
   async function handleUpdateItem(event) {
     event?.preventDefault();
+
     try {
+      const htmlContent = htmlEditor?.getHtml(true) || editFormValue.content;
+
       const tagsArray = editFormValue.tagsString
         .split(",")
         .map((tag) => tag.trim())
@@ -181,7 +188,7 @@
       const entityData = {
         title: editFormValue.title,
         tags: tagsArray,
-        content: editFormValue.content,
+        content: htmlContent, // Use the HTML content from the editor
         is_active: editFormValue.is_active,
       };
 
@@ -198,6 +205,9 @@
       if (response) {
         showEditModal.set(false);
         await loadItemData();
+
+        // Optional: Show success message
+        // successMessage.set($_("admin_item_detail.success.item_updated"));
       } else {
         console.error("Update failed: No response received");
         error.set($_("admin_item_detail.error.failed_update_item"));
@@ -209,7 +219,6 @@
       );
     }
   }
-
   async function handleDeleteItem() {
     if (
       !confirm(
@@ -794,6 +803,106 @@
                               <pre
                                 class="text-xs whitespace-pre-wrap">{itemDataValue
                                   .payload.body}</pre>
+                            </div>
+                          {/if}
+                        </td>
+                      </tr>
+                      <!-- New row for readable content -->
+                      <tr>
+                        <td
+                          class="px-6 py-4 text-sm font-medium text-gray-900 bg-gray-50 align-top"
+                          class:text-right={$isRTL}
+                          >{$_(
+                            "admin_item_detail.content.readable_content"
+                          )}</td
+                        >
+                        <td
+                          class="px-6 py-4 text-sm text-gray-500"
+                          class:text-right={$isRTL}
+                        >
+                          {#if itemDataValue.payload.content_type === "html"}
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                              <div class="text-sm whitespace-pre-wrap">
+                                {itemDataValue.payload.body
+                                  .replace(/<[^>]*>/g, "")
+                                  .replace(/&nbsp;/g, " ")
+                                  .replace(/&amp;/g, "&")
+                                  .replace(/&lt;/g, "<")
+                                  .replace(/&gt;/g, ">")
+                                  .replace(/&quot;/g, '"')
+                                  .trim()}
+                              </div>
+                            </div>
+                          {:else if itemDataValue.payload.content_type === "json"}
+                            <div class="bg-gray-50 p-4 rounded-lg space-y-3">
+                              {#if itemDataValue.payload.body.title}
+                                <div>
+                                  <span class="font-semibold text-gray-700"
+                                    >{$_("Title")}</span
+                                  >
+                                  <span class="ml-2"
+                                    >{itemDataValue.payload.body.title}</span
+                                  >
+                                </div>
+                              {/if}
+
+                              {#if itemDataValue.payload.body.content}
+                                <div
+                                  class="mt-1 pl-4 border-l-2 border-blue-200"
+                                >
+                                  {itemDataValue.payload.body.content
+                                    .replace(/<[^>]*>/g, "")
+                                    .replace(/&nbsp;/g, " ")
+                                    .replace(/&amp;/g, "&")
+                                    .replace(/&lt;/g, "<")
+                                    .replace(/&gt;/g, ">")
+                                    .replace(/&quot;/g, '"')
+                                    .trim()}
+                                </div>
+                              {/if}
+
+                              <div class="border-t border-gray-300 pt-2"></div>
+
+                              {#if itemDataValue.payload.body.tags && itemDataValue.payload.body.tags.length > 0}
+                                <div>
+                                  <span class="font-semibold text-gray-700"
+                                    >{$_("Tags")}:</span
+                                  >
+                                  <div class="mt-1 flex flex-wrap gap-1">
+                                    {#each itemDataValue.payload.body.tags as tag}
+                                      <span
+                                        class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                                      >
+                                        {tag}
+                                      </span>
+                                    {/each}
+                                  </div>
+                                </div>
+                              {/if}
+
+                              {#if itemDataValue.payload.body.is_active !== undefined}
+                                <div>
+                                  <span class="font-semibold text-gray-700"
+                                    >{$_("status")}:</span
+                                  >
+                                  <span
+                                    class="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {itemDataValue
+                                      .payload.body.is_active
+                                      ? 'bg-green-100 text-green-800'
+                                      : 'bg-red-100 text-red-800'}"
+                                  >
+                                    {itemDataValue.payload.body.is_active
+                                      ? "Active"
+                                      : "Inactive"}
+                                  </span>
+                                </div>
+                              {/if}
+                            </div>
+                          {:else}
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                              <div class="text-sm whitespace-pre-wrap">
+                                {itemDataValue.payload.body}
+                              </div>
                             </div>
                           {/if}
                         </td>
@@ -1394,151 +1503,675 @@
 
 {#if $showEditModal}
   <div
-    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    class="modal-overlay"
     onclick={() => showEditModal.set(false)}
     role="dialog"
     aria-modal="true"
     tabindex="-1"
   >
     <div
-      class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto"
+      class="modal-container"
       class:rtl={$isRTL}
       onclick={(event) => event.stopPropagation()}
     >
-      <div
-        class="flex justify-between items-center mb-6"
-        class:flex-row-reverse={$isRTL}
-      >
-        <h3
-          class="text-xl font-semibold text-gray-900"
-          class:text-right={$isRTL}
-        >
-          {$_("admin_item_detail.edit_modal.title")}
-        </h3>
-        <button
-          onclick={() => showEditModal.set(false)}
-          class="text-gray-400 hover:text-gray-600 transition-colors duration-200"
-          aria-label={$_("admin_item_detail.edit_modal.actions.cancel")}
-        >
-          <svg
-            class="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
-      </div>
-      <form class="space-y-5" onsubmit={handleUpdateItem}>
-        <div>
-          <label
-            for="editTitle"
-            class="block text-sm font-medium text-gray-700 mb-2"
-            class:text-right={$isRTL}
-          >
-            {$_("admin_item_detail.edit_modal.fields.title")}
-          </label>
-          <input
-            id="editTitle"
-            type="text"
-            bind:value={editFormValue.title}
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            class:text-right={$isRTL}
-            placeholder={$_("admin_item_detail.edit_modal.placeholders.title")}
-            required
-          />
-        </div>
-
-        <div>
-          <label
-            for="editContent"
-            class="block text-sm font-medium text-gray-700 mb-2"
-            class:text-right={$isRTL}
-          >
-            {$_("admin_item_detail.edit_modal.fields.content")}
-          </label>
-          <textarea
-            id="editContent"
-            bind:value={editFormValue.content}
-            rows="4"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
-            class:text-right={$isRTL}
-            placeholder={$_(
-              "admin_item_detail.edit_modal.placeholders.content"
-            )}
-          ></textarea>
-        </div>
-
-        <div>
-          <label
-            for="editTags"
-            class="block text-sm font-medium text-gray-700 mb-2"
-            class:text-right={$isRTL}
-          >
-            {$_("admin_item_detail.edit_modal.fields.tags")}
-          </label>
-          <input
-            id="editTags"
-            type="text"
-            bind:value={editFormValue.tagsString}
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            class:text-right={$isRTL}
-            placeholder={$_("admin_item_detail.edit_modal.placeholders.tags")}
-          />
-        </div>
-
-        <div
-          class="flex items-center"
-          class:flex-row-reverse={$isRTL}
-          class:justify-end={$isRTL}
-        >
-          <input
-            id="editIsActive"
-            type="checkbox"
-            bind:checked={editFormValue.is_active}
-            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          />
-          <label
-            for="editIsActive"
-            class="ml-2 block text-sm text-gray-900"
-            class:ml-2={!$isRTL}
-            class:mr-2={$isRTL}
-          >
-            {$_("admin_item_detail.edit_modal.fields.active")}
-          </label>
-        </div>
-
-        <div
-          class="flex justify-end space-x-3 pt-4 border-t border-gray-200"
-          class:space-x-reverse={$isRTL}
-          class:flex-row-reverse={$isRTL}
-        >
+      <!-- Header -->
+      <div class="modal-header" class:rtl={$isRTL}>
+        <div class="header-content">
+          <div class="header-text">
+            <h3 class="modal-title" class:text-right={$isRTL}>
+              {$_("admin_item_detail.edit_modal.title")}
+            </h3>
+            <p class="modal-subtitle" class:text-right={$isRTL}>
+              Update item details and content
+            </p>
+          </div>
           <button
-            type="button"
             onclick={() => showEditModal.set(false)}
-            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+            class="close-button"
+            aria-label={$_("admin_item_detail.edit_modal.actions.cancel")}
           >
-            {$_("admin_item_detail.edit_modal.actions.cancel")}
-          </button>
-          <button
-            type="submit"
-            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
-          >
-            {$_("admin_item_detail.edit_modal.actions.save")}
+            <svg
+              class="close-icon"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
           </button>
         </div>
-      </form>
+      </div>
+
+      <!-- Content -->
+      <div class="modal-content">
+        <form class="modal-form" onsubmit={handleUpdateItem}>
+          <div class="form-grid">
+            <!-- Left Column - Basic Fields -->
+            <div class="form-column">
+              <!-- Title Field -->
+              <div class="form-group">
+                <label
+                  for="editTitle"
+                  class="form-label"
+                  class:text-right={$isRTL}
+                  class:rtl-label={$isRTL}
+                >
+                  <svg
+                    class="label-icon"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.99 1.99 0 013 12V7a4 4 0 014-4z"
+                    />
+                  </svg>
+                  {$_("admin_item_detail.edit_modal.fields.title")}
+                </label>
+                <input
+                  id="editTitle"
+                  type="text"
+                  bind:value={editFormValue.title}
+                  class="form-input"
+                  class:text-right={$isRTL}
+                  placeholder={$_(
+                    "admin_item_detail.edit_modal.placeholders.title"
+                  )}
+                  required
+                />
+              </div>
+
+              <!-- Tags Field -->
+              <div class="form-group">
+                <label
+                  for="editTags"
+                  class="form-label"
+                  class:text-right={$isRTL}
+                  class:rtl-label={$isRTL}
+                >
+                  <svg
+                    class="label-icon"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.99 1.99 0 013 12V7a4 4 0 014-4z"
+                    />
+                  </svg>
+                  {$_("admin_item_detail.edit_modal.fields.tags")}
+                </label>
+                <input
+                  id="editTags"
+                  type="text"
+                  bind:value={editFormValue.tagsString}
+                  class="form-input"
+                  class:text-right={$isRTL}
+                  placeholder={$_(
+                    "admin_item_detail.edit_modal.placeholders.tags"
+                  )}
+                />
+                <p class="form-hint" class:text-right={$isRTL}>
+                  Separate tags with commas (e.g., tag1, tag2, tag3)
+                </p>
+              </div>
+
+              <!-- Active Status -->
+              <div class="status-container">
+                <div class="status-toggle" class:rtl-toggle={$isRTL}>
+                  <div class="toggle-wrapper">
+                    <input
+                      id="editIsActive"
+                      type="checkbox"
+                      bind:checked={editFormValue.is_active}
+                      class="toggle-input"
+                    />
+                    <div
+                      class="toggle-switch {editFormValue.is_active
+                        ? 'active'
+                        : ''}"
+                      onclick={() =>
+                        (editFormValue.is_active = !editFormValue.is_active)}
+                    >
+                      <div class="toggle-slider"></div>
+                    </div>
+                  </div>
+                  <div class="status-info" class:rtl-info={$isRTL}>
+                    <label
+                      for="editIsActive"
+                      class="status-label"
+                      class:rtl-status-label={$isRTL}
+                    >
+                      <svg
+                        class="label-icon"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M13 10V3L4 14h7v7l9-11h-7z"
+                        />
+                      </svg>
+                      {$_("admin_item_detail.edit_modal.fields.active")}
+                    </label>
+                    <p class="status-description" class:text-right={$isRTL}>
+                      {editFormValue.is_active
+                        ? "Item is currently active"
+                        : "Item is currently inactive"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Column - Content Editor -->
+            <div class="editor-column">
+              <div class="editor-group">
+                <label
+                  for="editContent"
+                  class="form-label"
+                  class:text-right={$isRTL}
+                  class:rtl-label={$isRTL}
+                >
+                  <svg
+                    class="label-icon"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  {$_("admin_item_detail.edit_modal.fields.content")}
+                </label>
+                <div class="editor-container">
+                  <HtmlEditor
+                    bind:editor={htmlEditor}
+                    bind:content={editFormValue.content}
+                    onContentChange={(html) => {
+                      editFormValue.content = html;
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="modal-actions">
+            <div class="actions-container" class:rtl-actions={$isRTL}>
+              <button
+                type="button"
+                onclick={() => showEditModal.set(false)}
+                class="cancel-button"
+              >
+                <svg
+                  class="button-icon"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+                {$_("admin_item_detail.edit_modal.actions.cancel")}
+              </button>
+              <button type="submit" class="save-button">
+                <svg
+                  class="button-icon"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                {$_("admin_item_detail.edit_modal.actions.save")}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 {/if}
 
 <style>
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    padding: 1rem;
+  }
+
+  .modal-container {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    width: 100%;
+    max-width: 64rem;
+    max-height: 95vh;
+    overflow: hidden;
+    animation: modalSlideIn 0.3s ease-out;
+  }
+
+  @keyframes modalSlideIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95) translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  .modal-header {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    padding: 2rem;
+    color: white;
+  }
+
+  .header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .modal-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  .modal-subtitle {
+    color: rgba(219, 234, 254, 0.9);
+    margin: 0.5rem 0 0 0;
+    font-size: 0.875rem;
+  }
+
+  .close-button {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .close-button:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+  }
+
+  .close-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .modal-content {
+    overflow-y: auto;
+    max-height: calc(95vh - 140px);
+  }
+
+  .modal-form {
+    padding: 2rem;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  @media (min-width: 1024px) {
+    .form-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .form-column {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .editor-column {
+    grid-column: span 1;
+  }
+
+  @media (min-width: 1024px) {
+    .editor-column {
+      grid-column: span 1;
+    }
+  }
+
+  .form-group,
+  .editor-group {
+    position: relative;
+  }
+
+  .form-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 0.75rem;
+    cursor: pointer;
+  }
+
+  .rtl-label {
+    flex-direction: row-reverse;
+  }
+
+  .label-icon {
+    width: 1rem;
+    height: 1rem;
+    color: #6b7280;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.75rem;
+    background: rgba(249, 250, 251, 0.5);
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+    outline: none;
+  }
+
+  .form-input:hover {
+    background: white;
+    border-color: #d1d5db;
+  }
+
+  .form-input:focus {
+    background: white;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  .form-hint {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: #6b7280;
+  }
+
+  .status-container {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+  }
+
+  .status-toggle {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .rtl-toggle {
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+  }
+
+  .toggle-wrapper {
+    position: relative;
+  }
+
+  .toggle-input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .toggle-switch {
+    width: 3rem;
+    height: 1.5rem;
+    background: #d1d5db;
+    border-radius: 9999px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.2s ease;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .toggle-switch.active {
+    background: #3b82f6;
+  }
+
+  .toggle-slider {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 1.25rem;
+    height: 1.25rem;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease;
+  }
+
+  .toggle-switch.active .toggle-slider {
+    transform: translateX(1.5rem);
+  }
+
+  .status-info {
+    flex: 1;
+  }
+
+  .rtl-info {
+    margin-right: 0;
+    margin-left: 1rem;
+  }
+
+  .status-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1f2937;
+    cursor: pointer;
+    margin-bottom: 0.25rem;
+  }
+
+  .rtl-status-label {
+    flex-direction: row-reverse;
+  }
+
+  .status-description {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin: 0;
+  }
+
+  .editor-container {
+    border: 2px solid #e5e7eb;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: border-color 0.2s ease;
+    height: 500px;
+  }
+
+  .editor-container:hover {
+    border-color: #d1d5db;
+  }
+
+  .modal-actions {
+    margin-top: 2.5rem;
+    padding-top: 2rem;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  .actions-container {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+  }
+
+  .rtl-actions {
+    flex-direction: row-reverse;
+  }
+
+  .cancel-button,
+  .save-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-radius: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    outline: none;
+  }
+
+  .cancel-button {
+    background: white;
+    color: #374151;
+    border: 2px solid #e5e7eb;
+  }
+
+  .cancel-button:hover {
+    background: #f9fafb;
+    border-color: #d1d5db;
+  }
+
+  .cancel-button:focus {
+    box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.1);
+  }
+
+  .save-button {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    border: 2px solid transparent;
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+    padding: 0.75rem 2rem;
+  }
+
+  .save-button:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    box-shadow: 0 6px 8px -1px rgba(59, 130, 246, 0.4);
+    transform: translateY(-1px);
+  }
+
+  .save-button:focus {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  }
+
+  .button-icon {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  /* RTL Support */
+  .rtl .header-content {
+    flex-direction: row-reverse;
+  }
+
+  .rtl .form-grid {
+    direction: rtl;
+  }
+
+  .rtl .actions-container {
+    direction: rtl;
+  }
+
+  /* Mobile Responsiveness */
+  @media (max-width: 768px) {
+    .modal-container {
+      margin: 0.5rem;
+      max-height: 98vh;
+    }
+
+    .modal-header {
+      padding: 1.5rem;
+    }
+
+    .modal-title {
+      font-size: 1.25rem;
+    }
+
+    .modal-form {
+      padding: 1.5rem;
+    }
+
+    .form-grid {
+      gap: 1.5rem;
+    }
+
+    .form-column {
+      gap: 1.25rem;
+    }
+
+    .actions-container {
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .cancel-button,
+    .save-button {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+
+  /* Animation for smooth interactions */
+  .form-input,
+  .toggle-switch,
+  .cancel-button,
+  .save-button {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Focus states for accessibility */
+  .form-input:focus,
+  .toggle-switch:focus-within,
+  .cancel-button:focus,
+  .save-button:focus {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+  }
   .rtl {
     direction: rtl;
   }

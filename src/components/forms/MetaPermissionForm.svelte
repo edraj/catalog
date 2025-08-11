@@ -1,6 +1,7 @@
 <script lang="ts">
   import { RequestType, ResourceType } from "@edraj/tsdmart";
   import { onMount } from "svelte";
+  import { _ } from "svelte-i18n";
   import {
     getChildren,
     getChildrenAndSubChildren,
@@ -220,7 +221,7 @@
     try {
       formData.allowed_fields_values = JSON.parse(jsonEditorContent);
     } catch (e) {
-      alert("Invalid JSON format");
+      alert($_("errors.invalid_json"));
     }
   }
 
@@ -228,9 +229,7 @@
     try {
       formData.allowed_fields_values = JSON.parse(jsonEditorContent);
     } catch (e) {
-      errorToastMessage(
-        "Please correct the JSON syntax.\nInvalid JSON format in Allowed Fields Values"
-      );
+      errorToastMessage($_("validation.json_syntax_error"));
     }
 
     const isValid = form.checkValidity();
@@ -262,18 +261,20 @@
 </script>
 
 <div class="permission-card">
-  <h2 class="form-title">Permission Settings</h2>
+  <h2 class="form-title">{$_("permissions.title")}</h2>
 
   <form bind:this={form}>
     <div class="form-group">
-      <label class="form-label" for="resourceTypeSelect">Resource Types</label>
+      <label class="form-label" for="resourceTypeSelect"
+        >{$_("permissions.resource_types")}</label
+      >
       <div class="input-group">
         <select
           class="form-select"
           bind:value={selectedResourceType}
           id="resourceTypeSelect"
         >
-          <option value="">Select resource type</option>
+          <option value="">{$_("options.select_resource_type")}</option>
           {#each resourceTypeOptions as option}
             <option value={option.value}>{option.name}</option>
           {/each}
@@ -299,19 +300,21 @@
           {/each}
         </div>
       {:else}
-        <div class="empty-state">No resource types added</div>
+        <div class="empty-state">{$_("empty_states.no_resource_types")}</div>
       {/if}
     </div>
 
     <div class="form-group">
-      <label class="form-label" for="actionSelect">Actions</label>
+      <label class="form-label" for="actionSelect"
+        >{$_("permissions.actions")}</label
+      >
       <div class="input-group">
         <select
           class="form-select"
           bind:value={selectedAction}
           id="actionSelect"
         >
-          <option value="">Select action</option>
+          <option value="">{$_("options.select_action")}</option>
           {#each requestTypeOptions as option}
             <option value={option.value}>{option.name}</option>
           {/each}
@@ -337,7 +340,7 @@
           {/each}
         </div>
       {:else}
-        <div class="empty-state">No actions added</div>
+        <div class="empty-state">{$_("empty_states.no_actions")}</div>
       {/if}
     </div>
 
@@ -352,7 +355,7 @@
             if (e.key === "Enter") toggleAccordion("subpaths");
           }}
         >
-          <span>Subpaths</span>
+          <span>{$_("sections.subpaths")}</span>
           <span class="accordion-icon" class:open={accordionStates.subpaths}
             >▼</span
           >
@@ -361,11 +364,13 @@
           <div class="accordion-content">
             <div class="grid grid-cols-2">
               <div class="form-group">
-                <label class="form-label" for="spaceSelect">Space</label>
+                <label class="form-label" for="spaceSelect"
+                  >{$_("fields.space")}</label
+                >
                 {#if loadingSpaces}
                   <div class="loading-container">
                     <div class="spinner"></div>
-                    <span>Loading spaces...</span>
+                    <span>{$_("loading.spaces")}</span>
                   </div>
                 {:else}
                   <select
@@ -373,7 +378,7 @@
                     bind:value={selectedSpace}
                     id="spaceSelect"
                   >
-                    <option value="">Select space</option>
+                    <option value="">{$_("options.select_space")}</option>
                     {#each spaces as space}
                       <option value={space.value}>{space.name}</option>
                     {/each}
@@ -382,11 +387,13 @@
               </div>
 
               <div class="form-group">
-                <label class="form-label" for="subpathSelect">Subpath</label>
+                <label class="form-label" for="subpathSelect"
+                  >{$_("fields.subpath")}</label
+                >
                 {#if loadingSubpaths}
                   <div class="loading-container">
                     <div class="spinner"></div>
-                    <span>Loading subpaths...</span>
+                    <span>{$_("loading.subpaths")}</span>
                   </div>
                 {:else}
                   <div class="input-group">
@@ -396,7 +403,7 @@
                       disabled={!selectedSpace}
                       id="subpathSelect"
                     >
-                      <option value="">Select subpath</option>
+                      <option value="">{$_("options.select_subpath")}</option>
                       {#each subpaths as subpath}
                         <option value={subpath.value}>{subpath.name}</option>
                       {/each}
@@ -433,7 +440,7 @@
                 {/each}
               </div>
             {:else}
-              <div class="empty-state">No spaces or subpaths added</div>
+              <div class="empty-state">{$_("empty_states.no_subpaths")}</div>
             {/if}
           </div>
         {/if}
@@ -449,7 +456,7 @@
             if (e.key === "Enter") toggleAccordion("conditions");
           }}
         >
-          <span>Conditions</span>
+          <span>{$_("sections.conditions")}</span>
           <span class="accordion-icon" class:open={accordionStates.conditions}
             >▼</span
           >
@@ -458,9 +465,9 @@
           <div class="accordion-content">
             <div class="input-group">
               <select class="form-select" bind:value={newCondition}>
-                <option value="">Select condition</option>
-                <option value="own">own</option>
-                <option value="is_active">is_active</option>
+                <option value="">{$_("options.select_condition")}</option>
+                <option value="own">{$_("conditions.own")}</option>
+                <option value="is_active">{$_("conditions.is_active")}</option>
               </select>
               <button
                 type="button"
@@ -483,7 +490,7 @@
                 {/each}
               </div>
             {:else}
-              <div class="empty-state">No conditions added</div>
+              <div class="empty-state">{$_("empty_states.no_conditions")}</div>
             {/if}
           </div>
         {/if}
@@ -499,7 +506,7 @@
             if (e.key === "Enter") toggleAccordion("restrictedFields");
           }}
         >
-          <span>Restricted Fields</span>
+          <span>{$_("sections.restricted_fields")}</span>
           <span
             class="accordion-icon"
             class:open={accordionStates.restrictedFields}>▼</span
@@ -511,7 +518,7 @@
               <input
                 type="text"
                 class="form-input"
-                placeholder="Add restricted field"
+                placeholder={$_("placeholders.restricted_field")}
                 bind:value={newRestrictedField}
                 id="restrictedFieldInput"
               />
@@ -536,7 +543,9 @@
                 {/each}
               </div>
             {:else}
-              <div class="empty-state">No restricted fields added</div>
+              <div class="empty-state">
+                {$_("empty_states.no_restricted_fields")}
+              </div>
             {/if}
           </div>
         {/if}
@@ -552,7 +561,7 @@
             if (e.key === "Enter") toggleAccordion("allowedFields");
           }}
         >
-          <span>Allowed Fields Values</span>
+          <span>{$_("sections.allowed_fields_values")}</span>
           <span
             class="accordion-icon"
             class:open={accordionStates.allowedFields}>▼</span
@@ -560,8 +569,10 @@
         </div>
         {#if accordionStates.allowedFields}
           <div class="accordion-content">
-            <label class="form-label" for="jsonEditor">JSON Editor</label>
-            <div class="helper-text">Edit the JSON object directly</div>
+            <label class="form-label" for="jsonEditor"
+              >{$_("fields.json_editor")}</label
+            >
+            <div class="helper-text">{$_("help.json_editor")}</div>
             <textarea
               class="textarea"
               bind:value={jsonEditorContent}
@@ -573,7 +584,7 @@
               <button
                 type="button"
                 class="btn btn-secondary"
-                onclick={saveJsonEditor}>Apply Changes</button
+                onclick={saveJsonEditor}>{$_("buttons.apply_changes")}</button
               >
             </div>
           </div>

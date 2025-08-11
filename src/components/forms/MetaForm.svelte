@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto, params } from "@roxi/routify";
   import { Dmart, RequestType, ResourceType } from "@edraj/tsdmart";
+  import { _ } from "svelte-i18n";
   $goto;
 
   let { isCreate, formData = $bindable(), validateFn = $bindable() } = $props();
@@ -50,8 +51,7 @@
   async function updateShortname() {
     if (!newShortname || newShortname === formData.shortname) return;
     if (!newShortname.match(/^[a-zA-Z0-9_]+$/)) {
-      shortnameUpdateError =
-        "Shortname can only contain alphanumeric characters, underscores.";
+      shortnameUpdateError = $_("validation.shortname_format");
       return;
     }
 
@@ -117,7 +117,7 @@
       shortnameUpdateError =
         error.response.data.error?.info[0]?.failed[0].error ||
         error.response.data.error?.message ||
-        "An error occurred while updating the shortname.";
+        $_("errors.shortname_update_failed");
     } finally {
       isUpdatingShortname = false;
     }
@@ -130,14 +130,14 @@
     <div class="field-group">
       <label for="shortname" class="field-label">
         {#if isCreate}<span class="required">*</span>{/if}
-        Shortname
+        {$_("fields.shortname")}
       </label>
       <div class="input-with-button">
         <input
           required
           id="shortname"
           class="input-field input-left"
-          placeholder="Short name"
+          placeholder={$_("placeholders.shortname")}
           bind:value={formData.shortname}
           disabled={!isCreate}
         />
@@ -149,12 +149,12 @@
               ? (formData.shortname = "auto")
               : handleShortnameModalUpdate()}
         >
-          {isCreate ? "Auto" : "Update"}
+          {isCreate ? $_("buttons.auto") : $_("buttons.update")}
         </button>
       </div>
       {#if isCreate}
         <p class="field-help">
-          A shortname (use 'auto' for auto generated shortname)
+          {$_("help.shortname")}
         </p>
       {/if}
     </div>
@@ -168,21 +168,23 @@
           class="checkbox"
           bind:checked={formData.is_active}
         />
-        <label for="is_active" class="checkbox-label">Active</label>
+        <label for="is_active" class="checkbox-label"
+          >{$_("fields.active")}</label
+        >
       </div>
-      <p class="field-help">Whether this item is currently active</p>
+      <p class="field-help">{$_("help.active")}</p>
     </div>
 
     <!-- Slug Field -->
     <div class="field-group">
-      <label for="slug" class="field-label">Slug</label>
+      <label for="slug" class="field-label">{$_("fields.slug")}</label>
       <input
         id="slug"
         class="input-field"
-        placeholder="url-friendly-name"
+        placeholder={$_("placeholders.slug")}
         bind:value={formData.slug}
       />
-      <p class="field-help">A URL-friendly version of the short name</p>
+      <p class="field-help">{$_("help.slug")}</p>
     </div>
 
     <div class="accordion">
@@ -191,9 +193,7 @@
         class="accordion-header"
         onclick={() => (isTranslationsOpen = !isTranslationsOpen)}
       >
-        <span class="accordion-title"
-          >Displayname and Description Translations</span
-        >
+        <span class="accordion-title">{$_("sections.translations")}</span>
         <svg
           class="accordion-icon {isTranslationsOpen ? 'rotated' : ''}"
           fill="none"
@@ -212,24 +212,29 @@
       {#if isTranslationsOpen}
         <div class="accordion-content">
           <div class="field-group">
-            <label class="field-label">Display name</label>
+            <label class="field-label">{$_("fields.displayname")}</label>
             <div class="translation-grid">
               <div>
-                <label class="translation-label">English</label>
+                <label class="translation-label"
+                  >{$_("languages.english")}</label
+                >
                 <input
                   class="input-field"
                   bind:value={formData.displayname.en}
                 />
               </div>
               <div>
-                <label class="translation-label">Arabic</label>
+                <label class="translation-label">{$_("languages.arabic")}</label
+                >
                 <input
                   class="input-field"
                   bind:value={formData.displayname.ar}
                 />
               </div>
               <div>
-                <label class="translation-label">Kurdish</label>
+                <label class="translation-label"
+                  >{$_("languages.kurdish")}</label
+                >
                 <input
                   class="input-field"
                   bind:value={formData.displayname.ku}
@@ -240,10 +245,12 @@
 
           <!-- Descriptions -->
           <div class="field-group">
-            <label class="field-label">Description</label>
+            <label class="field-label">{$_("fields.description")}</label>
             <div class="translation-grid">
               <div>
-                <label class="translation-label">English</label>
+                <label class="translation-label"
+                  >{$_("languages.english")}</label
+                >
                 <textarea
                   class="textarea-field"
                   bind:value={formData.description.en}
@@ -251,7 +258,8 @@
                 ></textarea>
               </div>
               <div>
-                <label class="translation-label">Arabic</label>
+                <label class="translation-label">{$_("languages.arabic")}</label
+                >
                 <textarea
                   class="textarea-field"
                   bind:value={formData.description.ar}
@@ -259,7 +267,9 @@
                 ></textarea>
               </div>
               <div>
-                <label class="translation-label">Kurdish</label>
+                <label class="translation-label"
+                  >{$_("languages.kurdish")}</label
+                >
                 <textarea
                   class="textarea-field"
                   bind:value={formData.description.ku}
@@ -279,7 +289,7 @@
   <div class="modal-overlay" onclick={() => (isShortnameUpdateOpen = false)}>
     <div class="modal-content" onclick={(e) => e.stopPropagation()}>
       <div class="modal-header">
-        <h3 class="modal-title">Update Shortname</h3>
+        <h3 class="modal-title">{$_("modal.update_shortname.title")}</h3>
         <button
           class="modal-close"
           onclick={() => (isShortnameUpdateOpen = false)}
@@ -297,8 +307,7 @@
 
       <div class="modal-body">
         <p class="modal-warning">
-          Changing the shortname will move this resource to a new location. This
-          may affect existing references to this item.
+          {$_("modal.update_shortname.warning")}
         </p>
 
         {#if shortnameUpdateError}
@@ -315,7 +324,9 @@
         {/if}
 
         <div class="field-group">
-          <label for="new-shortname" class="field-label">New Shortname</label>
+          <label for="new-shortname" class="field-label"
+            >{$_("modal.update_shortname.new_shortname")}</label
+          >
           <input
             id="new-shortname"
             class="input-field"
@@ -330,7 +341,7 @@
           class="button-secondary"
           onclick={() => (isShortnameUpdateOpen = false)}
         >
-          Cancel
+          {$_("buttons.cancel")}
         </button>
         <button
           class="button-primary"
@@ -339,7 +350,9 @@
             isUpdatingShortname}
           onclick={updateShortname}
         >
-          {isUpdatingShortname ? "Updating..." : "Update Shortname"}
+          {isUpdatingShortname
+            ? $_("buttons.updating")
+            : $_("buttons.update_shortname")}
         </button>
       </div>
     </div>

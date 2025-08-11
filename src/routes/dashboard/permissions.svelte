@@ -346,11 +346,9 @@
     <div>
       <strong>{$_("permission_info")}:</strong>
       {#if selectedPermissionType === "world"}
-        World permissions apply to all guests and unauthenticated users. These
-        are the most restrictive permissions.
+        {$_("world_permissions_info")}
       {:else if selectedPermissionType === "catalog_user"}
-        Catalog User permissions apply to authenticated users with catalog
-        access. These users can interact with content.
+        {$_("catalog_user_permissions_info")}
       {/if}
     </div>
   </div>
@@ -381,7 +379,7 @@
               {$_("saving")}
             {:else}
               {permissionExists ? $_("update") : $_("create")}
-              {$_("permissions")}
+              {$_("permission")}
             {/if}
           </button>
         </div>

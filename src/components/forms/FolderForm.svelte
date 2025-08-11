@@ -1,6 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
   import { Dmart, QueryType } from "@edraj/tsdmart";
+  import { _ } from "svelte-i18n";
 
   const dispatch = createEventDispatcher();
 
@@ -58,7 +59,7 @@
     errors = {};
 
     if (!content.index_attributes || content.index_attributes.length === 0) {
-      errors["index_attributes"] = "Index attributes is required";
+      errors["index_attributes"] = $_("validation.index_attributes_required");
     }
 
     return Object.keys(errors).length === 0;
@@ -150,14 +151,14 @@
 </script>
 
 <div class="editor-card">
-  <h2 class="editor-title">Folder Schema Editor</h2>
+  <h2 class="editor-title">{$_("editor.title")}</h2>
 
   <div class="editor-content">
     <!-- Index Attributes Section -->
     <div class="section">
-      <h3 class="section-title">Index Attributes</h3>
+      <h3 class="section-title">{$_("sections.index_attributes.title")}</h3>
       <p class="section-description">
-        The attributes from the schema that should be displayed in index page
+        {$_("sections.index_attributes.description")}
       </p>
 
       {#if errors["index_attributes"]}
@@ -171,14 +172,14 @@
               <input
                 class="input-field"
                 bind:value={attribute.key}
-                placeholder="Key"
+                placeholder={$_("placeholders.key")}
               />
             </div>
             <div class="attribute-input">
               <input
                 class="input-field"
                 bind:value={attribute.name}
-                placeholder="Name"
+                placeholder={$_("placeholders.name")}
               />
             </div>
             <button
@@ -186,7 +187,7 @@
               class="button-danger button-small"
               onclick={() => removeItem("index_attributes", index)}
             >
-              Remove
+              {$_("buttons.remove")}
             </button>
           </div>
         {/each}
@@ -197,57 +198,61 @@
         class="button-outline button-small add-button"
         onclick={() => addItem("index_attributes", { key: "", name: "" })}
       >
-        Add Index Attribute
+        {$_("buttons.add_index_attribute")}
       </button>
     </div>
 
     <!-- Sort Settings -->
     <div class="grid-2">
       <div class="field-group">
-        <label for="sort_by" class="field-label">Sort By</label>
+        <label for="sort_by" class="field-label">{$_("fields.sort_by")}</label>
         <input
           id="sort_by"
           class="input-field"
-          placeholder="Field name for sorting"
+          placeholder={$_("placeholders.sort_by")}
           bind:value={content.sort_by}
         />
       </div>
 
       <div class="field-group">
-        <label for="sort_type" class="field-label">Sort Order</label>
+        <label for="sort_type" class="field-label"
+          >{$_("fields.sort_order")}</label
+        >
         <select
           id="sort_type"
           class="select-field"
           bind:value={content.sort_type}
         >
-          <option value="">Select sort order...</option>
-          <option value="ascending">Ascending</option>
-          <option value="descending">Descending</option>
+          <option value="">{$_("options.select_sort_order")}</option>
+          <option value="ascending">{$_("options.ascending")}</option>
+          <option value="descending">{$_("options.descending")}</option>
         </select>
       </div>
     </div>
 
     <!-- Content Resource Types -->
     <div class="section">
-      <h3 class="section-title">Content Resource Types</h3>
+      <h3 class="section-title">
+        {$_("sections.content_resource_types.title")}
+      </h3>
       <div class="field-group">
         <select
           id="resource-type-select"
           class="select-field"
           onchange={handleResourceTypeChange}
         >
-          <option value="">Select a type...</option>
+          <option value="">{$_("options.select_type")}</option>
           <option
             value="ticket"
             selected={content.content_resource_types.includes("ticket")}
           >
-            Ticket
+            {$_("resource_types.ticket")}
           </option>
           <option
             value="content"
             selected={content.content_resource_types.includes("content")}
           >
-            Content
+            {$_("resource_types.content")}
           </option>
         </select>
       </div>
@@ -255,16 +260,16 @@
 
     <!-- Schema Shortnames -->
     <div class="section">
-      <h3 class="section-title">Schema Shortnames</h3>
+      <h3 class="section-title">{$_("sections.schema_shortnames.title")}</h3>
       <div class="field-group">
         <select class="select-field" onchange={addSchemaShortname}>
-          <option value="">Select schema to add...</option>
+          <option value="">{$_("options.select_schema_to_add")}</option>
           {#await Dmart.query( { space_name: "management", type: QueryType.search, subpath: "/schema", search: "", retrieve_json_payload: true, limit: 99 } ) then schemas}
             {#each schemas.records.map((e) => e.shortname) as schema}
               <option value={schema}>{schema}</option>
             {/each}
           {:catch error}
-            <option disabled>Error loading schemas</option>
+            <option disabled>{$_("errors.loading_schemas")}</option>
           {/await}
         </select>
 
@@ -289,16 +294,16 @@
 
     <!-- Workflow Shortnames -->
     <div class="section">
-      <h3 class="section-title">Workflow Shortnames</h3>
+      <h3 class="section-title">{$_("sections.workflow_shortnames.title")}</h3>
       <div class="field-group">
         <select class="select-field" onchange={addWorkflowShortname}>
-          <option value="">Select workflow to add...</option>
+          <option value="">{$_("options.select_workflow_to_add")}</option>
           {#await Dmart.query( { space_name: "management", type: QueryType.search, subpath: "/workflow", search: "", retrieve_json_payload: true, limit: 99 } ) then workflows}
             {#each workflows.records.map((e) => e.shortname) as workflow}
               <option value={workflow}>{workflow}</option>
             {/each}
           {:catch error}
-            <option disabled>Error loading workflows</option>
+            <option disabled>{$_("errors.loading_workflows")}</option>
           {/await}
         </select>
 

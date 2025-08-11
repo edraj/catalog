@@ -48,11 +48,17 @@
     return ext === "pdf";
   }
 
+  function isAudioFile(filename: string) {
+    const ext = getFileExtension(filename).toLowerCase();
+    return ["mp3", "wav", "ogg", "aac", "flac", "m4a", "wma"].includes(ext);
+  }
+
   function getFileTypeIcon(filename: string) {
     const ext = getFileExtension(filename).toLowerCase();
 
     if (isImageFile(filename)) return "🖼️";
     if (isVideoFile(filename)) return "🎥";
+    if (isAudioFile(filename)) return "🎵";
     if (["pdf"].includes(ext)) return "📄";
     if (["doc", "docx"].includes(ext)) return "📝";
     if (["xls", "xlsx"].includes(ext)) return "📊";
@@ -63,13 +69,30 @@
     return "📎";
   }
 
+  export function removeFileExtension(filename: string) {
+    if (!filename) return "";
+    const lastDotIndex = filename.lastIndexOf(".");
+    return lastDotIndex > 0 ? filename.substring(0, lastDotIndex) : filename;
+  }
+
   function openPreview(attachment: any) {
     const filename = attachment?.attributes?.payload?.body;
-    if (isImageFile(filename) || isVideoFile(filename) || isPdfFile(filename)) {
+
+    if (
+      isImageFile(filename) ||
+      isVideoFile(filename) ||
+      isPdfFile(filename) ||
+      isAudioFile(filename)
+    ) {
       let type = "file";
       if (isImageFile(filename)) type = "image";
       else if (isVideoFile(filename)) type = "video";
       else if (isPdfFile(filename)) type = "pdf";
+      else if (isAudioFile(filename)) type = "audio";
+      const shortname = removeFileExtension(attachment.shortname);
+
+      console.log("Shortname:", shortname);
+      console.log("Parent Shortname:", parent_shortname);
 
       currentPreview = {
         ...attachment,
@@ -78,13 +101,14 @@
           space_name,
           subpath,
           parent_shortname,
-          attachment.shortname,
+          shortname,
           getFileExtension(filename),
           "public"
         ),
         type,
         filename,
       };
+      console.log("Opening preview for attachment:", currentPreview.url);
 
       previewModal = true;
     }
@@ -175,7 +199,7 @@
             </div>
 
             <div class="attachment-actions">
-              {#if isImageFile(attachment.attributes?.payload?.body) || isVideoFile(attachment.attributes?.payload?.body) || isPdfFile(attachment.attributes?.payload?.body)}
+              {#if isImageFile(attachment.attributes?.payload?.body) || isVideoFile(attachment.attributes?.payload?.body) || isPdfFile(attachment.attributes?.payload?.body) || isAudioFile(attachment.attributes?.payload?.body)}
                 <button
                   class="action-button preview-button"
                   onclick={() => openPreview(attachment)}
@@ -306,6 +330,14 @@
             />
             Your browser doesn't support video playback.
           </video>
+        {:else if currentPreview.type === "audio"}
+          <div class="audio-container">
+            <div class="audio-icon">🎵</div>
+            <h4 class="audio-title">{currentPreview.shortname}</h4>
+            <audio src={currentPreview.url} controls class="modal-audio">
+              Your browser doesn't support audio playback.
+            </audio>
+          </div>
         {:else if currentPreview.type === "pdf"}
           <iframe
             src={currentPreview.url}
@@ -376,6 +408,44 @@
   }
   .attachments-container {
     width: 100%;
+  }
+  .audio-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 2rem;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-radius: 16px;
+    min-width: 400px;
+  }
+
+  .audio-icon {
+    font-size: 4rem;
+    opacity: 0.7;
+  }
+
+  .audio-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1e293b;
+    text-align: center;
+    margin: 0;
+    word-break: break-word;
+  }
+
+  .modal-audio {
+    width: 100%;
+    max-width: 400px;
+    height: 40px;
+    border-radius: 8px;
+    background: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .modal-audio::-webkit-media-controls-panel {
+    background-color: white;
+    border-radius: 8px;
   }
 
   .no-attachments {
@@ -741,7 +811,15 @@
     .attachment-preview {
       height: 150px;
     }
+    .audio-container {
+      min-width: auto;
+      width: 100%;
+      padding: 1.5rem;
+    }
 
+    .modal-audio {
+      max-width: 100%;
+    }
     .modal-content {
       margin: 0;
       border-radius: 0;

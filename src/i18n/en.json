@@ -312,7 +312,6 @@
   "invalid_response": "Invalid response structure",
   "failed_load_post": "Failed to load post data",
   "info_title": "Debug Information",
-  "space": "Space",
   "subpath": "Subpath",
   "item": "Item",
   "common.unnamed_space": "Unnamed Space",
@@ -325,7 +324,6 @@
   "admin": "Admin",
   "dashboard": "Dashboard",
   "contact_messages": "Contact Messages",
-  "permissions": "Permissions",
   "entries": "Entries",
   "notifications": "Notifications",
   "my_profile": "My Profile",
@@ -336,6 +334,11 @@
   "kurdish": "Kurdish",
   "roles": "Roles",
   "help": {
+    "json_editor": "Edit the JSON object directly",
+    "shortname": "A shortname (use 'auto' for auto generated shortname)",
+    "active": "Whether this item is currently active",
+    "slug": "A URL-friendly version of the short name",
+
     "hero": {
       "title": "Help",
       "center": "Center",
@@ -535,6 +538,8 @@
     },
     "search": {
       "placeholder": "Search by name, description, or owner...",
+      "end_of_results": "You've reached the end of the results!",
+      "total_found": "Total found: {count}",
       "label": "Search",
       "clear": "Clear search"
     },
@@ -542,27 +547,74 @@
       "showing": "Showing {start} to {end} of {total} items",
       "for_query": "for \"{query}\""
     },
-    "card": {
-      "posted_by": "posted by"
+    "tags": {
+      "available_tags": "Available Tags",
+      "show_all": "Show All",
+      "show_less": "Show Less",
+      "selected_tags": "Selected Tags",
+      "clear_all": "Clear All",
+      "remove_tag": "Remove {tag} tag"
+    },
+    "infinite_scroll": {
+      "items_per_load": "Items per load",
+      "showing_items": "Showing {displayed} of {total} items",
+      "showing_of": "Showing {displayed} of {total} items",
+      "load_more": "Load More",
+      "loading": "Loading...",
+      "end_of_results": "You've reached the end!",
+      "total_items": "Total: {count} items"
     },
     "time": {
       "just_now": "Just now",
-      "minutes_ago": "{count}m ago",
-      "hours_ago": "{count}h ago",
-      "days_ago": "{count}d ago"
+      "minutes_ago": "m ago",
+      "hours_ago": "h ago",
+      "days_ago": "d ago"
     },
     "pagination": {
-      "items_per_page": "Items Per Page",
+      "showing_items": "Showing {displayed} of {total} items",
+      "items_per_load": "Items Per Load",
       "page_info": "Page {current} of {total}",
       "previous": "Previous",
+      "loaded_items": "Loaded items",
+      "loading": "Loading...",
+      "load_more": "Load More",
+      "end_of_results": "You've reached the end!",
+      "total_loaded": "Total: {loaded} items",
       "next": "Next",
       "page": "Page {page}"
+    },
+    "card": {
+      "posted_by": "posted by",
+      "read_more": "Read more...",
+      "share": "Share",
+      "report": "Report"
+    },
+    "share": {
+      "copied_to_clipboard": "Link copied to clipboard!",
+      "copy_link": "Copy this link:"
+    },
+    "report": {
+      "reason_prompt": "Please provide a reason for reporting this content:",
+      "submitted": "Report submitted successfully. Thank you for helping keep our community safe."
     }
   },
   "navigation": {
     "go_back": "Go Back"
   },
   "space": {
+    "space": "Space",
+    "all_content_subtitle": "All items across all folders",
+    "total_folders": "Total folders",
+    "total_items": "Total items",
+    "total_tags": "Total tags",
+    "filter_by_folder": "Filter by folder",
+    "filter_by_tags": "Filter by tag",
+    "show_all_folders": "Show all folders",
+    "clear_filters": "Clear Filters",
+    "showing_with_tags": "Showing items with tags",
+    "show_less_folders": "Show less folders",
+    "show_all_tags": "Show all tags",
+    "show_less_tags": "Show less tags",
     "subtitle": "Browse through a variety of catalogs and posts to discover new ideas, insights, and updates from the community.",
     "search": {
       "placeholder": "Search by name, description, or owner..."
@@ -597,12 +649,16 @@
     "media": "Media"
   },
   "catalogs": {
+    "root_folder": "Root Folder",
     "hero": {
       "title": "Explore Catalogs",
       "description": "Discover a wide range of curated catalogs from our community. Find content that interests you and connect with creators."
     },
     "search": {
-      "placeholder": "Search Spaces..."
+      "placeholder": "Search Spaces...",
+      "results_subtitle": "Search results based on your query",
+      "results_title": "Search Results",
+      "clear": "Clear Search"
     },
     "sort": {
       "name": "Sort by name",
@@ -665,20 +721,6 @@
       "updated": "Updated",
       "content_type": "Content Type"
     },
-    "sections": {
-      "description": "Description",
-      "tags": "Tags",
-      "content": "Content",
-      "interactions": "Interactions",
-      "relationships": "Relationships"
-    },
-    "reactions": {
-      "title": "Reactions"
-    },
-    "comments": {
-      "title": "Comments ({count})",
-      "no_content": "No content"
-    },
     "media": {
       "title": "Media & Files ({count})"
     },
@@ -688,6 +730,45 @@
     "no_data": {
       "title": "No Data Available",
       "message": "Unable to load post data."
+    },
+    "sections": {
+      "interact": "Interact with this content",
+      "description": "Description",
+      "tags": "Tags",
+      "content": "Content",
+      "interactions": "Interactions",
+      "relationships": "Relationships"
+    },
+    "reactions": {
+      "like": "Like",
+      "unlike": "Unlike",
+      "reacting": "Reacting...",
+      "liked": "Liked",
+      "processing": "Processing...",
+      "added_successfully": "Reaction added successfully!",
+      "removed_successfully": "Reaction removed successfully!",
+      "add_failed": "Failed to add reaction. Please try again.",
+      "remove_failed": "Failed to remove reaction. Please try again.",
+      "toggle_error": "An error occurred while processing your reaction.",
+      "title": "Reactions"
+    },
+    "comments": {
+      "add_comment": "Add a comment",
+      "placeholder": "Share your thoughts...",
+      "submit": "Post Comment",
+      "submitting": "Posting...",
+      "empty_comment": "Please enter a comment before submitting.",
+      "added_successfully": "Comment added successfully!",
+      "add_failed": "Failed to add comment. Please try again.",
+      "add_error": "An error occurred while adding your comment.",
+      "title": "Comments ({count})",
+      "no_content": "No content"
+    },
+    "login_prompt": {
+      "title": "Login Required",
+      "message": "Please log in to interact with this content. You can like, comment, and engage with the community once you're signed in.",
+      "login": "Go to Login",
+      "cancel": "Cancel"
     }
   },
 
@@ -905,7 +986,10 @@
       "empty_message": "No tags added yet. Tags help others discover your content!"
     },
     "content": {
-      "section_title": "Content"
+      "section_title": "Content",
+      "editor_type": "Editor Type:",
+      "html_editor": "Rich Text",
+      "markdown_editor": "Markdown"
     },
     "attachments": {
       "section_title": "Attachments ({count})",
@@ -927,7 +1011,7 @@
       "save_failed": "Failed to save entry!"
     }
   },
-
+  "related_content": "Related Content",
   "admin_dashboard": "Admin Dashboard",
   "failed_to_load_spaces": "Failed to load spaces",
   "error_loading_spaces": "Error Loading Spaces",
@@ -940,7 +1024,7 @@
   "role": "Role",
   "super_admin": "Super Admin",
   "create_space": "Create Space",
-  "space": "Space",
+
   "status": "Status",
   "owner": "Owner",
   "created": "Created",
@@ -1003,9 +1087,11 @@
   "new_configuration": "New configuration",
   "permission_info": "Permission Info",
   "loading_permission_data": "Loading permission data...",
-  "permissions": "Permissions",
+  "permission": "Permission",
   "update": "Update",
   "create": "Create",
+  "world_permissions_info": " World permissions apply to all guests and unauthenticated users. These are the most restrictive permissions.",
+  "catalog_user_permissions_info": "Catalog User permissions apply to authenticated users with catalog access. These users can interact with content.",
   "permission_type": "Permission Type",
   "available_spaces": "Available Spaces",
   "add_new_permission": "Add New Permission",
@@ -1115,6 +1201,23 @@
         "button": "Delete Space"
       }
     },
+    "filters": {
+      "all": "All",
+      "folder": "Folder",
+      "content": "Content",
+      "post": "Post",
+      "ticket": "Ticket",
+      "user": "User",
+      "media": "Media",
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "sort": {
+      "name": "Name",
+      "created": "Created Date",
+      "updated": "Updated Date",
+      "owner": "Owner"
+    },
     "unnamed_space": "Unnamed Space",
     "no_description": "No description available"
   },
@@ -1162,19 +1265,29 @@
       }
     }
   },
+
   "admin_content": {
-    "title": "Admin: {name}",
-    "subtitle": "Managing contents in {spaceName}/{subpath}",
-    "breadcrumb": {
-      "label": "Breadcrumb",
-      "admin": "Admin"
+    "title": "Contents of {name}",
+    "subtitle": "Managing contents in {spaceName} at {subpath}",
+    "loading": "Loading contents...",
+    "error": {
+      "title": "Error loading contents",
+      "failed_load_contents": "Failed to load contents. Please try again.",
+      "try_again": "Try Again",
+      "create_folder_failed": "Failed to create folder",
+      "create_folder_error": "Error creating folder"
     },
-    "pagination": {
-      "show": "Show",
-      "per_page": "per page",
-      "page_info": "Page {current} of {total}",
-      "previous": "Previous",
-      "next": "Next"
+    "confirm": {
+      "delete_item": "Are you sure you want to delete '{name}'?"
+    },
+    "empty": {
+      "title": "No contents found",
+      "description": "This location is empty. Create new items or folders to get started.",
+      "no_matches": "No items match your search criteria."
+    },
+    "breadcrumb": {
+      "label": "Navigation breadcrumb",
+      "admin": "Admin"
     },
     "actions": {
       "create_new_item": "Create New Item",
@@ -1183,55 +1296,78 @@
       "view": "View",
       "delete": "Delete"
     },
-    "table": {
-      "title": "Admin Contents ({count} items)",
-      "showing": "Showing {start} to {end} of {total} items",
-      "headers": {
-        "name": "Name",
-        "type": "Type",
-        "status": "Status",
-        "owner": "Owner",
-        "created": "Created",
-        "actions": "Actions"
-      }
+    "filters": {
+      "title": "Filters",
+      "clear_all": "Clear All Filters",
+      "sort_by": "Sort by",
+      "toggle_sort": "Toggle sort order"
+    },
+    "infinite_scroll": {
+      "items_per_load": "Items per load",
+      "showing_items": "Showing {displayed} of {total} items",
+      "showing_of": "Showing {displayed} of {total} items",
+      "load_more": "Load More",
+      "loading": "Loading...",
+      "end_of_results": "You've reached the end",
+      "total_items": "Total items: {count}"
+    },
+    "results": {
+      "for_query": "for '{query}'"
     },
     "status": {
       "active": "Active",
       "inactive": "Inactive"
     },
-    "error": {
-      "title": "Error Loading Contents",
-      "failed_load_contents": "Failed to load space contents",
-      "create_folder_failed": "Failed to create folder",
-      "create_folder_error": "Error creating folder"
+    "card": {
+      "managed_by": "Managed by",
+      "path": "Path"
     },
-    "empty": {
-      "title": "No Contents Found",
-      "description": "This folder appears to be empty. Create some content to get started."
+    "search": {
+      "placeholder": "Search by name, description or owner...",
+      "label": "Search contents",
+      "clear": "Clear search"
     },
-    "confirm": {
-      "delete_item": "Are you sure you want to delete \"{name}\"?"
+    "common": {
+      "not_available": "Not available",
+      "unknown": "Unknown"
     },
     "modal": {
-      "close": "Close modal",
-      "cancel": "Cancel",
-      "creating": "Creating...",
-      "create_folder": "Create Folder",
       "create": {
         "title": "Create New Folder",
-        "subtitle": "Configure folder settings and permissions"
+        "subtitle": "Configure your new folder settings"
       },
       "basic_info": {
         "title": "Basic Information",
-        "description": "Set the folder name and description"
+        "description": "Provide basic details about this folder"
       },
       "folder_config": {
         "title": "Folder Configuration",
-        "description": "Configure folder behavior and permissions"
-      }
-    },
-    "unknown": "Unknown"
+        "description": "Configure how this folder should behave"
+      },
+      "close": "Close",
+      "cancel": "Cancel",
+      "creating": "Creating...",
+      "create_folder": "Create Folder"
+    }
   },
+
+  "search_filters": {
+    "search_label": "Search Spaces",
+    "search_placeholder": "Search by name, description, shortname, or owner...",
+    "clear_search": "Clear search",
+    "status_label": "Status",
+    "sort_label": "Sort By",
+    "toggle_sort": "Toggle sort order",
+    "results_count": "Showing {displayed} of {total} spaces",
+    "results_for": "for \"{query}\"",
+    "clear_filters": "Clear Filters",
+    "no_results": {
+      "title": "No spaces found",
+      "description": "Try adjusting your search terms or filters.",
+      "action": "Clear Filters"
+    }
+  },
+
   "no_users_match_filters": "No users match the selected filters",
   "admin_item_detail": {
     "breadcrumb": {
@@ -1273,6 +1409,7 @@
       "inactive": "Inactive"
     },
     "content": {
+      "readable_content": "Readable Content",
       "title": "Content & Payload",
       "content_type": "Content Type",
       "checksum": "Checksum",
@@ -1365,5 +1502,118 @@
       "gb": "GB"
     }
   },
-  "all_roles": "All Roles"
+  "all_roles": "All Roles",
+  "editor": {
+    "title": "Folder Schema Editor"
+  },
+  "sections": {
+    "translations": "Displayname and Description Translations",
+    "index_attributes": {
+      "title": "Index Attributes",
+      "description": "The attributes from the schema that should be displayed in index page"
+    },
+    "content_resource_types": {
+      "title": "Content Resource Types"
+    },
+    "schema_shortnames": {
+      "title": "Schema Shortnames"
+    },
+    "workflow_shortnames": {
+      "title": "Workflow Shortnames"
+    },
+    "subpaths": "Subpaths",
+    "conditions": "Conditions",
+    "restricted_fields": "Restricted Fields",
+    "allowed_fields_values": "Allowed Fields Values"
+  },
+  "fields": {
+    "sort_by": "Sort By",
+    "sort_order": "Sort Order",
+    "shortname": "Shortname",
+    "active": "Active",
+    "slug": "Slug",
+    "displayname": "Display name",
+    "description": "Description",
+    "space": "Space",
+    "subpath": "Subpath",
+    "json_editor": "JSON Editor"
+  },
+  "placeholders": {
+    "key": "Key",
+    "name": "Name",
+    "sort_by": "Field name for sorting",
+    "shortname": "Short name",
+    "slug": "url-friendly-name",
+    "restricted_field": "Add restricted field"
+  },
+  "buttons": {
+    "remove": "Remove",
+    "add_index_attribute": "Add Index Attribute",
+    "auto": "Auto",
+    "update": "Update",
+    "cancel": "Cancel",
+    "updating": "Updating...",
+    "update_shortname": "Update Shortname",
+    "apply_changes": "Apply Changes"
+  },
+  "options": {
+    "select_sort_order": "Select sort order...",
+    "ascending": "Ascending",
+    "descending": "Descending",
+    "select_type": "Select a type...",
+    "select_schema_to_add": "Select schema to add...",
+    "select_workflow_to_add": "Select workflow to add...",
+    "select_resource_type": "Select resource type",
+    "select_action": "Select action",
+    "select_space": "Select space",
+    "select_subpath": "Select subpath",
+    "select_condition": "Select condition"
+  },
+  "resource_types": {
+    "ticket": "Ticket",
+    "content": "Content"
+  },
+  "errors": {
+    "loading_schemas": "Error loading schemas",
+    "shortname_update_failed": "An error occurred while updating the shortname.",
+    "loading_workflows": "Error loading workflows",
+    "invalid_json": "Invalid JSON format"
+  },
+  "validation": {
+    "index_attributes_required": "Index attributes is required",
+    "shortname_format": "Shortname can only contain alphanumeric characters, underscores.",
+    "json_syntax_error": "Please correct the JSON syntax.\nInvalid JSON format in Allowed Fields Values"
+  },
+  "languages": {
+    "english": "English",
+    "arabic": "Arabic",
+    "kurdish": "Kurdish"
+  },
+  "modal": {
+    "update_shortname": {
+      "title": "Update Shortname",
+      "warning": "Changing the shortname will move this resource to a new location. This may affect existing references to this item.",
+      "new_shortname": "New Shortname"
+    }
+  },
+  "permissions": {
+    "title": "Permission Settings",
+    "resource_types": "Resource Types",
+    "actions": "Actions"
+  },
+  "conditions": {
+    "own": "own",
+    "is_active": "is_active"
+  },
+  "loading": {
+    "spaces": "Loading spaces...",
+    "subpaths": "Loading subpaths..."
+  },
+  "empty_states": {
+    "no_resource_types": "No resource types added",
+    "no_actions": "No actions added",
+    "no_subpaths": "No spaces or subpaths added",
+    "no_conditions": "No conditions added",
+    "no_restricted_fields": "No restricted fields added"
+  }
 }

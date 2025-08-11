@@ -256,7 +256,7 @@
                             d="M9 12l2 2 4-4"
                           />
                         </svg>
-                        <span>{$_("permissions")}</span>
+                        <span>{$_("permission")}</span>
                       </button>
                       <button
                         onclick={() => handleMenuItemClick("/dashboard/roles")}
@@ -608,7 +608,6 @@
     cursor: pointer;
     outline: none;
     flex: 1;
-    margin-left: 0.75rem;
   }
 
   .menu-divider {
