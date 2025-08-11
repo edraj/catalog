@@ -281,7 +281,7 @@
 
     if (editor && attachment) {
       const url = Dmart.get_attachment_url(
-        resource_type,
+        attachment.resource_type,
         space_name,
         subpath,
         parent_shortname,
