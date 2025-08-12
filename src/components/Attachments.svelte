@@ -25,8 +25,6 @@
     isOwner: boolean;
   } = $props();
 
-  console.log("Attachments I n the attachment componant:", attachments);
-
   let previewModal = $state(false);
   let currentPreview = $state(null);
 
@@ -92,10 +90,6 @@
       else if (isPdfFile(filename)) type = "pdf";
       else if (isAudioFile(filename)) type = "audio";
       const shortname = removeFileExtension(attachment.shortname);
-
-      console.log("Shortname:", shortname);
-      console.log("Parent Shortname:", parent_shortname);
-
       currentPreview = {
         ...attachment,
         url: Dmart.get_attachment_url(

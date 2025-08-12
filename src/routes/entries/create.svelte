@@ -125,7 +125,6 @@
           response?.records[0]?.attributes?.payload?.body
             .content_resource_types[0];
       }
-      console.log("------------", response);
 
       const levelData = {
         level,
@@ -148,7 +147,6 @@
       };
 
       subpathHierarchy = [...subpathHierarchy.slice(0, level), levelData];
-      console.log("Subpath hierarchy:", subpathHierarchy);
 
       updateCanCreateEntry();
     } catch (error) {
@@ -166,7 +164,6 @@
     }
 
     const lastLevel = subpathHierarchy[subpathHierarchy.length - 1];
-    console.log("Last level:", lastLevel);
 
     canCreateEntry = lastLevel.canCreateEntry;
     resource_type = lastLevel.resource_type;

@@ -97,10 +97,10 @@
 
   async function handleUpdate(isPublish) {
     isLoading = true;
-
+    const htmlContent = htmlEditor || content;
     const entityData = {
       title: title,
-      content: getContent(),
+      content: htmlContent,
       tags: tags,
       is_active: isPublish,
     };
@@ -158,7 +158,8 @@
     if (entity) {
       title = entity.payload?.body?.title || "";
       content = entity.payload?.body?.content || "";
-      console.log("Loaded entity:", entity);
+
+      htmlEditor = content;
 
       tags = entity.tags || [];
       setTimeout(() => {
@@ -412,7 +413,17 @@
         <div class="section-content">
           <div class="editor-container">
             {#if editorReady}
-              <HtmlEditor bind:content={htmlEditor} uid="main-editor" />
+              <HtmlEditor
+                bind:content={htmlEditor}
+                resource_type={$params.resource_type}
+                space_name={$params.space_name}
+                subpath={$params.subpath}
+                parent_shortname={entity.shortname}
+                uid="main-editor"
+                isEditMode={true}
+                attachments={entity?.attachments || []}
+                changed={() => {}}
+              />
             {:else}
               <div class="editor-loading">
                 <Diamonds size="40" color="#2563eb" unit="px" duration="1s" />

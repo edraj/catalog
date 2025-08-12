@@ -276,7 +276,6 @@
   }
 
   function insertAttachment(attachment) {
-    console.log("Inserting attachment:", attachment);
     const filename = attachment?.attributes?.payload?.body;
 
     if (editor && attachment) {
@@ -356,7 +355,6 @@
 </div>
 
 {#if showAttachments}
-  <!-- FIX: Added proper event handlers -->
   <div
     class="attachments-overlay"
     role="dialog"
@@ -422,12 +420,17 @@
     border: 1px solid #e5e7eb;
     border-radius: 0.5rem;
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
   }
 
   .editor-content {
     max-width: 100%;
     color: #1f2937;
     line-height: 1.75;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
   }
 
   .editor-container {
@@ -442,6 +445,8 @@
       sans-serif;
     font-size: 1rem !important;
     min-height: 200px;
+    max-height: 400px;
+    overflow-y: auto;
     border: 1px solid #e5e7eb;
     border-radius: 0.375rem;
     padding: 1rem;
@@ -451,11 +456,31 @@
     transition:
       border-color 0.15s ease-in-out,
       box-shadow 0.15s ease-in-out;
+    flex: 1; /* FIX: Allow container to grow */
   }
 
   .editor-container:focus-within {
     border-color: #3b82f6;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  /* FIX: Custom scrollbar styling for better appearance */
+  .editor-container::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .editor-container::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+  }
+
+  .editor-container::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+  }
+
+  .editor-container::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
   }
 
   :global(.editor-toolbar) {

@@ -477,7 +477,7 @@
   "entry_detail": {
     "loading": "جاري تحميل إدخالك...",
     "back_to_entries": "العودة إلى إدخالاتي",
-    "edit_entry": "تحرير الإدخال",
+    "edit_entry": "تعديل الإدخال",
     "created": "تم الإنشاء",
     "updated": "محدث",
     "untitled": "إدخال بدون عنوان",
@@ -526,7 +526,7 @@
     "loading": "جاري تحميل الإدخال للتحرير...",
     "back_to_entry": "العودة إلى الإدخال",
     "back_to_entries": "العودة إلى إدخالاتي",
-    "editing_entry": "تحرير الإدخال",
+    "editing_entry": "تعديل الإدخال",
     "update_entry": "تحديث إدخالك",
     "update_description": "احفظ تغييراتك أو انشر إدخالك المحدث",
     "published": "منشور",

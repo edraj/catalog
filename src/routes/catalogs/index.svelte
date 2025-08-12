@@ -43,10 +43,8 @@
       });
 
       const stats = await Promise.all(statsPromises);
-      console.log("All stats:", stats);
 
       const totalItems = stats.reduce((sum, stat) => sum + stat.total, 0);
-      console.log("Total items:", totalItems);
 
       spaces = response.records || [];
       filteredSpaces = spaces;
@@ -179,7 +177,6 @@
     isSearching = true;
     try {
       const results = await searchInCatalog(query.trim());
-      console.log("Search results:", results);
       searchResults = results;
 
       filteredSpaces = [];

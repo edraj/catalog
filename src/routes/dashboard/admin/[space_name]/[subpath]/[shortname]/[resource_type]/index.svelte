@@ -138,6 +138,7 @@
         $params.workflow_shortname,
         $params.schema_shortname
       );
+      console.log(response);
 
       if (response) {
         itemDataValue = response;
@@ -148,8 +149,13 @@
           response.payload?.title ||
           response.title ||
           "";
-        const content =
-          response.payload?.body?.content || response.description || "";
+        let content = "";
+        if (itemDataValue.payload?.content_type == "json") {
+          content = response.payload?.body?.content || "";
+        }
+        if (itemDataValue.payload?.content_type == "html") {
+          content = response.payload?.body || "";
+        }
         const tags = response.tags || [];
         const tagsString = Array.from(tags).join(", ");
 
@@ -162,9 +168,7 @@
           is_active: response.is_active,
         };
         editForm.set(editFormValue);
-
-        // Initialize htmlEditor with current content
-        htmlEditor = editFormValue.content;
+        htmlEditor = content;
       } else {
         console.error("No valid response found for item:", itemShortnameValue);
         error.set($_("admin_item_detail.error.item_not_found"));
@@ -807,10 +811,8 @@
                           class="px-6 py-4 text-sm text-gray-500"
                           class:text-right={$isRTL}
                         >
-                          {console.log(itemDataValue.payload)}
                           {#if itemDataValue.payload.content_type === "html"}
                             <div class="bg-gray-50 p-4 rounded-lg">
-                              <!-- Render HTML content directly -->
                               <div class="text-sm prose max-w-none">
                                 {@html itemDataValue.payload.body
                                   .replace(/&nbsp;/g, " ")
@@ -1078,8 +1080,8 @@
                       values: {
                         count: Number(
                           Object.values(itemDataValue.attachments).reduce(
-                            (total: number, attachments) =>
-                              total + ((attachments as any[])?.length || 0),
+                            (total, attachments) =>
+                              total + (attachments?.length || 0),
                             0
                           )
                         ),
@@ -1093,7 +1095,7 @@
 
               {#if itemDataValue.attachments && typeof itemDataValue.attachments === "object"}
                 {#each Object.entries(itemDataValue.attachments) as [type, attachmentsArr]}
-                  {#if attachmentsArr && (attachmentsArr as any[]).length > 0}
+                  {#if attachmentsArr && attachmentsArr.length > 0}
                     <div
                       class="bg-white border border-gray-200 rounded-lg overflow-hidden"
                     >
@@ -1105,28 +1107,266 @@
                           class:flex-row-reverse={$isRTL}
                           class:text-right={$isRTL}
                         >
+                          {#if type === "comment"}
+                            <svg
+                              class="w-5 h-5 text-blue-600"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                              />
+                            </svg>
+                          {:else if type === "reaction"}
+                            <svg
+                              class="w-5 h-5 text-yellow-600"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                              />
+                            </svg>
+                          {:else if type === "media"}
+                            <svg
+                              class="w-5 h-5 text-green-600"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                              />
+                            </svg>
+                          {:else}
+                            <svg
+                              class="w-5 h-5 text-gray-600"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
+                              />
+                            </svg>
+                          {/if}
+
                           <span
-                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                            class:bg-blue-100={type === "comment"}
+                            class:text-blue-800={type === "comment"}
+                            class:bg-yellow-100={type === "reaction"}
+                            class:text-yellow-800={type === "reaction"}
+                            class:bg-green-100={type === "media"}
+                            class:text-green-800={type === "media"}
+                            class:bg-gray-100={type !== "comment" &&
+                              type !== "reaction" &&
+                              type !== "media"}
+                            class:text-gray-800={type !== "comment" &&
+                              type !== "reaction" &&
+                              type !== "media"}
                           >
-                            {type}
+                            {attachmentsArr.length}
                           </span>
                           {$_("admin_item_detail.attachments.type_count", {
                             values: {
                               type: type,
-                              count: (attachmentsArr as any[]).length,
+                              count: attachmentsArr.length,
                             },
                           })}
                         </h4>
                       </div>
+
                       <div class="p-6">
-                        <Attachment
-                          attachments={Object.values(attachmentsArr ?? [])}
-                          resource_type={$params.resource_type}
-                          space_name={spaceNameValue}
-                          subpath={actualSubpathValue}
-                          parent_shortname={itemShortnameValue}
-                          isOwner={true}
-                        />
+                        {#if type === "comment"}
+                          <div class="space-y-4">
+                            {#each attachmentsArr as comment}
+                              <div
+                                class="bg-gray-50 rounded-lg p-4 border border-gray-200"
+                              >
+                                <div
+                                  class="flex items-start justify-between mb-2"
+                                >
+                                  <div
+                                    class="flex items-center space-x-2"
+                                    class:space-x-reverse={$isRTL}
+                                  >
+                                    <div
+                                      class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center"
+                                    >
+                                      <svg
+                                        class="w-4 h-4 text-white"
+                                        fill="currentColor"
+                                        viewBox="0 0 20 20"
+                                      >
+                                        <path
+                                          fill-rule="evenodd"
+                                          d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                                          clip-rule="evenodd"
+                                        />
+                                      </svg>
+                                    </div>
+                                    <div>
+                                      <p
+                                        class="text-sm font-medium text-gray-900"
+                                      >
+                                        {comment.attributes.owner_shortname ||
+                                          "Unknown User"}
+                                      </p>
+                                      <p class="text-xs text-gray-500">
+                                        {new Date(
+                                          comment.attributes.created_at
+                                        ).toLocaleDateString()}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <span
+                                    class="text-xs text-gray-400 bg-white px-2 py-1 rounded"
+                                  >
+                                    {comment.attributes.payload?.body?.state ||
+                                      "comment"}
+                                  </span>
+                                </div>
+
+                                <div class="mt-3">
+                                  <h5
+                                    class="text-sm font-medium text-gray-800 mb-2"
+                                  >
+                                    {comment?.attributes?.displayname?.ar ||
+                                      comment?.attributes?.displayname?.en ||
+                                      comment?.attributes?.payload?.body
+                                        ?.body ||
+                                      comment.shortname ||
+                                      ""}
+                                  </h5>
+
+                                  <div
+                                    class="flex items-center justify-between"
+                                  >
+                                    <div
+                                      class="flex items-center space-x-3 text-xs text-gray-500"
+                                    >
+                                      {#if comment.attributes.payload?.bytesize}
+                                        <span
+                                          >Size: {comment.attributes.payload
+                                            .bytesize} bytes</span
+                                        >
+                                      {/if}
+                                    </div>
+
+                                    <div class="flex items-center space-x-2">
+                                      <span
+                                        class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                                      >
+                                        {comment.resource_type}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            {/each}
+                          </div>
+                        {:else if type === "reaction"}
+                          <div class="space-y-3">
+                            {#each attachmentsArr as reaction}
+                              <div
+                                class="bg-yellow-50 rounded-lg p-4 border border-yellow-200"
+                              >
+                                <div class="flex items-center justify-between">
+                                  <div
+                                    class="flex items-center space-x-3"
+                                    class:space-x-reverse={$isRTL}
+                                  >
+                                    <div
+                                      class="w-10 h-10 bg-yellow-400 rounded-full flex items-center justify-center"
+                                    >
+                                      <svg
+                                        class="w-5 h-5 text-yellow-800"
+                                        fill="currentColor"
+                                        viewBox="0 0 20 20"
+                                      >
+                                        <path
+                                          fill-rule="evenodd"
+                                          d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                                          clip-rule="evenodd"
+                                        />
+                                      </svg>
+                                    </div>
+
+                                    <div>
+                                      <div
+                                        class="flex items-center space-x-2 mb-1"
+                                      >
+                                        <span
+                                          class="text-sm font-medium text-gray-900"
+                                        >
+                                          {reaction.attributes
+                                            .owner_shortname || "Anonymous"}
+                                        </span>
+                                        <span class="text-xs text-gray-500">
+                                          reacted
+                                        </span>
+                                      </div>
+                                      <p class="text-xs text-gray-500">
+                                        {new Date(
+                                          reaction.attributes.created_at
+                                        ).toLocaleDateString()} at {new Date(
+                                          reaction.attributes.created_at
+                                        ).toLocaleTimeString()}
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  <div class="text-right">
+                                    <p class="text-xs text-gray-400 mb-1">
+                                      ID: {reaction.shortname}
+                                    </p>
+                                    <span
+                                      class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"
+                                    >
+                                      {reaction.resource_type}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {#if reaction.attributes.updated_at !== reaction.attributes.created_at}
+                                  <div
+                                    class="mt-2 pt-2 border-t border-yellow-200"
+                                  >
+                                    <p class="text-xs text-gray-500">
+                                      Last updated: {new Date(
+                                        reaction.attributes.updated_at
+                                      ).toLocaleDateString()}
+                                    </p>
+                                  </div>
+                                {/if}
+                              </div>
+                            {/each}
+                          </div>
+                        {:else}
+                          <Attachment
+                            attachments={Object.values(attachmentsArr ?? [])}
+                            resource_type={$params.resource_type}
+                            space_name={spaceNameValue}
+                            subpath={actualSubpathValue}
+                            parent_shortname={itemShortnameValue}
+                            isOwner={true}
+                          />
+                        {/if}
                       </div>
                     </div>
                   {/if}
@@ -2037,7 +2277,9 @@
     background: white;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     transition: border-color 0.2s ease;
-    height: 500px;
+    height: 600px;
+    max-height: 500px;
+    overflow-y: auto;
   }
 
   .editor-container:hover {

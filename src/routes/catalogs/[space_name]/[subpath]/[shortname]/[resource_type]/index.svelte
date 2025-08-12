@@ -259,7 +259,10 @@
   }
 
   function getCommentText(comment) {
+    console.log(comment);
     return (
+      comment?.attributes?.displayname?.ar ||
+      comment?.attributes?.displayname?.en ||
       comment?.attributes?.payload?.body?.body ||
       comment?.payload?.body?.body ||
       $_("post_detail.comments.no_content")
@@ -569,7 +572,6 @@
               </div>
             </div>
 
-            <!-- Redesigned meta section - single card aligned with title -->
             <div class="meta-card">
               <div class="meta-row">
                 <div class="meta-item-compact">
@@ -975,7 +977,6 @@
             {:else}
               <div class="related-content-grid">
                 {#each relatedContent as item}
-                  {console.log(item)}
                   <button
                     class="related-content-card"
                     onclick={() => handleRelatedContentClick(item)}

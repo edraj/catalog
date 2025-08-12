@@ -467,7 +467,6 @@
   function reportItem(item) {
     const reason = prompt($_("catalog_contents.report.reason_prompt"));
     if (reason && reason.trim()) {
-      console.log("Reporting item:", item.shortname, "Reason:", reason);
       alert($_("catalog_contents.report.submitted"));
     }
   }

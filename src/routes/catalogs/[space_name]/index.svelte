@@ -95,8 +95,6 @@
           isTagFiltered ? tagFilteredOffset : currentOffset,
           tags
         );
-
-        console.log("Fetching contents with tags:", tags, response);
       } else {
         response = await getSpaceContents(
           spaceName,
@@ -329,7 +327,6 @@
 
   async function extractContentTags(items, reset = true) {
     const contentTags = await getSpaceTags(spaceName);
-    console.log(contentTags);
 
     if (contentTags.records && contentTags.records[0]?.attributes) {
       const tagsData = contentTags.records[0].attributes;

@@ -57,8 +57,6 @@
 
     avatar = await getAvatar(user.shortname);
 
-    console.log("Fetched avatar:", avatar);
-
     await fetchEntities();
     isLoading = false;
   });
@@ -125,7 +123,6 @@
 
     try {
       const loginResult = await loginBy(user.attributes.email, oldPassword);
-      console.log("Login result:", loginResult);
 
       if (!loginResult) {
         errorToastMessage("Current password is incorrect");
@@ -209,9 +206,6 @@
     isUploadingAvatar = true;
 
     try {
-      console.log("Uploading avatar:", file);
-      console.log("User shortname:", user.shortname);
-
       const success = await setAvatar(user.shortname, file);
 
       if (success) {

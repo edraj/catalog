@@ -68,7 +68,6 @@ export async function setAvatar(shortname: string, attachment: File) {
     attachment,
     ContentType.image
   );
-  console.log("Avatar upload response:", response);
 
   return response.status == "success" && response.records.length > 0;
 }
@@ -672,8 +671,6 @@ export async function getSpaceContentsByTags(
     searchQuery = `@tags:${tagQuery}`;
   }
 
-  console.log("Search Query:", searchQuery);
-
   const response = await Dmart.query(
     {
       type: QueryType.search,
@@ -713,7 +710,6 @@ export async function getSpaceTags(
     },
     "public"
   );
-  console.log("Space Tags Response:", response);
 
   return response;
 }
