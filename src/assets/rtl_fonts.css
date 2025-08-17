@@ -1,0 +1,6 @@
+@import url("./uthman/uthman.css");
+@import url("./iranyekan/fontiran.css");
+
+#routify-app {
+  font-family: uthman, sans-serif;
+}

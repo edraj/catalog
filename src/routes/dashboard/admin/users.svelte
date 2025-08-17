@@ -604,7 +604,7 @@
   .user-shortname {
     font-size: 12px;
     color: #6b7280;
-    font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+    font-family: "uthmantn", "Monaco", "Menlo", "Ubuntu Mono", monospace;
   }
 
   .roles-list {

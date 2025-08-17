@@ -1651,5 +1651,6 @@
   "addedPermissions": "الصلاحيات المضافة",
   "remove": "إزالة",
   "noPermissionsAdded": "لم تتم إضافة أي صلاحيات",
-  "permissions": "الصلاحيات"
+  "permissions": "الصلاحيات",
+  "or": "أو"
 }

@@ -1663,7 +1663,7 @@
   .relationship-space {
     font-size: 0.75rem;
     color: #64748b;
-    font-family: "Courier New", monospace;
+    font-family: "uthmantn", "Courier New", monospace;
   }
 
   .relationship-meta {
