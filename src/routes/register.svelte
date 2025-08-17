@@ -501,11 +501,13 @@
     background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 100%);
     padding: 2rem 1rem;
     font-family:
-      "Inter",
+      "uthmantn",
       -apple-system,
       BlinkMacSystemFont,
       "Segoe UI",
       Roboto,
+      "Helvetica Neue",
+      Arial,
       sans-serif;
   }
 

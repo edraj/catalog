@@ -1,4 +1,19 @@
+@import "/assets/fonts.css";
 @import "flowbite";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --font-main: "uthman", "IranYekan", sans-serif;
+}
+
+body {
+  font-family: var(--font-main);
+}
+
+*,
+*::before,
+*::after {
+  font-family: "Uthman", "IranYekan", sans-serif !important;
+}

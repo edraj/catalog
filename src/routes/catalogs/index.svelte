@@ -1382,7 +1382,7 @@
   }
 
   .result-shortname {
-    font-family: "Monaco", "Menlo", monospace;
+    font-family: "uthmantn", "Monaco", "Menlo", monospace;
     background: #f3f4f6;
     padding: 0.125rem 0.375rem;
     border-radius: 0.25rem;

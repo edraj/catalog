@@ -1,0 +1,15 @@
+@font-face {
+  font-family: "Uthman";
+  src: url("/uthman/uthmantn1_v10.otf") format("opentype"),
+    url("/uthman/uthmantn1b_v10.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "IranYekan";
+  src: url("/iranyekan/woff/IRANYekanWebRegular.woff") format("woff"),
+    url("/iranyekan/woff2/IRANYekanWebRegular.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+}

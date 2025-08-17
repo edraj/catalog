@@ -875,7 +875,7 @@
     padding: 12px 16px;
     border: 2px solid #e5e7eb;
     border-radius: 8px;
-    font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+    font-family: "uthmantn", "Monaco", "Menlo", "Ubuntu Mono", monospace;
     font-size: 13px;
     line-height: 1.5;
     resize: vertical;

@@ -759,7 +759,7 @@
   }
 
   .meta-code {
-    font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+    font-family: "uthmantn", "Monaco", "Menlo", "Ubuntu Mono", monospace;
     font-size: 12px;
     background: #f3f4f6;
     padding: 2px 6px;

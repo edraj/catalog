@@ -385,7 +385,15 @@
     border: none;
     outline: none;
     resize: none;
-    font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+    font-family:
+      "uthmantn",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
+      "Helvetica Neue",
+      Arial,
+      sans-serif;
     font-size: 0.875rem;
     line-height: 1.6;
     background: white;
@@ -397,7 +405,14 @@
     padding: 1rem;
     overflow-y: auto;
     background: white;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    font-family:
+      "uthmantn",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
+      "Helvetica Neue",
+      Arial,
       sans-serif;
     line-height: 1.6;
     color: #374151;
@@ -452,7 +467,7 @@
     background: #f3f4f6;
     padding: 0.125rem 0.25rem;
     border-radius: 0.25rem;
-    font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+    font-family: "uthmantn", "Monaco", "Menlo", "Ubuntu Mono", monospace;
     font-size: 0.875rem;
   }
 

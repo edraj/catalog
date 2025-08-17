@@ -616,7 +616,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    font-family:
+      "uthmantn",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
+      "Helvetica Neue",
+      Arial,
       sans-serif;
   }
 
@@ -663,7 +670,14 @@
       var(--gray-50) 0%,
       var(--gray-100) 100%
     );
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    font-family:
+      "uthmantn",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
+      "Helvetica Neue",
+      Arial,
       sans-serif;
     color: var(--gray-800);
     line-height: 1.6;
