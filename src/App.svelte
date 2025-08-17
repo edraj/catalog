@@ -1,15 +1,14 @@
 <script module lang="ts">
-  import {Router, createRouter} from "@roxi/routify";
+  import { Router, createRouter } from "@roxi/routify";
   import routes from "../.routify/routes.default";
-  import Dmart from "@edraj/tsdmart"
-  import { SvelteToast } from '@zerodevx/svelte-toast'
-  import {website} from "@/config";
+  import { SvelteToast } from "@zerodevx/svelte-toast";
+  import { website } from "@/config";
 
   const prefix = "";
 </script>
 
 <script lang="ts">
-  import {setupI18n, dir, locale} from "./i18n";
+  import { setupI18n, dir, locale } from "./i18n";
 
   function findRoute(routers, paths) {
     if (paths.length === 0) {
@@ -34,7 +33,7 @@
 
   let createdRouter = null;
 
-  async function prepareRouter() {
+  function prepareRouter() {
     if (createdRouter === null) {
       createdRouter = createRouter({
         routes: routes,
@@ -42,7 +41,7 @@
           toInternal: (url) => {
             const oldURL = url;
 
-            url = url.replaceAll('//', "/");
+            url = url.replaceAll("//", "/");
             url = url.replace(`/${prefix}`, "");
             url = url === "" ? "/" : url;
 
@@ -54,10 +53,10 @@
             }
 
             url = url.replaceAll(".ar", "").replaceAll(".ku", "");
-            if (url.endsWith("index")){
+            if (url.endsWith("index")) {
               url = url.slice(0, -5);
             }
-            if (url.endsWith("/")){
+            if (url.endsWith("/")) {
               url = url.slice(0, -1);
             }
 
@@ -69,10 +68,7 @@
               fileName = "index";
             }
 
-            const tryPaths = [
-              fileName,
-              "index"
-            ];
+            const tryPaths = [fileName, "index"];
             if (lang) {
               tryPaths.unshift(`index.${lang}`);
             }
@@ -85,9 +81,7 @@
                 if (surl.length === 1) {
                   return url;
                 }
-                return (
-                        surl.join("/") + `/${paths[paths.length - 1]}`
-                );
+                return surl.join("/") + `/${paths[paths.length - 1]}`;
               }
               paths.pop();
             }
@@ -104,26 +98,20 @@
     return createdRouter;
   }
 
+  const router = prepareRouter();
+
   setupI18n();
 </script>
 
 <svelte:head>
-  <link rel="stylesheet" media="screen"
-        href="{new URL('bootstrap-icons/font/bootstrap-icons.min.css', import.meta.url).href}">
-  {#if $dir === "rtl"}
-    <link rel="stylesheet" media="screen"
-          href="{new URL('bootstrap/dist/css/bootstrap.rtl.min.css', import.meta.url).href}">
-  {:else}
-    <link rel="stylesheet" media="screen"
-          href="{new URL('bootstrap/dist/css/bootstrap.min.css', import.meta.url).href}">
-  {/if}
-  <link rel="stylesheet" media="screen" href="{new URL('./app.css', import.meta.url).href}">
+  <link
+    rel="stylesheet"
+    media="screen"
+    href={new URL("./app.css", import.meta.url).href}
+  />
 </svelte:head>
-
 
 <div id="routify-app">
   <SvelteToast />
-  {#await prepareRouter() then router}
-    <Router {router}/>
-  {/await}
+  <Router {router} />
 </div>

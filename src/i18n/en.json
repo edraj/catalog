@@ -1,3 +1,1664 @@
 {
+  "Loading": "Loading...",
+  "Welcome": "Welcome",
+  "Back": "Back",
+  "Edit": "Edit",
+  "Publish": "Publish",
+  "UnPublish": "Unpublish",
+  "NoAttachments": "No attachments available",
+  "Unsupportedformat": "Unsupported format",
+  "Catalog": "Catalog",
+  "itemsInSpace": "Items in this space",
+  "Searchplaceholder": "Start typing to search entities",
+  "Searchplaceholder2": "Find projects, ideas, and more",
+  "SearchEntities": "Search entities ...",
+  "NoResults": "No entities found",
+  "NoResults2": "Try adjusting your search terms",
+  "Title": "Title",
+  "TitlePlaceholder": "Enter a title ...",
+  "Description": "Description",
+  "CreatedBy": "Created by",
+  "AddTag": "Add tag",
+  "Attachments": "Attachments",
+  "AddAttachment": "Add attachment",
+  "ThisEntityIsClosed": "This entity is closed",
+  "NoFurtherActionsCanBePerformed": "No further actions can be performed",
+  "Active": "Active",
+  "Inactive": "Inactive",
+  "Comments": "Comments",
+  "Reactions": "Reactions",
+  "NoComments": "No comments yet",
+  "NoComments2": "Be the first to share your thoughts!",
+  "Send": "Send",
+  "AddComment": "Add a comment...",
+  "AddFiles": "Add files",
+  "DragAndDropOrClick": "Drag and drop files here or click to select",
+  "NoTagsAdded": "No tags added yet",
+  "Content": "Content",
+  "Add": "Add",
+  "CreateEntity": "Create Entity",
+  "CreateEntityDescription": "Fill in the details below to create a new entity.",
+  "EntityName": "Entity Name",
+  "EntityDescription": "Entity Description",
+  "EntityTags": "Entity Tags",
+  "EntityContent": "Entity Content",
+  "EntityAttachments": "Entity Attachments",
+  "DraftMode": "Draft Mode",
+  "ReadyToPublish": "Ready to Publish",
+  "SaveDraftOrPublish": "Save to Draft or Publish immediately",
+  "ClickToAddTitle": "Click to add a title",
+  "Tags": "Tags",
+  "Entities": "Entities",
+  "ManageEntities": "Manage and explore your entities",
+  "CreateNewEntity": "Create New Entity",
+  "NoEntities": "No entities found",
+  "CreateNewEntityMsg": "Get started by creating your first entity",
+  "CreateNewEntityBtn": "Create Your First Entity",
+  "MyProfile": "My Profile",
+  "MyEntities": "My Entities",
+  "ProfilePreferences": "Profile Preferences",
+  "DisplayName": "Display Name",
+  "DisplayNamePlaceholder": "Enter your display name",
+  "DescriptionPlaceholder": "Tell us about yourself",
+  "SaveChanges": "Save Changes",
+  "AccountSettings": "Account Settings",
+  "EmailAddress": "Email Address",
+  "Verified": "Verified",
+  "NotSet": "Not Set",
+  "ContactAdmin": "Need to update these settings?",
+  "ContactAdmin2": "Contact your administrator to modify email or mobile number settings.",
+  "Updated": "Updated",
+  "Notifications": "Notifications",
+  "NotificationsMsg": "Stay updated with your latest activities",
+  "ReadAll": "Read All",
+  "UnReadAll": "UnRead All",
+  "DeleteAll": "Delete All",
+  "NoNotifications": "No notifications yet",
+  "NoNotificationsMsg": "When you have notifications, they'll appear here.",
+  "EmailOrMobile": "Email or Mobile phone",
+  "MobileNumber": "Mobile Number",
+  "Login": "Login",
+  "CodeSentTo": "We have sent you a code to email. Please enter it below.",
+  "InvalidCode": "Invalid code. Please try again.",
+  "Total": "Total",
+  "Publishing": "Publishing...",
+  "PublishNow": "Publish Now",
+  "SaveDraft": "Save Draft",
+  "Saving": "Saving...",
+  "WelcomeBack": "Welcome Back",
+  "PleaseSignInToContinue": "Please sign in to continue",
+  "SignIn": "Sign In",
+  "EnterYourCredentials": "Enter your credentials to access your account",
+  "Username": "Username",
+  "Password": "Password",
+  "InvalidCredentials": "Invalid credentials. Please try again.",
+  "SigningIn": "Signing in...",
+  "EnterYourPassword": "Enter your password",
+  "EnterYourUsername": "Enter your username",
+  "TermsAndConditions": "By logging in, you agree to our Terms of Service and Privacy Policy.",
+  "ContactUs": "Contact Us",
+  "ContactUsTitle": "We're here to help",
+  "ContactUsDescription": "Have a question, suggestion, or need assistance? We'd love to hear from you!",
+  "YourName": "Your Name",
+  "YourNamePlaceholder": "Enter your full name",
+  "YourMessage": "Your Message",
+  "YourMessagePlaceholder": "Share your thoughts, questions, or feedback...",
+  "SendMessage": "Send Message",
+  "SendingMessage": "Sending...",
+  "MessageSent": "Your message has been sent successfully!",
+  "MessageSentDescription": "Thank you for contacting us. We'll get back to you soon.",
+  "MessageError": "An error occurred while sending the message. Please try again.",
+  "NameRequired": "Name is required",
+  "MessageRequired": "Message is required",
+  "MessageTooShort": "Message is too short (minimum 10 characters)",
+  "MessageTooLong": "Message is too long (maximum 1000 characters)",
+  "Register": "Register",
+  "CreateAccount": "Create a new account",
+  "CreateAccountDescription": "Join our community and start sharing your thoughts",
+  "FullName": "Full Name",
+  "FullNamePlaceholder": "Enter your full name",
+  "Email": "Email",
+  "EmailPlaceholder": "Enter your email address",
+  "ConfirmPassword": "Confirm Password",
+  "ConfirmPasswordPlaceholder": "Re-enter your password",
+  "AgreeToTerms": "I agree to the Terms and Conditions and Privacy Policy",
+  "AlreadyHaveAccount": "Already have an account?",
+  "SignUp": "Sign Up",
+  "SigningUp": "Signing up...",
+  "PasswordMismatch": "Passwords do not match",
+  "EmailInvalid": "Invalid email address",
+  "FullNameRequired": "Full name is required",
+  "EmailRequired": "Email is required",
+  "PasswordRequired": "Password is required",
+  "TermsRequired": "You must agree to the terms and conditions",
+  "AccountCreated": "Your account has been created successfully!",
+  "AccountCreatedDescription": "Welcome to our community. You can now log in.",
+  "RegistrationError": "An error occurred while creating the account. Please try again.",
+  "DontHaveAccount": "Don't have an account?",
+  "YourEmail": "Your Email",
+  "YourEmailPlaceholder": "Enter your email address",
+  "ShortName": "Short Name",
+  "ShortNamePlaceholder": "Enter a short name",
+  "YourSubject": "Subject",
+  "YourSubjectPlaceholder": "Enter the subject of your message",
+  "contactMessages": "Contact Messages",
+  "refreshing": "Refreshing...",
+  "refresh": "Refresh",
+  "showing": "Showing",
+  "to": "to",
+  "of": "of",
+  "messages": "messages",
+  "page": "Page",
+  "previous": "Previous",
+  "next": "Next",
+  "loadingMessages": "Loading messages...",
+  "error": "Error",
+  "noContactMessages": "No contact messages",
+  "noMessagesSubmitted": "No messages have been submitted yet.",
+  "anonymous": "Anonymous",
+  "noEmailProvided": "No email provided",
+  "submitted": "Submitted",
+  "attachment": "Attachment",
+  "replied": "Replied",
+  "reply": "Reply",
+  "subject": "Subject",
+  "attachments": "Attachments",
+  "unknownFile": "Unknown file",
+  "message": "Message",
+  "noMessageContent": "No message content",
+  "noReplyContent": "No reply content",
+  "replyToMessage": "Reply to Message",
+  "name": "Name",
+  "email": "Email",
+  "noSubject": "No subject",
+  "originalMessage": "Original Message",
+  "yourReply": "Your Reply",
+  "typeReplyPlaceholder": "Type your reply here...",
+  "sending": "Sending...",
+  "sendReply": "Send Reply",
+  "cancel": "Cancel",
+  "noEmailFoundForMessage": "No email address found for this message",
+  "pleaseEnterReplyMessage": "Please enter a reply message",
+  "replyToYourMessage": "Reply to your message",
+  "replySentAndMarked": "Reply sent and message marked as replied!",
+  "replySentButFailedToMark": "Reply sent, but failed to mark message as replied in the system.",
+  "replySentButSystemError": "Reply sent, but there was an error updating the system.",
+  "failedToFetchContactMessages": "Failed to fetch contact messages",
+  "errorFetchingMessages": "An error occurred while fetching messages",
+  "autoRepliedAttachment": "Auto-replied: Message contains attachment",
+  "EmailAlreadyExists": "An account with this email already exists.",
 
+  "InvalidEmail": "Invalid email address.",
+  "PasswordTooShort": "Password must be at least 6 characters.",
+  "ConfirmPasswordRequired": "Please confirm your password.",
+  "PasswordsDoNotMatch": "Passwords do not match.",
+  "MustAgreeToTerms": "You must agree to the terms and conditions.",
+  "OtpRequired": "OTP is required.",
+  "OtpInvalidLength": "OTP must be 6 digits.",
+  "InvalidOtp": "Invalid OTP. Use 123456.",
+  "OtpVerificationFailed": "OTP verification failed.",
+  "VerifyPhoneNumber": "Verify Your Phone Number",
+  "EnterOtpSentTo": "Enter the OTP sent to",
+  "PhoneNumber": "Phone Number",
+  "PhoneNumberPlaceholder": "Enter your phone number",
+  "VerificationCode": "Verification Code",
+  "EnterOtpCode": "Enter the 6-digit OTP",
+  "DidNotReceiveOtp": "Didn't receive the code?",
+  "ResendOtp": "Resend OTP",
+  "ResendIn": "Resend in",
+  "VerifyingOtp": "Verifying...",
+  "VerifyOtp": "Verify OTP",
+  "SendOtp": "Send OTP",
+  "BackToForm": "Back to form",
+  "ChangePhoto": "Change Photo",
+
+  "ShareIdeas": "Share Ideas",
+  "BuildCommunity": "Build Community",
+  "HeroDescription": "Catalog is where creators share their thoughts, engage with others, and build meaningful connections. Join a community that values authentic conversations and quality content.",
+  "StartExploring": "Start Exploring",
+  "InteractiveEngagement": "Interactive Engagement",
+  "InteractiveEngagementDesc": "Like and comment on posts to engage with the community. Build meaningful connections through authentic interactions.",
+  "RealtimeNotifications": "Real-time Notifications",
+  "RealtimeNotificationsDesc": "Get instant alerts when someone reacts to your posts. Stay connected and never miss important interactions.",
+  "PersonalProfile": "Personal Profile",
+  "PersonalProfileDesc": "Manage your posts, track engagement, and customize your profile. Full control over your content and presence.",
+  "PublicBrowseMode": "Public Browse Mode",
+  "PublicBrowseModeDesc": "Explore all posts even without an account. Discover amazing content before deciding to join the community.",
+  "ContentManagement": "Content Management",
+  "ContentManagementDesc": "Create, edit, and unpublish your posts with ease. Maintain full ownership and control of your content.",
+  "RichDiscussions": "Rich Discussions",
+  "RichDiscussionsDesc": "Dive deep into conversations with detailed post pages and threaded comments for meaningful discussions.",
+  "FeaturesTitle": "Everything You Need to Connect",
+  "FeaturesDescription": "Powerful features designed to make sharing and discovering content effortless and engaging.",
+  "CTATitle": "Ready to Join the Community?",
+  "CTADescription": "Start sharing your ideas, discover amazing content, and connect with like-minded creators today.",
+  "ExploreAsGuest": "Explore as Guest",
+  "BrandDescription": "Building communities through authentic conversations and meaningful connections. Share your story, discover new perspectives.",
+  "Support": "Support",
+  "HelpCenter": "Help Center",
+  "Community": "Community",
+  "Privacy": "Privacy",
+  "Copyright": "© 2025 Catalog. All rights reserved.",
+
+  "catalogs.explore_title": "Explore Catalogs",
+  "catalogs.explore_description": "Discover all available spaces and their content. Browse through different catalogs to find what interests you most.",
+  "catalogs.no_catalogs_title": "No Catalogs Available",
+  "catalogs.no_catalogs_description": "There are currently no public catalogs to display.",
+  "catalogs.available_catalogs": "Available Catalogs ",
+  "catalogs.public_spaces_subtitle": "Public spaces you can explore",
+  "space.no_contents_title": "No Contents Found",
+  "space.no_contents_description": "This space appears to be empty or you don't have access to view its contents.",
+  "space.summary_title": "Space Summary",
+  "subpath.browse_description": "Browse contents in {spaceName}/{actualSubpath}",
+  "subpath.no_contents_title": "No Contents Found",
+  "subpath.no_contents_description": "This folder appears to be empty or you don't have access to view its contents.",
+  "subpath.contents_title": "Contents ({totalItems} items)",
+  "subpath.folder_summary": "Folder Summary",
+  "breadcrumb.catalogs": "Catalogs",
+  "table.space": "Space",
+  "table.status": "Status",
+  "table.owner": "Owner",
+  "table.created": "Created",
+  "table.website": "Website",
+  "table.name": "Name",
+  "table.type": "Type",
+  "table.actions": "Actions",
+  "status.active": "Active",
+  "status.inactive": "Inactive",
+  "resource_type.folder": "Folder",
+  "resource_type.content": "Content",
+  "resource_type.post": "Post",
+  "resource_type.ticket": "Ticket",
+  "resource_type.user": "User",
+  "resource_type.media": "Media",
+  "stats.total_spaces": "Total Spaces",
+  "stats.active_spaces": "Active Spaces",
+  "stats.with_websites": "With Websites",
+  "stats.total_items": "Total Items",
+  "stats.folders": "Folders",
+  "stats.content": "Content",
+  "stats.posts": "Posts",
+  "stats.other": "Other",
+  "show": "Show",
+  "per_page": "per page",
+  "showing_items": "Showing {start} to {end} of {total} items",
+  "page_info": "Page {currentPage} of {totalPages}",
+  "actions.visit": "Visit",
+  "go_back": "Go back",
+  "open": "Open",
+  "view": "View",
+  "back_to_contents": "Back to Contents",
+  "type_content": "Content",
+  "author": "Author",
+  "created": "Created",
+  "updated": "Updated",
+  "description": "Description",
+  "tags": "Tags",
+  "content_title": "Content",
+  "image_load_error": "Image could not be loaded",
+  "content_type": "Content Type",
+  "interactions": "Interactions",
+  "reactions": "Reactions ",
+  "comments": "Comments ",
+  "media_files": "Media & Files",
+  "relationships": "Relationships",
+  "related": "Related",
+  "no_data_title": "No Data Available",
+  "no_data_message": "Unable to load post data.",
+  "failed_load_catalogs": "Failed to load catalogs",
+  "loading_catalogs_title": "Error Loading Catalogs",
+  "failed_load_space_contents": "Failed to load space contents",
+  "loading_contents_title": "Error Loading Contents",
+  "loading_post_title": "Error Loading Post",
+  "invalid_response": "Invalid response structure",
+  "failed_load_post": "Failed to load post data",
+  "info_title": "Debug Information",
+  "subpath": "Subpath",
+  "item": "Item",
+  "common.unnamed_space": "Unnamed Space",
+  "common.no_description": "No description available",
+  "common.not_available": "N/A",
+  "common.unknown": "Unknown",
+  "common.no_website": "No website",
+  "common.loading_content": "Loading content...",
+
+  "admin": "Admin",
+  "dashboard": "Dashboard",
+  "contact_messages": "Contact Messages",
+  "entries": "Entries",
+  "notifications": "Notifications",
+  "my_profile": "My Profile",
+  "sign_out": "Sign Out",
+  "language": "Language",
+  "english": "English",
+  "arabic": "Arabic",
+  "kurdish": "Kurdish",
+  "roles": "Roles",
+  "help": {
+    "json_editor": "Edit the JSON object directly",
+    "shortname": "A shortname (use 'auto' for auto generated shortname)",
+    "active": "Whether this item is currently active",
+    "slug": "A URL-friendly version of the short name",
+
+    "hero": {
+      "title": "Help",
+      "center": "Center",
+      "description": "Find answers to common questions, learn how to use our platform, and get the support you need."
+    },
+    "quick_help": {
+      "title": "Quick Help",
+      "getting_started": {
+        "title": "Getting Started",
+        "description": "Learn the basics of creating and managing your catalogs.",
+        "button": "Explore Catalogs"
+      },
+      "community_support": {
+        "title": "Community Support",
+        "description": "Connect with other users and get help from the community.",
+        "button": "Join Community"
+      },
+      "contact_support": {
+        "title": "Contact Support",
+        "description": "Need direct help? Reach out to our support team.",
+        "button": "Contact Us"
+      }
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "create_catalog": {
+        "question": "How do I create my first catalog?",
+        "answer": "To create a catalog, navigate to your dashboard and click 'Create New Catalog'. Fill in the required information like title, description, and category. You can then start adding entries to organize your content."
+      },
+      "collaborate": {
+        "question": "Can I collaborate with others on catalogs?",
+        "answer": "Yes! You can invite other users to collaborate on your catalogs. Go to your catalog settings and use the 'Invite Collaborators' feature to add team members with different permission levels."
+      },
+      "make_public": {
+        "question": "How do I make my catalog public?",
+        "answer": "In your catalog settings, you can change the visibility from 'Private' to 'Public'. Public catalogs can be discovered and viewed by anyone on the platform."
+      },
+      "content_types": {
+        "question": "What types of content can I add to catalogs?",
+        "answer": "You can add various types of content including text entries, images, links, documents, and rich media. Each entry can have metadata, tags, and descriptions to help organize your content."
+      },
+      "search": {
+        "question": "How do I search for specific content?",
+        "answer": "Use the search bar at the top of the page to find catalogs, entries, or users. You can filter results by category, date, or content type to narrow down your search."
+      },
+      "export": {
+        "question": "Can I export my catalog data?",
+        "answer": "Yes, you can export your catalog data in various formats including JSON, CSV, or PDF. Go to your catalog settings and look for the 'Export' option."
+      }
+    },
+    "support": {
+      "title": "Still Need Help?",
+      "description": "Can't find what you're looking for? Our support team is here to help you with any questions or issues.",
+      "button": "Get Support"
+    }
+  },
+  "community": {
+    "hero": {
+      "join": "Join Our",
+      "community": "Community",
+      "description": "Connect with like-minded individuals, share your knowledge, and be part of a growing community that values collaboration and creativity.",
+      "join_button": "Join Community",
+      "explore_button": "Explore Catalogs"
+    },
+    "why_join": {
+      "title": "Why Join Our Community?",
+      "description": "Discover the benefits of being part of our collaborative platform."
+    },
+    "features": {
+      "connect": {
+        "title": "Connect with Others",
+        "description": "Join a vibrant community of creators, curators, and enthusiasts sharing knowledge and ideas."
+      },
+      "discussions": {
+        "title": "Rich Discussions",
+        "description": "Engage in meaningful conversations about content, share feedback, and collaborate on projects."
+      },
+      "support": {
+        "title": "Support & Recognition",
+        "description": "Show appreciation for quality content and get recognized for your contributions to the community."
+      },
+      "global": {
+        "title": "Global Network",
+        "description": "Connect with people from around the world who share your interests and passions."
+      }
+    },
+    "guidelines": {
+      "title": "Community Guidelines",
+      "respectful": {
+        "title": "Be Respectful",
+        "description": "Treat all community members with respect and kindness."
+      },
+      "quality": {
+        "title": "Share Quality Content",
+        "description": "Contribute meaningful and well-organized content to the catalogs."
+      },
+      "collaborate": {
+        "title": "Collaborate",
+        "description": "Work together to improve content and help others succeed."
+      },
+      "on_topic": {
+        "title": "Stay On Topic",
+        "description": "Keep discussions relevant and constructive."
+      }
+    }
+  },
+  "privacy": {
+    "hero": {
+      "title": "Privacy",
+      "policy": "Policy",
+      "description": "We value your privacy and are committed to protecting your personal information. Learn how we collect, use, and safeguard your data."
+    },
+    "principles": {
+      "title": "Our Privacy Principles",
+      "data_protection": {
+        "title": "Data Protection",
+        "description": "We use industry-standard security measures to protect your personal information."
+      },
+      "minimal_collection": {
+        "title": "Minimal Collection",
+        "description": "We only collect data that is necessary to provide and improve our services."
+      },
+      "secure_storage": {
+        "title": "Secure Storage",
+        "description": "Your data is encrypted and stored securely with limited access controls."
+      },
+      "user_control": {
+        "title": "User Control",
+        "description": "You have control over your data and can request access, updates, or deletion."
+      }
+    },
+    "information_collect": {
+      "title": "Information We Collect",
+      "account_info": "Account information (username, email, profile details)",
+      "content": "Content you create and share on the platform",
+      "usage_data": "Usage data and analytics to improve our services",
+      "communication": "Communication data when you contact us"
+    },
+    "how_we_use": {
+      "title": "How We Use Your Information",
+      "provide_services": "To provide and maintain our catalog services",
+      "personalize": "To personalize your experience on the platform",
+      "communicate": "To communicate with you about updates and features",
+      "improve": "To improve our services and develop new features"
+    },
+    "data_sharing": {
+      "title": "Data Sharing",
+      "description": "We do not sell your personal information. We may share data only in these limited circumstances:",
+      "consent": "With your explicit consent",
+      "legal": "To comply with legal obligations",
+      "protect_rights": "To protect our rights and prevent fraud",
+      "service_providers": "With service providers who help us operate the platform"
+    },
+    "your_rights": {
+      "title": "Your Rights",
+      "access": "Access your personal data",
+      "correct": "Correct inaccurate information",
+      "delete": "Delete your account and data",
+      "export": "Export your data",
+      "opt_out": "Opt out of marketing communications"
+    },
+    "questions": {
+      "title": "Questions About Privacy?",
+      "description": "If you have any questions about this privacy policy or how we handle your data, please don't hesitate to contact us.",
+      "button": "Contact Us"
+    }
+  },
+  "catalog_contents": {
+    "breadcrumb_label": "Breadcrumb",
+    "browse_contents": "Browse contents in",
+    "loading": "Loading content...",
+    "error": {
+      "title": "Error Loading Contents",
+      "failed_load": "Failed to load space contents. Please try again.",
+      "try_again": "Try Again"
+    },
+    "empty": {
+      "title": "No Content Found",
+      "no_matches": "No content matches your search criteria.",
+      "folder_empty": "This folder appears to be empty."
+    },
+    "filters": {
+      "title": "Search & Filter",
+      "clear_all": "Clear all filters",
+      "clear_filters": "Clear Filters",
+      "sort_by": "Sort By",
+      "toggle_sort": "Toggle sort order",
+      "type": "Type",
+      "all_types": "All types",
+      "remove_filter": "Remove filter"
+    },
+    "sort": {
+      "name": "Name",
+      "type": "Type",
+      "owner": "Owner",
+      "created": "Created Date"
+    },
+    "search": {
+      "placeholder": "Search by name, description, or owner...",
+      "end_of_results": "You've reached the end of the results!",
+      "total_found": "Total found: {count}",
+      "label": "Search",
+      "clear": "Clear search"
+    },
+    "results": {
+      "showing": "Showing {start} to {end} of {total} items",
+      "for_query": "for \"{query}\""
+    },
+    "tags": {
+      "available_tags": "Available Tags",
+      "show_all": "Show All",
+      "show_less": "Show Less",
+      "selected_tags": "Selected Tags",
+      "clear_all": "Clear All",
+      "remove_tag": "Remove {tag} tag"
+    },
+    "infinite_scroll": {
+      "items_per_load": "Items per load",
+      "showing_items": "Showing {displayed} of {total} items",
+      "showing_of": "Showing {displayed} of {total} items",
+      "load_more": "Load More",
+      "loading": "Loading...",
+      "end_of_results": "You've reached the end!",
+      "total_items": "Total: {count} items"
+    },
+    "time": {
+      "just_now": "Just now",
+      "minutes_ago": "m ago",
+      "hours_ago": "h ago",
+      "days_ago": "d ago"
+    },
+    "pagination": {
+      "showing_items": "Showing {displayed} of {total} items",
+      "items_per_load": "Items Per Load",
+      "page_info": "Page {current} of {total}",
+      "previous": "Previous",
+      "loaded_items": "Loaded {loaded} items",
+      "loading": "Loading...",
+      "load_more": "Load More",
+      "end_of_results": "You've reached the end!",
+      "total_loaded": "Total: {loaded} items",
+      "next": "Next",
+      "page": "Page {page}"
+    },
+    "card": {
+      "posted_by": "posted by",
+      "read_more": "Read more...",
+      "share": "Share",
+      "report": "Report"
+    },
+    "share": {
+      "copied_to_clipboard": "Link copied to clipboard!",
+      "copy_link": "Copy this link:"
+    },
+    "report": {
+      "reason_prompt": "Please provide a reason for reporting this content:",
+      "submitted": "Report submitted successfully. Thank you for helping keep our community safe."
+    }
+  },
+  "navigation": {
+    "go_back": "Go Back"
+  },
+  "space": {
+    "space": "Space",
+    "all_content_subtitle": "All items across all folders",
+    "total_folders": "Total folders",
+    "total_items": "Total items",
+    "total_tags": "Total tags",
+    "filter_by_folder": "Filter by folder",
+    "filter_by_tags": "Filter by tag",
+    "show_all_folders": "Show all folders",
+    "clear_filters": "Clear Filters",
+    "showing_with_tags": "Showing items with tags",
+    "show_less_folders": "Show less folders",
+    "show_all_tags": "Show all tags",
+    "show_less_tags": "Show less tags",
+    "subtitle": "Browse through a variety of catalogs and posts to discover new ideas, insights, and updates from the community.",
+    "search": {
+      "placeholder": "Search by name, description, or owner..."
+    },
+    "sort": {
+      "created": "Sort by created",
+      "updated": "Sort by updated",
+      "name": "Sort by name",
+      "reactions": "Sort by most reactions"
+    },
+    "filter": {
+      "all_types": "All types"
+    },
+    "error": {
+      "title": "Error Loading Contents",
+      "failed_load_contents": "Failed to load space contents. Please try again."
+    },
+    "empty": {
+      "no_results_title": "No Results Found",
+      "no_results_description": "Try different search terms or change your filters.",
+      "no_contents_title": "No Contents",
+      "no_contents_description": "This space is currently empty. Check back later for new content."
+    },
+    "author_avatar_alt": "Author avatar"
+  },
+  "resource_type": {
+    "folder": "Folder",
+    "content": "Content",
+    "post": "Post",
+    "ticket": "Ticket",
+    "user": "User",
+    "media": "Media"
+  },
+  "catalogs": {
+    "root_folder": "Root Folder",
+    "hero": {
+      "title": "Explore Catalogs",
+      "description": "Discover a wide range of curated catalogs from our community. Find content that interests you and connect with creators."
+    },
+    "search": {
+      "placeholder": "Search Spaces...",
+      "results_subtitle": "Search results based on your query",
+      "results_title": "Search Results",
+      "clear": "Clear Search"
+    },
+    "sort": {
+      "name": "Sort by name",
+      "created": "Sort by created",
+      "updated": "Sort by updated"
+    },
+    "error": {
+      "title": "Error Loading Catalogs",
+      "failed_load": "Failed to load catalogs. Please try again."
+    },
+    "empty": {
+      "no_results_title": "No Results Found",
+      "no_results_description": "We couldn't find any catalogs matching your search. Try different search terms.",
+      "no_catalogs_title": "No Catalogs Available",
+      "no_catalogs_description": "There are no public catalogs available at the moment. Check back later."
+    },
+    "actions": {
+      "visit": "Visit"
+    },
+    "unnamed_space": "Unnamed Space",
+    "no_description": "No description available"
+  },
+  "common": {
+    "loading": "Loading...",
+    "not_available": "Not available",
+    "unknown": "Unknown"
+  },
+  "post_detail": {
+    "breadcrumb": {
+      "label": "Breadcrumb",
+      "catalogs": "Catalogs"
+    },
+    "navigation": {
+      "back_to_contents": "Back to Contents"
+    },
+    "loading": {
+      "content": "Loading content..."
+    },
+    "error": {
+      "title": "Error Loading Post",
+      "invalid_response": "Invalid response structure",
+      "failed_load": "Failed to load post data"
+    },
+    "debug": {
+      "title": "Debug Information:",
+      "space": "Space",
+      "subpath": "Subpath",
+      "item": "Item"
+    },
+    "content_type": {
+      "content": "Content"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "meta": {
+      "author": "Author",
+      "created": "Created",
+      "updated": "Updated",
+      "content_type": "Content Type"
+    },
+    "media": {
+      "title": "Media & Files ({count})"
+    },
+    "relationships": {
+      "related": "Related"
+    },
+    "no_data": {
+      "title": "No Data Available",
+      "message": "Unable to load post data."
+    },
+    "sections": {
+      "interact": "Interact with this content",
+      "description": "Description",
+      "tags": "Tags",
+      "content": "Content",
+      "interactions": "Interactions",
+      "relationships": "Relationships"
+    },
+    "reactions": {
+      "like": "Like",
+      "unlike": "Unlike",
+      "reacting": "Reacting...",
+      "liked": "Liked",
+      "processing": "Processing...",
+      "added_successfully": "Reaction added successfully!",
+      "removed_successfully": "Reaction removed successfully!",
+      "add_failed": "Failed to add reaction. Please try again.",
+      "remove_failed": "Failed to remove reaction. Please try again.",
+      "toggle_error": "An error occurred while processing your reaction.",
+      "title": "Reactions"
+    },
+    "comments": {
+      "add_comment": "Add a comment",
+      "placeholder": "Share your thoughts...",
+      "submit": "Post Comment",
+      "submitting": "Posting...",
+      "empty_comment": "Please enter a comment before submitting.",
+      "added_successfully": "Comment added successfully!",
+      "add_failed": "Failed to add comment. Please try again.",
+      "add_error": "An error occurred while adding your comment.",
+      "title": "Comments ({count})",
+      "no_content": "No content"
+    },
+    "login_prompt": {
+      "title": "Login Required",
+      "message": "Please log in to interact with this content. You can like, comment, and engage with the community once you're signed in.",
+      "login": "Go to Login",
+      "cancel": "Cancel"
+    }
+  },
+
+  "my_entries": {
+    "title": "My Entries",
+    "subtitle": "Manage and track your content submissions",
+    "create_new": "Create New Entry",
+    "untitled": "Untitled",
+    "loading": "Loading your entries...",
+    "search": {
+      "placeholder": "Search entries..."
+    },
+    "filter": {
+      "all_status": "All Status",
+      "published": "Published",
+      "draft": "Draft",
+      "pending": "Pending",
+      "approved": "Approved"
+    },
+    "sort": {
+      "last_updated": "Last Updated",
+      "date_created": "Date Created",
+      "title": "Title",
+      "reactions": "Reactions",
+      "comments": "Comments",
+      "newest_first": "Newest First",
+      "oldest_first": "Oldest First"
+    },
+    "empty": {
+      "no_entries": "No entries yet",
+      "no_matches": "No matching entries",
+      "no_entries_description": "Start creating your first entry to share your ideas and content with the world.",
+      "no_matches_description": "Try adjusting your search or filter criteria to find what you're looking for."
+    },
+    "create_first": "Create Your First Entry",
+    "stats": {
+      "total_entries": "Total Entries",
+      "published": "Published",
+      "total_reactions": "Total Reactions",
+      "total_comments": "Total Comments"
+    },
+    "table": {
+      "entry": "Entry",
+      "status": "Status",
+      "engagement": "Engagement",
+      "updated": "Updated",
+      "actions": "Actions"
+    },
+    "status": {
+      "draft": "Draft",
+      "pending": "Pending",
+      "published": "Published",
+      "rejected": "Rejected",
+      "active": "Active"
+    },
+    "tags": {
+      "more": "+{count} more"
+    },
+    "actions": {
+      "view": "View",
+      "edit": "Edit"
+    },
+    "results": {
+      "showing": "Showing {filtered} of {total} entries"
+    },
+    "error": {
+      "fetch_failed": "An error occurred while fetching your entries"
+    }
+  },
+
+  "entry_detail": {
+    "loading": "Loading your entry...",
+    "back_to_entries": "Back to My Entries",
+    "edit_entry": "Edit Entry",
+    "created": "Created",
+    "updated": "Updated",
+    "untitled": "Untitled Entry",
+    "tags": "Tags",
+    "no_content": "No content available",
+    "attachments": "Attachments",
+    "status": {
+      "draft": "Draft",
+      "draft_description": "This entry is saved as a draft and not visible to others",
+      "pending": "Pending Review",
+      "pending_description": "This entry is under review and will be published once approved",
+      "published": "Published",
+      "published_description": "This entry is live and visible to everyone",
+      "rejected": "Rejected",
+      "rejected_description": "This entry was rejected and needs revision",
+      "active": "Active",
+      "active_description": "This entry is active"
+    },
+    "actions": {
+      "like": "Like",
+      "unlike": "Unlike"
+    },
+    "comments": {
+      "title": "Comments",
+      "placeholder": "Share your thoughts...",
+      "submit": "Submit comment",
+      "no_comments": "No comments yet",
+      "be_first": "Be the first to share your thoughts!",
+      "add_success": "Comment added successfully",
+      "add_error": "Failed to add comment!",
+      "delete_success": "Comment deleted successfully",
+      "delete_error": "Failed to delete comment!"
+    },
+    "reactions": {
+      "add_success": "Reaction added successfully",
+      "add_error": "Failed to add reaction!",
+      "remove_success": "Reaction removed successfully",
+      "remove_error": "Failed to remove reaction!"
+    },
+    "error": {
+      "not_found_title": "Entry Not Found",
+      "not_found_message": "The entry you're looking for doesn't exist or has been removed."
+    }
+  },
+  "entry_edit": {
+    "loading": "Loading entry for editing...",
+    "back_to_entry": "Back to Entry",
+    "back_to_entries": "Back to My Entries",
+    "editing_entry": "Editing Entry",
+    "update_entry": "Update Your Entry",
+    "update_description": "Save your changes or publish your updated entry",
+    "published": "published",
+    "updated": "updated",
+    "saving": "Saving...",
+    "publishing": "Publishing...",
+    "save_changes": "Save Changes",
+    "publish_changes": "Publish Changes",
+    "entry_title": "Entry Title",
+    "title_placeholder": "Enter your entry title...",
+    "edit_title": "Edit title",
+    "title_click_to_add": "Click to add a compelling title...",
+    "tags": "Tags",
+    "add_tag_placeholder": "Add a tag...",
+    "add": "Add",
+    "remove_tag": "Remove tag",
+    "no_tags_message": "No tags added yet. Tags help others discover your content!",
+    "content": "Content",
+    "loading_editor": "Loading editor...",
+    "current_attachments": "Current Attachments",
+    "add_new_attachments": "Add New Attachments",
+    "add_files": "Add Files",
+    "no_new_attachments": "No new attachments",
+    "add_files_description": "Add new files to attach to your entry",
+    "status": {
+      "draft": "Draft",
+      "draft_description": "This entry is saved as a draft",
+      "pending": "Pending Review",
+      "pending_description": "This entry is under review",
+      "published": "Published",
+      "published_description": "This entry is live and visible to everyone",
+      "rejected": "Rejected",
+      "rejected_description": "This entry was rejected and needs revision",
+      "active": "Active",
+      "active_description": "This entry is active"
+    },
+    "success": "Entry updated successfully.",
+    "error": "Failed to update entry!",
+    "attachment_error": "Failed to attach to entry!",
+    "error": {
+      "not_found_title": "Entry Not Found",
+      "not_found_message": "The entry you're trying to edit doesn't exist or has been removed."
+    }
+  },
+  "create_entry": {
+    "navigation": {
+      "back_to_entries": "Back to My Entries"
+    },
+    "action": {
+      "title": "Ready to Share Your Ideas?",
+      "description": "Save as draft or publish your entry for everyone to see"
+    },
+    "buttons": {
+      "save_draft": "Save Draft",
+      "publish_now": "Publish Now",
+      "saving": "Saving...",
+      "publishing": "Publishing..."
+    },
+    "destination": {
+      "title": "Destination",
+      "space": "Space",
+      "loading_spaces": "Loading spaces...",
+      "path_navigation": "Path Navigation",
+      "root": "Root",
+      "level": "Level {level}",
+      "select_folder": "-- Select folder or stay here --",
+      "no_subfolders": "No subfolders available",
+      "can_create": "✓ Can create entries here",
+      "cannot_create": "⚠ Contains only folders - navigate deeper",
+      "publishing_to": "Publishing to",
+      "cannot_create_here": "Cannot create entries here",
+      "warning_message": "This location contains only folders. Please navigate to a deeper level or select a different path."
+    },
+    "title": {
+      "section_title": "Entry Title",
+      "placeholder": "Enter your entry title...",
+      "edit_aria": "Edit title",
+      "click_to_add": "Click to add a compelling title..."
+    },
+    "shortname": {
+      "section_title": "Shortname (Admin Only)",
+      "placeholder": "Enter custom shortname (optional)...",
+      "edit_aria": "Edit shortname",
+      "click_to_set": "Click to set custom shortname (optional)...",
+      "help_text": "Leave empty to auto-generate from title. Only alphanumeric characters and underscores allowed."
+    },
+    "tags": {
+      "section_title": "Tags",
+      "placeholder": "Add a tag...",
+      "add_button": "Add",
+      "remove_aria": "Remove tag",
+      "empty_message": "No tags added yet. Tags help others discover your content!"
+    },
+    "content": {
+      "section_title": "Content",
+      "editor_type": "Editor Type:",
+      "html_editor": "Rich Text",
+      "markdown_editor": "Markdown"
+    },
+    "attachments": {
+      "section_title": "Attachments ({count})",
+      "add_files": "Add Files",
+      "empty_title": "No attachments yet",
+      "empty_description": "Drag and drop files here or click \"Add Files\" to upload"
+    },
+    "success": {
+      "published": "Entry published successfully.",
+      "saved": "Entry saved successfully."
+    },
+    "error": {
+      "load_spaces_failed": "Failed to load spaces!",
+      "load_subpaths_failed": "Failed to load subpaths!",
+      "select_space": "Please select a space!",
+      "cannot_create": "Cannot create entries in this location. Please select a path that doesn't contain only folders.",
+      "attachment_failed": "Failed to attach {name} to entry!",
+      "publish_failed": "Failed to publish entry!",
+      "save_failed": "Failed to save entry!"
+    }
+  },
+  "related_content": "Related Content",
+  "admin_dashboard": "Admin Dashboard",
+  "failed_to_load_spaces": "Failed to load spaces",
+  "error_loading_spaces": "Error Loading Spaces",
+  "no_spaces_available": "No Spaces Available",
+  "create_first_space": "Create First Space",
+  "total_spaces": "Total Spaces",
+  "active_spaces": "Active Spaces",
+  "admin_access": "Admin Access",
+  "full": "Full",
+  "role": "Role",
+  "super_admin": "Super Admin",
+  "create_space": "Create Space",
+
+  "status": "Status",
+  "owner": "Owner",
+  "created": "Created",
+  "actions": "Actions",
+  "active": "Active",
+  "inactive": "Inactive",
+  "unknown": "Unknown",
+  "manage": "Manage",
+  "edit": "Edit",
+  "delete": "Delete",
+  "create_new_space": "Create New Space",
+  "edit_space": "Edit Space",
+  "delete_space": "Delete Space",
+  "cancel": "Cancel",
+  "creating": "Creating...",
+  "updating": "Updating...",
+  "deleting": "Deleting...",
+  "update_space": "Update Space",
+  "delete_space": "Delete Space",
+  "are_you_sure": "Are you sure?",
+  "action_cannot_be_undone": "This action cannot be undone.",
+  "shortname": "Shortname",
+  "space_is_active": "Space is active",
+  "fill_required_fields": "Please fill all required fields in the meta form.",
+  "invalid_shortname": "Please give a valid shortname for the space.",
+  "failed_to_create_space": "Failed to create space. Please try again.",
+  "failed_to_update_space": "Failed to update space. Please try again.",
+  "unnamed_space": "Unnamed Space",
+  "no_description_available": "No description available",
+
+  "user_management": "User Management",
+  "manage_users_and_roles": "Manage users and their role assignments",
+  "users_overview": "Users Overview",
+  "search_users": "Search users...",
+  "loading_users": "Loading users...",
+  "no_users_found": "No users found in the system",
+  "user": "User",
+  "email": "Email",
+  "roles": "Roles",
+  "statistics": "Statistics",
+  "total_users": "Total Users",
+  "active_users": "Active Users",
+  "available_roles": "Available Roles",
+  "users_without_roles": "Users Without Roles",
+  "no_roles_assigned": "No roles assigned",
+  "manage_roles": "Manage Roles",
+  "close": "Close",
+  "saving": "Saving...",
+  "save_changes": "Save Changes",
+  "no_roles_available": "No roles available. Please create roles first.",
+  "failed_to_load_users": "Failed to load users",
+  "failed_to_load_roles": "Failed to load roles",
+  "failed_to_update_user_roles": "Failed to update user roles",
+
+  "user_permissions_management": "User Permissions Management",
+  "configure_access_permissions": "Configure access permissions for different user types",
+  "select_permission_type": "Select Permission Type",
+  "add_permission": "Add Permission",
+  "existing_configuration": "Existing configuration",
+  "new_configuration": "New configuration",
+  "permission_info": "Permission Info",
+  "loading_permission_data": "Loading permission data...",
+  "permission": "Permission",
+  "update": "Update",
+  "create": "Create",
+  "world_permissions_info": " World permissions apply to all guests and unauthenticated users. These are the most restrictive permissions.",
+  "catalog_user_permissions_info": "Catalog User permissions apply to authenticated users with catalog access. These users can interact with content.",
+  "permission_type": "Permission Type",
+  "available_spaces": "Available Spaces",
+  "add_new_permission": "Add New Permission",
+  "permission_name": "Permission Name",
+  "enter_permission_name": "Enter permission name",
+  "create_permission": "Create Permission",
+  "delete_permission": "Delete Permission",
+  "are_you_sure_delete_permission": "Are you sure you want to delete the permission",
+  "failed_to_load_permission_types": "Failed to load permission types",
+  "failed_to_load_permission_data": "Failed to load permission data",
+  "failed_to_save_permissions": "Failed to save permissions",
+  "failed_to_create_permission": "Failed to create permission",
+  "failed_to_delete_permission": "Failed to delete permission",
+  "no_permission_selected": "No permission selected to delete",
+
+  "role_management": "Role Management",
+  "configure_roles_and_permissions": "Configure roles and their associated permissions",
+  "select_role_type": "Select Role Type",
+  "add_role": "Add Role",
+  "loading_role_types": "Loading role types...",
+  "no_roles_found": "No Roles Found",
+  "existing_role": "Existing role",
+  "new_role": "New role",
+  "role_info": "Role Info",
+  "loading_role_data": "Loading role data...",
+  "role_type": "Role Type",
+  "add_new_role": "Add New Role",
+  "role_name": "Role Name",
+  "enter_role_name": "Enter role name",
+  "create_role": "Create Role",
+  "delete_role": "Delete Role",
+  "are_you_sure_delete_role": "Are you sure you want to delete the role",
+  "failed_to_load_role_types": "Failed to load role types",
+  "failed_to_load_role_data": "Failed to load role data",
+  "failed_to_save_role": "Failed to save role",
+  "failed_to_create_role": "Failed to create role",
+  "failed_to_delete_role": "Failed to delete role",
+  "no_role_selected": "No role selected to delete",
+  "fix_validation_errors": "Please fix validation errors before saving",
+  "Users": "Users",
+  "admin_dashboard": {
+    "title": "Admin Dashboard",
+    "welcome": "Welcome {name}! Manage all spaces and their content with full administrative access.",
+    "stats": {
+      "total_spaces": "Total Spaces",
+      "active_spaces": "Active Spaces",
+      "admin_access": "Admin Access",
+      "full": "Full",
+      "role": "Role",
+      "super_admin": "Super Admin"
+    },
+    "manage_spaces": "Manage Spaces ({count})",
+    "admin_access_description": "Administrative access to all spaces",
+    "table": {
+      "space": "Space",
+      "status": "Status",
+      "owner": "Owner",
+      "created": "Created",
+      "actions": "Actions"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "actions": {
+      "create_space": "Create Space",
+      "create_first": "Create First Space",
+      "manage": "Manage",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "empty": {
+      "title": "No Spaces Available",
+      "description": "There are currently no spaces to manage."
+    },
+    "error": {
+      "title": "Error Loading Spaces",
+      "failed_load_spaces": "Failed to load spaces",
+      "fill_required_fields": "Please fill all required fields in the meta form.",
+      "invalid_shortname": "Please give a valid shortname for the space.",
+      "create_failed": "Failed to create space. Please try again.",
+      "update_failed": "Failed to update space. Please try again."
+    },
+    "modal": {
+      "cancel": "Cancel",
+      "creating": "Creating...",
+      "updating": "Updating...",
+      "deleting": "Deleting...",
+      "create": {
+        "title": "Create New Space",
+        "description": "Fill in the details to create a new space",
+        "button": "Create Space"
+      },
+      "edit": {
+        "title": "Edit Space",
+        "description": "Update space information and translations",
+        "space_active": "Space is active",
+        "button": "Update Space"
+      },
+      "delete": {
+        "title": "Delete Space",
+        "confirm": "Are you sure?",
+        "irreversible": "This action cannot be undone.",
+        "space_label": "Space",
+        "shortname_label": "Shortname",
+        "warning": "All data in this space will be permanently deleted and cannot be recovered.",
+        "button": "Delete Space"
+      }
+    },
+    "filters": {
+      "all": "All",
+      "folder": "Folder",
+      "content": "Content",
+      "post": "Post",
+      "ticket": "Ticket",
+      "user": "User",
+      "media": "Media",
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "sort": {
+      "name": "Name",
+      "created": "Created Date",
+      "updated": "Updated Date",
+      "owner": "Owner"
+    },
+    "unnamed_space": "Unnamed Space",
+    "no_description": "No description available"
+  },
+
+  "admin_space": {
+    "title": "Admin: {spaceName} Space",
+    "subtitle": "Full administrative access to manage all content",
+    "navigation": {
+      "back_to_admin": "Back to Admin",
+      "go_back": "Go back"
+    },
+    "actions": {
+      "create_folder": "Create Folder",
+      "delete_item": "Delete item"
+    },
+    "error": {
+      "title": "Error Loading Contents",
+      "failed_load_contents": "Failed to load space contents",
+      "create_folder_failed": "Failed to create folder",
+      "create_folder_error": "Error creating folder"
+    },
+    "empty": {
+      "title": "No Contents Found",
+      "description": "This space appears to be empty. Create some folders to get started."
+    },
+    "confirm": {
+      "delete_item": "Are you sure you want to delete \"{name}\"?"
+    },
+    "modal": {
+      "close": "Close modal",
+      "cancel": "Cancel",
+      "creating": "Creating...",
+      "create_folder": "Create Folder",
+      "create": {
+        "title": "Create New Folder",
+        "subtitle": "Configure folder settings and permissions"
+      },
+      "basic_info": {
+        "title": "Basic Information",
+        "description": "Set the folder name and description"
+      },
+      "folder_config": {
+        "title": "Folder Configuration",
+        "description": "Configure folder behavior and permissions"
+      }
+    }
+  },
+
+  "admin_content": {
+    "title": "Contents of {name}",
+    "subtitle": "Managing contents in {spaceName} at {subpath}",
+    "loading": "Loading contents...",
+    "error": {
+      "title": "Error loading contents",
+      "failed_load_contents": "Failed to load contents. Please try again.",
+      "try_again": "Try Again",
+      "create_folder_failed": "Failed to create folder",
+      "create_folder_error": "Error creating folder"
+    },
+    "confirm": {
+      "delete_item": "Are you sure you want to delete '{name}'?"
+    },
+    "empty": {
+      "title": "No contents found",
+      "description": "This location is empty. Create new items or folders to get started.",
+      "no_matches": "No items match your search criteria."
+    },
+    "breadcrumb": {
+      "label": "Navigation breadcrumb",
+      "admin": "Admin"
+    },
+    "actions": {
+      "create_new_item": "Create New Item",
+      "create_folder": "Create Folder",
+      "open": "Open",
+      "view": "View",
+      "delete": "Delete"
+    },
+    "filters": {
+      "title": "Filters",
+      "clear_all": "Clear All Filters",
+      "sort_by": "Sort by",
+      "toggle_sort": "Toggle sort order"
+    },
+    "infinite_scroll": {
+      "items_per_load": "Items per load",
+      "showing_items": "Showing {displayed} of {total} items",
+      "showing_of": "Showing {displayed} of {total} items",
+      "load_more": "Load More",
+      "loading": "Loading...",
+      "end_of_results": "You've reached the end",
+      "total_items": "Total items: {count}"
+    },
+    "results": {
+      "for_query": "for '{query}'"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "card": {
+      "managed_by": "Managed by",
+      "path": "Path"
+    },
+    "search": {
+      "placeholder": "Search by name, description or owner...",
+      "label": "Search contents",
+      "clear": "Clear search"
+    },
+    "common": {
+      "not_available": "Not available",
+      "unknown": "Unknown"
+    },
+    "modal": {
+      "create": {
+        "title": "Create New Folder",
+        "subtitle": "Configure your new folder settings"
+      },
+      "basic_info": {
+        "title": "Basic Information",
+        "description": "Provide basic details about this folder"
+      },
+      "folder_config": {
+        "title": "Folder Configuration",
+        "description": "Configure how this folder should behave"
+      },
+      "close": "Close",
+      "cancel": "Cancel",
+      "creating": "Creating...",
+      "create_folder": "Create Folder"
+    }
+  },
+
+  "search_filters": {
+    "search_label": "Search Spaces",
+    "search_placeholder": "Search by name, description, shortname, or owner...",
+    "clear_search": "Clear search",
+    "status_label": "Status",
+    "sort_label": "Sort By",
+    "toggle_sort": "Toggle sort order",
+    "results_count": "Showing {displayed} of {total} spaces",
+    "results_for": "for \"{query}\"",
+    "clear_filters": "Clear Filters",
+    "no_results": {
+      "title": "No spaces found",
+      "description": "Try adjusting your search terms or filters.",
+      "action": "Clear Filters"
+    }
+  },
+
+  "no_users_match_filters": "No users match the selected filters",
+  "admin_item_detail": {
+    "breadcrumb": {
+      "label": "Breadcrumb",
+      "admin": "Admin"
+    },
+    "navigation": {
+      "back": "Back"
+    },
+    "subtitle": "Admin Management Panel",
+    "actions": {
+      "edit_item": "Edit Item",
+      "delete_item": "Delete Item"
+    },
+    "tabs": {
+      "overview": "Overview",
+      "content": "Content",
+      "relationships": "Relationships",
+      "attachments": "Attachments",
+      "author_entries": "Author Related Entries",
+      "metadata": "Metadata"
+    },
+    "overview": {
+      "basic_info": "Basic Information"
+    },
+    "fields": {
+      "uuid": "UUID",
+      "shortname": "Shortname",
+      "display_name": "Display Name",
+      "description": "Description",
+      "status": "Status",
+      "tags": "Tags",
+      "owner": "Owner",
+      "created": "Created",
+      "updated": "Updated"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "content": {
+      "readable_content": "Readable Content",
+      "title": "Content & Payload",
+      "content_type": "Content Type",
+      "checksum": "Checksum",
+      "content_body": "Content Body",
+      "no_content": "No content available"
+    },
+    "relationships": {
+      "title": "Relationships",
+      "headers": {
+        "role": "Role",
+        "related_to": "Related To",
+        "type": "Type",
+        "space": "Space",
+        "uuid": "UUID"
+      },
+      "no_relationships": "No relationships defined"
+    },
+    "attachments": {
+      "title": "Attachments",
+      "total_count": "{count} total attachments",
+      "zero_count": "0 attachments",
+      "type_count": "{type} Attachments ({count})",
+      "no_attachments": "No attachments found"
+    },
+    "metadata": {
+      "title": "System Metadata",
+      "full_path": "Full Path",
+      "space_name": "Space Name",
+      "subpath": "Subpath",
+      "resource_type": "Resource Type",
+      "acl_entries": "ACL Entries",
+      "entries_count": "{count} entries",
+      "relationships_count": "Relationships Count",
+      "attachments_count": "Attachments Count",
+      "raw_json": "Raw JSON Data"
+    },
+    "author_entries": {
+      "title": "Author Related Entries",
+      "headers": {
+        "shortname": "Shortname",
+        "display_name": "Display Name",
+        "space": "Space",
+        "type": "Type",
+        "status": "Status",
+        "created": "Created"
+      },
+      "no_entries": "No author related entries found"
+    },
+    "edit_modal": {
+      "title": "Edit Item",
+      "fields": {
+        "title": "Title",
+        "content": "Content",
+        "tags": "Tags (comma-separated)",
+        "active": "Active"
+      },
+      "placeholders": {
+        "title": "Enter title",
+        "content": "Enter content",
+        "tags": "tag1, tag2, tag3"
+      },
+      "actions": {
+        "cancel": "Cancel",
+        "save": "Save Changes"
+      }
+    },
+    "error": {
+      "title": "Error Loading Item",
+      "item_not_found": "Item not found",
+      "failed_load_item": "Failed to load item data",
+      "failed_update_item": "Failed to update item"
+    },
+    "confirm": {
+      "delete_item": "Are you sure you want to delete \"{name}\"?"
+    },
+    "not_found": {
+      "title": "Item Not Found",
+      "description": "The requested item could not be found or you don't have access to it."
+    },
+    "unnamed_item": "Unnamed Item",
+    "no_description": "No description available",
+    "not_set": "Not set",
+    "empty": "Empty",
+    "no_tags": "No tags",
+    "file_size": {
+      "zero_bytes": "0 Bytes",
+      "bytes": "Bytes",
+      "kb": "KB",
+      "mb": "MB",
+      "gb": "GB"
+    }
+  },
+  "all_roles": "All Roles",
+  "editor": {
+    "title": "Folder Schema Editor"
+  },
+  "sections": {
+    "translations": "Displayname and Description Translations",
+    "index_attributes": {
+      "title": "Index Attributes",
+      "description": "The attributes from the schema that should be displayed in index page"
+    },
+    "content_resource_types": {
+      "title": "Content Resource Types"
+    },
+    "schema_shortnames": {
+      "title": "Schema Shortnames"
+    },
+    "workflow_shortnames": {
+      "title": "Workflow Shortnames"
+    },
+    "subpaths": "Subpaths",
+    "conditions": "Conditions",
+    "restricted_fields": "Restricted Fields",
+    "allowed_fields_values": "Allowed Fields Values"
+  },
+  "fields": {
+    "sort_by": "Sort By",
+    "sort_order": "Sort Order",
+    "shortname": "Shortname",
+    "active": "Active",
+    "slug": "Slug",
+    "displayname": "Display name",
+    "description": "Description",
+    "space": "Space",
+    "subpath": "Subpath",
+    "json_editor": "JSON Editor"
+  },
+  "placeholders": {
+    "key": "Key",
+    "name": "Name",
+    "sort_by": "Field name for sorting",
+    "shortname": "Short name",
+    "slug": "url-friendly-name",
+    "restricted_field": "Add restricted field"
+  },
+  "buttons": {
+    "remove": "Remove",
+    "add_index_attribute": "Add Index Attribute",
+    "auto": "Auto",
+    "update": "Update",
+    "cancel": "Cancel",
+    "updating": "Updating...",
+    "update_shortname": "Update Shortname",
+    "apply_changes": "Apply Changes"
+  },
+  "options": {
+    "select_sort_order": "Select sort order...",
+    "ascending": "Ascending",
+    "descending": "Descending",
+    "select_type": "Select a type...",
+    "select_schema_to_add": "Select schema to add...",
+    "select_workflow_to_add": "Select workflow to add...",
+    "select_resource_type": "Select resource type",
+    "select_action": "Select action",
+    "select_space": "Select space",
+    "select_subpath": "Select subpath",
+    "select_condition": "Select condition"
+  },
+  "resource_types": {
+    "ticket": "Ticket",
+    "content": "Content"
+  },
+  "errors": {
+    "loading_schemas": "Error loading schemas",
+    "shortname_update_failed": "An error occurred while updating the shortname.",
+    "loading_workflows": "Error loading workflows",
+    "invalid_json": "Invalid JSON format"
+  },
+  "validation": {
+    "index_attributes_required": "Index attributes is required",
+    "shortname_format": "Shortname can only contain alphanumeric characters, underscores.",
+    "json_syntax_error": "Please correct the JSON syntax.\nInvalid JSON format in Allowed Fields Values"
+  },
+  "languages": {
+    "english": "English",
+    "arabic": "Arabic",
+    "kurdish": "Kurdish"
+  },
+  "modal": {
+    "update_shortname": {
+      "title": "Update Shortname",
+      "warning": "Changing the shortname will move this resource to a new location. This may affect existing references to this item.",
+      "new_shortname": "New Shortname"
+    }
+  },
+  "permissions": {
+    "title": "Permission Settings",
+    "resource_types": "Resource Types",
+    "actions": "Actions"
+  },
+  "conditions": {
+    "own": "own",
+    "is_active": "is_active"
+  },
+  "loading": {
+    "spaces": "Loading spaces...",
+    "subpaths": "Loading subpaths..."
+  },
+  "empty_states": {
+    "no_resource_types": "No resource types added",
+    "no_actions": "No actions added",
+    "no_subpaths": "No spaces or subpaths added",
+    "no_conditions": "No conditions added",
+    "no_restricted_fields": "No restricted fields added"
+  },
+  "DefaultRole": "Default Role",
+  "AccountStatus": "Account Status",
+  "MemberSince": "Member Since",
+  "MobileNumberPlaceholder": "Enter your mobile number",
+  "SpacesDashboard": "Spaces Dashboard",
+  "AccountActive": "Your account is active and verified",
+
+  "failedToLoadAvailableRoles": "Failed to load available roles",
+  "failedToLoadRoles": "Failed to load roles",
+  "failedToLoadCurrentDefaultRole": "Failed to load current default role",
+  "configurationEntityCreatedSuccessfully": "Configuration entity created successfully",
+  "failedToCreateConfigurationEntity": "Failed to create configuration entity",
+  "pleaseSelectDefaultRole": "Please select a default role",
+  "defaultUserRoleUpdatedSuccessfully": "Default user role updated successfully",
+  "failedToSaveDefaultUserRole": "Failed to save default user role",
+  "configurationMissing": "Configuration Missing",
+  "configurationEntityNotFound": "Configuration Entity Not Found",
+  "systemConfigurationEntityMissingDescription": "The system configuration entity is missing. This is required for managing default user roles.",
+  "autoCreateConfigurationEntityQuestion": "Would you like to automatically create the missing configuration entity?",
+  "autoFix": "Auto Fix",
+  "systemConfiguration": "System Configuration",
+  "systemConfigurationSubtitle": "Configure default settings for new users and system behavior",
+  "userDefaultRole": "User Default Role",
+  "userDefaultRoleDescription": "Select the default role that will be assigned to newly registered users. This role determines the initial permissions and access level for new users.",
+  "loadingConfiguration": "Loading configuration...",
+  "noRolesAvailable": "No Roles Available",
+  "createRolesFirstMessage": "Please create roles first before configuring default user role.",
+  "currentDefaultRole": "Current default role",
+  "noDefaultRoleConfigured": "No default role configured",
+  "selectDefaultRole": "Select Default Role",
+  "selectRoleOption": "-- Select a role --",
+  "saveConfiguration": "Save Configuration",
+  "resetToCurrent": "Reset to Current",
+  "manageRolesFor": "Manage Roles for",
+  "selectRolesToAssignDescription": "Select the roles you want to assign to this user. Changes will be saved immediately.",
+  "saveChanges": "Save Changes",
+  "rolePermissions": "Role Permissions",
+  "searchPermissionsPlaceholder": "Search permissions...",
+  "toggle": "Toggle",
+  "selected": "Selected",
+  "addedPermissions": "Added Permissions",
+  "remove": "Remove",
+  "noPermissionsAdded": "No permissions added",
+  "permissions": "Permissions"
 }
