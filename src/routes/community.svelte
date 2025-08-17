@@ -37,7 +37,7 @@
   }
 
   function handleExploreCatalogs() {
-    $goto("/catalogs");
+    $goto("/");
   }
 </script>
 

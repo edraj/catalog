@@ -2,7 +2,12 @@
   import { onMount } from "svelte";
   import { params, goto } from "@roxi/routify";
   import { getMyEntities } from "@/lib/dmart_services";
-  import { formatDate, renderStateString, truncateString } from "@/lib/helpers";
+  import {
+    formatDate,
+    formatNumberInText,
+    renderStateString,
+    truncateString,
+  } from "@/lib/helpers";
   import { errorToastMessage } from "@/lib/toasts_messages";
   import { user } from "@/stores/user";
   import { _, locale } from "@/i18n";
@@ -342,7 +347,9 @@
               <p class="text-sm font-medium text-gray-600">
                 {$_("my_entries.stats.total_entries")}
               </p>
-              <p class="text-3xl font-bold text-gray-900">{entities.length}</p>
+              <p class="text-3xl font-bold text-gray-900">
+                {formatNumberInText(entities.length, $locale)}
+              </p>
             </div>
             <div
               class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center"
@@ -359,8 +366,11 @@
                 {$_("my_entries.stats.published")}
               </p>
               <p class="text-3xl font-bold text-green-600">
-                {entities.filter((e) => e.is_active && e.state === "approved")
-                  .length}
+                {formatNumberInText(
+                  entities.filter((e) => e.is_active && e.state === "approved")
+                    .length,
+                  $locale
+                )}
               </p>
             </div>
             <div
@@ -378,7 +388,10 @@
                 {$_("my_entries.stats.total_reactions")}
               </p>
               <p class="text-3xl font-bold text-red-500">
-                {entities.reduce((sum, e) => sum + (e.reaction || 0), 0)}
+                {formatNumberInText(
+                  entities.reduce((sum, e) => sum + (e.reaction || 0), 0),
+                  $locale
+                )}
               </p>
             </div>
             <div
@@ -396,7 +409,10 @@
                 {$_("my_entries.stats.total_comments")}
               </p>
               <p class="text-3xl font-bold text-blue-600">
-                {entities.reduce((sum, e) => sum + (e.comment || 0), 0)}
+                {formatNumberInText(
+                  entities.reduce((sum, e) => sum + (e.comment || 0), 0),
+                  $locale
+                )}
               </p>
             </div>
             <div
@@ -476,7 +492,12 @@
                                 class="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-600 rounded-md text-xs font-medium"
                               >
                                 {$_("my_entries.tags.more", {
-                                  values: { count: entity.tags.length - 3 },
+                                  values: {
+                                    count: formatNumberInText(
+                                      entity.tags.length - 3,
+                                      $locale
+                                    ),
+                                  },
                                 })}
                               </span>
                             {/if}
@@ -502,11 +523,17 @@
                     >
                       <div class="flex items-center text-red-500">
                         <HeartSolid class="w-4 h-4 engagement-icon" />
-                        <span class="font-medium">{entity.reaction || 0}</span>
+                        <span class="font-medium"
+                          >{formatNumberInText(entity.reaction, $locale) ||
+                            0}</span
+                        >
                       </div>
                       <div class="flex items-center text-blue-500">
                         <MessagesSolid class="w-4 h-4 engagement-icon" />
-                        <span class="font-medium">{entity.comment || 0}</span>
+                        <span class="font-medium"
+                          >{formatNumberInText(entity.comment, $locale) ||
+                            0}</span
+                        >
                       </div>
                     </div>
                   </td>
@@ -551,8 +578,8 @@
       <div class="mt-6 text-center text-sm text-gray-600">
         {$_("my_entries.results.showing", {
           values: {
-            filtered: filteredEntities.length,
-            total: entities.length,
+            filtered: formatNumberInText(filteredEntities.length, $locale),
+            total: formatNumberInText(entities.length, $locale),
           },
         })}
       </div>

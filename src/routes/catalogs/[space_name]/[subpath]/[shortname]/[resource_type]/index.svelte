@@ -19,6 +19,7 @@
     successToastMessage,
     errorToastMessage,
   } from "@/lib/toasts_messages";
+  import { formatNumberInText } from "@/lib/helpers";
   $goto;
   let isLoading = $state(false);
   let postData = $state(null);
@@ -259,7 +260,6 @@
   }
 
   function getCommentText(comment) {
-    console.log(comment);
     return (
       comment?.attributes?.displayname?.ar ||
       comment?.attributes?.displayname?.en ||
@@ -769,7 +769,7 @@
                     }, {})) as [type, count]}
                     <span class="reaction-count">
                       {getReactionEmoji(type)}
-                      {count}
+                      {formatNumberInText(Number(count), $locale)}
                     </span>
                   {/each}
                 </div>
@@ -780,7 +780,9 @@
               <div class="comments-simple">
                 <h4 class="simple-subtitle">
                   {$_("post_detail.comments.title", {
-                    values: { count: comments.length },
+                    values: {
+                      count: formatNumberInText(comments.length, $locale),
+                    },
                   })}
                 </h4>
                 <div class="comments-list-simple">
@@ -888,25 +890,26 @@
               </div>
             </div>
           </section>
-
-          {#if mediaFiles.length > 0}
-            <section class="media-section">
-              <h3 class="section-title-large">
-                <span class="title-accent-green"></span>
-                {$_("post_detail.media.title", {
-                  values: { count: mediaFiles.length },
-                })}
-              </h3>
-              <Attachments
-                attachments={mediaFiles}
-                resource_type={ResourceType.content}
-                space_name={spaceName}
-                subpath={actualSubpath}
-                parent_shortname={itemShortname}
-                {isOwner}
-              />
-            </section>
-          {/if}
+        {/if}
+        {#if mediaFiles.length > 0}
+          <section class="media-section">
+            <h3 class="section-title-large">
+              <span class="title-accent-green"></span>
+              {$_("post_detail.media.title", {
+                values: {
+                  count: formatNumberInText(mediaFiles.length, $locale),
+                },
+              })}
+            </h3>
+            <Attachments
+              attachments={mediaFiles}
+              resource_type={ResourceType.ticket}
+              space_name={spaceName}
+              subpath={actualSubpath}
+              parent_shortname={itemShortname}
+              {isOwner}
+            />
+          </section>
         {/if}
         {#if postData.relationships && postData.relationships.length > 0}
           <section class="relationships-section">

@@ -11,6 +11,7 @@
   } from "@/lib/toasts_messages";
   import { _ } from "@/i18n";
   import { locale } from "@/i18n";
+  import { formatNumber, formatNumberInText } from "@/lib/helpers";
   import { derived } from "svelte/store";
   import { user } from "@/stores/user";
 
@@ -290,20 +291,29 @@
     <h3 class="card-title">{$_("statistics")}</h3>
     <div class="stats-grid">
       <div class="stat-item">
-        <div class="stat-number">{users.length}</div>
+        <div class="stat-number">
+          {formatNumber(users.length, $locale)}
+        </div>
         <div class="stat-label">{$_("total_users")}</div>
       </div>
       <div class="stat-item">
-        <div class="stat-number">{users.filter((u) => u.is_active).length}</div>
+        <div class="stat-number">
+          {formatNumber(users.filter((u) => u.is_active).length, $locale)}
+        </div>
         <div class="stat-label">{$_("active_users")}</div>
       </div>
       <div class="stat-item">
-        <div class="stat-number">{availableRoles.length}</div>
+        <div class="stat-number">
+          {formatNumber(availableRoles.length, $locale)}
+        </div>
         <div class="stat-label">{$_("available_roles")}</div>
       </div>
       <div class="stat-item">
         <div class="stat-number">
-          {users.filter((u) => u.roles.length === 0).length}
+          {formatNumber(
+            users.filter((u) => u.roles.length === 0).length,
+            $locale
+          )}
         </div>
         <div class="stat-label">{$_("users_without_roles")}</div>
       </div>
@@ -330,7 +340,10 @@
       onclick={(e) => e.stopPropagation()}
     >
       <div class="modal-header">
-        <h3 id="modal-title">Manage Roles for {selectedUser.displayname}</h3>
+        <h3 id="modal-title">
+          {$_("manageRolesFor")}
+          {selectedUser.displayname}
+        </h3>
         <button
           class="close-btn"
           aria-label={$_("close")}
@@ -343,14 +356,13 @@
 
       <div class="modal-body">
         <p class="modal-description">
-          Select the roles you want to assign to this user. Changes will be
-          saved immediately.
+          {$_("selectRolesToAssignDescription")}
         </p>
 
         {#if availableRoles.length === 0}
           <div class="alert alert-warning">
             <div class="alert-icon">⚠</div>
-            <div>{$_("no_roles_available")}</div>
+            <div>{$_("noRolesAvailable")}</div>
           </div>
         {:else}
           <div class="roles-selection">
@@ -394,7 +406,7 @@
             <div class="spinner small"></div>
             {$_("saving")}
           {:else}
-            {$_("save_changes")}
+            {$_("saveChanges")}
           {/if}
         </button>
       </div>

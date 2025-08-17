@@ -11,7 +11,7 @@
     getEntityAttachmentsCount,
     getEntity,
   } from "@/lib/dmart_services";
-  import { formatDate } from "@/lib/helpers";
+  import { formatDate, formatNumberInText } from "@/lib/helpers";
   import Attachments from "@/components/Attachments.svelte";
   import { ResourceType } from "@edraj/tsdmart";
   import { user } from "@/stores/user";
@@ -291,11 +291,15 @@
           >
             <div class="stat-item likes" class:flex-row-reverse={$isRTL}>
               <HeartSolid class="w-5 h-5" />
-              <span class="stat-count">{counts.reaction || 0}</span>
+              <span class="stat-count"
+                >{formatNumberInText(counts.reaction, $locale) || 0}</span
+              >
             </div>
             <div class="stat-item comments" class:flex-row-reverse={$isRTL}>
               <MessagesSolid class="w-5 h-5" />
-              <span class="stat-count">{counts.comment || 0}</span>
+              <span class="stat-count"
+                >{formatNumberInText(counts.comment, $locale) || 0}</span
+              >
             </div>
           </div>
         </div>
@@ -322,7 +326,6 @@
         <div class="entry-content" class:text-right={$isRTL}>
           {@html entity.payload?.body?.content || $_("entry_detail.no_content")}
         </div>
-
         <!-- Attachments -->
         {#if entity.attachments.media && Object.keys(entity.attachments.media).length > 0}
           <div class="attachments-section">
@@ -350,7 +353,10 @@
             <HeartSolid class="w-5 h-5" />
             {userReactionEntry
               ? $_("entry_detail.actions.unlike")
-              : $_("entry_detail.actions.like")} ({counts.reaction || 0})
+              : $_("entry_detail.actions.like")} ({formatNumberInText(
+              counts.reaction,
+              $locale
+            ) || 0})
           </button>
         </div>
       </div>
@@ -358,7 +364,10 @@
       <div class="comments-section">
         <h3 class="comments-title">
           <MessagesSolid class="w-6 h-6" />
-          {$_("entry_detail.comments.title")} ({counts.comment || 0})
+          {$_("entry_detail.comments.title")} ({formatNumberInText(
+            counts.comment,
+            $locale
+          ) || 0})
         </h3>
 
         <!-- Add Comment -->

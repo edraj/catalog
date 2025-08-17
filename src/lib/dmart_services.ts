@@ -78,13 +78,8 @@ export async function updateProfile(data: any) {
     shortname: data.shortname,
     subpath: "users",
     attributes: {
-      displayname: {
-        en: data.displayname,
-      },
-      description: {
-        en: data.description,
-      },
-      msisdn: data.msisdn,
+      displayname: data.displayname,
+      description: data.description,
       email: data.email,
     },
   };
@@ -551,7 +546,7 @@ export async function getSpaces(
       type: QueryType.spaces,
       space_name: "management",
       subpath: "/",
-      search: "-@shortname:applications",
+      search: "",
       limit: 100,
     },
     scope
@@ -559,6 +554,9 @@ export async function getSpaces(
 
   if (ignoreFilter === false) {
     _spaces.records = _spaces.records.filter((e) => !e.attributes.hide_space);
+    _spaces.records = _spaces.records.filter(
+      (e) => !e.shortname.includes("applications")
+    );
   }
 
   _spaces.records = _spaces.records.map((e) => {

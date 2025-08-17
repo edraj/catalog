@@ -76,7 +76,7 @@
   }
 
   function goBack() {
-    $goto("/home");
+    $goto("/");
   }
 </script>
 

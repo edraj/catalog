@@ -1,4 +1,5 @@
 import { ContentType, ResourceType } from "@edraj/tsdmart";
+import { locale } from "@/i18n";
 
 export function formatDate(dateString: string): string {
   const date = new Date(dateString);
@@ -72,4 +73,27 @@ export function getFileType(
   }
 
   return { contentType, resourceType };
+}
+
+export function formatNumber(number: number, locale): string {
+  if (locale === "ar") {
+    return number.toLocaleString("ar-EG");
+  }
+  return number.toLocaleString("en-US");
+}
+
+export function formatNumberInText(number: number, locale): string {
+  if (locale === "ar") {
+    const westernDigits = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
+    const arabicDigits = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٢", "٩"];
+    let arabicNumber = number.toString();
+    westernDigits.forEach((digit, index) => {
+      arabicNumber = arabicNumber.replace(
+        new RegExp(digit, "g"),
+        arabicDigits[index]
+      );
+    });
+    return arabicNumber;
+  }
+  return number.toString();
 }

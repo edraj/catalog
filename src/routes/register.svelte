@@ -229,7 +229,7 @@
         clearInterval(resendTimer);
       }
     } else {
-      $goto("/home");
+      $goto("/");
     }
   }
 </script>

@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { run, preventDefault } from "svelte/legacy";
+
   import { onMount } from "svelte";
   import {
     getAvatar,
@@ -18,127 +20,137 @@
   import { formatDate, renderStateString } from "@/lib/helpers";
   import { goto, params } from "@roxi/routify";
   import { Diamonds } from "svelte-loading-spinners";
-  $goto;
-  import { _ } from "@/i18n";
+  import { _, locale } from "@/i18n";
   import { loginBy } from "@/stores/user";
+  import { writable } from "svelte/store";
+  import { formatNumberInText } from "@/lib/helpers";
 
-  // let profileSection: string = $state("ME");
-
+  $goto;
   const ProfileSection = {
     ME: "ME",
     IDEAS: "IDEAS",
   };
-  let profileSection: string = $state(ProfileSection.ME);
+  let profileSection = writable(ProfileSection.ME);
 
-  let isLoading = $state(true);
-  let isUploadingAvatar = $state(false);
-  let user = $state(null);
-  let avatar = $state(null);
-  let entities = $state([]);
-  let displayname = $state("");
-  let description = $state("");
-  let email = $state("");
-  let msisdn = $state("");
-  let fileInput: HTMLInputElement;
+  let isLoading = writable(true);
+  let isUploadingAvatar = writable(false);
+  let user = writable(null);
+  let avatar = writable(null);
+  let entities = writable([]);
+  let displayname = writable("");
+  let description = writable("");
+  let email = writable("");
+  let msisdn = writable("");
+  let fileInput = writable(null);
 
-  let oldPassword = $state("");
-  let newPassword = $state("");
-  let confirmPassword = $state("");
-  let isChangingPassword = $state(false);
-  let showChangePassword = $state(false);
+  let oldPassword = writable("");
+  let newPassword = writable("");
+  let confirmPassword = writable("");
+  let isChangingPassword = writable(false);
+  let showChangePassword = writable(false);
 
   onMount(async () => {
-    isLoading = true;
-    user = await getProfile();
-    displayname = user?.attributes?.displayname?.en ?? user.attributes.email;
-    description = user.attributes?.description?.en ?? "";
-    email = user.attributes?.email ?? "";
-    msisdn = user.attributes?.msisdn ?? "";
+    isLoading.set(true);
+    user.set(await getProfile());
 
-    avatar = await getAvatar(user.shortname);
+    const currentUser = $user;
+    displayname.set(currentUser?.attributes?.displayname?.[$locale] ?? "");
+
+    if (!displayname && $locale === "en") {
+      displayname.set(currentUser.attributes.email);
+    }
+
+    description.set(currentUser.attributes?.description?.[$locale] ?? "");
+
+    email.set(currentUser.attributes?.email ?? "");
+    msisdn.set(currentUser.attributes?.msisdn ?? "");
+
+    avatar.set(await getAvatar(currentUser.shortname));
 
     await fetchEntities();
-    isLoading = false;
+    isLoading.set(false);
   });
 
   async function fetchEntities() {
-    isLoading = true;
+    isLoading.set(true);
     try {
       const rawEntities = await getMyEntities();
 
-      entities = rawEntities.map((entity) => ({
-        shortname: entity.shortname,
-        title:
-          entity.attributes?.payload?.body?.title ||
-          entity.attributes?.displayname?.en ||
-          "Untitled",
-        content: entity.attributes?.payload?.body?.content || "",
-        tags: entity.attributes?.tags || [],
-        state: entity.attributes?.state || "unknown",
-        is_active: entity.attributes?.is_active || false,
-        created_at: entity.attributes?.created_at
-          ? formatDate(entity.attributes.created_at)
-          : "",
-        updated_at: entity.attributes?.updated_at
-          ? formatDate(entity.attributes.updated_at)
-          : "",
-        raw_created_at: entity.attributes?.created_at || "",
-        raw_updated_at: entity.attributes?.updated_at || "",
-        space_name: entity.attributes?.space_name || "",
-        subpath: entity?.subpath || "",
-        owner_shortname: entity.attributes?.owner_shortname || "",
-        comment: entity.attachments?.comment?.length ?? 0,
-        reaction: entity.attachments?.reaction?.length ?? 0,
-      }));
+      entities.set(
+        rawEntities.map((entity) => ({
+          shortname: entity.shortname,
+          title:
+            entity.attributes?.payload?.body?.title ||
+            entity.attributes?.displayname?.en ||
+            "Untitled",
+          content: entity.attributes?.payload?.body?.content || "",
+          tags: entity.attributes?.tags || [],
+          state: entity.attributes?.state || "unknown",
+          is_active: entity.attributes?.is_active || false,
+          created_at: entity.attributes?.created_at
+            ? formatDate(entity.attributes.created_at)
+            : "",
+          updated_at: entity.attributes?.updated_at
+            ? formatDate(entity.attributes.updated_at)
+            : "",
+          raw_created_at: entity.attributes?.created_at || "",
+          raw_updated_at: entity.attributes?.updated_at || "",
+          space_name: entity.attributes?.space_name || "",
+          subpath: entity?.subpath || "",
+          owner_shortname: entity.attributes?.owner_shortname || "",
+          comment: entity.attachments?.comment?.length ?? 0,
+          reaction: entity.attachments?.reaction?.length ?? 0,
+        }))
+      );
     } catch (error) {
       console.error("Error fetching entities:", error);
       errorToastMessage("An error occurred while fetching your entries");
-      entities = [];
+      entities.set([]);
     } finally {
-      isLoading = false;
+      isLoading.set(false);
     }
   }
 
   async function handlePasswordChange(event) {
     event.preventDefault();
 
-    if (newPassword !== confirmPassword) {
+    if ($newPassword !== $confirmPassword) {
       errorToastMessage("New passwords do not match");
       return;
     }
 
-    if (newPassword.length < 8) {
+    if ($newPassword.length < 8) {
       errorToastMessage("New password must be at least 8 characters long");
       return;
     }
 
-    if (oldPassword === newPassword) {
+    if ($oldPassword === $newPassword) {
       errorToastMessage(
         "New password must be different from the current password"
       );
       return;
     }
 
-    isChangingPassword = true;
+    isChangingPassword.set(true);
 
     try {
-      const loginResult = await loginBy(user.attributes.email, oldPassword);
+      const loginResult = await loginBy($user.attributes.email, $oldPassword);
 
       if (!loginResult) {
         errorToastMessage("Current password is incorrect");
         return;
       }
       const response = await updatePassword({
-        shortname: user.shortname,
-        password: newPassword,
+        shortname: $user.shortname,
+        password: $newPassword,
       });
 
       if (response) {
         successToastMessage("Password changed successfully");
-        oldPassword = "";
-        newPassword = "";
-        confirmPassword = "";
-        showChangePassword = false;
+        oldPassword.set("");
+        newPassword.set("");
+        confirmPassword.set("");
+        showChangePassword.set(false);
       } else {
         errorToastMessage("Failed to change password");
       }
@@ -146,32 +158,60 @@
       console.error("Error changing password:", error);
       errorToastMessage("An error occurred while changing your password");
     } finally {
-      isChangingPassword = false;
+      isChangingPassword.set(false);
     }
   }
 
   async function handleSubmit(event) {
     event.preventDefault();
 
-    const response = await updateProfile({
-      shortname: user.shortname,
-      displayname,
-      description,
-      // msisdn,
-      email,
+    if (!$displayname.trim()) {
+      errorToastMessage(
+        `Display name is required for ${$locale === "ar" ? "Arabic" : $locale === "en" ? "English" : $locale.toUpperCase()}`
+      );
+      return;
+    }
+
+    if (!$description.trim()) {
+      errorToastMessage(
+        `Description is required for ${$locale === "ar" ? "Arabic" : $locale === "en" ? "English" : $locale.toUpperCase()}`
+      );
+      return;
+    }
+
+    const updatedDisplayname = { ...$user.attributes.displayname };
+    const updatedDescription = { ...$user.attributes.description };
+
+    updatedDisplayname[$locale] = $displayname.trim();
+    updatedDescription[$locale] = $description.trim();
+
+    console.log("Updating profile with:", {
+      displayname: updatedDisplayname,
+      description: updatedDescription,
     });
+
+    const response = await updateProfile({
+      shortname: $user.shortname,
+      displayname: updatedDisplayname,
+      description: updatedDescription,
+      email: $email,
+      msisdn: $msisdn,
+    });
+
     if (response) {
       successToastMessage("Profile updated successfully");
+      $user.attributes.displayname = updatedDisplayname;
+      $user.attributes.description = updatedDescription;
     } else {
       errorToastMessage("Error updating profile");
     }
   }
 
   function handleME() {
-    profileSection = ProfileSection.ME;
+    profileSection.set(ProfileSection.ME);
   }
   function handleEntities() {
-    profileSection = ProfileSection.IDEAS;
+    profileSection.set(ProfileSection.IDEAS);
   }
 
   function gotoEntityDetails(entity: any) {
@@ -183,7 +223,7 @@
   }
 
   function triggerFileInput() {
-    fileInput?.click();
+    $fileInput?.click();
   }
 
   async function handleAvatarChange(event: Event) {
@@ -203,13 +243,13 @@
       return;
     }
 
-    isUploadingAvatar = true;
+    isUploadingAvatar.set(true);
 
     try {
-      const success = await setAvatar(user.shortname, file);
+      const success = await setAvatar($user.shortname, file);
 
       if (success) {
-        avatar = await getAvatar(user.shortname);
+        avatar.set(await getAvatar($user.shortname));
         successToastMessage("Profile picture updated successfully");
       } else {
         errorToastMessage("Failed to update profile picture");
@@ -220,10 +260,22 @@
         "An error occurred while updating your profile picture"
       );
     } finally {
-      isUploadingAvatar = false;
+      isUploadingAvatar.set(false);
       target.value = "";
     }
   }
+
+  run(() => {
+    if ($user && $locale) {
+      displayname.set($user?.attributes?.displayname?.[$locale] ?? "");
+
+      if (!displayname && $locale === "en") {
+        displayname.set($user.attributes.email);
+      }
+
+      description.set($user.attributes?.description?.[$locale] ?? "");
+    }
+  });
 </script>
 
 <div class="min-h-screen bg-gray-50 px-8">
@@ -231,7 +283,7 @@
     <div class="mb-8">
       <nav class="flex space-x-8 border-b border-gray-200">
         <button
-          class="py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 {profileSection ===
+          class="py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 {$profileSection ===
           'ME'
             ? 'border-blue-500 text-blue-600'
             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}"
@@ -240,22 +292,22 @@
           {$_("MyProfile")}
         </button>
         <button
-          class="py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 {profileSection ===
+          class="py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 {$profileSection ===
           'IDEAS'
             ? 'border-blue-500 text-blue-600'
             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}"
           onclick={handleEntities}
         >
-          {$_("MyEntities")} ({entities.length})
+          {$_("MyEntities")} ({formatNumberInText($entities.length, $locale)})
         </button>
       </nav>
     </div>
 
-    {#if isLoading}
+    {#if $isLoading}
       <div class="flex justify-center py-16">
         <Diamonds color="#3b82f6" size="60" unit="px" />
       </div>
-    {:else if profileSection === "ME"}
+    {:else if $profileSection === ProfileSection.ME}
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-1">
           <div
@@ -263,14 +315,18 @@
           >
             <div class="mb-6 flex justify-center relative">
               <div class="relative group">
-                <Avatar src={avatar} size="120" />
+                <Avatar src={$avatar} size="120" />
 
-                <!-- Avatar Edit Overlay -->
                 <div
                   class="absolute inset-0 bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center cursor-pointer"
                   onclick={triggerFileInput}
+                  onkeydown={(e) => {
+                    if (e.key === "Enter") triggerFileInput();
+                  }}
+                  role="button"
+                  tabindex="0"
                 >
-                  {#if isUploadingAvatar}
+                  {#if $isUploadingAvatar}
                     <div class="text-white">
                       <Diamonds color="#ffffff" size="24" unit="px" />
                     </div>
@@ -301,24 +357,22 @@
                 </div>
               </div>
 
-              <!-- Hidden file input -->
               <input
-                bind:this={fileInput}
+                bind:this={$fileInput}
                 type="file"
                 accept="image/*"
                 class="hidden"
                 onchange={handleAvatarChange}
-                disabled={isUploadingAvatar}
+                disabled={$isUploadingAvatar}
               />
             </div>
 
-            <!-- Edit Avatar Button (alternative placement) -->
             <button
               class="mb-4 px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors duration-200 flex items-center gap-2"
               onclick={triggerFileInput}
-              disabled={isUploadingAvatar}
+              disabled={$isUploadingAvatar}
             >
-              {#if isUploadingAvatar}
+              {#if $isUploadingAvatar}
                 <Diamonds color="#6b7280" size="16" unit="px" />
                 Uploading...
               {:else}
@@ -346,30 +400,33 @@
             </button>
 
             <h2 class="text-xl font-semibold text-gray-900 mb-2">
-              {displayname || user.shortname}
+              {$displayname || $user.shortname}
             </h2>
-            <p class="text-gray-600 text-sm">@{user.shortname}</p>
+            <p class="text-gray-600 text-sm">@{$user.shortname}</p>
           </div>
         </div>
         <div class="bg-white rounded-xl border border-gray-200 p-6">
           <h3 class="text-lg font-semibold text-gray-900 mb-6">
             {$_("ProfilePreferences")}
           </h3>
-          <form onsubmit={handleSubmit} class="space-y-6">
+
+          <form onsubmit={preventDefault(handleSubmit)} class="space-y-6">
             <div>
               <label
                 for="displayname"
                 class="block text-sm font-medium text-gray-700 mb-2"
               >
-                {$_("DisplayName")}
+                {$_("DisplayName")} ({$_($locale.toUpperCase())})
+                <span class="text-red-500">*</span>
               </label>
               <input
                 id="displayname"
                 type="text"
                 required
-                bind:value={displayname}
+                bind:value={$displayname}
                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
                 placeholder={$_("DisplayNamePlaceholder")}
+                dir={$locale === "ar" || $locale === "ku" ? "rtl" : "ltr"}
               />
             </div>
 
@@ -383,9 +440,9 @@
               <input
                 id="email"
                 type="email"
-                bind:value={email}
+                bind:value={$email}
                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
-                placeholder="Enter your email address"
+                placeholder={$_("EmailPlaceholder")}
               />
             </div>
 
@@ -399,25 +456,28 @@
               <input
                 id="msisdn"
                 type="tel"
-                bind:value={msisdn}
+                bind:value={$msisdn}
                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
-                placeholder="Enter your mobile number"
+                placeholder={$_("MobileNumberPlaceholder")}
               />
             </div>
+
             <div>
               <label
                 for="description"
                 class="block text-sm font-medium text-gray-700 mb-2"
               >
-                {$_("Description")}
+                {$_("Description")} ({$_($locale.toUpperCase())})
+                <span class="text-red-500">*</span>
               </label>
               <textarea
                 id="description"
                 required
-                bind:value={description}
+                bind:value={$description}
                 rows="4"
                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 resize-none"
                 placeholder={$_("DescriptionPlaceholder")}
+                dir={$locale === "ar" || $locale === "ku" ? "rtl" : "ltr"}
               ></textarea>
             </div>
 
@@ -430,7 +490,7 @@
           </form>
         </div>
 
-        {#if user}
+        {#if $user}
           <div class="bg-white rounded-xl border border-gray-200 p-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-6">
               {$_("AccountSettings")}
@@ -444,7 +504,7 @@
                     {$_("AccountStatus")}
                   </h4>
                   <p class="text-gray-600 text-sm mt-1">
-                    Your account is active and verified
+                    {$_("AccountActive")}
                   </p>
                 </div>
                 <span
@@ -458,29 +518,31 @@
                 class="flex justify-between items-start py-3 border-b border-gray-100"
               >
                 <div>
-                  <h4 class="font-medium text-gray-900">Member Since</h4>
+                  <h4 class="font-medium text-gray-900">{$_("MemberSince")}</h4>
                   <p class="text-gray-600 text-sm mt-1">
-                    {user.attributes?.created_at
-                      ? formatDate(user.attributes.created_at)
-                      : "Unknown"}
+                    {$user.attributes?.created_at
+                      ? formatDate($user.attributes.created_at)
+                      : $_("unknown")}
                   </p>
                 </div>
               </div>
-              <!-- Change Password Section -->
               <div class="pt-4">
                 <div class="flex justify-between items-center mb-4">
-                  <h4 class="font-medium text-gray-900">Password</h4>
+                  <h4 class="font-medium text-gray-900">{$_("Password")}</h4>
                   <button
                     type="button"
                     class="text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200"
-                    onclick={() => (showChangePassword = !showChangePassword)}
+                    onclick={() => showChangePassword.set(!$showChangePassword)}
                   >
-                    {showChangePassword ? "Cancel" : "Change Password"}
+                    {$showChangePassword ? "Cancel" : "Change Password"}
                   </button>
                 </div>
 
-                {#if showChangePassword}
-                  <form onsubmit={handlePasswordChange} class="space-y-4">
+                {#if $showChangePassword}
+                  <form
+                    onsubmit={preventDefault(handlePasswordChange)}
+                    class="space-y-4"
+                  >
                     <div>
                       <label
                         for="oldPassword"
@@ -492,10 +554,10 @@
                         id="oldPassword"
                         type="password"
                         required
-                        bind:value={oldPassword}
+                        bind:value={$oldPassword}
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
                         placeholder="Enter your current password"
-                        disabled={isChangingPassword}
+                        disabled={$isChangingPassword}
                       />
                     </div>
 
@@ -511,10 +573,10 @@
                         type="password"
                         required
                         minlength="8"
-                        bind:value={newPassword}
+                        bind:value={$newPassword}
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
                         placeholder="Enter your new password"
-                        disabled={isChangingPassword}
+                        disabled={$isChangingPassword}
                       />
                       <p class="text-xs text-gray-500 mt-1">
                         Password must be at least 8 characters long
@@ -532,20 +594,20 @@
                         id="confirmPassword"
                         type="password"
                         required
-                        bind:value={confirmPassword}
+                        bind:value={$confirmPassword}
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
                         placeholder="Confirm your new password"
-                        disabled={isChangingPassword}
+                        disabled={$isChangingPassword}
                       />
                     </div>
 
                     <div class="flex gap-3 pt-2">
                       <button
                         type="submit"
-                        disabled={isChangingPassword}
+                        disabled={$isChangingPassword}
                         class="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
                       >
-                        {#if isChangingPassword}
+                        {#if $isChangingPassword}
                           <Diamonds color="#ffffff" size="16" unit="px" />
                           Changing...
                         {:else}
@@ -555,13 +617,13 @@
                       <button
                         type="button"
                         onclick={() => {
-                          showChangePassword = false;
-                          oldPassword = "";
-                          newPassword = "";
-                          confirmPassword = "";
+                          showChangePassword.set(false);
+                          oldPassword.set("");
+                          newPassword.set("");
+                          confirmPassword.set("");
                         }}
                         class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors duration-200"
-                        disabled={isChangingPassword}
+                        disabled={$isChangingPassword}
                       >
                         Cancel
                       </button>
@@ -574,7 +636,7 @@
           </div>
         {/if}
       </div>
-    {:else if entities.length === 0}
+    {:else if $entities.length === 0}
       <div class="text-center py-16">
         <div
           class="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6"
@@ -602,7 +664,7 @@
       </div>
     {:else}
       <div class="grid gap-6">
-        {#each entities as entity}
+        {#each $entities as entity}
           <div
             class="bg-white rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-md cursor-pointer transition-all duration-200"
             role="button"
@@ -662,7 +724,10 @@
                           d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
                         />
                       </svg>
-                      <span class="font-medium">{entity.reaction ?? 0}</span>
+                      <span class="font-medium"
+                        >{formatNumberInText(entity.reaction, $locale) ??
+                          0}</span
+                      >
                     </span>
                     <span class="flex items-center gap-2 text-blue-600">
                       <svg
@@ -674,7 +739,10 @@
                           d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"
                         />
                       </svg>
-                      <span class="font-medium">{entity.comment ?? 0}</span>
+                      <span class="font-medium"
+                        >{formatNumberInText(entity.comment, $locale) ??
+                          0}</span
+                      >
                     </span>
                   </div>
 

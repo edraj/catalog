@@ -13,6 +13,7 @@
   import { _, locale } from "@/i18n";
   import Avatar from "@/components/Avatar.svelte";
   import { derived } from "svelte/store";
+  import { formatNumberInText } from "@/lib/helpers";
   $goto;
 
   let isLoading = $state(true);
@@ -145,7 +146,6 @@
         }
       }
 
-      // Update pagination state
       if (isTagFiltered) {
         tagFilteredOffset += itemsPerLoad;
       } else {
@@ -252,6 +252,8 @@
           item.subpath || "/"
         ),
       ]);
+
+      console.log(avatar);
 
       const attachmentData = attachmentCounts?.[0]?.attributes || {};
 
@@ -599,7 +601,7 @@
                   d="M9 12h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 ></path>
               </svg>
-              {totalDisplayed}
+              {formatNumberInText(totalDisplayed, $locale)}
               {$_("space.total_items")}
             </span>
             <span class="stat-item">
@@ -616,7 +618,7 @@
                   d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
                 ></path>
               </svg>
-              {availableContentTags.length}
+              {formatNumberInText(availableContentTags.length, $locale)}
               {$_("space.total_tags")}
             </span>
           </div>
@@ -685,7 +687,7 @@
                   {showAllTags
                     ? $_("space.show_less_tags")
                     : $_("space.show_all_tags")}
-                  ({availableContentTags.length})
+                  ({formatNumberInText(availableContentTags.length, $locale)})
                 </button>
               {/if}
               {#if selectedContentTags.length > 0}
@@ -709,7 +711,7 @@
               >
                 <span class="content-tag-name">{tag}</span>
                 <span class="content-tag-count">
-                  ({tagCounts[tag] || 0})
+                  ({formatNumberInText(tagCounts[tag], $locale) || 0})
                 </span>
                 {#if selectedContentTags.includes(tag)}
                   <svg
@@ -879,8 +881,8 @@
             {#if searchQuery.trim()}
               {$_("catalog_contents.pagination.showing_items", {
                 values: {
-                  displayed: totalDisplayed,
-                  total: totalFiltered,
+                  displayed: formatNumberInText(totalDisplayed, $locale),
+                  total: formatNumberInText(totalFiltered, $locale),
                 },
               })}
               {$_("catalog_contents.results.for_query", {
@@ -889,13 +891,18 @@
             {:else}
               {$_("catalog_contents.pagination.showing_items", {
                 values: {
-                  displayed: totalDisplayed,
-                  total: totalFiltered,
+                  displayed: formatNumberInText(totalDisplayed, $locale),
+                  total: formatNumberInText(totalFiltered, $locale),
                 },
               })}
               {#if selectedContentTags.length > 0}
                 {$_("catalog_contents.results.with_tags", {
-                  values: { count: selectedContentTags.length },
+                  values: {
+                    count: formatNumberInText(
+                      selectedContentTags.length,
+                      $locale
+                    ),
+                  },
                 })}
               {/if}
             {/if}
@@ -1093,7 +1100,10 @@
                     {/each}
                     {#if item.attributes?.tags.length > 3}
                       <span class="more-tags"
-                        >+{item.attributes?.tags.length - 3} more</span
+                        >+{formatNumberInText(
+                          item.attributes?.tags.length - 3,
+                          $locale
+                        )} more</span
                       >
                     {/if}
                   </div>
@@ -1116,7 +1126,10 @@
                           d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
                         />
                       </svg>
-                      <span class="stat-number">{item.commentCount || 0}</span>
+                      <span class="stat-number"
+                        >{formatNumberInText(item.commentCount, $locale) ||
+                          formatNumberInText(0, $locale)}</span
+                      >
                     </div>
 
                     <!-- Reaction Count -->
@@ -1132,7 +1145,10 @@
                           clip-rule="evenodd"
                         />
                       </svg>
-                      <span class="stat-number">{item.reactionCount || 0}</span>
+                      <span class="stat-number"
+                        >{formatNumberInText(item.reactionCount, $locale) ||
+                          0}</span
+                      >
                     </div>
 
                     <div class="stat-item me-4 stat-media">
@@ -1149,7 +1165,10 @@
                           d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                         />
                       </svg>
-                      <span class="stat-number">{item.mediaCount || 0}</span>
+                      <span class="stat-number"
+                        >{formatNumberInText(item.mediaCount, $locale) ||
+                          0}</span
+                      >
                     </div>
                   </div>
 
@@ -1213,8 +1232,7 @@
                 <span class="load-more-text">
                   {$_("catalog_contents.pagination.loaded_items", {
                     values: {
-                      loaded: allContents.length,
-                      displayed: totalDisplayed,
+                      loaded: formatNumberInText(allContents.length, $locale),
                     },
                   })}
                 </span>
@@ -1244,7 +1262,10 @@
                       d="M19 14l-7 7m0 0l-7-7m7 7V3"
                     ></path>
                   </svg>
-                  {$_("catalog_contents.pagination.load_more")} ({itemsPerLoad})
+                  {$_("catalog_contents.pagination.load_more")} ({formatNumberInText(
+                    itemsPerLoad,
+                    $locale
+                  )})
                 {/if}
               </button>
             </div>
@@ -1273,10 +1294,17 @@
               <p class="end-of-results-count">
                 {searchQuery.trim()
                   ? $_("catalog_contents.search.total_found", {
-                      values: { count: searchResults.length },
+                      values: {
+                        count: formatNumberInText(
+                          searchResults.length,
+                          $locale
+                        ),
+                      },
                     })
                   : $_("catalog_contents.pagination.total_loaded", {
-                      values: { count: allContents.length },
+                      values: {
+                        loaded: formatNumberInText(allContents.length, $locale),
+                      },
                     })}
               </p>
             </div>

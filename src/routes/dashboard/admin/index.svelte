@@ -14,6 +14,7 @@
   import { user } from "@/stores/user";
   import MetaForm from "@/components/forms/MetaForm.svelte";
   import { derived } from "svelte/store";
+  import { formatNumberInText } from "@/lib/helpers";
   $goto;
   let isLoading = $state(true);
   let spaces = $state([]);
@@ -597,7 +598,7 @@
                 {$_("admin_dashboard.stats.total_spaces")}
               </p>
               <p class="text-2xl font-semibold text-gray-900">
-                {spaces.length}
+                {formatNumberInText(spaces.length, $locale)}
               </p>
             </div>
           </div>
@@ -629,7 +630,10 @@
                 {$_("admin_dashboard.stats.active_spaces")}
               </p>
               <p class="text-2xl font-semibold text-gray-900">
-                {spaces.filter((s) => s.attributes?.is_active).length}
+                {formatNumberInText(
+                  spaces.filter((s) => s.attributes?.is_active).length,
+                  $locale
+                )}
               </p>
             </div>
           </div>
@@ -710,14 +714,25 @@
               <div class="flex-1">
                 <h2 class="text-lg font-semibold text-gray-900 mb-2">
                   {$_("admin_dashboard.manage_spaces", {
-                    values: { count: displayedSpaces.length },
+                    values: {
+                      count: formatNumberInText(
+                        displayedSpaces.length,
+                        $locale
+                      ),
+                    },
                   })}
                 </h2>
                 <p class="text-sm text-gray-600">
                   {#if searchQuery.trim()}
-                    Showing {displayedSpaces.length} search results for "{searchQuery}"
+                    Showing {formatNumberInText(
+                      displayedSpaces.length,
+                      $locale
+                    )} search results for "{searchQuery}"
                   {:else if isSearchActive}
-                    Showing {displayedSpaces.length} of {spaces.length} spaces
+                    Showing {formatNumberInText(
+                      displayedSpaces.length,
+                      $locale
+                    )} of {formatNumberInText(spaces.length, $locale)} spaces
                   {:else}
                     {$_("admin_dashboard.admin_access_description")}
                   {/if}

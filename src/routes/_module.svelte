@@ -14,6 +14,7 @@
     "/register",
     "/contact",
     "/home",
+    "/",
     { path: "/catalogs", wildcard: true },
   ];
 

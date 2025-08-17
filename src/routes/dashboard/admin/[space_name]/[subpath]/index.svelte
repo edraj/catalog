@@ -10,20 +10,29 @@
   import MetaForm from "@/components/forms/MetaForm.svelte";
   import FolderForm from "@/components/forms/FolderForm.svelte";
   import Avatar from "@/components/Avatar.svelte";
+  import { formatNumber, formatNumberInText } from "@/lib/helpers";
   $goto;
 
   let isLoading = writable(false);
   let isLoadingMore = writable(false);
   let allContents = writable([]);
   let displayedContents = $state([]);
-  let error = null;
-  let spaceName = "";
+  let error = $state(null);
+  let spaceName = $state("");
   let subpath = "";
   let actualSubpath = writable("");
-  let breadcrumbs = [];
+  let breadcrumbs = $state([]);
 
-  let itemsPerLoad = $state(10);
-  let currentDisplayCount = $state(10);
+  let currentOffset = $state(0);
+  let itemsPerLoad = $state(20);
+  let totalItemsCount = $state(0);
+  let hasMoreItems = $state(true);
+  let isInitialLoad = $state(true);
+
+  const itemsPerLoadOptions = [20, 50, 100];
+
+  // let currentDisplayCount = $state(itemsPerLoad);
+
   let filteredContents = $state([]);
 
   let searchQuery = $state("");
@@ -36,7 +45,6 @@
     locale,
     ($locale) => $locale === "ar" || $locale === "ku"
   );
-  const itemsPerLoadOptions = [10, 25, 50];
 
   const typeOptions = [
     { value: "all", label: $_("admin_dashboard.filters.all") },
@@ -88,33 +96,45 @@
       });
     });
 
-    currentDisplayCount = itemsPerLoad;
-    await loadContents();
+    currentOffset = 0;
+    hasMoreItems = true;
+    await loadContents(true);
   }
 
   onMount(async () => {
     await initializeContent();
   });
 
-  $effect(() => {
-    if ($params.space_name && $params.subpath) {
-      initializeContent();
-    }
-  });
+  // The initialization should only happen on mount, not on every param change
 
-  async function loadContents() {
-    $isLoading = true;
+  async function loadContents(reset = false) {
+    if (reset && $isLoading) return;
+    if (!reset && ($isLoadingMore || !hasMoreItems)) return;
+
+    if (reset) {
+      $isLoading = true;
+      currentOffset = 0;
+      $allContents = [];
+      filteredContents = [];
+      displayedContents = [];
+      isInitialLoad = true;
+    } else {
+      $isLoadingMore = true;
+    }
+
     error = null;
 
     try {
       const response = await getSpaceContents(
         spaceName,
         `/${$actualSubpath}`,
-        "managed"
+        "managed",
+        itemsPerLoad,
+        currentOffset
       );
 
       if (response && response.records) {
-        $allContents = await Promise.all(
+        const enhancedItems = await Promise.all(
           response.records.map(async (item) => {
             let avatarUrl = "";
             try {
@@ -127,20 +147,46 @@
           })
         );
 
+        if (reset) {
+          $allContents = enhancedItems;
+        } else {
+          $allContents = [...$allContents, ...enhancedItems];
+        }
+
+        currentOffset += itemsPerLoad;
+        hasMoreItems = enhancedItems.length === itemsPerLoad;
+
+        if (reset) {
+          totalItemsCount = enhancedItems.length;
+        }
+
         applyFilters();
       } else {
-        $allContents = [];
-        filteredContents = [];
-        updateDisplayedContents();
+        if (reset) {
+          $allContents = [];
+          filteredContents = [];
+          displayedContents = [];
+          totalItemsCount = 0;
+          hasMoreItems = false;
+        }
       }
     } catch (err) {
       console.error("Error fetching space contents:", err);
       error = $_("admin_content.error.failed_load_contents");
-      $allContents = [];
-      filteredContents = [];
-      updateDisplayedContents();
+      if (reset) {
+        $allContents = [];
+        filteredContents = [];
+        displayedContents = [];
+        totalItemsCount = 0;
+        hasMoreItems = false;
+      }
     } finally {
-      $isLoading = false;
+      if (reset) {
+        $isLoading = false;
+        isInitialLoad = false;
+      } else {
+        $isLoadingMore = false;
+      }
     }
   }
 
@@ -218,31 +264,22 @@
 
     filteredContents = filtered;
     // Reset display count when filters change
-    currentDisplayCount = itemsPerLoad;
+    // currentDisplayCount = itemsPerLoad;
     updateDisplayedContents();
   }
 
   function updateDisplayedContents() {
-    displayedContents = filteredContents.slice(0, currentDisplayCount);
+    displayedContents = filteredContents;
   }
 
   function loadMoreItems() {
-    if ($isLoadingMore) return;
-
-    $isLoadingMore = true;
-
-    // Simulate loading delay for better UX
-    setTimeout(() => {
-      currentDisplayCount += itemsPerLoad;
-      updateDisplayedContents();
-      $isLoadingMore = false;
-    }, 300);
+    if ($isLoadingMore || !hasMoreItems) return;
+    loadContents(false);
   }
 
   function handleItemsPerLoadChange(newItemsPerLoad) {
     itemsPerLoad = newItemsPerLoad;
-    currentDisplayCount = itemsPerLoad;
-    updateDisplayedContents();
+    loadContents(true);
   }
 
   function handleItemClick(item) {
@@ -293,7 +330,7 @@
         item.resource_type
       );
       if (success) {
-        await loadContents();
+        await loadContents(true);
       }
     } catch (err) {
       console.error("Error deleting item:", err);
@@ -391,7 +428,7 @@
     selectedStatus = "all";
     sortBy = "name";
     sortOrder = "asc";
-    currentDisplayCount = itemsPerLoad;
+    // currentDisplayCount = itemsPerLoad;
     applyFilters();
   }
 
@@ -477,14 +514,12 @@
   });
 
   const displayedContentsDerived = $derived.by(() => {
-    return filteredContentsDerived.slice(0, currentDisplayCount);
+    return filteredContents;
   });
 
-  const totalItemsDerived = $derived.by(() => filteredContentsDerived.length);
+  const totalItemsDerived = $derived.by(() => filteredContents.length);
 
-  const hasMoreItems = $derived.by(
-    () => currentDisplayCount < totalItemsDerived
-  );
+  const hasMoreItemsDerived = $derived.by(() => hasMoreItems);
 
   let isCreatingFolder = $state(false);
   let metaContent: any = $state({});
@@ -542,8 +577,8 @@
   }
 
   async function handleSaveFolder(event) {
-    isCreatingFolder = true;
     event.preventDefault();
+    isCreatingFolder = true;
 
     try {
       const response = await Dmart.request({
@@ -568,7 +603,7 @@
 
       if (response) {
         showCreateFolderModal = false;
-        await loadContents();
+        await loadContents(true);
       } else {
         alert($_("admin_content.error.create_folder_failed"));
       }
@@ -679,7 +714,7 @@
   </div>
 
   <div class="container mx-auto px-4 py-8 max-w-7xl">
-    {#if $isLoading}
+    {#if $isLoading || isInitialLoad}
       <div class="loading-state">
         <Diamonds color="#3b82f6" size="60" unit="px" />
         <p class="loading-text">{$_("admin_content.loading")}</p>
@@ -705,40 +740,9 @@
           {$_("admin_content.error.title")}
         </h3>
         <p class="error-message">{error}</p>
-        <button onclick={() => loadContents()} class="retry-button">
+        <button onclick={() => loadContents(true)} class="retry-button">
           {$_("admin_content.error.try_again")}
         </button>
-      </div>
-    {:else if totalItemsDerived === 0}
-      <div class="empty-state">
-        <div class="empty-icon">
-          <svg
-            class="w-12 h-12 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-            ></path>
-          </svg>
-        </div>
-        <h3 class="empty-title">
-          {$_("admin_content.empty.title")}
-        </h3>
-        <p class="empty-message">
-          {searchQuery || selectedType !== "all" || selectedStatus !== "all"
-            ? $_("admin_content.empty.no_matches")
-            : $_("admin_content.empty.description")}
-        </p>
-        {#if searchQuery || selectedType !== "all" || selectedStatus !== "all"}
-          <button onclick={clearFilters} class="clear-filters-button">
-            {$_("admin_content.filters.clear_all")}
-          </button>
-        {/if}
       </div>
     {:else}
       <div class="search-filter-section">
@@ -762,7 +766,7 @@
                   bind:value={sortBy}
                   class="filter-select sort-select"
                   aria-label={$_("admin_content.filters.sort_by")}
-                  onchange={applyFilters}
+                  onchange={() => applyFilters()}
                   id="sort-by"
                 >
                   {#each sortOptions as option}
@@ -808,7 +812,7 @@
               <select
                 bind:value={selectedType}
                 class="filter-select"
-                onchange={applyFilters}
+                onchange={() => applyFilters()}
                 id="type-select"
               >
                 {#each typeOptions as option}
@@ -824,7 +828,7 @@
               <select
                 bind:value={selectedStatus}
                 class="filter-select"
-                onchange={applyFilters}
+                onchange={() => applyFilters()}
                 id="status-select"
               >
                 {#each statusOptions as option}
@@ -875,7 +879,7 @@
                 placeholder={$_("admin_content.search.placeholder")}
                 class="search-input"
                 aria-label={$_("admin_content.search.label")}
-                oninput={applyFilters}
+                oninput={() => applyFilters()}
               />
               {#if searchQuery}
                 <button
@@ -907,10 +911,13 @@
 
         <div class="results-summary">
           <div class="results-info">
-            {$_("admin_content.infinite_scroll.showing_items", {
+            {$_("admin_content.infinite_scroll.showing_of", {
               values: {
-                displayed: displayedContentsDerived.length,
-                total: totalItemsDerived,
+                displayed: formatNumber(
+                  displayedContentsDerived.length,
+                  $locale
+                ),
+                total: formatNumber(totalItemsDerived, $locale),
               },
             })}
             {#if searchQuery}
@@ -922,211 +929,235 @@
         </div>
       </div>
 
-      <div class="card-list-container">
-        <div class="card-list">
-          {#each displayedContentsDerived as item, index}
-            <div
-              class="admin-content-card"
-              onclick={() => handleItemClick(item)}
-              role="button"
-              tabindex="0"
-              onkeydown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  handleItemClick(item);
-                }
-              }}
-            >
-              <div class="card-avatar">
-                {#if item.attributes?.owner_shortname}
-                  {#await getAvatar(item.attributes?.owner_shortname) then avatar}
-                    <Avatar
-                      src={avatar}
-                      size="40"
-                      alt={item.attributes?.owner_shortname}
-                    />
-                  {/await}
-                  <div class="avatar-fallback">
-                    {item.attributes?.owner_shortname.charAt(0).toUpperCase()}
-                  </div>
-                {:else}
-                  <div class="avatar-unknown">
-                    <span class="text-sm font-medium text-gray-600">?</span>
-                  </div>
-                {/if}
-              </div>
-
-              <div class="card-content">
-                <div class="card-header">
-                  <h3 class="card-title">
-                    <span class="title-icon">{getItemIcon(item)}</span>
-                    {getDisplayName(item)}
-                  </h3>
-                  <span
-                    class="resource-type-badge {getResourceTypeColor(
-                      item.resource_type
-                    )}"
-                  >
-                    {item.resource_type}
-                  </span>
-                </div>
-
-                <div class="card-meta">
-                  <span class="meta-text"
-                    >{$_("admin_content.card.managed_by")}</span
-                  >
-                  <span class="meta-author">
-                    {item.attributes?.owner_shortname || $_("common.unknown")}
-                  </span>
-                  <span class="meta-separator">•</span>
-                  <span class="meta-time">
-                    {formatRelativeTime(item.attributes?.created_at)}
-                  </span>
-                </div>
-
-                {#if getDescription(item)}
-                  <div class="card-description">
-                    <p class="description-text">
-                      {getDescription(item)}
-                    </p>
-                  </div>
-                {/if}
-
-                <div class="card-details">
-                  <div class="detail-item">
-                    <span class="detail-label"
-                      >{$_("admin_dashboard.table.status")} :</span
-                    >
-                    <span
-                      class="status-badge {item.attributes?.is_active
-                        ? 'status-active'
-                        : 'status-inactive'}"
-                    >
-                      {item.attributes?.is_active
-                        ? $_("admin_content.status.active")
-                        : $_("admin_content.status.inactive")}
-                    </span>
-                  </div>
-                  {#if item.subpath && item.subpath !== "/"}
-                    <div class="detail-item">
-                      <span class="detail-label"
-                        >{$_("admin_content.card.path")} :</span
-                      >
-                      <span class="detail-value">{item.subpath}</span>
+      {#if totalItemsDerived !== 0}
+        <div class="card-list-container">
+          <div class="card-list">
+            {#each displayedContentsDerived as item, index}
+              <div
+                class="admin-content-card"
+                onclick={() => handleItemClick(item)}
+                role="button"
+                tabindex="0"
+                onkeydown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    handleItemClick(item);
+                  }
+                }}
+              >
+                <div class="card-avatar">
+                  {#if item.attributes?.owner_shortname}
+                    {#await getAvatar(item.attributes?.owner_shortname) then avatar}
+                      <Avatar
+                        src={avatar}
+                        size="40"
+                        alt={item.attributes?.owner_shortname}
+                      />
+                    {/await}
+                    <div class="avatar-fallback">
+                      {item.attributes?.owner_shortname.charAt(0).toUpperCase()}
+                    </div>
+                  {:else}
+                    <div class="avatar-unknown">
+                      <span class="text-sm font-medium text-gray-600">?</span>
                     </div>
                   {/if}
                 </div>
-              </div>
 
-              <div class="card-actions">
-                <div class="action-buttons">
-                  {#if item.resource_type === "folder"}
-                    <button
-                      onclick={(e) => {
-                        e.stopPropagation();
-                        handleItemClick(item);
-                      }}
-                      class="action-button open-button"
-                      title={$_("admin_content.actions.open")}
-                      aria-label={$_("admin_content.actions.open")}
+                <div class="card-content">
+                  <div class="card-header">
+                    <h3 class="card-title">
+                      <span class="title-icon">{getItemIcon(item)}</span>
+                      {getDisplayName(item)}
+                    </h3>
+                    <span
+                      class="resource-type-badge {getResourceTypeColor(
+                        item.resource_type
+                      )}"
                     >
-                      <svg
-                        class="action-icon"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
-                        ></path>
-                      </svg>
-                    </button>
-                  {:else}
-                    <button
-                      onclick={(e) => {
-                        e.stopPropagation();
-                        handleItemClick(item);
-                      }}
-                      class="action-button view-button"
-                      title={$_("admin_content.actions.view")}
-                      aria-label={$_("admin_content.actions.view")}
+                      {item.resource_type}
+                    </span>
+                  </div>
+
+                  <div class="card-meta">
+                    <span class="meta-text"
+                      >{$_("admin_content.card.managed_by")}</span
                     >
-                      <svg
-                        class="action-icon"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                        ></path>
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                        ></path>
-                      </svg>
-                    </button>
+                    <span class="meta-author">
+                      {item.attributes?.owner_shortname || $_("common.unknown")}
+                    </span>
+                    <span class="meta-separator">•</span>
+                    <span class="meta-time">
+                      {formatRelativeTime(item.attributes?.created_at)}
+                    </span>
+                  </div>
+
+                  {#if getDescription(item)}
+                    <div class="card-description">
+                      <p class="description-text">
+                        {getDescription(item)}
+                      </p>
+                    </div>
                   {/if}
 
-                  <button
-                    onclick={(e) => handleDeleteItem(item, e)}
-                    class="action-button delete-button"
-                    title={$_("admin_content.actions.delete")}
-                    aria-label={$_("admin_content.actions.delete")}
-                  >
-                    <svg
-                      class="action-icon"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                  <div class="card-details">
+                    <div class="detail-item">
+                      <span class="detail-label"
+                        >{$_("admin_dashboard.table.status")} :</span
+                      >
+                      <span
+                        class="status-badge {item.attributes?.is_active
+                          ? 'status-active'
+                          : 'status-inactive'}"
+                      >
+                        {item.attributes?.is_active
+                          ? $_("admin_content.status.active")
+                          : $_("admin_content.status.inactive")}
+                      </span>
+                    </div>
+                    {#if item.subpath && item.subpath !== "/"}
+                      <div class="detail-item">
+                        <span class="detail-label"
+                          >{$_("admin_content.card.path")} :</span
+                        >
+                        <span class="detail-value">{item.subpath}</span>
+                      </div>
+                    {/if}
+                  </div>
+                </div>
+
+                <div class="card-actions">
+                  <div class="action-buttons">
+                    {#if item.resource_type === "folder"}
+                      <button
+                        onclick={(e) => {
+                          e.stopPropagation();
+                          handleItemClick(item);
+                        }}
+                        class="action-button open-button"
+                        title={$_("admin_content.actions.open")}
+                        aria-label={$_("admin_content.actions.open")}
+                      >
+                        <svg
+                          class="action-icon"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+                          ></path>
+                        </svg>
+                      </button>
+                    {:else}
+                      <button
+                        onclick={(e) => {
+                          e.stopPropagation();
+                          handleItemClick(item);
+                        }}
+                        class="action-button view-button"
+                        title={$_("admin_content.actions.view")}
+                        aria-label={$_("admin_content.actions.view")}
+                      >
+                        <svg
+                          class="action-icon"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                          ></path>
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                          ></path>
+                        </svg>
+                      </button>
+                    {/if}
+
+                    <button
+                      onclick={(e) => handleDeleteItem(item, e)}
+                      class="action-button delete-button"
+                      title={$_("admin_content.actions.delete")}
+                      aria-label={$_("admin_content.actions.delete")}
                     >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                      ></path>
-                    </svg>
-                  </button>
+                      <svg
+                        class="action-icon"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        ></path>
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          {/each}
-        </div>
+            {/each}
+          </div>
 
-        {#if hasMoreItems}
-          <div class="load-more-section">
-            <div class="load-more-info">
-              <span class="load-more-text">
-                {$_("admin_content.infinite_scroll.showing_of", {
-                  values: {
-                    displayed: displayedContentsDerived.length,
-                    total: totalItemsDerived,
-                  },
-                })}
-              </span>
+          {#if hasMoreItemsDerived}
+            <div class="load-more-section">
+              <div class="load-more-info">
+                <span class="load-more-text">
+                  {$_("admin_content.infinite_scroll.showing_of", {
+                    values: {
+                      displayed: formatNumber(
+                        displayedContentsDerived.length,
+                        $locale
+                      ),
+                      total: formatNumber(totalItemsDerived, $locale),
+                    },
+                  })}
+                </span>
+              </div>
+              <button
+                onclick={loadMoreItems}
+                disabled={$isLoadingMore}
+                class="load-more-button"
+                aria-label={$_("admin_content.infinite_scroll.load_more")}
+              >
+                {#if $isLoadingMore}
+                  <div class="load-more-spinner">
+                    <Diamonds color="#ffffff" size="20" unit="px" />
+                  </div>
+                  {$_("admin_content.infinite_scroll.loading")}
+                {:else}
+                  <svg
+                    class="load-more-icon"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                    ></path>
+                  </svg>
+                  {$_("admin_content.infinite_scroll.load_more")}
+                {/if}
+              </button>
             </div>
-            <button
-              onclick={loadMoreItems}
-              disabled={$isLoadingMore}
-              class="load-more-button"
-              aria-label={$_("admin_content.infinite_scroll.load_more")}
-            >
-              {#if $isLoadingMore}
-                <div class="load-more-spinner">
-                  <Diamonds color="#ffffff" size="20" unit="px" />
-                </div>
-                {$_("admin_content.infinite_scroll.loading")}
-              {:else}
+          {:else if displayedContentsDerived.length > 0}
+            <div class="end-of-results">
+              <div class="end-of-results-icon">
                 <svg
-                  class="load-more-icon"
+                  class="w-8 h-8 text-gray-400"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -1135,41 +1166,53 @@
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     stroke-width="2"
-                    d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                   ></path>
                 </svg>
-                {$_("admin_content.infinite_scroll.load_more")}
-              {/if}
-            </button>
-          </div>
-        {:else if displayedContentsDerived.length > 0}
-          <div class="end-of-results">
-            <div class="end-of-results-icon">
-              <svg
-                class="w-8 h-8 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                ></path>
-              </svg>
+              </div>
+              <p class="end-of-results-text">
+                {$_("admin_content.infinite_scroll.end_of_results")}
+              </p>
+              <p class="end-of-results-count">
+                {$_("admin_content.infinite_scroll.total_items", {
+                  values: { count: totalItemsDerived },
+                })}
+              </p>
             </div>
-            <p class="end-of-results-text">
-              {$_("admin_content.infinite_scroll.end_of_results")}
-            </p>
-            <p class="end-of-results-count">
-              {$_("admin_content.infinite_scroll.total_items", {
-                values: { count: totalItemsDerived },
-              })}
-            </p>
+          {/if}
+        </div>
+      {:else}
+        <div class="empty-state">
+          <div class="empty-icon">
+            <svg
+              class="w-12 h-12 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              ></path>
+            </svg>
           </div>
-        {/if}
-      </div>
+          <h3 class="empty-title">
+            {$_("admin_content.empty.title")}
+          </h3>
+          <p class="empty-message">
+            {searchQuery || selectedType !== "all" || selectedStatus !== "all"
+              ? $_("admin_content.empty.no_matches")
+              : $_("admin_content.empty.description")}
+          </p>
+          {#if searchQuery || selectedType !== "all" || selectedStatus !== "all"}
+            <button onclick={clearFilters} class="clear-filters-button">
+              {$_("admin_content.filters.clear_all")}
+            </button>
+          {/if}
+        </div>
+      {/if}
     {/if}
   </div>
 </div>
@@ -1205,57 +1248,60 @@
         </button>
       </div>
 
-      <div class="modal-content">
-        <div class="form-section">
-          <div class="section-header" class:text-right={$isRTL}>
-            <h4 class="section-title">
-              {$_("admin_content.modal.basic_info.title")}
-            </h4>
-            <p class="section-description">
-              {$_("admin_content.modal.basic_info.description")}
-            </p>
+      <form onsubmit={handleSaveFolder}>
+        <div class="modal-content">
+          <div class="form-section">
+            <div class="section-header" class:text-right={$isRTL}>
+              <h4 class="section-title">
+                {$_("admin_content.modal.basic_info.title")}
+              </h4>
+              <p class="section-description">
+                {$_("admin_content.modal.basic_info.description")}
+              </p>
+            </div>
+            <MetaForm
+              bind:formData={metaContent}
+              bind:validateFn={validateMetaForm}
+              isCreate={true}
+            />
           </div>
-          <MetaForm
-            bind:formData={metaContent}
-            bind:validateFn={validateMetaForm}
-            isCreate={true}
-          />
+
+          <div class="form-section">
+            <div class="section-header" class:text-right={$isRTL}>
+              <h4 class="section-title">
+                {$_("admin_content.modal.folder_config.title")}
+              </h4>
+              <p class="section-description">
+                {$_("admin_content.modal.folder_config.description")}
+              </p>
+            </div>
+            <FolderForm bind:content={folderContent} />
+          </div>
         </div>
 
-        <div class="form-section">
-          <div class="section-header" class:text-right={$isRTL}>
-            <h4 class="section-title">
-              {$_("admin_content.modal.folder_config.title")}
-            </h4>
-            <p class="section-description">
-              {$_("admin_content.modal.folder_config.description")}
-            </p>
-          </div>
-          <FolderForm bind:content={folderContent} on:save={handleSaveFolder} />
+        <div class="modal-footer" class:flex-row-reverse={$isRTL}>
+          <button
+            type="button"
+            onclick={() => (showCreateFolderModal = false)}
+            class="btn btn-secondary"
+            disabled={isCreatingFolder}
+          >
+            {$_("admin_content.modal.cancel")}
+          </button>
+          <button
+            type="submit"
+            class="btn btn-primary"
+            disabled={isCreatingFolder}
+          >
+            {#if isCreatingFolder}
+              <div class="spinner"></div>
+              {$_("admin_content.modal.creating")}
+            {:else}
+              {$_("admin_content.modal.create_folder")}
+            {/if}
+          </button>
         </div>
-      </div>
-
-      <div class="modal-footer" class:flex-row-reverse={$isRTL}>
-        <button
-          onclick={() => (showCreateFolderModal = false)}
-          class="btn btn-secondary"
-          disabled={isCreatingFolder}
-        >
-          {$_("admin_content.modal.cancel")}
-        </button>
-        <button
-          onclick={handleSaveFolder}
-          class="btn btn-primary"
-          disabled={isCreatingFolder}
-        >
-          {#if isCreatingFolder}
-            <div class="spinner"></div>
-            {$_("admin_content.modal.creating")}
-          {:else}
-            {$_("admin_content.modal.create_folder")}
-          {/if}
-        </button>
-      </div>
+      </form>
     </div>
   </div>
 {/if}

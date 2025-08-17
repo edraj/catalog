@@ -4,12 +4,19 @@
     getSpaceContents,
     getSpaceContentsByTags,
     getSpaces,
+    getSpaceTags,
     searchInCatalog,
   } from "@/lib/dmart_services";
   import { Diamonds } from "svelte-loading-spinners";
   import { goto } from "@roxi/routify";
   import { _, locale } from "@/i18n";
   import { derived } from "svelte/store";
+  import { formatNumber, formatNumberInText } from "@/lib/helpers";
+  import {
+    GlobeSolid,
+    MessageCaptionSolid,
+    HeartSolid,
+  } from "flowbite-svelte-icons";
   $goto;
 
   let isLoading = $state(true);
@@ -24,6 +31,7 @@
   let searchTimeout: number;
   let spaceStats = [];
   let totalSpaceItems = 0;
+  let spaceTags = {};
 
   const isRTL = derived(
     locale,
@@ -36,6 +44,21 @@
 
       const statsPromises = response.records.map(async (space) => {
         const data = await getSpaceContents(space.shortname, "/", "public");
+        const tags = await getSpaceTags(space.shortname);
+
+        if (tags.status === "success" && tags.records.length > 0) {
+          const tagData = tags.records[0].attributes;
+          if (tagData.tag_counts) {
+            const sortedTags = Object.entries(tagData.tag_counts)
+              .map(([name, count]) => ({ name, count }))
+              .sort((a, b) => Number(b.count) - Number(a.count));
+
+            spaceTags[space.shortname] = sortedTags;
+          }
+        } else {
+          spaceTags[space.shortname] = [];
+        }
+
         return {
           spaceName: space.shortname,
           total: data.attributes.total,
@@ -58,6 +81,10 @@
       isLoading = false;
     }
   });
+
+  function getTagsSpaces(shortname) {
+    return spaceTags[shortname] || [];
+  }
 
   function getSpaceStats(spaceShortname) {
     return (
@@ -129,6 +156,7 @@
 
   function getRecordDescription(record: any): string {
     const description = record.attributes?.description;
+
     if (description) {
       return (
         description[$locale] ||
@@ -142,22 +170,69 @@
       record.resource_type === "ticket" &&
       record.attributes?.payload?.body?.content
     ) {
-      return record.attributes.payload.body.content;
-    }
+      const contentType = record.attributes?.payload?.content_type;
 
-    if (record.attributes?.payload?.body) {
-      const htmlContent = record.attributes.payload.body;
-      if (typeof htmlContent === "string") {
-        const textContent = htmlContent.replace(/<[^>]*>/g, "");
+      if (contentType === "json") {
+        let processedContent = record.attributes.payload.body.content
+          .replace(/<img[^>]*alt="([^"]*)"[^>]*>/gi, "[Image: $1]")
+          .replace(/<img[^>]*>/gi, "[Image]")
+          .replace(/&nbsp;/g, " ")
+          .replace(/&amp;/g, "&")
+          .replace(/&lt;/g, "<")
+          .replace(/&gt;/g, ">")
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'")
+          .replace(/<[^>]*>/g, "")
+          .replace(/\s+/g, " ")
+          .trim();
+
+        return processedContent.length > 200
+          ? processedContent.substring(0, 200) + "..."
+          : processedContent || $_("catalogs.no_description");
+      } else {
+        const textContent = record.attributes.payload.body.content.replace(
+          /<[^>]*>/g,
+          ""
+        );
         return textContent.length > 200
           ? textContent.substring(0, 200) + "..."
           : textContent;
       }
     }
 
+    if (record.attributes?.payload?.body) {
+      const htmlContent = record.attributes.payload.body;
+      if (typeof htmlContent === "string") {
+        const contentType = record.attributes?.payload?.content_type;
+
+        if (contentType === "json") {
+          let processedContent = htmlContent
+            .replace(/<img[^>]*alt="([^"]*)"[^>]*>/gi, "[Image: $1]")
+            .replace(/<img[^>]*>/gi, "[Image]")
+            .replace(/&nbsp;/g, " ")
+            .replace(/&amp;/g, "&")
+            .replace(/&lt;/g, "<")
+            .replace(/&gt;/g, ">")
+            .replace(/&quot;/g, '"')
+            .replace(/&#39;/g, "'")
+            .replace(/<[^>]*>/g, "")
+            .replace(/\s+/g, " ")
+            .trim();
+
+          return processedContent.length > 200
+            ? processedContent.substring(0, 200) + "..."
+            : processedContent || $_("catalogs.no_description");
+        } else {
+          const textContent = htmlContent.replace(/<[^>]*>/g, "");
+          return textContent.length > 200
+            ? textContent.substring(0, 200) + "..."
+            : textContent;
+        }
+      }
+    }
+
     return $_("catalogs.no_description");
   }
-
   function formatDate(dateString: string): string {
     if (!dateString) return $_("common.not_available");
     return new Date(dateString).toLocaleDateString($locale, {
@@ -232,6 +307,10 @@
     searchTimeout = setTimeout(() => {
       performSearch(searchQuery);
     }, 500);
+  }
+
+  function handleContactUs() {
+    $goto("/contact");
   }
 
   $effect(() => {
@@ -346,12 +425,17 @@
           <div class="results-info">
             <h2 class="results-title">
               {$_("catalogs.search.results_title", {
-                values: { count: searchResults.length, query: searchQuery },
+                values: {
+                  count: formatNumberInText(searchResults.length, $locale),
+                  query: searchQuery,
+                },
               })}
             </h2>
             <p class="results-subtitle">
               {$_("catalogs.search.results_subtitle", {
-                values: { count: searchResults.length },
+                values: {
+                  count: formatNumberInText(searchResults.length, $locale),
+                },
               })}
             </p>
           </div>
@@ -386,6 +470,7 @@
         <!-- Enhanced Results Grid -->
         <div class="results-grid">
           {#each searchResults as record, index}
+            <!-- svelte-ignore a11y_no_noninteractive_element_to_interactive_role -->
             <article
               class="result-card {record.resource_type}-card"
               onclick={() => handleRecordClick(record)}
@@ -469,7 +554,10 @@
                   {/each}
                   {#if record.attributes.tags.length > 4}
                     <span class="tag-more">
-                      +{record.attributes.tags.length - 4} more
+                      +{formatNumberInText(
+                        record.attributes.tags.length - 4,
+                        $locale
+                      )} more
                     </span>
                   {/if}
                 </div>
@@ -588,15 +676,17 @@
     {:else}
       {#if !isLoading && spaceStats.length > 0}
         <div class="header-stats">
-          <h1 class="stats-title">Spaces Dashboard</h1>
+          <h1 class="stats-title">{$_("SpacesDashboard")}</h1>
           <div class="global-stats">
             <div class="global-stat-card">
-              <div class="global-stat-number">{spaces.length}</div>
+              <div class="global-stat-number">
+                {formatNumber(spaces.length, $locale)}
+              </div>
               <div class="global-stat-label">Total Spaces</div>
             </div>
             <div class="global-stat-card">
               <div class="global-stat-number">
-                {totalSpaceItems.toLocaleString()}
+                {formatNumber(totalSpaceItems, $locale)}
               </div>
               <div class="global-stat-label">Total Items</div>
             </div>
@@ -633,13 +723,31 @@
 
               <div class="space-content">
                 <p class="space-description">{getDescription(space)}</p>
+
+                <!-- Tags Section -->
+                {#if getTagsSpaces(space.shortname).length > 0}
+                  <div class="space-tags">
+                    {#each getTagsSpaces(space.shortname).slice(0, 5) as tag}
+                      <span class="tag-chip">{tag.name}</span>
+                    {/each}
+                    {#if getTagsSpaces(space.shortname).length > 5}
+                      <span class="tag-more"
+                        >+{formatNumberInText(
+                          getTagsSpaces(space.shortname).length - 5,
+                          $locale
+                        )}</span
+                      >
+                    {/if}
+                  </div>
+                {/if}
               </div>
+
               <!-- Individual Space Stats -->
               <div class="space-stats">
                 <div class="space-stat-number">
-                  {getSpaceStats(space.shortname).toLocaleString()}
+                  {formatNumber(getSpaceStats(space.shortname), $locale)}
                 </div>
-                <div class="space-stat-label">Items in this space</div>
+                <div class="space-stat-label">{$_("itemsInSpace")}</div>
               </div>
               <div class="space-footer">
                 <div class="space-meta">
@@ -711,6 +819,48 @@
       {/if}
     {/if}
   </section>
+
+  <footer class="footer-section">
+    <div class="footer-content">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <h3 class="brand-name">{$_("Catalog")}</h3>
+          <p class="brand-description">
+            {$_("BrandDescription")}
+          </p>
+          <div class="social-icons">
+            <a href="#" class="social-icon">
+              <GlobeSolid class="icon" />
+            </a>
+            <a href="#" class="social-icon">
+              <MessageCaptionSolid class="icon" />
+            </a>
+            <a href="#" class="social-icon">
+              <HeartSolid class="icon" />
+            </a>
+          </div>
+        </div>
+
+        <div class="footer-column">
+          <h4 class="footer-column-title">{$_("Support")}</h4>
+          <ul class="footer-links">
+            <li><a href="/help">{$_("HelpCenter")}</a></li>
+            <li><a href="/community">{$_("Community")}</a></li>
+            <li>
+              <button onclick={handleContactUs} class="footer-link-button"
+                >{$_("ContactUs")}</button
+              >
+            </li>
+            <li><a href="/privacy">{$_("Privacy")}</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>{$_("Copyright")}</p>
+      </div>
+    </div>
+  </footer>
 </div>
 
 <style>
@@ -1660,5 +1810,135 @@
   .link-icon {
     width: 16px;
     height: 16px;
+  }
+
+  .space-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+  }
+
+  .tag-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    background-color: var(--color-primary-100, #e3f2fd);
+    color: var(--color-primary-700, #1976d2);
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+    border: 1px solid var(--color-primary-200, #bbdefb);
+    transition: all 0.2s ease;
+  }
+
+  .tag-chip:hover {
+    background-color: var(--color-primary-200, #bbdefb);
+  }
+
+  .tag-more {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    background-color: var(--color-gray-100, #f5f5f5);
+    color: var(--color-gray-600, #757575);
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+    border: 1px solid var(--color-gray-300, #e0e0e0);
+  }
+  .footer-section {
+    background: #111827;
+    color: white;
+  }
+
+  .footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+  }
+
+  .footer-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+    padding: 3rem 0;
+  }
+
+  .footer-brand {
+    grid-column: span 2;
+  }
+
+  @media (max-width: 768px) {
+    .footer-brand {
+      grid-column: span 1;
+    }
+  }
+
+  .brand-name {
+    font-size: 1.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    margin-bottom: 1rem;
+  }
+
+  .brand-description {
+    color: #9ca3af;
+    margin-bottom: 1.5rem;
+    max-width: 24rem;
+    line-height: 1.6;
+  }
+
+  .social-icons {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .social-icon {
+    color: #9ca3af;
+    transition: color 0.3s ease;
+  }
+
+  .social-icon:hover {
+    color: white;
+  }
+
+  .footer-column-title {
+    font-weight: 700;
+    color: white;
+    margin-bottom: 1rem;
+  }
+
+  .footer-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .footer-links li {
+    margin-bottom: 0.5rem;
+  }
+
+  .footer-links a {
+    color: #9ca3af;
+    text-decoration: none;
+    transition: color 0.3s ease;
+  }
+
+  .footer-links a:hover {
+    color: white;
+  }
+
+  .footer-bottom {
+    border-top: 1px solid #374151;
+    padding: 2rem 0;
+    text-align: center;
+    color: #9ca3af;
   }
 </style>

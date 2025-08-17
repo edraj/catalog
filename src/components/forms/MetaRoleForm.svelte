@@ -2,6 +2,8 @@
   import { onMount } from "svelte";
   import { Dmart, QueryType } from "@edraj/tsdmart";
   import { writable } from "svelte/store";
+  import { _ } from "@/i18n";
+  import { locale } from "@/i18n";
 
   let {
     formData = $bindable(),
@@ -107,12 +109,12 @@
 </script>
 
 <div class="card">
-  <h2 class="card-title">Role Permissions</h2>
+  <h2 class="card-title">{$_("rolePermissions")}</h2>
 
   <div class="form-group">
     <label class="form-label" for="permissions-search">
       <span class="required">*</span>
-      Permissions
+      {$_("permissions")}
     </label>
 
     {#if $loading}
@@ -139,7 +141,7 @@
             <input
               id="permissions-search"
               class="search-input"
-              placeholder="Search permissions..."
+              placeholder={$_("searchPermissionsPlaceholder")}
               bind:value={$searchTerm}
               onfocus={() => showDropdown.set(true)}
               onkeydown={(e) => {
@@ -156,12 +158,12 @@
             {#each $filteredPermissions as permission}
               <button
                 class="dropdown-item"
-                aria-label={`Toggle ${permission.key}`}
+                aria-label={`${$_("toggle")} ${permission.key}`}
                 onclick={(e) => togglePermission(e, permission)}
               >
                 <span>{permission.key}</span>
                 {#if formData.permissions.includes(permission.value)}
-                  <span class="selected-badge">Selected</span>
+                  <span class="selected-badge">{$_("selected")}</span>
                 {/if}
               </button>
             {/each}
@@ -172,7 +174,7 @@
 
     {#if formData.permissions.length > 0}
       <div class="permissions-display">
-        <label class="form-label">Added Permissions</label>
+        <label class="form-label">{$_("addedPermissions")}</label>
         <div class="permissions-container">
           <div class="permissions-list">
             {#each formData.permissions as permission}
@@ -180,7 +182,7 @@
                 <span>{permission}</span>
                 <button
                   class="remove-btn"
-                  aria-label={`Remove ${permission}`}
+                  aria-label={`${$_("remove")} ${permission}`}
                   onclick={() => removePermission(permission)}
                   type="button"
                 >
@@ -192,7 +194,7 @@
         </div>
       </div>
     {:else}
-      <div class="empty-state">No permissions added</div>
+      <div class="empty-state">{$_("noPermissionsAdded")}</div>
     {/if}
   </div>
 </div>

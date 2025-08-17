@@ -35,6 +35,7 @@
   import { Diamonds } from "svelte-loading-spinners";
   import { _, locale } from "@/i18n";
   import { derived } from "svelte/store";
+  import { formatNumberInText } from "@/lib/helpers";
 
   $goto;
   let entity = $state(null);
@@ -439,8 +440,10 @@
           <div class="section-header">
             <PaperClipOutline class="section-icon" />
             <h2>
-              {$_("entry_edit.current_attachments")} ({getExistingAttachments()
-                .length})
+              {$_("entry_edit.current_attachments")} ({formatNumberInText(
+                getExistingAttachments().length,
+                $locale
+              )})
             </h2>
           </div>
           <div class="section-content">
@@ -460,7 +463,12 @@
       <div class="section">
         <div class="section-header">
           <PaperClipOutline class="section-icon" />
-          <h2>{$_("entry_edit.add_new_attachments")} ({attachments.length})</h2>
+          <h2>
+            {$_("entry_edit.add_new_attachments")} ({formatNumberInText(
+              attachments.length,
+              $locale
+            )})
+          </h2>
           <input
             type="file"
             id="fileInput"

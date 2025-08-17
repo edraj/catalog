@@ -14,6 +14,7 @@
   import { writable } from "svelte/store";
   import Attachment from "@/components/Attachments.svelte";
   import HtmlEditor from "@/components/editors/HtmlEditor.svelte";
+  import { formatNumberInText } from "@/lib/helpers";
 
   $goto;
 
@@ -138,7 +139,6 @@
         $params.workflow_shortname,
         $params.schema_shortname
       );
-      console.log(response);
 
       if (response) {
         itemDataValue = response;
@@ -1078,12 +1078,18 @@
                   {#if itemDataValue.attachments}
                     {$_("admin_item_detail.attachments.total_count", {
                       values: {
-                        count: Number(
-                          Object.values(itemDataValue.attachments).reduce(
-                            (total, attachments) =>
-                              total + (attachments?.length || 0),
-                            0
-                          )
+                        count: formatNumberInText(
+                          Number(
+                            Object.values(itemDataValue.attachments).reduce(
+                              (total, attachments) =>
+                                (typeof total === "number" ? total : 0) +
+                                (Array.isArray(attachments)
+                                  ? (attachments as any[]).length
+                                  : 0),
+                              0
+                            )
+                          ),
+                          $locale
                         ),
                       },
                     })}
@@ -1094,8 +1100,9 @@
               </div>
 
               {#if itemDataValue.attachments && typeof itemDataValue.attachments === "object"}
-                {#each Object.entries(itemDataValue.attachments) as [type, attachmentsArr]}
-                  {#if attachmentsArr && attachmentsArr.length > 0}
+                {#each Object.entries(itemDataValue.attachments) as [type, attachmentsArrRaw]}
+                  {#if Array.isArray(attachmentsArrRaw) && attachmentsArrRaw.length > 0}
+                    {@const attachmentsArr = attachmentsArrRaw as any[]}
                     <div
                       class="bg-white border border-gray-200 rounded-lg overflow-hidden"
                     >
@@ -1180,12 +1187,15 @@
                               type !== "reaction" &&
                               type !== "media"}
                           >
-                            {attachmentsArr.length}
+                            {formatNumberInText(attachmentsArr.length, $locale)}
                           </span>
                           {$_("admin_item_detail.attachments.type_count", {
                             values: {
                               type: type,
-                              count: attachmentsArr.length,
+                              count: formatNumberInText(
+                                attachmentsArr.length,
+                                $locale
+                              ),
                             },
                           })}
                         </h4>
@@ -1478,7 +1488,12 @@
                           class:text-right={$isRTL}
                         >
                           {$_("admin_item_detail.metadata.entries_count", {
-                            values: { count: itemDataValue.acl.length },
+                            values: {
+                              count: formatNumberInText(
+                                itemDataValue.acl.length,
+                                $locale
+                              ),
+                            },
                           })}
                         </td>
                       </tr>
@@ -1496,7 +1511,10 @@
                         class:text-right={$isRTL}
                       >
                         {itemDataValue.relationships
-                          ? itemDataValue.relationships.length
+                          ? formatNumberInText(
+                              itemDataValue.relationships.length,
+                              $locale
+                            )
                           : 0}
                       </td>
                     </tr>

@@ -104,7 +104,6 @@
         type,
         filename,
       };
-      console.log("Opening preview for attachment:", currentPreview.url);
 
       previewModal = true;
     }

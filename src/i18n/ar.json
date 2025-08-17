@@ -452,7 +452,10 @@
       "empty_message": "لم تتم إضافة علامات بعد. العلامات تساعد الآخرين في اكتشاف محتواك!"
     },
     "content": {
-      "section_title": "المحتوى"
+      "section_title": "المحتوى",
+      "editor_type": "نوع المحرر:",
+      "html_editor": "HTML",
+      "markdown_editor": "ماركداون"
     },
     "attachments": {
       "section_title": "المرفقات ({count})",
@@ -522,6 +525,7 @@
       "not_found_message": "الإدخال الذي تبحث عنه غير موجود أو تم حذفه."
     }
   },
+  "itemsInSpace": "العناصر في هذه المساحة",
   "entry_edit": {
     "loading": "جاري تحميل الإدخال للتحرير...",
     "back_to_entry": "العودة إلى الإدخال",
@@ -1603,5 +1607,49 @@
     "resource_types": "أنواع الموارد",
     "actions": "الإجراءات"
   },
-  "related_content": "المحتوى ذي الصلة"
+  "related_content": "المحتوى ذي الصلة",
+  "DefaultRole": "الدور الافتراضي",
+  "AccountStatus": "حالة الحساب",
+  "MemberSince": "عضو منذ,",
+  "MobileNumberPlaceholder": "أدخل رقم هاتفك المحمول",
+  "SpacesDashboard": "لوحة معلومات المساحات",
+  "AccountActive": "حسابك نشط ومؤكد",
+
+  "failedToLoadAvailableRoles": "فشل في تحميل الأدوار المتاحة",
+  "failedToLoadRoles": "فشل في تحميل الأدوار",
+  "failedToLoadCurrentDefaultRole": "فشل في تحميل الدور الافتراضي الحالي",
+  "configurationEntityCreatedSuccessfully": "تم إنشاء كيان التكوين بنجاح",
+  "failedToCreateConfigurationEntity": "فشل في إنشاء كيان التكوين",
+  "pleaseSelectDefaultRole": "يرجى اختيار دور افتراضي",
+  "defaultUserRoleUpdatedSuccessfully": "تم تحديث دور المستخدم الافتراضي بنجاح",
+  "failedToSaveDefaultUserRole": "فشل في حفظ دور المستخدم الافتراضي",
+  "configurationMissing": "التكوين مفقود",
+  "configurationEntityNotFound": "كيان التكوين غير موجود",
+  "systemConfigurationEntityMissingDescription": "كيان تكوين النظام مفقود. هذا مطلوب لإدارة أدوار المستخدمين الافتراضية.",
+  "autoCreateConfigurationEntityQuestion": "هل تريد إنشاء كيان التكوين المفقود تلقائياً؟",
+  "autoFix": "إصلاح تلقائي",
+  "systemConfiguration": "تكوين النظام",
+  "systemConfigurationSubtitle": "تكوين الإعدادات الافتراضية للمستخدمين الجدد وسلوك النظام",
+  "userDefaultRole": "دور المستخدم الافتراضي",
+  "userDefaultRoleDescription": "اختر الدور الافتراضي الذي سيتم تعيينه للمستخدمين المسجلين حديثاً. يحدد هذا الدور الصلاحيات الأولية ومستوى الوصول للمستخدمين الجدد.",
+  "loadingConfiguration": "جاري تحميل التكوين...",
+  "noRolesAvailable": "لا توجد أدوار متاحة",
+  "createRolesFirstMessage": "يرجى إنشاء الأدوار أولاً قبل تكوين دور المستخدم الافتراضي.",
+  "currentDefaultRole": "الدور الافتراضي الحالي",
+  "noDefaultRoleConfigured": "لم يتم تكوين دور افتراضي",
+  "selectDefaultRole": "اختر الدور الافتراضي",
+  "selectRoleOption": "-- اختر دوراً --",
+  "saveConfiguration": "حفظ التكوين",
+  "resetToCurrent": "إعادة تعيين إلى الحالي",
+  "manageRolesFor": "إدارة الأدوار لـ",
+  "selectRolesToAssignDescription": "اختر الأدوار التي تريد تعيينها لهذا المستخدم. سيتم حفظ التغييرات فوراً.",
+  "saveChanges": "حفظ التغييرات",
+  "rolePermissions": "صلاحيات الدور",
+  "searchPermissionsPlaceholder": "البحث في الصلاحيات...",
+  "toggle": "تبديل",
+  "selected": "محدد",
+  "addedPermissions": "الصلاحيات المضافة",
+  "remove": "إزالة",
+  "noPermissionsAdded": "لم تتم إضافة أي صلاحيات",
+  "permissions": "الصلاحيات"
 }

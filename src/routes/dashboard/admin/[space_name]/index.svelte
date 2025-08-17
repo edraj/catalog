@@ -9,6 +9,7 @@
   import { deleteEntity } from "@/lib/dmart_services";
   import FolderForm from "@/components/forms/FolderForm.svelte";
   import MetaForm from "@/components/forms/MetaForm.svelte";
+  import { formatNumberInText } from "@/lib/helpers";
   $goto;
 
   const isRTL = derived(
@@ -94,7 +95,14 @@
   async function loadContents() {
     isLoading = true;
     try {
-      const response = await getSpaceContents(spaceName, "/", "managed", true);
+      const response = await getSpaceContents(
+        spaceName,
+        "/",
+        "managed",
+        100,
+        0,
+        true
+      );
       if (response && response.records) {
         allContents = response.records;
         applyFilters();
@@ -508,12 +516,20 @@
             <div class="flex-1">
               <h2 class="text-lg font-semibold text-gray-900 mb-2">
                 {$_("admin_dashboard.manage_spaces", {
-                  values: { count: displayedContents.length },
+                  values: {
+                    count: formatNumberInText(
+                      displayedContents.length,
+                      $locale
+                    ),
+                  },
                 })}
               </h2>
               <p class="text-sm text-gray-600">
                 {#if isSearchActive}
-                  Showing {displayedContents.length} of {allContents.length} spaces
+                  Showing {formatNumberInText(
+                    displayedContents.length,
+                    $locale
+                  )} of {formatNumberInText(allContents.length, $locale)} spaces
                 {:else}
                   {$_("admin_dashboard.admin_access_description")}
                 {/if}
@@ -672,8 +688,11 @@
               <div class="text-sm text-gray-600">
                 {$_("search_filters.results_count", {
                   values: {
-                    displayed: displayedContents.length,
-                    total: allContents.length,
+                    displayed: formatNumberInText(
+                      displayedContents.length,
+                      $locale
+                    ),
+                    total: formatNumberInText(allContents.length, $locale),
                   },
                 })}
                 {#if searchQuery}

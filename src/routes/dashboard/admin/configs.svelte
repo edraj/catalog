@@ -11,6 +11,7 @@
     errorToastMessage,
   } from "@/lib/toasts_messages";
   import { ResourceType } from "@edraj/tsdmart";
+  import { _, locale } from "@/i18n";
 
   let availableRoles = $state([]);
   let selectedDefaultRole = $state("");
@@ -34,14 +35,15 @@
           shortname: role.shortname,
           displayname: role.attributes?.displayname?.en || role.shortname,
           description:
-            role.attributes?.description?.en || `Role: ${role.shortname}`,
+            role.attributes?.description?.en ||
+            `${$_("role")}: ${role.shortname}`,
         }));
       } else {
-        errorToastMessage("Failed to load available roles");
+        errorToastMessage($_("failedToLoadAvailableRoles"));
       }
     } catch (error) {
       console.error("Error loading roles:", error);
-      errorToastMessage("Failed to load roles");
+      errorToastMessage($_("failedToLoadRoles"));
     }
   }
 
@@ -79,7 +81,7 @@
         return;
       }
 
-      errorToastMessage("Failed to load current default role");
+      errorToastMessage($_("failedToLoadCurrentDefaultRole"));
     }
   }
 
@@ -106,15 +108,15 @@
 
       if (result) {
         showAutoFixModal = false;
-        successToastMessage("Configuration entity created successfully");
+        successToastMessage($_("configurationEntityCreatedSuccessfully"));
 
         await loadCurrentDefaultRole();
       } else {
-        errorToastMessage("Failed to create configuration entity");
+        errorToastMessage($_("failedToCreateConfigurationEntity"));
       }
     } catch (error) {
       console.error("Error creating configuration entity:", error);
-      errorToastMessage("Failed to create configuration entity");
+      errorToastMessage($_("failedToCreateConfigurationEntity"));
     } finally {
       isAutoFixing = false;
     }
@@ -122,7 +124,7 @@
 
   async function saveDefaultRole() {
     if (!selectedDefaultRole) {
-      errorToastMessage("Please select a default role");
+      errorToastMessage($_("pleaseSelectDefaultRole"));
       return;
     }
 
@@ -132,13 +134,13 @@
       if (success) {
         currentDefaultRole = selectedDefaultRole;
 
-        successToastMessage("Default user role updated successfully");
+        successToastMessage($_("defaultUserRoleUpdatedSuccessfully"));
       } else {
-        errorToastMessage("Failed to save default user role");
+        errorToastMessage($_("failedToSaveDefaultUserRole"));
       }
     } catch (error) {
       console.error("Error saving default role:", error);
-      errorToastMessage("Failed to save default user role");
+      errorToastMessage($_("failedToSaveDefaultUserRole"));
     } finally {
       isSaving = false;
     }
@@ -156,22 +158,20 @@
   <div class="modal-overlay">
     <div class="modal">
       <div class="modal-header">
-        <h3>Configuration Missing</h3>
+        <h3>{$_("configurationMissing")}</h3>
       </div>
       <div class="modal-body">
         <div class="alert alert-warning">
           <div class="alert-icon">⚠</div>
           <div>
-            <strong>Configuration Entity Not Found</strong>
+            <strong>{$_("configurationEntityNotFound")}</strong>
             <p>
-              The system configuration entity is missing. This is required for
-              managing default user roles.
+              {$_("systemConfigurationEntityMissingDescription")}
             </p>
           </div>
         </div>
         <p>
-          Would you like to automatically create the missing configuration
-          entity?
+          {$_("autoCreateConfigurationEntityQuestion")}
         </p>
       </div>
       <div class="modal-footer">
@@ -180,7 +180,7 @@
           onclick={() => (showAutoFixModal = false)}
           disabled={isAutoFixing}
         >
-          Cancel
+          {$_("cancel")}
         </button>
         <button
           class="btn btn-primary"
@@ -189,9 +189,9 @@
         >
           {#if isAutoFixing}
             <div class="spinner small"></div>
-            Creating...
+            {$_("creating")}...
           {:else}
-            Auto Fix
+            {$_("autoFix")}
           {/if}
         </button>
       </div>
@@ -201,31 +201,29 @@
 
 <div class="container">
   <div class="page-header">
-    <h1 class="page-title">System Configuration</h1>
+    <h1 class="page-title">{$_("systemConfiguration")}</h1>
     <p class="page-subtitle">
-      Configure default settings for new users and system behavior
+      {$_("systemConfigurationSubtitle")}
     </p>
   </div>
 
   <div class="card">
-    <h2 class="card-title">User Default Role</h2>
+    <h2 class="card-title">{$_("userDefaultRole")}</h2>
     <p class="card-description">
-      Select the default role that will be assigned to newly registered users.
-      This role determines the initial permissions and access level for new
-      users.
+      {$_("userDefaultRoleDescription")}
     </p>
 
     {#if isLoading}
       <div class="loading-state">
         <div class="spinner"></div>
-        <span>Loading configuration...</span>
+        <span>{$_("loadingConfiguration")}</span>
       </div>
     {:else if availableRoles.length === 0}
       <div class="alert alert-warning">
         <div class="alert-icon">⚠</div>
         <div>
-          <strong>No Roles Available:</strong>
-          Please create roles first before configuring default user role.
+          <strong>{$_("noRolesAvailable")}:</strong>
+          {$_("createRolesFirstMessage")}
         </div>
       </div>
     {:else}
@@ -235,28 +233,28 @@
             <div class="status-indicator status-info">
               <span>ℹ</span>
               <span
-                >Current default role: <strong>{currentDefaultRole}</strong
-                ></span
+                >{$_("currentDefaultRole")}:
+                <strong>{currentDefaultRole}</strong></span
               >
             </div>
           {:else}
             <div class="status-indicator status-warning">
               <span>⚠</span>
-              <span>No default role configured</span>
+              <span>{$_("noDefaultRoleConfigured")}</span>
             </div>
           {/if}
         </div>
 
         <div class="role-selection">
           <label class="form-label" for="default-role-select">
-            Select Default Role
+            {$_("selectDefaultRole")}
           </label>
           <select
             id="default-role-select"
             class="form-select"
             bind:value={selectedDefaultRole}
           >
-            <option value="">-- Select a role --</option>
+            <option value="">{$_("selectRoleOption")}</option>
             {#each availableRoles as role}
               <option value={role.shortname}>{role.displayname}</option>
             {/each}
@@ -286,9 +284,9 @@
           >
             {#if isSaving}
               <div class="spinner small"></div>
-              Saving...
+              {$_("saving")}...
             {:else}
-              Save Configuration
+              {$_("saveConfiguration")}
             {/if}
           </button>
 
@@ -298,7 +296,7 @@
               onclick={() => (selectedDefaultRole = currentDefaultRole)}
               disabled={isSaving}
             >
-              Reset to Current
+              {$_("resetToCurrent")}
             </button>
           {/if}
         </div>
