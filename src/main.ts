@@ -8,15 +8,7 @@ const isHydrating = isClient && document.body.hasAttribute('data-svelte-hydrated
 if (isClient) {
   const target = document.body;
 
-  if (isHydrating) {
-    hydrate(App, {
-      target,
-    });
-  } else {
-    mount(App, {
-      target,
-    });
-  }
+  hydrate(App, {target,});
 
   document.body.setAttribute('data-svelte-hydrated', 'true');
 }
