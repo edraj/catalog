@@ -77,6 +77,7 @@
 
   function openPreview(attachment: any) {
     const filename = attachment?.attributes?.payload?.body;
+    console.log(filename);
 
     if (
       isImageFile(filename) ||
@@ -104,6 +105,7 @@
         type,
         filename,
       };
+      console.log(currentPreview);
 
       previewModal = true;
     }
