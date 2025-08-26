@@ -142,7 +142,8 @@
             ?.workflow_shortnames[0] || "",
         schema_shortname:
           response.records[0]?.attributes?.payload?.schema_shortname || "",
-        canCreateEntry: hasNonFolderContent || folders.length === 0,
+        canCreateEntry:
+          level > 0 || hasNonFolderContent || folders.length === 0,
         selectedFolder: "",
       };
 
@@ -159,13 +160,13 @@
 
   function updateCanCreateEntry() {
     if (subpathHierarchy.length === 0) {
-      canCreateEntry = true;
+      canCreateEntry = false;
       return;
     }
 
     const lastLevel = subpathHierarchy[subpathHierarchy.length - 1];
 
-    canCreateEntry = lastLevel.canCreateEntry;
+    canCreateEntry = lastLevel.level > 0 || lastLevel.canCreateEntry;
     resource_type = lastLevel.resource_type;
     workflow_shortname = subpathHierarchy[0].workflow_shortname;
     schema_shortname = lastLevel.schema_shortname;

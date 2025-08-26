@@ -261,11 +261,12 @@ export async function updateEntity(
 ) {
   const attributes: any = {
     is_active: data.is_active,
+    displayname: data.displayname,
     relationships: [],
     tags: data.tags,
     payload: {
-      content_type: "json",
-      body: data,
+      content_type: "html",
+      body: data.content,
     },
   };
 
