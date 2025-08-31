@@ -235,6 +235,7 @@
       <!-- Header -->
       <div class="header">
         <button
+          aria-label={$_("entry_edit.navigation.back_to_entry")}
           class="back-button"
           onclick={() =>
             $goto(
@@ -286,6 +287,7 @@
           </div>
           <div class="action-buttons">
             <button
+              aria-label={$_("entry_edit.buttons.save_draft")}
               class="draft-button"
               onclick={() => handleUpdate(false)}
               disabled={isLoading}
@@ -298,6 +300,7 @@
               >
             </button>
             <button
+              aria-label={$_("entry_edit.buttons.publish_now")}
               class="publish-button"
               onclick={() => handleUpdate(true)}
               disabled={isLoading}
@@ -321,6 +324,7 @@
         </div>
         <div class="section-content">
           {#if isEditing}
+            <label for="title-input"></label>
             <input
               type="text"
               bind:value={title}
@@ -360,6 +364,7 @@
         </div>
         <div class="section-content">
           <div class="tag-input-container">
+            <label for="tag-input"></label>
             <input
               type="text"
               bind:value={newTag}
@@ -371,6 +376,7 @@
               }}
             />
             <button
+              aria-label={$_("entry_edit.tags.add_button")}
               class="add-tag-button"
               onclick={addTag}
               disabled={!newTag.trim()}
@@ -469,6 +475,7 @@
               $locale
             )})
           </h2>
+          <label for="fileInput"></label>
           <input
             type="file"
             id="fileInput"
@@ -477,6 +484,7 @@
             style="display: none;"
           />
           <button
+            aria-label={$_("entry_edit.attachments.add_files")}
             class="add-files-button"
             onclick={() => document.getElementById("fileInput").click()}
           >
@@ -494,7 +502,7 @@
                       {#if attachment.type.startsWith("image/")}
                         <img
                           src={getPreviewUrl(attachment) || "/placeholder.svg"}
-                          alt={attachment.name}
+                          alt={attachment.name || "no-image"}
                           class="attachment-image"
                         />
                       {:else if attachment.type.startsWith("video/")}
@@ -530,6 +538,9 @@
                     </p>
                   </div>
                   <button
+                    aria-label={$_("entry_edit.attachments.remove_file", {
+                      values: { name: attachment.name },
+                    })}
                     class="remove-attachment"
                     onclick={() => removeAttachment(index)}
                   >

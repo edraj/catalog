@@ -563,7 +563,11 @@
           {$_("catalog_contents.error.title")}
         </h3>
         <p class="error-message">{error}</p>
-        <button onclick={() => loadContents()} class="retry-button">
+        <button
+          aria-label={`Retry loading content`}
+          onclick={() => loadContents()}
+          class="retry-button"
+        >
           {$_("catalog_contents.error.try_again")}
         </button>
       </div>
@@ -576,6 +580,7 @@
             </h3>
             {#if availableTags.length > 10}
               <button
+                aria-label={`Show all tags`}
                 onclick={() => (showAllTags = !showAllTags)}
                 class="show-all-tags-button"
               >
@@ -590,6 +595,7 @@
           <div class="tags-container">
             {#each displayedTags as tag}
               <button
+                aria-label={`Filter by tag: ${tag}`}
                 onclick={() => toggleTag(tag)}
                 class="tag-filter-button {selectedTags.includes(tag)
                   ? 'tag-selected'
@@ -620,6 +626,7 @@
                   >{$_("catalog_contents.tags.selected_tags")}:</span
                 >
                 <button
+                  aria-label={`Clear all selected tags`}
                   onclick={() => {
                     selectedTags = [];
                     applyFilters();
@@ -688,7 +695,11 @@
               : $_("catalog_contents.empty.folder_empty")}
           </p>
           {#if searchQuery || selectedTags.length > 0}
-            <button onclick={clearFilters} class="clear-filters-button">
+            <button
+              aria-label={`Clear all filters`}
+              onclick={clearFilters}
+              class="clear-filters-button"
+            >
               {$_("catalog_contents.filters.clear_all")}
             </button>
           {/if}
@@ -700,7 +711,11 @@
               {$_("catalog_contents.filters.title")}
             </h2>
             {#if searchQuery || selectedTags.length > 0}
-              <button onclick={clearFilters} class="clear-all-filters-button">
+              <button
+                aria-label={`Clear all filters`}
+                onclick={clearFilters}
+                class="clear-all-filters-button"
+              >
                 {$_("catalog_contents.filters.clear_all")}
               </button>
             {/if}
@@ -794,6 +809,7 @@
                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                   ></path>
                 </svg>
+                <label for="search-input"></label>
                 <input
                   type="text"
                   bind:value={searchQuery}
@@ -943,6 +959,7 @@
 
                       {#if isLongContent || (item.attributes?.payload?.content_type === "json" && JSON.stringify(item.attributes.payload.body?.content || item.attributes.payload.body, null, 2).length > 150)}
                         <button
+                          aria-label={`Read more about ${getDisplayName(item)}`}
                           onclick={() => handleItemClick(item)}
                           class="read-more-button"
                         >
@@ -957,6 +974,7 @@
                       {#each item.attributes?.tags.slice(0, 3) as tag}
                         {#if tag && tag.trim()}
                           <button
+                            aria-label={`Filter by tag: ${tag}`}
                             class="card-tag {selectedTags.includes(tag)
                               ? 'card-tag-selected'
                               : ''}"
@@ -1039,6 +1057,7 @@
 
                   <div class="stats-right">
                     <button
+                      aria-label={`Share ${getDisplayName(item)}`}
                       class="action-button share-button"
                       onclick={(e) => {
                         e.stopPropagation();
@@ -1062,6 +1081,7 @@
                     </button>
 
                     <button
+                      aria-label={`Report ${getDisplayName(item)}`}
                       class="action-button report-button"
                       onclick={(e) => {
                         e.stopPropagation();

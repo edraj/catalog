@@ -260,12 +260,17 @@
     <div class="card-header">
       <h2 class="card-title">{$_("select_role_type")}</h2>
       <div class="header-actions">
-        <button class="btn btn-success" onclick={() => (showAddModal = true)}>
+        <button
+          aria-label={`Add role`}
+          class="btn btn-success"
+          onclick={() => (showAddModal = true)}
+        >
           <span>+</span>
           {$_("add_role")}
         </button>
         {#if roleExists}
           <button
+            aria-label={`Delete role ${selectedRoleType}`}
             class="btn btn-danger"
             onclick={() => (showDeleteConfirm = true)}
             disabled={isDeleting}
@@ -363,6 +368,7 @@
         <div class="action-bar">
           <div class="action-buttons">
             <button
+              aria-label={`Save role`}
               class="btn btn-primary"
               onclick={preventDefault((e) => {
                 saveRole();
@@ -443,6 +449,7 @@
       </div>
       <div class="modal-footer">
         <button
+          aria-label={`Cancel adding role`}
           class="btn btn-secondary"
           onclick={() => (showAddModal = false)}
           onkeydown={(e) => {
@@ -452,6 +459,7 @@
           {$_("cancel")}
         </button>
         <button
+          aria-label={`Create new role`}
           class="btn btn-primary"
           onclick={preventDefault((e) => {
             createNewRole();
@@ -514,6 +522,7 @@
       </div>
       <div class="modal-footer">
         <button
+          aria-label={`Cancel deleting role`}
           class="btn btn-secondary"
           onclick={() => (showDeleteConfirm = false)}
           onkeydown={(e) => {
@@ -523,6 +532,7 @@
           {$_("cancel")}
         </button>
         <button
+          aria-label={`Delete role ${selectedRoleType}`}
           class="btn btn-danger"
           onclick={preventDefault((e) => {
             deleteRole();

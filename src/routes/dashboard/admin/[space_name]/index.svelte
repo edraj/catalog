@@ -428,6 +428,7 @@
         </div>
 
         <button
+          aria-label={`Create new folder`}
           onclick={handleCreateFolder}
           class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
           class:flex-row-reverse={$isRTL}
@@ -567,6 +568,7 @@
                     ></path>
                   </svg>
                 </div>
+                <label for="search"></label>
                 <input
                   id="search"
                   type="text"
@@ -742,16 +744,16 @@
               ></path>
             </svg>
             <h3 class="text-lg font-medium text-gray-900 mb-2">
-              No items found
+              {$_("search_filters.no_results_title")}
             </h3>
             <p class="text-gray-500 mb-4">
-              Try adjusting your search terms or filters.
+              {$_("search_filters.no_results_description")}
             </p>
             <button
               onclick={clearFilters}
               class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-600 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
-              Clear Filters
+              {$_("search_filters.clear_filters")}
             </button>
           </div>
         {:else}

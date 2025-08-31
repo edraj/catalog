@@ -84,6 +84,7 @@
   <div class="contact-content">
     <div class="contact-header">
       <button
+        aria-label={`Go back`}
         onclick={() => history.back()}
         class="flex items-center cursor-pointer bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 shadow-sm transition-all duration-200 px-4 py-2 rounded-lg font-medium"
       >
@@ -218,6 +219,7 @@
         </div>
 
         <button
+          aria-label={`Send message`}
           type="submit"
           class="submit-button"
           class:loading={isSubmitting}

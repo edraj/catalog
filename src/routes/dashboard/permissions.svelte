@@ -290,12 +290,17 @@
     <div class="card-header">
       <h2 class="card-title">{$_("select_permission_type")}</h2>
       <div class="header-actions">
-        <button class="btn btn-success" onclick={() => (showAddModal = true)}>
+        <button
+          aria-label={`Add permission`}
+          class="btn btn-success"
+          onclick={() => (showAddModal = true)}
+        >
           <span>+</span>
           {$_("add_permission")}
         </button>
         {#if permissionExists}
           <button
+            aria-label={`Delete permission ${selectedPermissionType}`}
             class="btn btn-danger"
             onclick={() => (showDeleteConfirm = true)}
             disabled={isDeleting}
@@ -367,6 +372,7 @@
       <div class="action-bar">
         <div class="action-buttons">
           <button
+            aria-label={`Save permissions`}
             class="btn btn-primary"
             onclick={savePermissions}
             disabled={isSaving}
@@ -437,12 +443,14 @@
       </div>
       <div class="modal-footer">
         <button
+          aria-label={`Cancel adding permission`}
           class="btn btn-secondary"
           onclick={() => (showAddModal = false)}
         >
           {$_("cancel")}
         </button>
         <button
+          aria-label={`Create new permission`}
           class="btn btn-primary"
           onclick={createNewPermission}
           disabled={isCreating || !newPermissionName.trim()}
@@ -490,12 +498,14 @@
       </div>
       <div class="modal-footer">
         <button
+          aria-label={`Cancel deleting permission`}
           class="btn btn-secondary"
           onclick={() => (showDeleteConfirm = false)}
         >
           {$_("cancel")}
         </button>
         <button
+          aria-label={`Delete permission ${selectedPermissionType}`}
           class="btn btn-danger"
           onclick={deletePermission}
           disabled={isDeleting}

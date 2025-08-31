@@ -151,10 +151,12 @@
         class="toolbar-btn"
         onclick={() => handleFormatting("**")}
         title="Bold"
+        aria-label={`Bold`}
       >
         <strong>B</strong>
       </button>
       <button
+        aria-label={`Italic`}
         class="toolbar-btn"
         onclick={() => handleFormatting("_")}
         title="Italic"
@@ -162,6 +164,7 @@
         <i>I</i>
       </button>
       <button
+        aria-label={`Strikethrough`}
         class="toolbar-btn"
         onclick={() => handleFormatting("~~")}
         title="Strikethrough"
@@ -172,6 +175,7 @@
 
     <div class="toolbar-group">
       <button
+        aria-label={`Bullet List`}
         class="toolbar-btn"
         onclick={() => handleFormatting("*", false, true)}
         title="Bullet List"
@@ -179,6 +183,7 @@
         <span>•</span>
       </button>
       <button
+        aria-label={`Numbered List`}
         class="toolbar-btn"
         onclick={() => handleFormatting("1.", false, true)}
         title="Numbered List"
@@ -189,6 +194,7 @@
 
     <div class="toolbar-group">
       <button
+        aria-label={`Heading 1`}
         class="toolbar-btn"
         onclick={() => handleFormatting("#", false)}
         title="Heading 1"
@@ -196,6 +202,7 @@
         <span>H1</span>
       </button>
       <button
+        aria-label={`Heading 2`}
         class="toolbar-btn"
         onclick={() => handleFormatting("##", false)}
         title="Heading 2"
@@ -203,6 +210,7 @@
         <span>H2</span>
       </button>
       <button
+        aria-label={`Heading 3`}
         class="toolbar-btn"
         onclick={() => handleFormatting("###", false)}
         title="Heading 3"
@@ -213,6 +221,7 @@
 
     <div class="toolbar-group">
       <button
+        aria-label={`Insert Table`}
         class="toolbar-btn"
         onclick={() => handleFormatting(tableInsert, false)}
         title="Insert Table"
@@ -220,6 +229,7 @@
         <span>⊞</span>
       </button>
       <button
+        aria-label={`Insert List View`}
         class="toolbar-btn"
         onclick={() => handleFormatting(listViewInsert, false)}
         title="Insert List View"

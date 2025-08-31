@@ -176,6 +176,7 @@
       </div>
       <div class="modal-footer">
         <button
+          aria-label={`Cancel fixing configuration`}
           class="btn btn-secondary"
           onclick={() => (showAutoFixModal = false)}
           disabled={isAutoFixing}
@@ -183,6 +184,7 @@
           {$_("cancel")}
         </button>
         <button
+          aria-label={`Create configuration entity`}
           class="btn btn-primary"
           onclick={autoFixConfiguration}
           disabled={isAutoFixing}
@@ -276,6 +278,7 @@
 
         <div class="action-bar">
           <button
+            aria-label={`Save default role`}
             class="btn btn-primary"
             onclick={saveDefaultRole}
             disabled={isSaving ||
@@ -292,6 +295,7 @@
 
           {#if selectedDefaultRole !== currentDefaultRole && currentDefaultRole}
             <button
+              aria-label={`Reset to current default role`}
               class="btn btn-secondary"
               onclick={() => (selectedDefaultRole = currentDefaultRole)}
               disabled={isSaving}

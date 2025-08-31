@@ -54,6 +54,7 @@
     isLoading = true;
     try {
       const rawEntities = await getMyEntities();
+      console.log(rawEntities);
 
       entities = rawEntities.map((entity) => ({
         resource_type: entity?.resource_type || "",
@@ -237,6 +238,7 @@
         </div>
 
         <button
+          aria-label={$_("my_entries.create_new")}
           onclick={createNewEntry}
           class="btn-primary inline-flex items-center"
         >
@@ -253,6 +255,7 @@
           <SearchOutline
             class="absolute top-1/2 transform -translate-y-1/2 w-5 h-5 ms-2 text-gray-400 search-icon"
           />
+          <label for="search-input" class="visually-hidden"></label>
           <input
             type="text"
             bind:value={searchTerm}
@@ -331,6 +334,7 @@
         </p>
         {#if entities.length === 0}
           <button
+            aria-label={$_("my_entries.create_new")}
             onclick={createNewEntry}
             class="inline-flex items-center btn-primary"
           >
@@ -552,6 +556,7 @@
                       class="flex items-center justify-end space-x-2 action-buttons"
                     >
                       <button
+                        aria-label={$_("my_entries.actions.view")}
                         onclick={() => viewEntity(entity)}
                         class="inline-flex items-center px-3 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors duration-150"
                       >
@@ -559,6 +564,7 @@
                         {$_("my_entries.actions.view")}
                       </button>
                       <button
+                        aria-label={$_("my_entries.actions.edit")}
                         onclick={() => editEntity(entity)}
                         class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-150"
                       >

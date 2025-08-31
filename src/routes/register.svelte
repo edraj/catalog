@@ -167,6 +167,8 @@
         true,
         false
       );
+      console.log(defaultRole);
+
       const role =
         defaultRole.payload.body.items.find(
           (item) => item.key === "default_user_role"
@@ -336,6 +338,7 @@
               {$_("Password")}
             </label>
             <div class="password-input-wrapper" class:rtl={isRTL}>
+              <label for="password" class="visually-hidden"></label>
               <input
                 id="password"
                 type={showPassword ? "text" : "password"}
@@ -347,6 +350,7 @@
                 disabled={isSubmitting}
               />
               <button
+                aria-label={`Toggle password visibility`}
                 type="button"
                 class="password-toggle"
                 onclick={togglePasswordVisibility}
@@ -372,6 +376,7 @@
               {$_("ConfirmPassword")}
             </label>
             <div class="password-input-wrapper" class:rtl={isRTL}>
+              <label for="confirmPassword" class="visually-hidden"></label>
               <input
                 id="confirmPassword"
                 type={showConfirmPassword ? "text" : "password"}
@@ -383,6 +388,7 @@
                 disabled={isSubmitting}
               />
               <button
+                aria-label={`Toggle confirm password visibility`}
                 type="button"
                 class="password-toggle"
                 onclick={toggleConfirmPasswordVisibility}
@@ -403,15 +409,16 @@
           </div>
 
           <div class="form-group">
-            <label class="checkbox-label" class:rtl={isRTL}>
-              <input
-                type="checkbox"
-                bind:checked={agreeToTerms}
-                class="checkbox-input"
-                disabled={isSubmitting}
-              />
-              <span class="checkbox-text">{$_("AgreeToTerms")}</span>
-            </label>
+            <label for="agreeToTerms" class="checkbox-label" class:rtl={isRTL}
+            ></label>
+            <input
+              id="agreeToTerms"
+              type="checkbox"
+              bind:checked={agreeToTerms}
+              class="checkbox-input"
+              disabled={isSubmitting}
+            />
+            <span class="checkbox-text">{$_("AgreeToTerms")}</span>
             {#if errors.terms}
               <p class="error-text-small" class:rtl={isRTL}>{errors.terms}</p>
             {/if}
@@ -441,6 +448,7 @@
           <div class="resend-otp-container" class:rtl={isRTL}>
             <p class="resend-text">{$_("DidNotReceiveOtp")}</p>
             <button
+              aria-label={`Resend OTP`}
               type="button"
               class="resend-button"
               onclick={resendOtp}
@@ -457,6 +465,7 @@
         {/if}
 
         <button
+          aria-label={`Submit form`}
           type="submit"
           class="submit-button"
           class:loading={isSubmitting || isVerifyingOtp}
@@ -478,7 +487,11 @@
 
       {#if isOtpStep}
         <div class="back-link items-center" class:rtl={isRTL}>
-          <button class="link-button d-flex align-center" onclick={goBack}>
+          <button
+            aria-label={`Go back`}
+            class="link-button d-flex align-center"
+            onclick={goBack}
+          >
             <ArrowLeftOutline class="back-icon mx-2" />
             {$_("BackToForm")}
           </button>
@@ -486,7 +499,11 @@
       {:else}
         <div class="login-link" class:rtl={isRTL}>
           <span class="login-text">{$_("AlreadyHaveAccount")}</span>
-          <button class="link-button" onclick={goToLogin}>
+          <button
+            aria-label={`Go to login`}
+            class="link-button"
+            onclick={goToLogin}
+          >
             {$_("SignIn")}
           </button>
         </div>

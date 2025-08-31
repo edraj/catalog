@@ -1,6 +1,6 @@
 <script lang="ts">
   import { ResourceType } from "@edraj/tsdmart";
-  import {marked} from "marked";
+  import { marked } from "marked";
 
   export let attributes: any = {};
   export let resource_type: ResourceType;
@@ -17,12 +17,12 @@
     <p style="margin: 0px"><b>Body:</b>{attributes.body}</p>
   </div>
 {:else if content_type.includes("image")}
-  {#if url.endsWith('svg')}
-    <object data={url} type="image/svg+xml" title="{displayname}">
-      <img src={url} alt={displayname} class="mw-100 border" />
+  {#if url.endsWith("svg")}
+    <object data={url} type="image/svg+xml" title={displayname}>
+      <img src={url} alt={displayname || "no-image"} class="mw-100 border" />
     </object>
   {:else}
-  <img src={url} alt={displayname} class="mw-100 border" />
+    <img src={url} alt={displayname || "no-image"} class="mw-100 border" />
   {/if}
 {:else if content_type.includes("audio")}
   <audio controls src={url}>
@@ -52,6 +52,11 @@
     {@html marked(body)}
   </div>
 {:else}
-  <a href={url} title={displayname}
-     target="_blank" rel="noopener noreferrer" download>link {displayname}</a>
+  <a
+    href={url}
+    title={displayname}
+    target="_blank"
+    rel="noopener noreferrer"
+    download>link {displayname}</a
+  >
 {/if}

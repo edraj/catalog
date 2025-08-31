@@ -124,6 +124,7 @@
             {$_("Password")}
           </label>
           <div class="password-input-wrapper" class:rtl={isRTL}>
+            <label for="password" class="visually-hidden"></label>
             <input
               id="password"
               type={showPassword ? "text" : "password"}
@@ -135,6 +136,7 @@
               disabled={isSubmitting}
             />
             <button
+              aria-label={`Toggle password visibility`}
               type="button"
               class="password-toggle"
               onclick={togglePasswordVisibility}
@@ -158,6 +160,7 @@
           class:loading={isSubmitting}
           class:rtl={isRTL}
           disabled={isSubmitting}
+          aria-label={`Sign in`}
         >
           {#if isSubmitting}
             <div class="loading-spinner"></div>
@@ -171,7 +174,11 @@
 
       <div class="register-link" class:rtl={isRTL}>
         <span class="register-text">{$_("DontHaveAccount")}</span>
-        <button class="link-button" onclick={goToRegister}>
+        <button
+          aria-label={`Go to register`}
+          class="link-button"
+          onclick={goToRegister}
+        >
           {$_("Register")}
         </button>
       </div>

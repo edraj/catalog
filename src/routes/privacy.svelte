@@ -123,7 +123,11 @@
           <p>
             {$_("privacy.questions.description")}
           </p>
-          <button class="btn-contact" onclick={handleContactUs}>
+          <button
+            aria-label={`Contact us`}
+            class="btn-contact"
+            onclick={handleContactUs}
+          >
             {$_("privacy.questions.button")}
           </button>
         </div>

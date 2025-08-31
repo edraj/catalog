@@ -488,6 +488,7 @@
               {/if}
               {#if crumb.path}
                 <button
+                  aria-label={`Navigate to ${crumb.name}`}
                   onclick={() => navigateToBreadcrumb(crumb.path)}
                   class="breadcrumb-link"
                 >
@@ -501,7 +502,7 @@
         </ol>
       </nav>
 
-      <button onclick={goBack} class="back-button">
+      <button aria-label={`Go back`} onclick={goBack} class="back-button">
         <svg
           class="back-icon"
           fill="none"
@@ -795,79 +796,57 @@
               </div>
             {/if}
           </section>
+        {/if}
+        <section class="interactive-section">
+          <h3 class="section-title-large">
+            <span class="title-accent-blue"></span>
+            {$_("post_detail.sections.interact")}
+          </h3>
 
-          <section class="interactive-section">
-            <h3 class="section-title-large">
-              <span class="title-accent-blue"></span>
-              {$_("post_detail.sections.interact")}
-            </h3>
-
-            <div class="comment-form">
-              <h4 class="comment-form-title">
-                {$_("post_detail.comments.add_comment")}
-              </h4>
-              <div class="comment-input-group">
-                <textarea
-                  bind:value={newComment}
-                  placeholder={$_("post_detail.comments.placeholder")}
-                  class="comment-textarea"
-                  rows="3"
-                  disabled={isSubmittingComment}
-                ></textarea>
-                <div class="comment-actions">
-                  <button
-                    onclick={handleAddComment}
-                    disabled={isSubmittingComment || !newComment.trim()}
-                    class="submit-comment-button"
-                  >
-                    {#if isSubmittingComment}
-                      <svg
-                        class="animate-spin w-4 h-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          class="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          stroke-width="4"
-                        ></circle>
-                        <path
-                          class="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      {$_("post_detail.comments.submitting")}
-                    {:else}
-                      <svg
-                        class="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-                        ></path>
-                      </svg>
-                      {$_("post_detail.comments.submit")}
-                    {/if}
-                  </button>
-                  <button
-                    class="interaction-button reaction-button {userReactionId
-                      ? 'active'
-                      : ''}"
-                    onclick={handleToggleReaction}
-                    disabled={isSubmittingReaction}
-                  >
+          <div class="comment-form">
+            <h4 class="comment-form-title">
+              {$_("post_detail.comments.add_comment")}
+            </h4>
+            <div class="comment-input-group">
+              <textarea
+                bind:value={newComment}
+                placeholder={$_("post_detail.comments.placeholder")}
+                class="comment-textarea"
+                rows="3"
+                disabled={isSubmittingComment}
+              ></textarea>
+              <div class="comment-actions">
+                <button
+                  aria-label={`Submit comment`}
+                  onclick={handleAddComment}
+                  disabled={isSubmittingComment || !newComment.trim()}
+                  class="submit-comment-button"
+                >
+                  {#if isSubmittingComment}
                     <svg
-                      class="interaction-icon"
-                      fill={userReactionId ? "currentColor" : "none"}
+                      class="animate-spin w-4 h-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        class="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="4"
+                      ></circle>
+                      <path
+                        class="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    {$_("post_detail.comments.submitting")}
+                  {:else}
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
                     >
@@ -875,22 +854,45 @@
                         stroke-linecap="round"
                         stroke-linejoin="round"
                         stroke-width="2"
-                        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                        d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
                       ></path>
                     </svg>
-                    {#if isSubmittingReaction}
-                      {$_("post_detail.reactions.processing")}
-                    {:else if userReactionId}
-                      {$_("post_detail.reactions.liked")}
-                    {:else}
-                      {$_("post_detail.reactions.like")}
-                    {/if}
-                  </button>
-                </div>
+                    {$_("post_detail.comments.submit")}
+                  {/if}
+                </button>
+                <button
+                  aria-label={`Toggle reaction`}
+                  class="interaction-button reaction-button {userReactionId
+                    ? 'active'
+                    : ''}"
+                  onclick={handleToggleReaction}
+                  disabled={isSubmittingReaction}
+                >
+                  <svg
+                    class="interaction-icon"
+                    fill={userReactionId ? "currentColor" : "none"}
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                    ></path>
+                  </svg>
+                  {#if isSubmittingReaction}
+                    {$_("post_detail.reactions.processing")}
+                  {:else if userReactionId}
+                    {$_("post_detail.reactions.liked")}
+                  {:else}
+                    {$_("post_detail.reactions.like")}
+                  {/if}
+                </button>
               </div>
             </div>
-          </section>
-        {/if}
+          </div>
+        </section>
         {#if mediaFiles.length > 0}
           <section class="media-section">
             <h3 class="section-title-large">
@@ -920,6 +922,7 @@
             <div class="relationships-grid">
               {#each postData.relationships as relationship}
                 <button
+                  aria-label={`View relationship with ${relationship.related_to?.shortname}`}
                   class="relationship-item clickable"
                   onclick={() => handleRelationshipClick(relationship)}
                   disabled={relationship.attributes?.role !== "editor"}
@@ -981,6 +984,7 @@
               <div class="related-content-grid">
                 {#each relatedContent as item}
                   <button
+                    aria-label={`View related content: ${getDisplayName(item)}`}
                     class="related-content-card"
                     onclick={() => handleRelatedContentClick(item)}
                   >
@@ -1051,7 +1055,11 @@
             <h3 class="modal-title">
               {$_("post_detail.login_required.title")}
             </h3>
-            <button onclick={closeLoginPrompt} class="modal-close-button">
+            <button
+              aria-label={`Close login prompt`}
+              onclick={closeLoginPrompt}
+              class="modal-close-button"
+            >
               <svg
                 class="w-5 h-5"
                 fill="none"

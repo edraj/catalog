@@ -198,6 +198,7 @@
             <div class="attachment-actions">
               {#if isImageFile(attachment.attributes?.payload?.body) || isVideoFile(attachment.attributes?.payload?.body) || isPdfFile(attachment.attributes?.payload?.body) || isAudioFile(attachment.attributes?.payload?.body)}
                 <button
+                  aria-label={`Preview ${attachment.shortname}`}
                   class="action-button preview-button"
                   onclick={() => openPreview(attachment)}
                   title="Preview"
@@ -207,6 +208,7 @@
               {/if}
 
               <button
+                aria-label={`Download ${attachment.shortname}`}
                 class="action-button download-button"
                 onclick={() => downloadFile(attachment)}
                 title="Download"
@@ -216,6 +218,7 @@
 
               {#if isOwner}
                 <button
+                  aria-label={`Delete ${attachment.shortname}`}
                   class="action-button delete-button"
                   onclick={() => handleDelete(attachment)}
                   title="Delete"
@@ -246,6 +249,7 @@
                 />
                 <div class="media-overlay">
                   <button
+                    aria-label={`Preview ${attachment.shortname}`}
                     class="preview-overlay-button"
                     onclick={() => openPreview(attachment)}
                   >
@@ -313,7 +317,7 @@
         {#if currentPreview.type === "image"}
           <img
             src={currentPreview.url}
-            alt={currentPreview.shortname}
+            alt={currentPreview.shortname || "no-image"}
             class="modal-image"
           />
         {:else if currentPreview.type === "video"}
@@ -349,6 +353,7 @@
 
       <div class="modal-footer">
         <button
+          aria-label={`Download ${currentPreview.shortname}`}
           class="modal-button download"
           onclick={() => downloadFile(currentPreview)}
         >
@@ -357,6 +362,7 @@
         </button>
         {#if isOwner}
           <button
+            aria-label={`Delete ${currentPreview.shortname}`}
             class="modal-button delete"
             onclick={() => handleDelete(currentPreview)}
           >

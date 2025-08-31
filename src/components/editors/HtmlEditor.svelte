@@ -18,17 +18,14 @@
   let maindiv: HTMLDivElement;
   let editor: any;
 
-  // placeholders for typewriter-editor functions
   let format: any;
   let h: any;
   let Editor: any;
 
-  // custom formats
   let underline, strike, superscript, subscript;
   let alignLeft, alignCenter, alignRight, alignJustify;
 
   onMount(async () => {
-    // ⬇ lazy import here
     const mod = await import("typewriter-editor");
     Editor = mod.Editor;
     h = mod.h;
@@ -101,10 +98,11 @@
         h("div", { style: "text-align: justify" }, children),
     });
 
-    // ✅ Now safe to use Editor (browser only)
+    console.log("Editor initialized with content:", content);
+
     editor = new Editor({
       root: maindiv,
-      html: content,
+      html: content || "",
       types: {
         lines: [
           "paragraph",
@@ -351,8 +349,11 @@
   $effect(() => {
     if (editor && typeof editor.setHTML === "function") {
       const currentHtml = editor.getHTML();
-      if (content !== currentHtml) {
-        editor.setHTML(content);
+      // Ensure content is a string and not null/undefined
+      const newContent = content || "";
+      if (newContent !== currentHtml) {
+        console.log("Updating editor content:", newContent);
+        editor.setHTML(newContent);
       }
     }
   });
@@ -386,8 +387,11 @@
     >
       <div class="attachments-header">
         <h3 class="attachments-title">Item Attachments</h3>
-        <!-- FIX: Added proper close button handler -->
-        <button class="attachments-close" onclick={closeAttachments}>
+        <button
+          class="attachments-close"
+          aria-label={`Close attachments`}
+          onclick={closeAttachments}
+        >
           ✕
         </button>
       </div>
