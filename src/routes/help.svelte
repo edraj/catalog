@@ -114,6 +114,7 @@
         {#each faqs as faq, index}
           <div class="faq-item">
             <button
+              aria-label={`Toggle FAQ ${index}`}
               class="faq-question"
               onclick={() => toggleFaq(index)}
               class:active={openFaq === index}

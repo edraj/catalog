@@ -114,7 +114,7 @@
   <div class="form-group">
     <label class="form-label" for="permissions-search">
       <span class="required">*</span>
-      {$_("permissions")}
+      {$_("permissions.permissions")}
     </label>
 
     {#if $loading}
@@ -138,6 +138,7 @@
                 <path d="m21 21-4.35-4.35"></path>
               </svg>
             </div>
+            <label for="permissions-search"></label>
             <input
               id="permissions-search"
               class="search-input"

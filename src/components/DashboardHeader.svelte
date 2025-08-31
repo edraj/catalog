@@ -192,6 +192,7 @@
                     <div class="menu-section">
                       <div class="menu-section-title">{$_("admin")}</div>
                       <button
+                        aria-label={`Admin Dashboard`}
                         onclick={() => handleMenuItemClick("/dashboard/admin")}
                         class="menu-item"
                       >
@@ -211,6 +212,7 @@
                         <span>{$_("dashboard")}</span>
                       </button>
                       <button
+                        aria-label={`Contact Messages`}
                         onclick={() =>
                           handleMenuItemClick(
                             "/dashboard/admin/contact-messages"
@@ -233,6 +235,7 @@
                         <span>{$_("contact_messages")}</span>
                       </button>
                       <button
+                        aria-label={`Manage Permissions`}
                         onclick={() =>
                           handleMenuItemClick("/dashboard/permissions")}
                         class="menu-item"
@@ -259,6 +262,7 @@
                         <span>{$_("permission")}</span>
                       </button>
                       <button
+                        aria-label={`Manage Roles`}
                         onclick={() => handleMenuItemClick("/dashboard/roles")}
                         class="menu-item"
                       >
@@ -279,6 +283,7 @@
                         <span>{$_("roles")}</span>
                       </button>
                       <button
+                        aria-label={`Manage Users`}
                         onclick={() =>
                           handleMenuItemClick("/dashboard/admin/users")}
                         class="menu-item"
@@ -300,6 +305,7 @@
                         <span>{$_("Users")}</span>
                       </button>
                       <button
+                        aria-label={`Manage Configurations`}
                         onclick={() =>
                           handleMenuItemClick("/dashboard/admin/configs")}
                         class="menu-item"
@@ -327,6 +333,7 @@
                   <!-- Main Navigation -->
                   <div class="menu-section">
                     <button
+                      aria-label={`Entries`}
                       onclick={() => handleMenuItemClick("/entries")}
                       class="menu-item"
                     >
@@ -346,6 +353,7 @@
                       <span>{$_("entries")}</span>
                     </button>
                     <button
+                      aria-label={`Notifications`}
                       onclick={() => handleMenuItemClick("/notifications")}
                       class="menu-item"
                     >
@@ -368,6 +376,7 @@
                       {/if}
                     </button>
                     <button
+                      aria-label={`My Profile`}
                       onclick={() => handleMenuItemClick("/me")}
                       class="menu-item"
                     >
@@ -406,7 +415,9 @@
                           d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
                         />
                       </svg>
+                      <label for="language-select"></label>
                       <select
+                        aria-label={$_("language_select")}
                         bind:value={$locale}
                         onchange={(e) =>
                           switchLocale((e.target as HTMLSelectElement).value)}
@@ -418,6 +429,7 @@
                       </select>
                     </div>
                     <button
+                      aria-label={`Logout`}
                       onclick={handleLogout}
                       class="menu-item logout-item"
                     >
@@ -444,7 +456,9 @@
 
           <!-- Language selector for larger screens -->
           <div class="relative ml-2 hidden sm:block">
+            <label for="language-select"></label>
             <select
+              aria-label={$_("language_select")}
               bind:value={$locale}
               onchange={(e) =>
                 switchLocale((e.target as HTMLSelectElement).value)}
@@ -458,7 +472,9 @@
         {:else}
           <div class="flex items-center space-x-3">
             <div class="relative">
+              <label for="language-select"></label>
               <select
+                aria-label={$_("language_select")}
                 bind:value={$locale}
                 onchange={(e) =>
                   switchLocale((e.target as HTMLSelectElement).value)}

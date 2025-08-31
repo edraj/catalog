@@ -31,7 +31,7 @@
     UploadOutline,
   } from "flowbite-svelte-icons";
   import { _, locale } from "@/i18n";
-  import { derived } from "svelte/store";
+  import { derived, get } from "svelte/store";
   import { onMount } from "svelte";
   import { ResourceType } from "@edraj/tsdmart";
   import { roles } from "@/stores/user";
@@ -113,6 +113,7 @@
         parentPath || "/",
         "managed"
       );
+      console.log(response);
 
       const folders = response.records.filter(
         (item) => item.resource_type === "folder"
@@ -142,7 +143,8 @@
             ?.workflow_shortnames[0] || "",
         schema_shortname:
           response.records[0]?.attributes?.payload?.schema_shortname || "",
-        canCreateEntry: hasNonFolderContent || folders.length === 0,
+        canCreateEntry:
+          level > 0 || hasNonFolderContent || folders.length === 0,
         selectedFolder: "",
       };
 
@@ -159,13 +161,13 @@
 
   function updateCanCreateEntry() {
     if (subpathHierarchy.length === 0) {
-      canCreateEntry = true;
+      canCreateEntry = false;
       return;
     }
 
     const lastLevel = subpathHierarchy[subpathHierarchy.length - 1];
 
-    canCreateEntry = lastLevel.canCreateEntry;
+    canCreateEntry = lastLevel.level > 0 || lastLevel.canCreateEntry;
     resource_type = lastLevel.resource_type;
     workflow_shortname = subpathHierarchy[0].workflow_shortname;
     schema_shortname = lastLevel.schema_shortname;
@@ -379,7 +381,11 @@
 <div class="page-container" class:rtl={$isRTL}>
   <div class="content-wrapper">
     <div class="header">
-      <button class="back-button" onclick={() => $goto("/entries")}>
+      <button
+        aria-label={$_("create_entry.navigation.back_to_entries")}
+        class="back-button"
+        onclick={() => $goto("/entries")}
+      >
         <ArrowLeftOutline class="icon back-icon" />
         <span>{$_("create_entry.navigation.back_to_entries")}</span>
       </button>
@@ -398,6 +404,7 @@
         </div>
         <div class="action-buttons">
           <button
+            aria-label={$_("create_entry.buttons.save_draft")}
             class="draft-button"
             onclick={() => handlePublish(false)}
             disabled={isLoading || !canCreateEntry}
@@ -410,6 +417,7 @@
             >
           </button>
           <button
+            aria-label={$_("create_entry.buttons.publish_now")}
             class="publish-button"
             onclick={() => handlePublish(true)}
             disabled={isLoading || !canCreateEntry}
@@ -553,6 +561,7 @@
       </div>
       <div class="section-content">
         {#if isEditing}
+          <label for="title-input"></label>
           <input
             type="text"
             bind:value={title}
@@ -592,6 +601,7 @@
         </div>
         <div class="section-content">
           {#if isEditingShortname}
+            <label for="shortname-input"></label>
             <input
               type="text"
               bind:value={shortname}
@@ -648,6 +658,7 @@
             }}
           />
           <button
+            aria-label={$_("create_entry.tags.add_button")}
             class="add-tag-button"
             onclick={addTag}
             disabled={!newTag.trim()}
@@ -732,6 +743,7 @@
             values: { count: attachments.length },
           })}
         </h2>
+        <label for="fileInput"></label>
         <input
           type="file"
           id="fileInput"
@@ -740,6 +752,7 @@
           style="display: none;"
         />
         <button
+          aria-label={$_("create_entry.attachments.add_files")}
           class="add-files-button"
           onclick={() => document.getElementById("fileInput").click()}
         >
@@ -757,7 +770,7 @@
                     {#if attachment.type.startsWith("image/")}
                       <img
                         src={getPreviewUrl(attachment) || "/placeholder.svg"}
-                        alt={attachment.name}
+                        alt={attachment.name || "no-image"}
                         class="attachment-image"
                       />
                     {:else if attachment.type.startsWith("video/")}
@@ -793,6 +806,9 @@
                   </p>
                 </div>
                 <button
+                  aria-label={$_("create_entry.attachments.remove_file", {
+                    values: { name: attachment.name },
+                  })}
                   class="remove-attachment"
                   onclick={() => removeAttachment(index)}
                 >

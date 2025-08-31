@@ -133,6 +133,7 @@
         {$_("fields.shortname")}
       </label>
       <div class="input-with-button">
+        <label for="shortname"></label>
         <input
           required
           id="shortname"
@@ -162,6 +163,7 @@
     <!-- Active Checkbox -->
     <div class="field-group">
       <div class="checkbox-group">
+        <label for="is_active"></label>
         <input
           type="checkbox"
           id="is_active"
@@ -189,6 +191,7 @@
 
     <div class="accordion">
       <button
+        aria-label={`Toggle translations`}
         type="button"
         class="accordion-header"
         onclick={() => (isTranslationsOpen = !isTranslationsOpen)}
@@ -212,30 +215,36 @@
       {#if isTranslationsOpen}
         <div class="accordion-content">
           <div class="field-group">
-            <label class="field-label">{$_("fields.displayname")}</label>
+            <label for="displayname-en" class="field-label"
+              >{$_("fields.displayname")}</label
+            >
             <div class="translation-grid">
               <div>
-                <label class="translation-label"
+                <label for="displayname-en" class="translation-label"
                   >{$_("languages.english")}</label
                 >
                 <input
+                  id="displayname-en"
                   class="input-field"
                   bind:value={formData.displayname.en}
                 />
               </div>
               <div>
-                <label class="translation-label">{$_("languages.arabic")}</label
+                <label for="displayname-ar" class="translation-label"
+                  >{$_("languages.arabic")}</label
                 >
                 <input
+                  id="displayname-ar"
                   class="input-field"
                   bind:value={formData.displayname.ar}
                 />
               </div>
               <div>
-                <label class="translation-label"
+                <label for="displayname-ku" class="translation-label"
                   >{$_("languages.kurdish")}</label
                 >
                 <input
+                  id="displayname-ku"
                   class="input-field"
                   bind:value={formData.displayname.ku}
                 />
@@ -245,32 +254,38 @@
 
           <!-- Descriptions -->
           <div class="field-group">
-            <label class="field-label">{$_("fields.description")}</label>
+            <label for="description-en" class="field-label"
+              >{$_("fields.description")}</label
+            >
             <div class="translation-grid">
               <div>
-                <label class="translation-label"
+                <label for="description-en" class="translation-label"
                   >{$_("languages.english")}</label
                 >
                 <textarea
+                  id="description-en"
                   class="textarea-field"
                   bind:value={formData.description.en}
                   rows="3"
                 ></textarea>
               </div>
               <div>
-                <label class="translation-label">{$_("languages.arabic")}</label
+                <label for="description-ar" class="translation-label"
+                  >{$_("languages.arabic")}</label
                 >
                 <textarea
+                  id="description-ar"
                   class="textarea-field"
                   bind:value={formData.description.ar}
                   rows="3"
                 ></textarea>
               </div>
               <div>
-                <label class="translation-label"
+                <label for="description-ku" class="translation-label"
                   >{$_("languages.kurdish")}</label
                 >
                 <textarea
+                  id="description-ku"
                   class="textarea-field"
                   bind:value={formData.description.ku}
                   rows="3"

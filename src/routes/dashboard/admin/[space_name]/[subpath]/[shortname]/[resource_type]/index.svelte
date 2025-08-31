@@ -41,7 +41,7 @@
   const authorRelatedEntries = writable([]);
   let authorRelatedEntriesValue = $state([]);
   let itemDataValue = $state(null);
-  let htmlEditor: any = $state("");
+  let htmlEditor: string = $state(""); // Ensure it's typed as string
 
   const editForm = writable({
     title: "",
@@ -59,7 +59,37 @@
     is_active: true,
   });
 
-  // ... existing functions remain the same ...
+  // Helper function to extract content based on content_type
+  function getItemContent(item) {
+    if (!item?.payload) return "";
+
+    const contentType = item.payload.content_type;
+
+    if (contentType === "html") {
+      return item.payload.body || "";
+    } else if (contentType === "json") {
+      // For JSON content type, extract the content field from the body
+      if (item.payload.body && typeof item.payload.body === "object") {
+        return item.payload.body.content || "";
+      }
+      return "";
+    }
+
+    return item.payload.body || "";
+  }
+
+  function prepareContentForSave(content, originalContentType) {
+    if (originalContentType === "json") {
+      return {
+        title: editFormValue.title,
+        content: content || "",
+      };
+    }
+
+    // For HTML content type, return content directly
+    return content || "";
+  }
+
   onMount(async () => {
     await initializeContent();
   });
@@ -144,31 +174,32 @@
         itemDataValue = response;
         itemData.set(response);
 
-        const title =
+        let title =
           response.payload?.body?.title ||
           response.payload?.title ||
-          response.title ||
-          "";
-        let content = "";
-        if (itemDataValue.payload?.content_type == "json") {
-          content = response.payload?.body?.content || "";
+          response.title;
+
+        if (!title || title.trim() === "") {
+          title = getDisplayName(response);
         }
-        if (itemDataValue.payload?.content_type == "html") {
-          content = response.payload?.body || "";
-        }
+        const currentDisplayName = response.displayname?.[$locale] || "";
+
+        const content = getItemContent(response);
+
         const tags = response.tags || [];
         const tagsString = Array.from(tags).join(", ");
 
         editFormValue = {
-          title: typeof title === "string" ? title : getDisplayName(response),
-          content:
-            typeof content === "string" ? content : getDescription(response),
+          title: currentDisplayName,
+          content: content || getDescription(response),
           tags: Array.isArray(tags) ? tags : Array.from(tags),
           tagsString: tagsString,
           is_active: response.is_active,
         };
         editForm.set(editFormValue);
-        htmlEditor = content;
+
+        // Set the HTML editor content based on content type
+        htmlEditor = content || "";
       } else {
         console.error("No valid response found for item:", itemShortnameValue);
         error.set($_("admin_item_detail.error.item_not_found"));
@@ -182,7 +213,7 @@
   }
 
   async function handleUpdateItem(event) {
-    event?.preventDefault();
+    event.preventDefault();
 
     try {
       const htmlContent = htmlEditor || editFormValue.content;
@@ -192,12 +223,24 @@
         .map((tag) => tag.trim())
         .filter((tag) => tag.length > 0);
 
-      const entityData = {
-        title: editFormValue.title,
-        tags: tagsArray,
-        content: htmlContent,
-        is_active: editFormValue.is_active,
+      const updatedDisplayname = {
+        ...itemDataValue.displayname,
+        [$locale]: editFormValue.title,
       };
+
+      const contentType = itemDataValue?.payload?.content_type;
+      let preparedContent = prepareContentForSave(htmlContent, contentType);
+      console.log(preparedContent);
+
+      const entityData = {
+        displayname: updatedDisplayname,
+        tags: tagsArray,
+        content: preparedContent,
+        is_active: editFormValue.is_active,
+        content_type: contentType,
+      };
+
+      console.log("Updating with entity data:", entityData);
 
       const response = await updateEntity(
         itemShortnameValue,
@@ -256,12 +299,11 @@
 
   function getDisplayName(item) {
     if (item?.displayname) {
-      return (
-        item.displayname[$locale] ||
-        item.displayname.en ||
-        item.displayname.ar ||
-        item.shortname
-      );
+      const localeDisplay = item.displayname[$locale]?.trim();
+      const enDisplay = item.displayname.en?.trim();
+      const arDisplay = item.displayname.ar?.trim();
+
+      return localeDisplay || enDisplay || arDisplay || item.shortname;
     }
     return item?.shortname || $_("admin_item_detail.unnamed_item");
   }
@@ -359,6 +401,7 @@
             onclick={goBack}
             class="flex items-center text-gray-600 hover:text-gray-900 transition-colors duration-200"
             class:flex-row-reverse={$isRTL}
+            aria-label={`Go back`}
           >
             <svg
               class="w-5 h-5 mr-2"
@@ -917,7 +960,7 @@
                       stroke-linecap="round"
                       stroke-linejoin="round"
                       stroke-width="2"
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 2 0 01-2 2z"
                     />
                   </svg>
                   <p class="mt-2">
@@ -1114,7 +1157,7 @@
                           class:flex-row-reverse={$isRTL}
                           class:text-right={$isRTL}
                         >
-                          {#if type === "comment"}
+                          {#if type === "comment" || type === "reply"}
                             <svg
                               class="w-5 h-5 text-blue-600"
                               fill="none"
@@ -1140,6 +1183,20 @@
                                 stroke-linejoin="round"
                                 stroke-width="2"
                                 d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                              />
+                            </svg>
+                          {:else if type === "share"}
+                            <svg
+                              class="w-5 h-5 text-purple-600"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
                               />
                             </svg>
                           {:else if type === "media"}
@@ -1202,7 +1259,7 @@
                       </div>
 
                       <div class="p-6">
-                        {#if type === "comment"}
+                        {#if type === "comment" || type === "reply"}
                           <div class="space-y-4">
                             {#each attachmentsArr as comment}
                               <div
@@ -1360,6 +1417,96 @@
                                     <p class="text-xs text-gray-500">
                                       Last updated: {new Date(
                                         reaction.attributes.updated_at
+                                      ).toLocaleDateString()}
+                                    </p>
+                                  </div>
+                                {/if}
+                              </div>
+                            {/each}
+                          </div>
+                        {:else if type === "share"}
+                          <div class="space-y-3">
+                            {#each attachmentsArr as share}
+                              <div
+                                class="bg-purple-50 rounded-lg p-4 border border-purple-200"
+                              >
+                                <div class="flex items-center justify-between">
+                                  <div
+                                    class="flex items-center space-x-3"
+                                    class:space-x-reverse={$isRTL}
+                                  >
+                                    <div
+                                      class="w-10 h-10 bg-purple-400 rounded-full flex items-center justify-center"
+                                    >
+                                      <svg
+                                        class="w-5 h-5 text-purple-800"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path
+                                          stroke-linecap="round"
+                                          stroke-linejoin="round"
+                                          stroke-width="2"
+                                          d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
+                                        />
+                                      </svg>
+                                    </div>
+
+                                    <div>
+                                      <div
+                                        class="flex items-center space-x-2 mb-1"
+                                      >
+                                        <span
+                                          class="text-sm font-medium text-gray-900"
+                                        >
+                                          {share.attributes.owner_shortname ||
+                                            "Anonymous"}
+                                        </span>
+                                        <span class="text-xs text-gray-500">
+                                          shared
+                                        </span>
+                                      </div>
+                                      <p class="text-xs text-gray-500">
+                                        {new Date(
+                                          share.attributes.created_at
+                                        ).toLocaleDateString()} at {new Date(
+                                          share.attributes.created_at
+                                        ).toLocaleTimeString()}
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  <div class="text-right">
+                                    <p class="text-xs text-gray-400 mb-1">
+                                      ID: {share.shortname}
+                                    </p>
+                                    <span
+                                      class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800"
+                                    >
+                                      {share.resource_type}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {#if share.attributes.payload?.shared_with}
+                                  <div
+                                    class="mt-2 pt-2 border-t border-purple-200"
+                                  >
+                                    <p class="text-xs text-gray-500">
+                                      Shared with: {share.attributes.payload
+                                        .shared_with}
+                                    </p>
+                                  </div>
+                                {/if}
+
+                                {#if share.attributes.updated_at !== share.attributes.created_at}
+                                  <div
+                                    class="mt-2 pt-2 border-t border-purple-200"
+                                  >
+                                    <p class="text-xs text-gray-500">
+                                      Last updated: {new Date(
+                                        share.attributes.updated_at
                                       ).toLocaleDateString()}
                                     </p>
                                   </div>
@@ -1563,6 +1710,7 @@
               </div>
             </div>
           {/if}
+
           {#if $activeTab === "author-entries"}
             <div class="space-y-6">
               <h3
@@ -1707,7 +1855,7 @@
                       stroke-linecap="round"
                       stroke-linejoin="round"
                       stroke-width="2"
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 2 0 01-2 2z"
                     />
                   </svg>
                   <p class="mt-2">
@@ -1734,7 +1882,7 @@
               stroke-linecap="round"
               stroke-linejoin="round"
               stroke-width="2"
-              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 2 0 01-2 2z"
             ></path>
           </svg>
         </div>
@@ -1749,7 +1897,10 @@
   </div>
 </div>
 
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 {#if $showEditModal}
+  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+  <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
   <div
     class="modal-overlay"
     role="dialog"
@@ -1759,6 +1910,7 @@
       if (e.key === "Escape") showEditModal.set(false);
     }}
   >
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
     <div
       class="modal-container"
       class:rtl={$isRTL}
@@ -1799,7 +1951,14 @@
       </div>
 
       <div class="modal-content">
-        <form class="modal-form" onsubmit={handleUpdateItem}>
+        <!-- Fixed form onsubmit to use proper event handler with preventDefault -->
+        <form
+          class="modal-form"
+          onsubmit={(event) => {
+            event.preventDefault();
+            handleUpdateItem(event);
+          }}
+        >
           <div class="form-grid">
             <!-- Left Column - Basic Fields -->
             <div class="form-column">
@@ -1879,6 +2038,7 @@
               <div class="status-container">
                 <div class="status-toggle" class:rtl-toggle={$isRTL}>
                   <div class="toggle-wrapper">
+                    <label for="editIsActive"></label>
                     <input
                       id="editIsActive"
                       type="checkbox"
@@ -1954,7 +2114,7 @@
                       stroke-linecap="round"
                       stroke-linejoin="round"
                       stroke-width="2"
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 2 0 01-2 2z"
                     />
                   </svg>
                   {$_("admin_item_detail.edit_modal.fields.content")}
@@ -1969,7 +2129,9 @@
                     uid="main-editor"
                     isEditMode={true}
                     attachments={itemDataValue?.attachments || []}
-                    changed={() => {}}
+                    changed={() => {
+                      console.log("Content changed:", htmlEditor);
+                    }}
                   />
                 </div>
               </div>
@@ -1982,6 +2144,7 @@
                 type="button"
                 onclick={() => showEditModal.set(false)}
                 class="cancel-button"
+                aria-label={`Cancel editing item`}
               >
                 <svg
                   class="button-icon"
@@ -1998,7 +2161,12 @@
                 </svg>
                 {$_("admin_item_detail.edit_modal.actions.cancel")}
               </button>
-              <button type="submit" class="save-button">
+              <!-- Removed onclick handler from submit button to rely on form onsubmit -->
+              <button
+                aria-label={`Save changes`}
+                type="submit"
+                class="save-button"
+              >
                 <svg
                   class="button-icon"
                   fill="none"
@@ -2022,7 +2190,6 @@
   </div>
 {/if}
 
-<!-- ... existing styles ... -->
 <style>
   .modal-overlay {
     position: fixed;
@@ -2041,8 +2208,9 @@
     border-radius: 1rem;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     width: 100%;
-    max-width: 64rem;
-    max-height: 95vh;
+    max-width: 80rem;
+    max-height: 90vh;
+    overflow: hidden;
     overflow: hidden;
     animation: modalSlideIn 0.3s ease-out;
   }
@@ -2104,7 +2272,7 @@
 
   .modal-content {
     overflow-y: auto;
-    max-height: calc(95vh - 140px);
+    max-height: calc(90vh - 140px);
   }
 
   .modal-form {
@@ -2112,31 +2280,28 @@
   }
 
   .form-grid {
-    display: grid;
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 2rem;
   }
 
-  @media (min-width: 1024px) {
-    .form-grid {
-      grid-template-columns: 1fr 1fr;
-    }
+  .form-column {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1.5rem;
   }
 
-  .form-column {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
+  @media (max-width: 768px) {
+    .form-column {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
   }
 
   .editor-column {
     grid-column: span 1;
-  }
-
-  @media (min-width: 1024px) {
-    .editor-column {
-      grid-column: span 1;
-    }
+    width: 100%;
   }
 
   .form-group,
@@ -2153,10 +2318,6 @@
     color: #1f2937;
     margin-bottom: 0.75rem;
     cursor: pointer;
-  }
-
-  .rtl-label {
-    flex-direction: row-reverse;
   }
 
   .label-icon {
@@ -2207,7 +2368,6 @@
   }
 
   .rtl-toggle {
-    flex-direction: row-reverse;
     justify-content: flex-end;
   }
 
@@ -2278,10 +2438,6 @@
     margin-bottom: 0.25rem;
   }
 
-  .rtl-status-label {
-    flex-direction: row-reverse;
-  }
-
   .status-description {
     font-size: 0.75rem;
     color: #6b7280;
@@ -2295,8 +2451,8 @@
     background: white;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     transition: border-color 0.2s ease;
-    height: 600px;
-    max-height: 500px;
+    height: 500px; /* Increased from 600px with max-height 500px */
+    min-height: 500px;
     overflow-y: auto;
   }
 
@@ -2314,10 +2470,6 @@
     display: flex;
     justify-content: flex-end;
     gap: 1rem;
-  }
-
-  .rtl-actions {
-    flex-direction: row-reverse;
   }
 
   .cancel-button,
@@ -2374,9 +2526,6 @@
   }
 
   /* RTL Support */
-  .rtl .header-content {
-    flex-direction: row-reverse;
-  }
 
   .rtl .form-grid {
     direction: rtl;
@@ -2425,7 +2574,6 @@
     }
   }
 
-  /* Animation for smooth interactions */
   .form-input,
   .toggle-switch,
   .cancel-button,

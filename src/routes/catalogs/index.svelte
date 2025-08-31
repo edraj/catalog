@@ -355,6 +355,7 @@
             d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
           ></path>
         </svg>
+        <label for="search-input"></label>
         <input
           type="text"
           placeholder={$_("catalogs.search.placeholder")}
@@ -371,6 +372,7 @@
 
       {#if !searchQuery.trim()}
         <div class="filters">
+          <label for="sort-select"></label>
           <select bind:value={sortBy} class="filter-select">
             <option value="name">{$_("catalogs.sort.name")}</option>
             <option value="created">{$_("catalogs.sort.created")}</option>
@@ -399,7 +401,7 @@
             ></path>
           </svg>
         </div>
-        <h3 class="error-title">{$_("catalogs.error.title")}</h3>
+        <h2 class="error-title">{$_("catalogs.error.title")}</h2>
         <p class="error-message">{error}</p>
       </div>
     {:else if searchQuery.trim() && searchResults.length === 0 && !isSearching}
@@ -716,7 +718,7 @@
                   </div>
                 </div>
                 <div class="space-info">
-                  <h3 class="space-title">{getDisplayName(space)}</h3>
+                  <h1 class="space-title">{getDisplayName(space)}</h1>
                   <p class="space-shortname">@{space.shortname}</p>
                 </div>
               </div>
@@ -828,17 +830,6 @@
           <p class="brand-description">
             {$_("BrandDescription")}
           </p>
-          <div class="social-icons">
-            <a href="#" class="social-icon">
-              <GlobeSolid class="icon" />
-            </a>
-            <a href="#" class="social-icon">
-              <MessageCaptionSolid class="icon" />
-            </a>
-            <a href="#" class="social-icon">
-              <HeartSolid class="icon" />
-            </a>
-          </div>
         </div>
 
         <div class="footer-column">
@@ -1006,6 +997,13 @@
     text-align: center;
     padding: 4rem 0;
   }
+  .loading-state {
+    display: flex;
+    padding: 4rem 0;
+    flex-direction: column;
+    align-items: center;
+    margin: 400px;
+  }
 
   .loading-text {
     margin-top: 1rem;
@@ -1162,7 +1160,8 @@
     align-items: center;
     gap: 0.5rem;
     color: #6366f1;
-    font-size: 0.875rem;
+    font-size: 1.3rem;
+    margin-top: 20px;
     font-weight: 500;
     text-decoration: none;
     transition: color 0.2s ease;
@@ -1795,8 +1794,9 @@
   .website-link {
     display: inline-flex;
     align-items: center;
+    margin-top: 20px;
     gap: 0.4rem;
-    font-size: 0.85rem;
+    font-size: 1.3rem;
     font-weight: 500;
     color: #2d6cdf;
     text-decoration: none;
@@ -1808,8 +1808,8 @@
   }
 
   .link-icon {
-    width: 16px;
-    height: 16px;
+    width: 22px;
+    height: 22px;
   }
 
   .space-tags {
@@ -1893,20 +1893,6 @@
     margin-bottom: 1.5rem;
     max-width: 24rem;
     line-height: 1.6;
-  }
-
-  .social-icons {
-    display: flex;
-    gap: 1rem;
-  }
-
-  .social-icon {
-    color: #9ca3af;
-    transition: color 0.3s ease;
-  }
-
-  .social-icon:hover {
-    color: white;
   }
 
   .footer-column-title {

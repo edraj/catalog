@@ -1603,6 +1603,7 @@
     "invalid_json": "تنسيق JSON غير صحيح"
   },
   "permissions": {
+    "permissions": "الصلاحيات",
     "title": "إعدادات الصلاحيات",
     "resource_types": "أنواع الموارد",
     "actions": "الإجراءات"
@@ -1651,6 +1652,5 @@
   "addedPermissions": "الصلاحيات المضافة",
   "remove": "إزالة",
   "noPermissionsAdded": "لم تتم إضافة أي صلاحيات",
-  "permissions": "الصلاحيات",
   "or": "أو"
 }

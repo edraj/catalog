@@ -562,7 +562,7 @@
   <div class="header-section">
     <div class="container mx-auto px-4 py-6 max-w-7xl">
       <div class="header-nav">
-        <button onclick={goBack} class="back-button">
+        <button aria-label={`Go back`} onclick={goBack} class="back-button">
           <svg
             class="back-icon"
             fill="none"
@@ -654,7 +654,11 @@
           {$_("catalog_contents.error.title")}
         </h3>
         <p class="error-message">{error}</p>
-        <button onclick={() => loadContents(true)} class="retry-button">
+        <button
+          aria-label={`Retry loading content`}
+          onclick={() => loadContents(true)}
+          class="retry-button"
+        >
           {$_("catalog_contents.error.try_again")}
         </button>
       </div>
@@ -681,6 +685,7 @@
             <div class="tags-actions">
               {#if availableContentTags.length > 12}
                 <button
+                  aria-label={`Show all tags`}
                   onclick={() => (showAllTags = !showAllTags)}
                   class="show-all-tags-button"
                 >
@@ -691,7 +696,11 @@
                 </button>
               {/if}
               {#if selectedContentTags.length > 0}
-                <button onclick={clearAllFilters} class="clear-filters-button">
+                <button
+                  aria-label={`Clear all filters`}
+                  onclick={clearAllFilters}
+                  class="clear-filters-button"
+                >
                   {$_("catalog_contents.filters.clear_filters")}
                 </button>
               {/if}
@@ -776,7 +785,11 @@
             {$_("catalog_contents.filters.title")}
           </h2>
           {#if searchQuery || selectedContentTags.length > 0}
-            <button onclick={clearAllFilters} class="clear-all-filters-button">
+            <button
+              onclick={clearAllFilters}
+              class="clear-all-filters-button"
+              aria-label={`Clear all filters`}
+            >
               {$_("catalog_contents.filters.clear_all")}
             </button>
           {/if}
@@ -1088,6 +1101,7 @@
                   <div class="card-content-tags">
                     {#each item.attributes?.tags.slice(0, 3) as tag}
                       <button
+                        aria-label={`Filter by tag: ${tag}`}
                         class="content-tag-badge {selectedContentTags.includes(
                           tag
                         )
@@ -1336,7 +1350,11 @@
               : $_("catalog_contents.empty.space_empty")}
           </p>
           {#if searchQuery || selectedContentTags.length > 0}
-            <button onclick={clearAllFilters} class="clear-filters-button">
+            <button
+              aria-label={`Clear all filters`}
+              onclick={clearAllFilters}
+              class="clear-filters-button"
+            >
               {$_("catalog_contents.filters.clear_all")}
             </button>
           {/if}

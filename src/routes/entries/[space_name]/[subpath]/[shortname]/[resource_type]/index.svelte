@@ -221,13 +221,21 @@
     <div class="content-wrapper">
       <!-- Header -->
       <div class="header">
-        <button class="back-button" onclick={() => $goto("/entries")}>
+        <button
+          aria-label={$_("entry_detail.navigation.back_to_entries")}
+          class="back-button"
+          onclick={() => $goto("/entries")}
+        >
           <ArrowLeftOutline class="w-5 h-5" />
           {$_("entry_detail.back_to_entries")}
         </button>
 
         {#if isOwner}
-          <button class="edit-button" onclick={() => handleEdit(entity)}>
+          <button
+            aria-label={$_("entry_detail.navigation.edit_entry")}
+            class="edit-button"
+            onclick={() => handleEdit(entity)}
+          >
             <EditOutline class="w-4 h-4" />
             {$_("entry_detail.edit_entry")}
           </button>
@@ -346,6 +354,7 @@
         <!-- Actions -->
         <div class="actions-section">
           <button
+            aria-label={$_("entry_detail.actions.like")}
             class="like-button {userReactionEntry ? 'liked' : ''}"
             onclick={handleReaction}
             disabled={isLoading}
@@ -374,6 +383,7 @@
         <div class="comment-form">
           <div class="comment-input-container">
             <div class="comment-input-wrapper">
+              <label for="comment-input" class="visually-hidden"></label>
               <input
                 type="text"
                 bind:value={comment}
@@ -455,10 +465,16 @@
                     </span>
                     {#if comment.attributes.owner_shortname === $user.shortname}
                       <button
+                        aria-label={$_("entry_detail.comments.delete_comment")}
                         class="delete-comment"
                         onclick={() => deleteComment(comment.shortname)}
                       >
-                        <TrashBinSolid class="w-3 h-3" />
+                        <TrashBinSolid
+                          aria-label={$_(
+                            "entry_detail.comments.delete_comment"
+                          )}
+                          class="w-3 h-3"
+                        />
                       </button>
                     {/if}
                   </div>

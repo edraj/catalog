@@ -1,7 +1,6 @@
 <script lang="ts">
   import { Dmart } from "@edraj/tsdmart";
   import { onMount } from "svelte";
-  import { Editor, h, format } from "typewriter-editor";
 
   let {
     uid = "",
@@ -16,79 +15,94 @@
   } = $props();
 
   let showAttachments = $state(false);
-  let maindiv;
-  let editor;
+  let maindiv: HTMLDivElement;
+  let editor: any;
 
-  const underline = format({
-    name: "underline",
-    selector: "u",
-    styleSelector:
-      '[style*="text-decoration:underline"], [style*="text-decoration: underline"]',
-    commands: (editor) => () => editor.toggleTextFormat({ underline: true }),
-    shortcuts: "Mod+U",
-    render: (attributes, children) => h("u", null, children),
-  });
+  let format: any;
+  let h: any;
+  let Editor: any;
 
-  const strike = format({
-    name: "strike",
-    selector: "strike, s",
-    styleSelector:
-      '[style*="text-decoration:line-through"], [style*="text-decoration: line-through"]',
-    commands: (editor) => () => editor.toggleTextFormat({ strike: true }),
-    shortcuts: "Mod+Shift+X",
-    render: (attributes, children) => h("s", null, children),
-  });
-
-  const superscript = format({
-    name: "superscript",
-    selector: "sup",
-    commands: (editor) => () => editor.toggleTextFormat({ superscript: true }),
-    render: (attributes, children) => h("sup", null, children),
-  });
-
-  const subscript = format({
-    name: "subscript",
-    selector: "sub",
-    commands: (editor) => () => editor.toggleTextFormat({ subscript: true }),
-    render: (attributes, children) => h("sub", null, children),
-  });
-
-  const alignLeft = format({
-    name: "align-left",
-    selector: '[style*="text-align:left"], [style*="text-align: left"]',
-    commands: (editor) => () => editor.formatLine({ align: "left" }),
-    render: (attributes, children) =>
-      h("div", { style: "text-align: left" }, children),
-  });
-
-  const alignCenter = format({
-    name: "align-center",
-    selector: '[style*="text-align:center"], [style*="text-align: center"]',
-    commands: (editor) => () => editor.formatLine({ align: "center" }),
-    render: (attributes, children) =>
-      h("div", { style: "text-align: center" }, children),
-  });
-
-  const alignRight = format({
-    name: "align-right",
-    selector: '[style*="text-align:right"], [style*="text-align: right"]',
-    commands: (editor) => () => editor.formatLine({ align: "right" }),
-    render: (attributes, children) =>
-      h("div", { style: "text-align: right" }, children),
-  });
-
-  const alignJustify = format({
-    name: "align-justify",
-    selector: '[style*="text-align:justify"], [style*="text-align: justify"]',
-    commands: (editor) => () => editor.formatLine({ align: "justify" }),
-    render: (attributes, children) =>
-      h("div", { style: "text-align: justify" }, children),
-  });
+  let underline, strike, superscript, subscript;
+  let alignLeft, alignCenter, alignRight, alignJustify;
 
   onMount(async () => {
+    const mod = await import("typewriter-editor");
+    Editor = mod.Editor;
+    h = mod.h;
+    format = mod.format;
+
+    underline = format({
+      name: "underline",
+      selector: "u",
+      styleSelector:
+        '[style*="text-decoration:underline"], [style*="text-decoration: underline"]',
+      commands: (editor) => () => editor.toggleTextFormat({ underline: true }),
+      shortcuts: "Mod+U",
+      render: (attributes, children) => h("u", null, children),
+    });
+
+    strike = format({
+      name: "strike",
+      selector: "strike, s",
+      styleSelector:
+        '[style*="text-decoration:line-through"], [style*="text-decoration: line-through"]',
+      commands: (editor) => () => editor.toggleTextFormat({ strike: true }),
+      shortcuts: "Mod+Shift+X",
+      render: (attributes, children) => h("s", null, children),
+    });
+
+    superscript = format({
+      name: "superscript",
+      selector: "sup",
+      commands: (editor) => () =>
+        editor.toggleTextFormat({ superscript: true }),
+      render: (attributes, children) => h("sup", null, children),
+    });
+
+    subscript = format({
+      name: "subscript",
+      selector: "sub",
+      commands: (editor) => () => editor.toggleTextFormat({ subscript: true }),
+      render: (attributes, children) => h("sub", null, children),
+    });
+
+    alignLeft = format({
+      name: "align-left",
+      selector: '[style*="text-align:left"], [style*="text-align: left"]',
+      commands: (editor) => () => editor.formatLine({ align: "left" }),
+      render: (attributes, children) =>
+        h("div", { style: "text-align: left" }, children),
+    });
+
+    alignCenter = format({
+      name: "align-center",
+      selector: '[style*="text-align:center"], [style*="text-align: center"]',
+      commands: (editor) => () => editor.formatLine({ align: "center" }),
+      render: (attributes, children) =>
+        h("div", { style: "text-align: center" }, children),
+    });
+
+    alignRight = format({
+      name: "align-right",
+      selector: '[style*="text-align:right"], [style*="text-align: right"]',
+      commands: (editor) => () => editor.formatLine({ align: "right" }),
+      render: (attributes, children) =>
+        h("div", { style: "text-align: right" }, children),
+    });
+
+    alignJustify = format({
+      name: "align-justify",
+      selector: '[style*="text-align:justify"], [style*="text-align: justify"]',
+      commands: (editor) => () => editor.formatLine({ align: "justify" }),
+      render: (attributes, children) =>
+        h("div", { style: "text-align: justify" }, children),
+    });
+
+    console.log("Editor initialized with content:", content);
+
     editor = new Editor({
       root: maindiv,
-      html: content,
+      html: content || "",
       types: {
         lines: [
           "paragraph",
@@ -335,8 +349,11 @@
   $effect(() => {
     if (editor && typeof editor.setHTML === "function") {
       const currentHtml = editor.getHTML();
-      if (content !== currentHtml) {
-        editor.setHTML(content);
+      // Ensure content is a string and not null/undefined
+      const newContent = content || "";
+      if (newContent !== currentHtml) {
+        console.log("Updating editor content:", newContent);
+        editor.setHTML(newContent);
       }
     }
   });
@@ -370,8 +387,11 @@
     >
       <div class="attachments-header">
         <h3 class="attachments-title">Item Attachments</h3>
-        <!-- FIX: Added proper close button handler -->
-        <button class="attachments-close" onclick={closeAttachments}>
+        <button
+          class="attachments-close"
+          aria-label={`Close attachments`}
+          onclick={closeAttachments}
+        >
           ✕
         </button>
       </div>

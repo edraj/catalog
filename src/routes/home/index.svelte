@@ -133,10 +133,14 @@
           {$_("ExploreAsGuest")}
         </button>
         <button
+          aria-label={$_("CTADescription")}
           class="btn-cta-secondary flex items-center"
           onclick={handleContactUs}
         >
-          <MessagesOutline class="button-icon mr-2" />
+          <MessagesOutline
+            aria-label={$_("CTADescription")}
+            class="button-icon mr-2"
+          />
           {$_("ContactUs")}
         </button>
       </div>
@@ -151,17 +155,6 @@
           <p class="brand-description">
             {$_("BrandDescription")}
           </p>
-          <div class="social-icons">
-            <a href="#" class="social-icon">
-              <GlobeSolid class="icon" />
-            </a>
-            <a href="#" class="social-icon">
-              <MessageCaptionSolid class="icon" />
-            </a>
-            <a href="#" class="social-icon">
-              <HeartSolid class="icon" />
-            </a>
-          </div>
         </div>
 
         <div class="footer-column">

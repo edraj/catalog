@@ -68,7 +68,7 @@
 
   onMount(async () => {
     try {
-      const spacesResponse = await getSpaces();
+      const spacesResponse = await getSpaces(true);
       spaces = spacesResponse.records.map((space) => ({
         name: space.shortname,
         value: space.shortname,
@@ -280,6 +280,7 @@
           {/each}
         </select>
         <button
+          aria-label={`Add resource type`}
           type="button"
           class="btn btn-primary btn-small"
           onclick={addResourceType}>+</button
@@ -292,6 +293,7 @@
             <div class="tag tag-blue">
               <span>{item}</span>
               <button
+                aria-label={`Remove resource type ${item}`}
                 type="button"
                 class="tag-remove"
                 onclick={() => removeResourceType(item)}>×</button
@@ -320,6 +322,7 @@
           {/each}
         </select>
         <button
+          aria-label={`Add action`}
           type="button"
           class="btn btn-primary btn-small"
           onclick={addAction}>+</button
@@ -332,6 +335,7 @@
             <div class="tag tag-green">
               <span>{item}</span>
               <button
+                aria-label={`Remove action ${item}`}
                 type="button"
                 class="tag-remove"
                 onclick={() => removeAction(item)}>×</button
@@ -409,6 +413,7 @@
                       {/each}
                     </select>
                     <button
+                      aria-label={`Add subpath ${selectedSubpath} to space ${selectedSpace}`}
                       type="button"
                       class="btn btn-primary btn-small"
                       onclick={addSubpathToSpace}
@@ -429,6 +434,7 @@
                         <div class="tag tag-purple">
                           <span>{path}</span>
                           <button
+                            aria-label={`Remove subpath ${path} from space ${space}`}
                             type="button"
                             class="tag-remove"
                             onclick={() => removeSubpath(space, path)}>×</button
@@ -470,6 +476,7 @@
                 <option value="is_active">{$_("conditions.is_active")}</option>
               </select>
               <button
+                aria-label={`Add condition ${newCondition}`}
                 type="button"
                 class="btn btn-primary btn-small"
                 onclick={addCondition}>+</button
@@ -482,6 +489,7 @@
                   <div class="tag tag-yellow">
                     <span>{item}</span>
                     <button
+                      aria-label={`Remove condition ${item}`}
                       type="button"
                       class="tag-remove"
                       onclick={() => removeCondition(item)}>×</button
@@ -515,6 +523,7 @@
         {#if accordionStates.restrictedFields}
           <div class="accordion-content">
             <div class="input-group">
+              <label for="restrictedFieldInput"></label>
               <input
                 type="text"
                 class="form-input"
@@ -523,6 +532,7 @@
                 id="restrictedFieldInput"
               />
               <button
+                aria-label={`Add restricted field ${newRestrictedField}`}
                 type="button"
                 class="btn btn-primary btn-small"
                 onclick={addRestrictedField}>+</button
@@ -535,6 +545,7 @@
                   <div class="tag tag-red">
                     <span>{item}</span>
                     <button
+                      aria-label={`Remove restricted field ${item}`}
                       type="button"
                       class="tag-remove"
                       onclick={() => removeRestrictedField(item)}>×</button
@@ -582,6 +593,7 @@
               style="display: flex; justify-content: flex-end; margin-top: 12px;"
             >
               <button
+                aria-label={`Apply changes to JSON editor`}
                 type="button"
                 class="btn btn-secondary"
                 onclick={saveJsonEditor}>{$_("buttons.apply_changes")}</button

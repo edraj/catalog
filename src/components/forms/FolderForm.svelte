@@ -169,6 +169,7 @@
         {#each content.index_attributes as attribute, index}
           <div class="attribute-item">
             <div class="attribute-input">
+              <label for="index_attribute_key_{index}"></label>
               <input
                 class="input-field"
                 bind:value={attribute.key}
@@ -176,6 +177,7 @@
               />
             </div>
             <div class="attribute-input">
+              <label for="index_attribute_name_{index}"></label>
               <input
                 class="input-field"
                 bind:value={attribute.name}
@@ -279,6 +281,7 @@
               <span class="tag">
                 {schema}
                 <button
+                  aria-label={`Remove schema ${schema}`}
                   type="button"
                   class="tag-remove"
                   onclick={() => removeSchemaShortname(schema)}
@@ -313,6 +316,7 @@
               <span class="tag">
                 {workflow}
                 <button
+                  aria-label={`Remove workflow ${workflow}`}
                   type="button"
                   class="tag-remove"
                   onclick={() => removeWorkflowShortname(workflow)}

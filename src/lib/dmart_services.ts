@@ -259,13 +259,16 @@ export async function updateEntity(
   workflow_shortname: string,
   schema_shortname: string
 ) {
+  const contentType = data.content_type || "html";
+
   const attributes: any = {
     is_active: data.is_active,
+    displayname: data.displayname,
     relationships: [],
     tags: data.tags,
     payload: {
-      content_type: "json",
-      body: data,
+      content_type: contentType,
+      body: data.content,
     },
   };
 
@@ -274,7 +277,7 @@ export async function updateEntity(
     attributes.payload.schema_shortname = schema_shortname;
   }
 
-  const actionRequest: ActionRequest = {
+  const actionRequest = {
     space_name,
     request_type: RequestType.update,
     records: [
@@ -287,7 +290,7 @@ export async function updateEntity(
     ],
   };
 
-  const response: ActionResponse = await Dmart.request(actionRequest);
+  const response = await Dmart.request(actionRequest);
   return response.status === "success" && response.records.length > 0
     ? response.records[0].shortname
     : null;

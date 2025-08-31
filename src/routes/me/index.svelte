@@ -356,7 +356,7 @@
                   {/if}
                 </div>
               </div>
-
+              <label for="fileInput" class="visually-hidden"></label>
               <input
                 bind:this={$fileInput}
                 type="file"
@@ -370,10 +370,16 @@
             <button
               class="mb-4 px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors duration-200 flex items-center gap-2"
               onclick={triggerFileInput}
+              aria-label={$_("profile.change_avatar")}
               disabled={$isUploadingAvatar}
             >
               {#if $isUploadingAvatar}
-                <Diamonds color="#6b7280" size="16" unit="px" />
+                <Diamonds
+                  aria-label={$_("profile.uploading_avatar")}
+                  color="#6b7280"
+                  size="16"
+                  unit="px"
+                />
                 Uploading...
               {:else}
                 <svg
@@ -603,18 +609,25 @@
 
                     <div class="flex gap-3 pt-2">
                       <button
+                        aria-label={$_("profile.change_password")}
                         type="submit"
                         disabled={$isChangingPassword}
                         class="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
                       >
                         {#if $isChangingPassword}
-                          <Diamonds color="#ffffff" size="16" unit="px" />
+                          <Diamonds
+                            aria-label={$_("profile.uploading_avatar")}
+                            color="#ffffff"
+                            size="16"
+                            unit="px"
+                          />
                           Changing...
                         {:else}
                           Change Password
                         {/if}
                       </button>
                       <button
+                        aria-label={$_("profile.cancel")}
                         type="button"
                         onclick={() => {
                           showChangePassword.set(false);

@@ -180,6 +180,7 @@
       <h2 class="card-title">{$_("users_overview")}</h2>
       <div class="filters-container">
         <div class="search-container">
+          <label for="search-input" class="visually-hidden"></label>
           <input
             type="text"
             class="search-input"

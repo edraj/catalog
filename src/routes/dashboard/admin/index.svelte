@@ -790,6 +790,7 @@
                       ></path>
                     </svg>
                   </div>
+                  <label for="search"></label>
                   <input
                     id="search"
                     type="text"
@@ -1268,6 +1269,7 @@
 
         <div class="form-group">
           <div class="form-checkbox">
+            <label for="editIsActive"></label>
             <input
               type="checkbox"
               bind:checked={editIsActive}

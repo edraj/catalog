@@ -1598,6 +1598,7 @@
     }
   },
   "permissions": {
+    "permissions": "Permissions",
     "title": "Permission Settings",
     "resource_types": "Resource Types",
     "actions": "Actions"
@@ -1660,6 +1661,5 @@
   "addedPermissions": "Added Permissions",
   "remove": "Remove",
   "noPermissionsAdded": "No permissions added",
-  "permissions": "Permissions",
   "or": "or"
 }
