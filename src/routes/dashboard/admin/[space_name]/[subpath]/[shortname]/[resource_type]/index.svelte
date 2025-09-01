@@ -1897,10 +1897,7 @@
   </div>
 </div>
 
-<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 {#if $showEditModal}
-  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-  <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
   <div
     class="modal-overlay"
     role="dialog"
@@ -1910,7 +1907,6 @@
       if (e.key === "Escape") showEditModal.set(false);
     }}
   >
-    <!-- svelte-ignore a11y_click_events_have_key_events -->
     <div
       class="modal-container"
       class:rtl={$isRTL}
