@@ -25,7 +25,7 @@
     "path": "^0.12.7",
     "plantuml-encoder": "^1.4.0",
     "postcss": "^8.5.6",
-    "svelte": "^5.2.10",
+    "svelte": "^5.38.6",
     "svelte-check": "^4.0.9",
     "svelte-i18n": "^4.0.1",
     "svelte-loading-spinners": "^0.3.6",
@@ -39,7 +39,7 @@
     "vite-plugin-svelte-md": "^0.1.7"
   },
   "peerDependencies": {
-    "svelte": "^4.2.19"
+    "svelte": "^5.38.6"
   },
   "dependencies": {
     "@edraj/tsdmart": "^2.8.0",
