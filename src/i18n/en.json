@@ -1661,5 +1661,6 @@
   "addedPermissions": "Added Permissions",
   "remove": "Remove",
   "noPermissionsAdded": "No permissions added",
-  "or": "or"
+  "or": "or",
+  "templates": "Templates"
 }

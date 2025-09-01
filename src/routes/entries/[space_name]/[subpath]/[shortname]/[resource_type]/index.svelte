@@ -207,6 +207,24 @@
       };
     }
   }
+
+  function getLocalizedDisplayName(entity: any) {
+    if (!entity?.displayname)
+      return entity?.shortname || $_("entry_detail.untitled");
+
+    const displayname = entity.displayname;
+    if ($locale === "ar" && displayname.ar) return displayname.ar;
+    if ($locale === "ku" && displayname.ku) return displayname.ku;
+    if ($locale === "en" && displayname.en) return displayname.en;
+
+    return (
+      displayname.ar ||
+      displayname.en ||
+      displayname.ku ||
+      entity.shortname ||
+      $_("entry_detail.untitled")
+    );
+  }
 </script>
 
 {#if isLoadingPage}
@@ -274,9 +292,7 @@
       <div class="main-card">
         <!-- Title -->
         <h1 class="entry-title" class:text-right={$isRTL}>
-          {entity.payload?.body?.title ||
-            entity.displayname.en ||
-            $_("entry_detail.untitled")}
+          {getLocalizedDisplayName(entity)}
         </h1>
 
         <!-- Meta Information -->
@@ -306,7 +322,7 @@
             <div class="stat-item comments" class:flex-row-reverse={$isRTL}>
               <MessagesSolid class="w-5 h-5" />
               <span class="stat-count"
-                >{formatNumberInText(counts.comment, $locale) || 0}</span
+                >{formatNumberInText(counts.reply, $locale) || 0}</span
               >
             </div>
           </div>
@@ -330,12 +346,38 @@
           </div>
         {/if}
 
+        <!-- Relationships -->
+        {#if entity.relationships && entity.relationships.length > 0}
+          <div class="relationships-section">
+            <h3 class="section-title" class:flex-row-reverse={$isRTL}>
+              <UserCircleOutline class="w-5 h-5" />
+              {$_("entry_detail.contributors")}
+            </h3>
+            <div
+              class="relationships-container"
+              class:flex-row-reverse={$isRTL}
+            >
+              {#each entity.relationships as relationship}
+                <div class="relationship-item" class:flex-row-reverse={$isRTL}>
+                  <span class="relationship-role"
+                    >{relationship.attributes.relation}:</span
+                  >
+                  <span class="relationship-name"
+                    >{relationship.related_to.shortname}</span
+                  >
+                </div>
+              {/each}
+            </div>
+          </div>
+        {/if}
+
         <!-- Content -->
         <div class="entry-content" class:text-right={$isRTL}>
-          {@html entity.payload?.body?.content || $_("entry_detail.no_content")}
+          {@html entity.payload?.body || $_("entry_detail.no_content")}
         </div>
+
         <!-- Attachments -->
-        {#if entity.attachments.media && Object.keys(entity.attachments.media).length > 0}
+        {#if entity.attachments.media && entity.attachments.media.length > 0}
           <div class="attachments-section">
             <h3 class="section-title" class:flex-row-reverse={$isRTL}>
               {$_("entry_detail.attachments")}
@@ -345,7 +387,7 @@
               space_name={$params.space_name}
               subpath={$params.subpath}
               parent_shortname={entity.shortname}
-              attachments={Object.values(entity.attachments.media ?? [])}
+              attachments={entity.attachments.media}
               {isOwner}
             />
           </div>
@@ -369,12 +411,13 @@
           </button>
         </div>
       </div>
+
       <!-- Comments Section -->
       <div class="comments-section">
         <h3 class="comments-title">
           <MessagesSolid class="w-6 h-6" />
           {$_("entry_detail.comments.title")} ({formatNumberInText(
-            counts.comment,
+            counts.reply,
             $locale
           ) || 0})
         </h3>
@@ -411,11 +454,14 @@
                   viewBox="0 0 512 512"
                   xml:space="preserve"
                   fill="#000000"
-                  ><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g
+                >
+                  <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                  <g
                     id="SVGRepo_tracerCarrier"
                     stroke-linecap="round"
                     stroke-linejoin="round"
-                  ></g><g id="SVGRepo_iconCarrier">
+                  ></g>
+                  <g id="SVGRepo_iconCarrier">
                     <polygon
                       style="fill:#5EBAE7;"
                       points="490.452,21.547 16.92,235.764 179.068,330.053 179.068,330.053 "
@@ -436,38 +482,39 @@
                       style="fill:#1D1D1B;"
                       d="M0,234.918l174.682,102.4L277.082,512L512,0L0,234.918z M275.389,478.161L190.21,332.858 l52.099-52.099l-11.068-11.068l-52.099,52.099L33.839,236.612L459.726,41.205L293.249,207.682l11.068,11.068L470.795,52.274 L275.389,478.161z"
                     ></path>
-                  </g></svg
-                >
+                  </g>
+                </svg>
               </button>
             </div>
           </div>
         </div>
 
         <!-- Comments List -->
-        {#if entity.attachments && entity.attachments.comment && entity.attachments.comment.length > 0}
+        {#if entity.attachments && entity.attachments.reply && entity.attachments.reply.length > 0}
           <div class="comments-list">
-            {#each entity.attachments.comment as comment}
+            {#each entity.attachments.reply as reply}
               <div class="comment-item">
                 <div class="comment-avatar">
-                  {#await getAvatar(comment.attributes.owner_shortname) then avatar}
+                  {#await getAvatar(reply.attributes.owner_shortname) then avatar}
                     <Avatar src={avatar} size="40" />
                   {/await}
                 </div>
                 <div class="comment-content">
                   <div class="comment-header">
-                    <span class="comment-author"
-                      >{comment.attributes?.displayname?.en
-                        ? comment.attributes?.displayname?.en
-                        : comment.attributes?.owner_shortname}</span
-                    >
-                    <span class="comment-date">
-                      {formatDate(comment.attributes.created_at)}
+                    <span class="comment-author">
+                      {reply.attributes?.displayname?.[$locale] ||
+                        reply.attributes?.displayname?.en ||
+                        reply.attributes?.displayname?.ar ||
+                        reply.attributes?.owner_shortname}
                     </span>
-                    {#if comment.attributes.owner_shortname === $user.shortname}
+                    <span class="comment-date">
+                      {formatDate(reply.attributes.created_at)}
+                    </span>
+                    {#if reply.attributes.owner_shortname === $user.shortname}
                       <button
                         aria-label={$_("entry_detail.comments.delete_comment")}
                         class="delete-comment"
-                        onclick={() => deleteComment(comment.shortname)}
+                        onclick={() => deleteComment(reply.shortname)}
                       >
                         <TrashBinSolid
                           aria-label={$_(
@@ -479,7 +526,9 @@
                     {/if}
                   </div>
                   <p class="comment-text">
-                    {comment.attributes.payload.body.body}
+                    {reply.attributes.payload?.body?.embedded ||
+                      reply.attributes.payload?.body ||
+                      $_("entry_detail.no_content")}
                   </p>
                 </div>
               </div>
@@ -848,6 +897,7 @@
     opacity: 0.5;
     cursor: not-allowed;
   }
+
   .comments-section {
     background: white;
     border-radius: 16px;
@@ -1064,6 +1114,38 @@
   .error-button:hover {
     background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
     transform: translateY(-1px);
+  }
+
+  /* Added styles for relationships section */
+  .relationships-section {
+    margin-bottom: 2rem;
+  }
+
+  .relationships-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .relationship-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: #f1f5f9;
+    color: #475569;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    border: 1px solid #e2e8f0;
+  }
+
+  .relationship-role {
+    font-weight: 600;
+    color: #3b82f6;
+  }
+
+  .relationship-name {
+    font-weight: 500;
   }
 
   @media (max-width: 768px) {

@@ -326,6 +326,28 @@
 
                         <span>{$_("DefaultRole")}</span>
                       </button>
+                      <button
+                        aria-label={`Manage Templates`}
+                        onclick={() =>
+                          handleMenuItemClick("/dashboard/templates")}
+                        class="menu-item"
+                      >
+                        <svg
+                          class="menu-icon"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M11.983 13.983a2 2 0 100-4 2 2 0 000 4zM19.4 15a1.65 1.65 0 01.33 1.82l-.58 1a1.65 1.65 0 01-1.51.88h-1.12a6.66 6.66 0 01-1.3.76l-.17 1.12a1.65 1.65 0 01-.88 1.51l-1 .58a1.65 1.65 0 01-1.82-.33l-.8-.8a6.66 6.66 0 01-.76-1.3H7.4a1.65 1.65 0 01-1.51-.88l-.58-1a1.65 1.65 0 01.33-1.82l.8-.8a6.66 6.66 0 010-1.52l-.8-.8a1.65 1.65 0 01-.33-1.82l.58-1a1.65 1.65 0 011.51-.88h1.12c.23-.46.49-.89.76-1.3l-.17-1.12a1.65 1.65 0 01.88-1.51l1-.58a1.65 1.65 0 011.82.33l.8.8c.51-.13 1.03-.24 1.52-.24s1.01.11 1.52.24l.8-.8a1.65 1.65 0 011.82-.33l1 .58a1.65 1.65 0 01.88 1.51l-.17 1.12c.46.23.89.49 1.3.76h1.12a1.65 1.65 0 011.51.88l.58 1a1.65 1.65 0 01-.33 1.82l-.8.8c.13.51.24 1.03.24 1.52s-.11 1.01-.24 1.52l.8.8z"
+                          />
+                        </svg>
+
+                        <span>{$_("templates")}</span>
+                      </button>
                     </div>
                     <div class="menu-divider"></div>
                   {/if}

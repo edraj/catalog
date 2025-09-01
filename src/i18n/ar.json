@@ -1652,5 +1652,6 @@
   "addedPermissions": "الصلاحيات المضافة",
   "remove": "إزالة",
   "noPermissionsAdded": "لم تتم إضافة أي صلاحيات",
-  "or": "أو"
+  "or": "أو",
+  "templates": "القوالب"
 }
