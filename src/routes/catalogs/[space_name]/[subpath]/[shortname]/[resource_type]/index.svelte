@@ -1,30 +1,27 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { params, goto } from "@roxi/routify";
-  import { getEntity } from "@/lib/dmart_services";
-  import { getRelatedContents } from "@/lib/dmart_services";
-  import { Diamonds } from "svelte-loading-spinners";
-  import { _, locale } from "@/i18n";
-  import { derived } from "svelte/store";
-  import { ResourceType } from "@edraj/tsdmart/dmart.model";
-  import Attachments from "@/components/Attachments.svelte";
-  import { user } from "@/stores/user";
-  import {
-    createComment,
-    createReaction,
-    deleteReactionComment,
-    checkCurrentUserReactedIdea,
-  } from "@/lib/dmart_services";
-  import {
-    successToastMessage,
-    errorToastMessage,
-  } from "@/lib/toasts_messages";
-  import { formatNumberInText } from "@/lib/helpers";
-  import { marked } from "marked";
-  import { mangle } from "marked-mangle";
-  import { gfmHeadingId } from "marked-gfm-heading-id";
+    import {onMount} from "svelte";
+    import {goto, params} from "@roxi/routify";
+    import {
+        checkCurrentUserReactedIdea,
+        createComment,
+        createReaction,
+        deleteReactionComment,
+        getEntity,
+        getRelatedContents
+    } from "@/lib/dmart_services";
+    import {Diamonds} from "svelte-loading-spinners";
+    import {_, locale} from "@/i18n";
+    import {derived} from "svelte/store";
+    import {ResourceType} from "@edraj/tsdmart/dmart.model";
+    import Attachments from "@/components/Attachments.svelte";
+    import {user} from "@/stores/user";
+    import {errorToastMessage, successToastMessage,} from "@/lib/toasts_messages";
+    import {formatNumberInText} from "@/lib/helpers";
+    import {marked} from "marked";
+    import {mangle} from "marked-mangle";
+    import {gfmHeadingId} from "marked-gfm-heading-id";
 
-  $goto;
+    $goto;
   let isLoading = $state(false);
   let postData = $state(null);
   let relatedContent = $state([]);

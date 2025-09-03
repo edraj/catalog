@@ -1,10 +1,9 @@
 <script lang="ts">
-  import { Card, Tabs, TabItem, Button } from "flowbite-svelte";
-  import { marked } from "marked";
-  import { mangle } from "marked-mangle";
-  import { gfmHeadingId } from "marked-gfm-heading-id";
+    import {marked} from "marked";
+    import {mangle} from "marked-mangle";
+    import {gfmHeadingId} from "marked-gfm-heading-id";
 
-  marked.use(mangle());
+    marked.use(mangle());
   marked.use(
     gfmHeadingId({
       prefix: "my-prefix-",
