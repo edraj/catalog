@@ -23,6 +23,8 @@
   let error = $state(null);
   let spaceName = $state("");
   let actualSubpath = $state("");
+  let isEditMode = $state(false);
+  let selectedFolderForEdit = $state(null);
 
   // Search and Filter State
   let searchQuery = $state("");
@@ -222,6 +224,8 @@
   }
 
   function handleCreateFolder() {
+    isEditMode = false;
+    selectedFolderForEdit = null;
     folderContent = {
       title: "",
       content: "",
@@ -248,6 +252,79 @@
     showCreateFolderModal = true;
   }
 
+  function handleEditFolder(item) {
+    isEditMode = true;
+    selectedFolderForEdit = item;
+
+    metaContent = {
+      shortname: item.shortname,
+      displayname: item.attributes?.displayname || {},
+      description: item.attributes?.description || {},
+    };
+
+    const existingContent = item.attributes?.payload?.body || {};
+    folderContent = {
+      title: existingContent.title || "",
+      content: existingContent.content || "",
+      is_active:
+        existingContent.is_active !== undefined
+          ? existingContent.is_active
+          : true,
+      tags: existingContent.tags || [],
+      index_attributes: existingContent.index_attributes || [],
+      sort_by: existingContent.sort_by || "created_at",
+      sort_type: existingContent.sort_type || "descending",
+      content_resource_types: existingContent.content_resource_types || [],
+      content_schema_shortnames:
+        existingContent.content_schema_shortnames || [],
+      workflow_shortnames: existingContent.workflow_shortnames || [],
+      allow_view:
+        existingContent.allow_view !== undefined
+          ? existingContent.allow_view
+          : true,
+      allow_create:
+        existingContent.allow_create !== undefined
+          ? existingContent.allow_create
+          : true,
+      allow_update:
+        existingContent.allow_update !== undefined
+          ? existingContent.allow_update
+          : true,
+      allow_delete:
+        existingContent.allow_delete !== undefined
+          ? existingContent.allow_delete
+          : false,
+      allow_create_category:
+        existingContent.allow_create_category !== undefined
+          ? existingContent.allow_create_category
+          : false,
+      allow_csv:
+        existingContent.allow_csv !== undefined
+          ? existingContent.allow_csv
+          : false,
+      allow_upload_csv:
+        existingContent.allow_upload_csv !== undefined
+          ? existingContent.allow_upload_csv
+          : false,
+      use_media:
+        existingContent.use_media !== undefined
+          ? existingContent.use_media
+          : false,
+      stream:
+        existingContent.stream !== undefined ? existingContent.stream : false,
+      expand_children:
+        existingContent.expand_children !== undefined
+          ? existingContent.expand_children
+          : false,
+      disable_filter:
+        existingContent.disable_filter !== undefined
+          ? existingContent.disable_filter
+          : false,
+    };
+
+    showCreateFolderModal = true;
+  }
+
   async function handleSaveFolder(event) {
     event.preventDefault();
     isCreatingFolder = true;
@@ -255,7 +332,7 @@
     try {
       const response = await Dmart.request({
         space_name: spaceName,
-        request_type: RequestType.create,
+        request_type: isEditMode ? RequestType.update : RequestType.create,
         records: [
           {
             resource_type: ResourceType.folder,
@@ -277,11 +354,20 @@
         showCreateFolderModal = false;
         await loadContents();
       } else {
-        alert($_("admin_space.error.create_folder_failed"));
+        const errorMessage = isEditMode
+          ? $_("admin_space.error.update_folder_failed")
+          : $_("admin_space.error.create_folder_failed");
+        alert(errorMessage);
       }
     } catch (err) {
-      console.error("Error creating folder:", err);
-      alert($_("admin_space.error.create_folder_error") + ": " + err.message);
+      console.error(
+        `Error ${isEditMode ? "updating" : "creating"} folder:`,
+        err
+      );
+      const errorMessage = isEditMode
+        ? $_("admin_space.error.update_folder_error")
+        : $_("admin_space.error.create_folder_error");
+      alert(errorMessage + ": " + err.message);
     } finally {
       isCreatingFolder = false;
     }
@@ -798,8 +884,32 @@
                         </span>
                       </p>
                     </div>
+                    {#if item.resource_type === "folder"}
+                      <button
+                        onclick={(e) => {
+                          e.stopPropagation();
+                          handleEditFolder(item);
+                        }}
+                        class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                        aria-label="Edit folder"
+                        title="Edit folder"
+                      >
+                        <svg
+                          class="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                          ></path>
+                        </svg>
+                      </button>
+                    {/if}
                   </div>
-
                   <button
                     onclick={(e) => handleDeleteItem(item, e)}
                     class="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 transition-all duration-200 p-1"
@@ -899,9 +1009,15 @@
     <div class="modal-container" class:rtl={$isRTL}>
       <div class="modal-header">
         <div class="modal-header-content" class:text-right={$isRTL}>
-          <h3 class="modal-title">{$_("admin_space.modal.create.title")}</h3>
+          <h3 class="modal-title">
+            {isEditMode
+              ? $_("admin_space.modal.edit.title")
+              : $_("admin_space.modal.create.title")}
+          </h3>
           <p class="modal-subtitle">
-            {$_("admin_space.modal.create.subtitle")}
+            {isEditMode
+              ? $_("admin_space.modal.edit.subtitle")
+              : $_("admin_space.modal.create.subtitle")}
           </p>
         </div>
         <button
@@ -938,7 +1054,7 @@
           <MetaForm
             bind:formData={metaContent}
             bind:validateFn={validateMetaForm}
-            isCreate={true}
+            isCreate={!isEditMode}
           />
         </div>
 
@@ -969,10 +1085,14 @@
           disabled={isCreatingFolder}
         >
           {#if isCreatingFolder}
-            <div class="spinner"></div>
-            {$_("admin_space.modal.creating")}
+            <Diamonds size="20" color="#ffffff" />
+            {isEditMode
+              ? $_("admin_space.modal.updating")
+              : $_("admin_space.modal.creating")}
           {:else}
-            {$_("admin_space.modal.create_folder")}
+            {isEditMode
+              ? $_("admin_space.modal.update")
+              : $_("admin_space.modal.create")}
           {/if}
         </button>
       </div>

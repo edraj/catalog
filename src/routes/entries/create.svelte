@@ -59,7 +59,7 @@
   let shortname = $state("");
   let isEditing = $state(false);
   let isEditingShortname = $state(false);
-  let selectedSpace = $state("catalog");
+  let selectedSpace = $state("");
   let selectedSubpath = "posts";
   let spaces = $state([]);
   let subpathHierarchy = $state([]);
@@ -142,7 +142,10 @@
           response.records[0]?.attributes?.payload?.body
             ?.workflow_shortnames[0] || "",
         schema_shortname:
-          response.records[0]?.attributes?.payload?.schema_shortname || "",
+          response.records[0]?.attributes?.payload?.schema_shortname ||
+          response.records[0]?.attributes?.payload?.body
+            ?.content_schema_shortnames[0] ||
+          "",
         canCreateEntry:
           level > 0 || hasNonFolderContent || folders.length === 0,
         selectedFolder: "",

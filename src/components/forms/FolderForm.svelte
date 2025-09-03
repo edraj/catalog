@@ -266,7 +266,7 @@
       <div class="field-group">
         <select class="select-field" onchange={addSchemaShortname}>
           <option value="">{$_("options.select_schema_to_add")}</option>
-          {#await Dmart.query( { space_name: "management", type: QueryType.search, subpath: "/schema", search: "", retrieve_json_payload: true, limit: 99 } ) then schemas}
+          {#await Dmart.query( { space_name: "template_test", type: QueryType.search, subpath: "/schema", search: "", retrieve_json_payload: true, limit: 99 } ) then schemas}
             {#each schemas.records.map((e) => e.shortname) as schema}
               <option value={schema}>{schema}</option>
             {/each}

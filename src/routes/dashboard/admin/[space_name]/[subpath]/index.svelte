@@ -28,7 +28,7 @@
   let totalItemsCount = $state(0);
   let hasMoreItems = $state(true);
   let isInitialLoad = $state(true);
-
+  let containTemplates = $state(false);
   const itemsPerLoadOptions = [20, 50, 100];
 
   // let currentDisplayCount = $state(itemsPerLoad);
@@ -125,6 +125,24 @@
     error = null;
 
     try {
+      const parent = await getSpaceContents(
+        spaceName,
+        "/",
+        "managed",
+        100,
+        0,
+        true
+      );
+      for (const item of parent?.records) {
+        if (
+          item?.attributes?.payload?.body?.content_schema_shortnames?.includes(
+            "templates"
+          ) &&
+          item?.shortname == `${$actualSubpath}`
+        ) {
+          containTemplates = true;
+        }
+      }
       const response = await getSpaceContents(
         spaceName,
         `/${$actualSubpath}`,
@@ -303,10 +321,17 @@
   }
 
   function handleCreateItem() {
-    $goto("/entries/create", {
-      space_name: spaceName,
-      subpath: $actualSubpath,
-    });
+    if (containTemplates) {
+      $goto("/dashboard/admin/[space_name]/[subpath]/create", {
+        space_name: spaceName,
+        subpath: $actualSubpath,
+      });
+    } else {
+      $goto("/entries/create", {
+        space_name: spaceName,
+        subpath: $actualSubpath,
+      });
+    }
   }
 
   async function handleDeleteItem(item, event) {
@@ -588,7 +613,7 @@
           {
             resource_type: ResourceType.folder,
             shortname: metaContent.shortname || "auto",
-            subpath: `/${actualSubpath}`,
+            subpath: `/${$actualSubpath}`,
             attributes: {
               displayname: metaContent.displayname,
               description: metaContent.description,
@@ -612,6 +637,57 @@
       alert($_("admin_content.error.create_folder_error") + ": " + err.message);
     } finally {
       isCreatingFolder = false;
+    }
+  }
+
+  let showCreateSchemaModal = $state(false);
+  let schemaContent = $state({
+    shortname: "auto",
+  });
+  let isCreatingSchema = $state(false);
+
+  function handleCreateSchema() {
+    schemaContent = {
+      shortname: "auto",
+    };
+    showCreateSchemaModal = true;
+  }
+
+  async function handleSaveschema(event) {
+    event.preventDefault();
+    isCreatingSchema = true;
+    try {
+      const response = await Dmart.request({
+        space_name: spaceName,
+        request_type: RequestType.create,
+        records: [
+          {
+            resource_type: ResourceType.schema,
+            shortname: metaContent.shortname || "auto",
+            subpath: `/${$actualSubpath}`,
+            attributes: {
+              displayname: metaContent.displayname,
+              description: metaContent.description,
+              payload: {
+                body: "",
+                content_type: "json",
+              },
+            },
+          },
+        ],
+      });
+
+      if (response) {
+        showCreateSchemaModal = false;
+        await loadContents(true);
+      } else {
+        alert($_("admin_content.error.create_schema_failed"));
+      }
+    } catch (err) {
+      console.error("Error creating schema:", err);
+      alert($_("admin_content.error.create_schema_error") + ": " + err.message);
+    } finally {
+      isCreatingSchema = false;
     }
   }
 </script>
@@ -679,16 +755,29 @@
         >
           {#if $actualSubpath !== "/" && $actualSubpath !== ""}
             <button
-              onclick={() => handleCreateItem()}
-              class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200"
+              onclick={handleCreateItem}
+              class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
               aria-label={$_("admin_content.actions.create_new_item")}
             >
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 4v16m8-8H4m4-8h8v8H8z"
+                />
+              </svg>
               {$_("admin_content.actions.create_new_item")}
             </button>
 
             <button
               onclick={handleCreateFolder}
-              class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+              class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
               class:flex-row-reverse={$isRTL}
               aria-label={$_("admin_content.actions.create_folder")}
             >
@@ -702,11 +791,40 @@
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M12 4v16m8-8H4"
-                ></path>
+                  d="M3 7h4l2-2h8l2 2h2v10H3V7z"
+                />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 10v4m2-2h-4"
+                />
               </svg>
               {$_("admin_content.actions.create_folder")}
             </button>
+            {#if $actualSubpath === "schema"}
+              <button
+                onclick={handleCreateSchema}
+                class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+                class:flex-row-reverse={$isRTL}
+                aria-label={$_("admin_content.actions.create_schema")}
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M16 18l6-6-6-6M8 6l-6 6 6 6"
+                  />
+                </svg>
+                {$_("admin_content.actions.create_schema")}
+              </button>
+            {/if}
           {/if}
         </div>
       </div>
@@ -1249,7 +1367,94 @@
         </button>
       </div>
 
-      <form onsubmit={handleSaveFolder}>
+      <div class="modal-content">
+        <div class="form-section">
+          <div class="section-header" class:text-right={$isRTL}>
+            <h4 class="section-title">
+              {$_("admin_content.modal.basic_info.title")}
+            </h4>
+            <p class="section-description">
+              {$_("admin_content.modal.basic_info.description")}
+            </p>
+          </div>
+          <MetaForm
+            bind:formData={metaContent}
+            bind:validateFn={validateMetaForm}
+            isCreate={true}
+          />
+        </div>
+
+        <div class="form-section">
+          <div class="section-header" class:text-right={$isRTL}>
+            <h4 class="section-title">
+              {$_("admin_content.modal.folder_config.title")}
+            </h4>
+            <p class="section-description">
+              {$_("admin_content.modal.folder_config.description")}
+            </p>
+          </div>
+          <FolderForm bind:content={folderContent} on:foo={handleSaveFolder} />
+        </div>
+      </div>
+
+      <div class="modal-footer" class:flex-row-reverse={$isRTL}>
+        <button
+          type="button"
+          onclick={() => (showCreateFolderModal = false)}
+          class="btn btn-secondary"
+          disabled={isCreatingFolder}
+        >
+          {$_("admin_content.modal.cancel")}
+        </button>
+        <button
+          onclick={handleSaveFolder}
+          class="btn btn-primary"
+          disabled={isCreatingFolder}
+        >
+          {#if isCreatingFolder}
+            <div class="spinner"></div>
+            {$_("admin_content.modal.creating")}
+          {:else}
+            {$_("admin_content.modal.create_folder")}
+          {/if}
+        </button>
+      </div>
+    </div>
+  </div>
+{/if}
+
+{#if showCreateSchemaModal}
+  <div class="modal-overlay">
+    <div class="modal-container" class:rtl={$isRTL}>
+      <div class="modal-header">
+        <div class="modal-header-content" class:text-right={$isRTL}>
+          <h3 class="modal-title">{$_("admin_content.modal.create.title")}</h3>
+          <p class="modal-subtitle">
+            {$_("admin_content.modal.create.subtitle")}
+          </p>
+        </div>
+        <button
+          onclick={() => (showCreateSchemaModal = false)}
+          class="modal-close-btn"
+          aria-label={$_("admin_content.modal.close")}
+        >
+          <svg
+            class="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            ></path>
+          </svg>
+        </button>
+      </div>
+
+      <form onsubmit={handleSaveschema}>
         <div class="modal-content">
           <div class="form-section">
             <div class="section-header" class:text-right={$isRTL}>
@@ -1266,39 +1471,27 @@
               isCreate={true}
             />
           </div>
-
-          <div class="form-section">
-            <div class="section-header" class:text-right={$isRTL}>
-              <h4 class="section-title">
-                {$_("admin_content.modal.folder_config.title")}
-              </h4>
-              <p class="section-description">
-                {$_("admin_content.modal.folder_config.description")}
-              </p>
-            </div>
-            <FolderForm bind:content={folderContent} />
-          </div>
         </div>
 
         <div class="modal-footer" class:flex-row-reverse={$isRTL}>
           <button
             type="button"
-            onclick={() => (showCreateFolderModal = false)}
+            onclick={() => (showCreateSchemaModal = false)}
             class="btn btn-secondary"
-            disabled={isCreatingFolder}
+            disabled={isCreatingSchema}
           >
             {$_("admin_content.modal.cancel")}
           </button>
           <button
             type="submit"
             class="btn btn-primary"
-            disabled={isCreatingFolder}
+            disabled={isCreatingSchema}
           >
-            {#if isCreatingFolder}
+            {#if isCreatingSchema}
               <div class="spinner"></div>
               {$_("admin_content.modal.creating")}
             {:else}
-              {$_("admin_content.modal.create_folder")}
+              {$_("admin_content.actions.create_schema")}
             {/if}
           </button>
         </div>
@@ -2251,6 +2444,24 @@
 
     .results-summary {
       flex-direction: row;
+    }
+  }
+  @media (max-width: 1024px) {
+    .modal-container {
+      max-width: 95vw;
+      margin: 0.5rem;
+    }
+
+    .modal-header {
+      padding: 1rem 1.5rem;
+    }
+
+    .modal-content {
+      padding: 1.5rem;
+    }
+
+    .modal-footer {
+      padding: 1rem 1.5rem;
     }
   }
 

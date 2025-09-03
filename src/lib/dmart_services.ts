@@ -196,7 +196,8 @@ export async function createEntity(
   subpath: string,
   resourceType: ResourceType = ResourceType.content,
   workflow_shortname: string,
-  schema_shortname: string
+  schema_shortname: string,
+  content_type: string = "json"
 ) {
   let actionRequest: ActionRequest;
   if (workflow_shortname || schema_shortname) {
@@ -214,7 +215,7 @@ export async function createEntity(
             relationships: [],
             tags: data.tags || [],
             payload: {
-              content_type: "json",
+              content_type: content_type,
               schema_shortname: schema_shortname,
               body: data.body,
             },
@@ -703,12 +704,16 @@ export async function getSpaceContents(
   offset = 0,
   exact_subpath = false
 ): Promise<ApiQueryResponse> {
+  let search = "";
+  if (scope === "public") {
+    search = "-@shortname:schema";
+  }
   const response = await Dmart.query(
     {
       type: QueryType.search,
       space_name: spaceName,
       subpath: subpath,
-      search: "-@shortname:schema",
+      search: search,
       limit: limit,
       sort_by: "shortname",
       sort_type: SortyType.ascending,
