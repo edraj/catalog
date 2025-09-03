@@ -1,17 +1,22 @@
 <script lang="ts">
-    import {onMount} from "svelte";
-    import {goto, params} from "@roxi/routify";
-    import {deleteEntity, getAvatar, getSpaceContents} from "@/lib/dmart_services";
-    import {Diamonds} from "svelte-loading-spinners";
-    import {_, locale} from "@/i18n";
-    import {Dmart, RequestType, ResourceType} from "@edraj/tsdmart";
-    import {derived, writable} from "svelte/store";
-    import MetaForm from "@/components/forms/MetaForm.svelte";
-    import FolderForm from "@/components/forms/FolderForm.svelte";
-    import Avatar from "@/components/Avatar.svelte";
-    import {formatNumber} from "@/lib/helpers";
+  import { onMount } from "svelte";
+  import { goto, params } from "@roxi/routify";
+  import {
+    deleteEntity,
+    getAvatar,
+    getSpaceContents,
+  } from "@/lib/dmart_services";
+  import { Diamonds } from "svelte-loading-spinners";
+  import { _, locale } from "@/i18n";
+  import { Dmart, RequestType, ResourceType } from "@edraj/tsdmart";
+  import { derived, writable } from "svelte/store";
+  import MetaForm from "@/components/forms/MetaForm.svelte";
+  import FolderForm from "@/components/forms/FolderForm.svelte";
+  import Avatar from "@/components/Avatar.svelte";
+  import { formatNumber } from "@/lib/helpers";
+  import SchemaForm from "@/components/forms/SchemaForm.svelte";
 
-    $goto;
+  $goto;
 
   let isLoading = writable(false);
   let isLoadingMore = writable(false);
@@ -641,21 +646,19 @@
   }
 
   let showCreateSchemaModal = $state(false);
-  let schemaContent = $state({
-    shortname: "auto",
-  });
+  let schemaContent = $state({});
   let isCreatingSchema = $state(false);
 
   function handleCreateSchema() {
-    schemaContent = {
-      shortname: "auto",
-    };
+    schemaContent = {};
     showCreateSchemaModal = true;
   }
 
   async function handleSaveschema(event) {
     event.preventDefault();
     isCreatingSchema = true;
+    console.log("-------------", schemaContent);
+
     try {
       const response = await Dmart.request({
         space_name: spaceName,
@@ -669,7 +672,7 @@
               displayname: metaContent.displayname,
               description: metaContent.description,
               payload: {
-                body: "",
+                body: schemaContent,
                 content_type: "json",
               },
             },
@@ -1471,6 +1474,18 @@
               isCreate={true}
             />
           </div>
+
+          <div class="form-section">
+            <div class="section-header" class:text-right={$isRTL}>
+              <h4 class="section-title">
+                {$_("admin_content.modal.basic_info.title")}
+              </h4>
+              <p class="section-description">
+                {$_("admin_content.modal.basic_info.description")}
+              </p>
+            </div>
+            <SchemaForm bind:content={schemaContent} />
+          </div>
         </div>
 
         <div class="modal-footer" class:flex-row-reverse={$isRTL}>
@@ -2235,6 +2250,7 @@
   }
 
   .modal-container {
+    overflow: scroll;
     background: white;
     border-radius: 16px;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
