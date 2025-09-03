@@ -1,19 +1,19 @@
 import {
-    type ActionRequest,
-    type ActionResponse,
-    type ApiQueryResponse,
-    ContentType,
-    Dmart,
-    type QueryRequest,
-    QueryType,
-    RequestType,
-    ResourceType,
-    SortyType,
+  type ActionRequest,
+  type ActionResponse,
+  type ApiQueryResponse,
+  ContentType,
+  Dmart,
+  type QueryRequest,
+  QueryType,
+  RequestType,
+  ResourceType,
+  SortyType,
 } from "@edraj/tsdmart";
-import {user} from "@/stores/user";
-import {get} from "svelte/store";
-import type {Translation} from "@edraj/tsdmart/dmart.model";
-import {getFileType} from "./helpers";
+import { user } from "@/stores/user";
+import { get } from "svelte/store";
+import type { Translation } from "@edraj/tsdmart/dmart.model";
+import { getFileType } from "./helpers";
 
 export async function getProfile() {
   try {
@@ -777,6 +777,31 @@ export async function getSpaceFolders(
       retrieve_attachments: true,
       exact_subpath: false,
       filter_types: [ResourceType.folder],
+    },
+    scope
+  );
+  return response;
+}
+export async function getSpaceSchema(
+  spaceName: string,
+  subpath: string,
+  scope: string,
+  limit = 100,
+  offset = 0
+): Promise<ApiQueryResponse> {
+  const response = await Dmart.query(
+    {
+      type: QueryType.search,
+      space_name: spaceName,
+      subpath: subpath,
+      search: "",
+      limit: limit,
+      sort_by: "shortname",
+      sort_type: SortyType.ascending,
+      offset: offset,
+      retrieve_json_payload: true,
+      retrieve_attachments: true,
+      exact_subpath: false,
     },
     scope
   );

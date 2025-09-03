@@ -1,11 +1,16 @@
 <script lang="ts">
-    import {Dmart, RequestType, ResourceType} from "@edraj/tsdmart";
-    import Media from "./Media.svelte";
-    import {successToastMessage} from "@/lib/toasts_messages";
-    import {CloseOutline, DownloadOutline, EyeOutline, TrashBinSolid,} from "flowbite-svelte-icons";
-    import {_} from "@/i18n";
+  import { Dmart, RequestType, ResourceType } from "@edraj/tsdmart";
+  import Media from "./Media.svelte";
+  import { successToastMessage } from "@/lib/toasts_messages";
+  import {
+    CloseOutline,
+    DownloadOutline,
+    EyeOutline,
+    TrashBinSolid,
+  } from "flowbite-svelte-icons";
+  import { _ } from "@/i18n";
 
-    let {
+  let {
     attachments = [],
     space_name,
     subpath,
@@ -72,7 +77,6 @@
 
   function openPreview(attachment: any) {
     const filename = attachment?.attributes?.payload?.body;
-    console.log(filename);
 
     if (
       isImageFile(filename) ||
@@ -100,7 +104,6 @@
         type,
         filename,
       };
-      console.log(currentPreview);
 
       previewModal = true;
     }

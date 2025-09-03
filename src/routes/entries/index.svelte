@@ -1,26 +1,30 @@
 <script lang="ts">
-    import {onMount} from "svelte";
-    import {goto, params} from "@roxi/routify";
-    import {getMyEntities} from "@/lib/dmart_services";
-    import {formatDate, formatNumberInText, truncateString,} from "@/lib/helpers";
-    import {errorToastMessage} from "@/lib/toasts_messages";
-    import {_, locale} from "@/i18n";
-    import {derived} from "svelte/store";
-    import {
-        ClockOutline,
-        EditOutline,
-        EyeOutline,
-        FilterOutline,
-        FolderOutline,
-        HeartSolid,
-        MessagesSolid,
-        PhoneOutline,
-        PlusOutline,
-        SearchOutline,
-        TagOutline,
-    } from "flowbite-svelte-icons";
+  import { onMount } from "svelte";
+  import { goto, params } from "@roxi/routify";
+  import { getMyEntities } from "@/lib/dmart_services";
+  import {
+    formatDate,
+    formatNumberInText,
+    truncateString,
+  } from "@/lib/helpers";
+  import { errorToastMessage } from "@/lib/toasts_messages";
+  import { _, locale } from "@/i18n";
+  import { derived } from "svelte/store";
+  import {
+    ClockOutline,
+    EditOutline,
+    EyeOutline,
+    FilterOutline,
+    FolderOutline,
+    HeartSolid,
+    MessagesSolid,
+    PhoneOutline,
+    PlusOutline,
+    SearchOutline,
+    TagOutline,
+  } from "flowbite-svelte-icons";
 
-    $goto;
+  $goto;
   let entities = $state([]);
   let filteredEntities = $state([]);
   let isLoading = $state(true);
@@ -106,7 +110,6 @@
     isLoading = true;
     try {
       const response = await getMyEntities();
-      console.log("API Response:", response);
 
       const rawEntities = response?.records || response || [];
 

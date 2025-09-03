@@ -1,9 +1,14 @@
 <script lang="ts">
-    import MarkdownEditor from "@/components/editors/MarkdownEditor.svelte";
-    import {createTemplate, deleteTemplate, getTemplates, updateTemplates,} from "@/lib/dmart_services";
-    import {onMount} from "svelte";
+  import MarkdownEditor from "@/components/editors/MarkdownEditor.svelte";
+  import {
+    createTemplate,
+    deleteTemplate,
+    getTemplates,
+    updateTemplates,
+  } from "@/lib/dmart_services";
+  import { onMount } from "svelte";
 
-    let templates = $state([]);
+  let templates = $state([]);
   let isLoading = $state(true);
   let loadError = $state("");
 
@@ -32,7 +37,6 @@
       isLoading = true;
       loadError = "";
       const response = await getTemplates();
-      console.log("[v0] Templates response:", response);
 
       if (response.status === "success") {
         templates = response.records || [];

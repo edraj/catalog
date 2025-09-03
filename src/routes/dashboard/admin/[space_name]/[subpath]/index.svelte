@@ -657,7 +657,6 @@
   async function handleSaveschema(event) {
     event.preventDefault();
     isCreatingSchema = true;
-    console.log("-------------", schemaContent);
 
     try {
       const response = await Dmart.request({

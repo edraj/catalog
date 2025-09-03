@@ -1,8 +1,8 @@
 <script lang="ts">
-    import {Dmart} from "@edraj/tsdmart";
-    import {onMount} from "svelte";
+  import { Dmart } from "@edraj/tsdmart";
+  import { onMount } from "svelte";
 
-    let {
+  let {
     uid = "",
     content = $bindable(""),
     isEditMode = false,
@@ -97,8 +97,6 @@
       render: (attributes, children) =>
         h("div", { style: "text-align: justify" }, children),
     });
-
-    console.log("Editor initialized with content:", content);
 
     editor = new Editor({
       root: maindiv,
@@ -352,7 +350,6 @@
       // Ensure content is a string and not null/undefined
       const newContent = content || "";
       if (newContent !== currentHtml) {
-        console.log("Updating editor content:", newContent);
         editor.setHTML(newContent);
       }
     }
