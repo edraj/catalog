@@ -1,22 +1,17 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { params, goto } from "@roxi/routify";
-  import {
-    deleteEntity,
-    updateEntity,
-    getMyEntities,
-    getEntity,
-  } from "@/lib/dmart_services";
-  import { Diamonds } from "svelte-loading-spinners";
-  import { _, locale } from "@/i18n";
-  import { derived } from "svelte/store";
-  import { ResourceType } from "@edraj/tsdmart";
-  import { writable } from "svelte/store";
-  import Attachment from "@/components/Attachments.svelte";
-  import HtmlEditor from "@/components/editors/HtmlEditor.svelte";
-  import { formatNumberInText } from "@/lib/helpers";
+    import {onMount} from "svelte";
+    import {goto, params} from "@roxi/routify";
+    import {deleteEntity, getEntity, getMyEntities, updateEntity,} from "@/lib/dmart_services";
+    import {Diamonds} from "svelte-loading-spinners";
+    import {_, locale} from "@/i18n";
+    import {derived, writable} from "svelte/store";
+    import Attachment from "@/components/Attachments.svelte";
+    import HtmlEditor from "@/components/editors/HtmlEditor.svelte";
+    import {formatNumberInText} from "@/lib/helpers";
+    import {marked} from "marked";
+    import TemplateEditor from "@/components/editors/TemplateEditor.svelte";
 
-  $goto;
+    $goto;
 
   const isRTL = derived(
     locale,
@@ -31,8 +26,6 @@
   const itemShortname = writable("");
   const actualSubpath = writable("");
   const breadcrumbs = writable([]);
-  const showEditModal = writable(false);
-  const activeTab = writable("overview");
   let spaceNameValue = $state("");
   let subpathValue = "";
   let itemShortnameValue = $state("");
@@ -41,7 +34,11 @@
   const authorRelatedEntries = writable([]);
   let authorRelatedEntriesValue = $state([]);
   let itemDataValue = $state(null);
-  let htmlEditor: string = $state(""); // Ensure it's typed as string
+  const activeTab = writable("overview");
+  const showEditModal = writable(false);
+  let htmlEditor: string = $state("");
+  let isTemplateBasedItem = $state(false);
+  let templateEditorContent = $state("");
 
   const editForm = writable({
     title: "",
@@ -59,16 +56,14 @@
     is_active: true,
   });
 
-  // Helper function to extract content based on content_type
   function getItemContent(item) {
     if (!item?.payload) return "";
 
     const contentType = item.payload.content_type;
 
     if (contentType === "html") {
-      return item.payload.body || "";
+      return marked(item.payload.body || "");
     } else if (contentType === "json") {
-      // For JSON content type, extract the content field from the body
       if (item.payload.body && typeof item.payload.body === "object") {
         return item.payload.body.content || "";
       }
@@ -86,7 +81,6 @@
       };
     }
 
-    // For HTML content type, return content directly
     return content || "";
   }
 
@@ -198,7 +192,13 @@
         };
         editForm.set(editFormValue);
 
-        // Set the HTML editor content based on content type
+        isTemplateBasedItem =
+          response.payload?.schema_shortname === "templates";
+
+        if (isTemplateBasedItem) {
+          templateEditorContent = content || "";
+        }
+
         htmlEditor = content || "";
       } else {
         console.error("No valid response found for item:", itemShortnameValue);
@@ -212,11 +212,19 @@
     }
   }
 
+  function handleTemplateContentChange(newContent) {
+    templateEditorContent = newContent;
+    htmlEditor = newContent;
+    editFormValue.content = newContent;
+    editForm.update((form) => ({ ...form, content: newContent }));
+  }
+
   async function handleUpdateItem(event) {
     event.preventDefault();
 
     try {
-      const htmlContent = htmlEditor || editFormValue.content;
+      const htmlContent =
+        htmlEditor || editFormValue.content || templateEditorContent;
 
       const tagsArray = editFormValue.tagsString
         .split(",")
@@ -230,7 +238,6 @@
 
       const contentType = itemDataValue?.payload?.content_type;
       let preparedContent = prepareContentForSave(htmlContent, contentType);
-      console.log(preparedContent);
 
       const entityData = {
         displayname: updatedDisplayname,
@@ -239,8 +246,6 @@
         is_active: editFormValue.is_active,
         content_type: contentType,
       };
-
-      console.log("Updating with entity data:", entityData);
 
       const response = await updateEntity(
         itemShortnameValue,
@@ -1903,17 +1908,18 @@
     role="dialog"
     aria-modal="true"
     tabindex="-1"
+    onclick={(e) => {
+      if (e.target === e.currentTarget) {
+        showEditModal.set(false);
+      }
+    }}
     onkeydown={(e) => {
-      if (e.key === "Escape") showEditModal.set(false);
+      if (e.key === "Escape") {
+        showEditModal.set(false);
+      }
     }}
   >
-    <div
-      class="modal-container"
-      class:rtl={$isRTL}
-      onclick={(event) => event.stopPropagation()}
-      role="document"
-      tabindex="0"
-    >
+    <section class="modal-container" class:rtl={$isRTL} role="document">
       <div class="modal-header" class:rtl={$isRTL}>
         <div class="header-content">
           <div class="header-text">
@@ -1921,7 +1927,11 @@
               {$_("admin_item_detail.edit_modal.title")}
             </h3>
             <p class="modal-subtitle" class:text-right={$isRTL}>
-              Update item details and content
+              {#if isTemplateBasedItem}
+                Edit template fields - structure will remain unchanged
+              {:else}
+                Update item details and content
+              {/if}
             </p>
           </div>
           <button
@@ -1948,13 +1958,7 @@
 
       <div class="modal-content">
         <!-- Fixed form onsubmit to use proper event handler with preventDefault -->
-        <form
-          class="modal-form"
-          onsubmit={(event) => {
-            event.preventDefault();
-            handleUpdateItem(event);
-          }}
-        >
+        <form class="modal-form" onsubmit={handleUpdateItem}>
           <div class="form-grid">
             <!-- Left Column - Basic Fields -->
             <div class="form-column">
@@ -1990,7 +1994,6 @@
                   placeholder={$_(
                     "admin_item_detail.edit_modal.placeholders.title"
                   )}
-                  required
                 />
               </div>
 
@@ -2041,14 +2044,14 @@
                       bind:checked={editFormValue.is_active}
                       class="toggle-input"
                     />
-                    <!-- Fixed accessibility issues with toggle switch -->
                     <button
                       type="button"
                       class="toggle-switch {editFormValue.is_active
                         ? 'active'
                         : ''}"
-                      onclick={() =>
-                        (editFormValue.is_active = !editFormValue.is_active)}
+                      onclick={() => {
+                        editFormValue.is_active = !editFormValue.is_active;
+                      }}
                       onkeydown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();
@@ -2116,19 +2119,27 @@
                   {$_("admin_item_detail.edit_modal.fields.content")}
                 </label>
                 <div class="editor-container">
-                  <HtmlEditor
-                    bind:content={htmlEditor}
-                    resource_type={$params.resource_type}
-                    space_name={spaceNameValue}
-                    subpath={actualSubpathValue}
-                    parent_shortname={itemShortnameValue}
-                    uid="main-editor"
-                    isEditMode={true}
-                    attachments={itemDataValue?.attachments || []}
-                    changed={() => {
-                      console.log("Content changed:", htmlEditor);
-                    }}
-                  />
+                  {#if isTemplateBasedItem}
+                    <TemplateEditor
+                      content={templateEditorContent}
+                      on:contentChange={(e) =>
+                        handleTemplateContentChange(e.detail)}
+                    />
+                  {:else}
+                    <HtmlEditor
+                      bind:content={htmlEditor}
+                      resource_type={$params.resource_type}
+                      space_name={spaceNameValue}
+                      subpath={actualSubpathValue}
+                      parent_shortname={itemShortnameValue}
+                      uid="main-editor"
+                      isEditMode={true}
+                      attachments={itemDataValue?.attachments || []}
+                      changed={() => {
+                        console.log("Content changed:", htmlEditor);
+                      }}
+                    />
+                  {/if}
                 </div>
               </div>
             </div>
@@ -2182,7 +2193,7 @@
           </div>
         </form>
       </div>
-    </div>
+    </section>
   </div>
 {/if}
 

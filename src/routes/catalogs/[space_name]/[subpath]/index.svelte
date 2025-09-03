@@ -1,12 +1,13 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { params, goto } from "@roxi/routify";
-  import { getAvatar, getSpaceContents } from "@/lib/dmart_services";
-  import { Diamonds } from "svelte-loading-spinners";
-  import { _, locale } from "@/i18n";
-  import Avatar from "@/components/Avatar.svelte";
-  import { derived } from "svelte/store";
-  $goto;
+    import {onMount} from "svelte";
+    import {goto, params} from "@roxi/routify";
+    import {getAvatar, getSpaceContents} from "@/lib/dmart_services";
+    import {Diamonds} from "svelte-loading-spinners";
+    import {_, locale} from "@/i18n";
+    import Avatar from "@/components/Avatar.svelte";
+    import {derived} from "svelte/store";
+
+    $goto;
 
   let isLoading = $state(false);
   let isLoadingMore = $state(false);

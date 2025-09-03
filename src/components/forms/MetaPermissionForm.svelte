@@ -1,15 +1,11 @@
 <script lang="ts">
-  import { RequestType, ResourceType } from "@edraj/tsdmart";
-  import { onMount } from "svelte";
-  import { _ } from "svelte-i18n";
-  import {
-    getChildren,
-    getChildrenAndSubChildren,
-    getSpaces,
-  } from "@/lib/dmart_services";
-  import { errorToastMessage } from "@/lib/toasts_messages";
+    import {RequestType, ResourceType} from "@edraj/tsdmart";
+    import {onMount} from "svelte";
+    import {_} from "svelte-i18n";
+    import {getChildren, getChildrenAndSubChildren, getSpaces,} from "@/lib/dmart_services";
+    import {errorToastMessage} from "@/lib/toasts_messages";
 
-  let {
+    let {
     formData = $bindable(),
     validateFn = $bindable(),
   }: {

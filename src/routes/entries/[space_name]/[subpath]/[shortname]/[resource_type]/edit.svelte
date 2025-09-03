@@ -1,53 +1,42 @@
 <script lang="ts">
-  import { params } from "@roxi/routify";
-  import { goto } from "@roxi/routify";
-  import { onMount } from "svelte";
-  import HtmlEditor from "@/components/editors/HtmlEditor.svelte";
-  import Attachments from "@/components/Attachments.svelte";
-  import {
-    attachAttachmentsToEntity,
-    getEntity,
-    updateEntity,
-  } from "@/lib/dmart_services";
-  import {
-    errorToastMessage,
-    successToastMessage,
-  } from "@/lib/toasts_messages";
-  import { ResourceType } from "@edraj/tsdmart";
-  import {
-    ArrowLeftOutline,
-    CloseCircleOutline,
-    CloudArrowUpOutline,
-    FileCheckSolid,
-    FileImportSolid,
-    FilePdfOutline,
-    FloppyDiskSolid,
-    PaperClipOutline,
-    PaperPlaneSolid,
-    PlayOutline,
-    PlusOutline,
-    TagOutline,
-    TextUnderlineOutline,
-    TrashBinSolid,
-    UploadOutline,
-    StarOutline,
-  } from "flowbite-svelte-icons";
-  import { Diamonds } from "svelte-loading-spinners";
-  import { _, locale } from "@/i18n";
-  import { derived } from "svelte/store";
-  import { formatNumberInText } from "@/lib/helpers";
+    import {goto, params} from "@roxi/routify";
+    import {onMount} from "svelte";
+    import HtmlEditor from "@/components/editors/HtmlEditor.svelte";
+    import Attachments from "@/components/Attachments.svelte";
+    import {attachAttachmentsToEntity, getEntity, updateEntity,} from "@/lib/dmart_services";
+    import {errorToastMessage, successToastMessage,} from "@/lib/toasts_messages";
+    import {ResourceType} from "@edraj/tsdmart";
+    import {
+        ArrowLeftOutline,
+        CloseCircleOutline,
+        CloudArrowUpOutline,
+        FileCheckSolid,
+        FileImportSolid,
+        FloppyDiskSolid,
+        PaperClipOutline,
+        PaperPlaneSolid,
+        PlusOutline,
+        StarOutline,
+        TagOutline,
+        TextUnderlineOutline,
+        TrashBinSolid,
+        UploadOutline,
+    } from "flowbite-svelte-icons";
+    import {Diamonds} from "svelte-loading-spinners";
+    import {_, locale} from "@/i18n";
+    import {derived} from "svelte/store";
+    import {formatNumberInText} from "@/lib/helpers";
 
-  $goto;
-  let entity = $state(null);
+    let entity = $state(null);
   let isLoading = $state(false);
   let isLoadingPage = $state(true);
-  let content = $state("");
+  let content = "";
   let title = $state("");
   let isEditing = $state(false);
   let tags = $state([]);
   let newTag = $state("");
   let attachments = $state([]);
-  let htmlEditor: any = $state("");
+  let htmlEditor = $state("");
   let editorReady = $state(false);
 
   const isRTL = derived(
@@ -99,9 +88,18 @@
   async function handleUpdate(isPublish) {
     isLoading = true;
     const htmlContent = htmlEditor || content;
+
     const entityData = {
-      title: title,
-      content: htmlContent,
+      displayname: {
+        [$locale]: title,
+        en: $locale === "en" ? title : entity.displayname?.en || "",
+        ar: $locale === "ar" ? title : entity.displayname?.ar || "",
+        ku: $locale === "ku" ? title : entity.displayname?.ku || "",
+      },
+      payload: {
+        content_type: "html",
+        body: htmlContent,
+      },
       tags: tags,
       is_active: isPublish,
     };
@@ -157,8 +155,8 @@
       "managed"
     );
     if (entity) {
-      title = entity.payload?.body?.title || "";
-      content = entity.payload?.body?.content || "";
+      title = getLocalizedDisplayName(entity);
+      content = entity.payload?.body || "";
 
       htmlEditor = content;
 
@@ -219,6 +217,23 @@
     });
 
     return allAttachments;
+  }
+
+  function getLocalizedDisplayName(entity: any) {
+    if (!entity?.displayname) return entity?.shortname || "";
+
+    const displayname = entity.displayname;
+    if ($locale === "ar" && displayname.ar) return displayname.ar;
+    if ($locale === "ku" && displayname.ku) return displayname.ku;
+    if ($locale === "en" && displayname.en) return displayname.en;
+
+    return (
+      displayname.ar ||
+      displayname.en ||
+      displayname.ku ||
+      entity.shortname ||
+      ""
+    );
   }
 </script>
 
@@ -320,7 +335,7 @@
       <div class="section">
         <div class="section-header">
           <TextUnderlineOutline class="section-icon" />
-          <h2>{$_("entry_edit.entry_title")}</h2>
+          <h2>{$_("entry_edit.entry_title")} ({$locale.toUpperCase()})</h2>
         </div>
         <div class="section-content">
           {#if isEditing}
@@ -376,7 +391,6 @@
               }}
             />
             <button
-              aria-label={$_("entry_edit.tags.add_button")}
               class="add-tag-button"
               onclick={addTag}
               disabled={!newTag.trim()}
@@ -441,13 +455,13 @@
         </div>
       </div>
 
-      {#if getExistingAttachments().length > 0}
+      {#if entity.attachments?.media && entity.attachments.media.length > 0}
         <div class="section">
           <div class="section-header">
             <PaperClipOutline class="section-icon" />
             <h2>
               {$_("entry_edit.current_attachments")} ({formatNumberInText(
-                getExistingAttachments().length,
+                entity.attachments.media.length,
                 $locale
               )})
             </h2>
@@ -458,7 +472,7 @@
               space_name={$params.space_name}
               subpath={$params.subpath}
               parent_shortname={entity.shortname}
-              attachments={getExistingAttachments()}
+              attachments={entity.attachments.media}
               isOwner={true}
             />
           </div>
@@ -499,30 +513,15 @@
                 <div class="attachment-card">
                   <div class="attachment-preview">
                     {#if getPreviewUrl(attachment)}
-                      {#if attachment.type.startsWith("image/")}
+                      {#if attachment.type.startsWith("image/") || attachment.type.startsWith("video/") || attachment.type === "application/pdf"}
                         <img
                           src={getPreviewUrl(attachment) || "/placeholder.svg"}
                           alt={attachment.name || "no-image"}
                           class="attachment-image"
                         />
-                      {:else if attachment.type.startsWith("video/")}
-                        <video
-                          src={getPreviewUrl(attachment)}
-                          class="attachment-video"
-                        >
-                          <track
-                            kind="captions"
-                            src=""
-                            srclang="en"
-                            label="English"
-                          />
-                        </video>
-                        <div class="video-overlay">
-                          <PlayOutline class="play-icon" />
-                        </div>
-                      {:else if attachment.type === "application/pdf"}
+                      {:else}
                         <div class="file-preview">
-                          <FilePdfOutline class="file-icon pdf" />
+                          <FileImportSolid class="file-icon" />
                         </div>
                       {/if}
                     {:else}
@@ -538,9 +537,6 @@
                     </p>
                   </div>
                   <button
-                    aria-label={$_("entry_edit.attachments.remove_file", {
-                      values: { name: attachment.name },
-                    })}
                     class="remove-attachment"
                     onclick={() => removeAttachment(index)}
                   >

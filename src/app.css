@@ -1,4 +1,5 @@
-@import "/assets/fonts.css";
+@import "tailwindcss";
+/* @import "/assets/fonts.css"; */
 @import "flowbite";
 @tailwind base;
 @tailwind components;

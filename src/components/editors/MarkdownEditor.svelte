@@ -1,10 +1,9 @@
 <script lang="ts">
-  import { Card, Tabs, TabItem, Button } from "flowbite-svelte";
-  import { marked } from "marked";
-  import { mangle } from "marked-mangle";
-  import { gfmHeadingId } from "marked-gfm-heading-id";
+    import {marked} from "marked";
+    import {mangle} from "marked-mangle";
+    import {gfmHeadingId} from "marked-gfm-heading-id";
 
-  marked.use(mangle());
+    marked.use(mangle());
   marked.use(
     gfmHeadingId({
       prefix: "my-prefix-",
@@ -23,6 +22,7 @@
   }
 
   let textarea;
+  let activeTab = $state("editor");
   let start = 0,
     end = 0;
   function handleSelect() {
@@ -114,34 +114,18 @@
 
   // Tab switching functionality
   function switchTab(tabName) {
-    const container = document.querySelector(".markdown-editor-container");
-
-    // Update tab buttons
-    container
-      .querySelectorAll(".tab-btn")
-      .forEach((btn) => btn.classList.remove("active"));
-    container
-      .querySelector(`.tab-btn[data-tab="${tabName}"]`)
-      .classList.add("active");
-
-    // Update tab panels
-    container
-      .querySelectorAll(".tab-panel")
-      .forEach((panel) => panel.classList.remove("active"));
-    container
-      .querySelector(`.tab-panel[data-panel="${tabName}"]`)
-      .classList.add("active");
+    activeTab = tabName;
   }
 
-  if (typeof window !== "undefined") {
-    window.addEventListener("click", (e) => {
-      const target = e.target as HTMLElement;
-      if (target.classList && target.classList.contains("tab-btn")) {
-        const tabName = target.dataset.tab;
-        switchTab(tabName);
-      }
-    });
-  }
+  //   if (typeof window !== "undefined") {
+  //     window.addEventListener("click", (e) => {
+  //       const target = e.target as HTMLElement;
+  //       if (target.classList && target.classList.contains("tab-btn")) {
+  //         const tabName = target.dataset.tab;
+  //         switchTab(tabName);
+  //       }
+  //     });
+  //   }
 </script>
 
 <div class="markdown-editor-container">
@@ -151,12 +135,10 @@
         class="toolbar-btn"
         onclick={() => handleFormatting("**")}
         title="Bold"
-        aria-label={`Bold`}
       >
         <strong>B</strong>
       </button>
       <button
-        aria-label={`Italic`}
         class="toolbar-btn"
         onclick={() => handleFormatting("_")}
         title="Italic"
@@ -164,7 +146,6 @@
         <i>I</i>
       </button>
       <button
-        aria-label={`Strikethrough`}
         class="toolbar-btn"
         onclick={() => handleFormatting("~~")}
         title="Strikethrough"
@@ -175,7 +156,6 @@
 
     <div class="toolbar-group">
       <button
-        aria-label={`Bullet List`}
         class="toolbar-btn"
         onclick={() => handleFormatting("*", false, true)}
         title="Bullet List"
@@ -183,7 +163,6 @@
         <span>•</span>
       </button>
       <button
-        aria-label={`Numbered List`}
         class="toolbar-btn"
         onclick={() => handleFormatting("1.", false, true)}
         title="Numbered List"
@@ -194,7 +173,6 @@
 
     <div class="toolbar-group">
       <button
-        aria-label={`Heading 1`}
         class="toolbar-btn"
         onclick={() => handleFormatting("#", false)}
         title="Heading 1"
@@ -202,7 +180,6 @@
         <span>H1</span>
       </button>
       <button
-        aria-label={`Heading 2`}
         class="toolbar-btn"
         onclick={() => handleFormatting("##", false)}
         title="Heading 2"
@@ -210,7 +187,6 @@
         <span>H2</span>
       </button>
       <button
-        aria-label={`Heading 3`}
         class="toolbar-btn"
         onclick={() => handleFormatting("###", false)}
         title="Heading 3"
@@ -221,7 +197,6 @@
 
     <div class="toolbar-group">
       <button
-        aria-label={`Insert Table`}
         class="toolbar-btn"
         onclick={() => handleFormatting(tableInsert, false)}
         title="Insert Table"
@@ -229,7 +204,6 @@
         <span>⊞</span>
       </button>
       <button
-        aria-label={`Insert List View`}
         class="toolbar-btn"
         onclick={() => handleFormatting(listViewInsert, false)}
         title="Insert List View"
@@ -241,12 +215,23 @@
 
   <div class="editor-tabs">
     <div class="tab-buttons">
-      <button class="tab-btn active" data-tab="editor">Editor</button>
-      <button class="tab-btn" data-tab="preview">Preview</button>
+      <button
+        class="tab-btn active"
+        data-tab="editor"
+        onclick={() => switchTab("editor")}>Editor</button
+      >
+      <button
+        class="tab-btn"
+        data-tab="preview"
+        onclick={() => switchTab("preview")}>Preview</button
+      >
     </div>
 
     <div class="tab-content">
-      <div class="tab-panel active" data-panel="editor">
+      <div
+        class="tab-panel {activeTab === 'editor' ? 'active' : ''}"
+        data-panel="editor"
+      >
         <textarea
           bind:this={textarea}
           onselect={handleSelect}
@@ -263,8 +248,10 @@
           placeholder="Write your content in Markdown..."
         ></textarea>
       </div>
-
-      <div class="tab-panel" data-panel="preview">
+      <div
+        class="tab-panel {activeTab === 'preview' ? 'active' : ''}"
+        data-panel="preview"
+      >
         <div class="markdown-preview">
           {@html marked(content)}
         </div>

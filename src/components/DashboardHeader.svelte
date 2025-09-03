@@ -1,13 +1,13 @@
 <script lang="ts">
-  import SearchBar from "./SearchBar.svelte";
-  import { onDestroy, onMount } from "svelte";
-  import { website } from "@/config.js";
-  import { newNotificationType } from "@/stores/newNotificationType";
-  import { _ } from "@/i18n";
-  import { locale, switchLocale } from "@/i18n";
-  import { user, signout, roles } from "@/stores/user";
-  import { goto } from "@roxi/routify";
-  $goto;
+    import SearchBar from "./SearchBar.svelte";
+    import {onDestroy, onMount} from "svelte";
+    import {website} from "@/config.js";
+    import {newNotificationType} from "@/stores/newNotificationType";
+    import {_, locale, switchLocale} from "@/i18n";
+    import {roles, signout, user} from "@/stores/user";
+    import {goto} from "@roxi/routify";
+
+    $goto;
 
   let ws = $state(null);
   let isMenuOpen = $state(false);
@@ -325,6 +325,28 @@
                         </svg>
 
                         <span>{$_("DefaultRole")}</span>
+                      </button>
+                      <button
+                        aria-label={`Manage Templates`}
+                        onclick={() =>
+                          handleMenuItemClick("/dashboard/templates")}
+                        class="menu-item"
+                      >
+                        <svg
+                          class="menu-icon"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8l6 6v4a2 2 0 01-2 2h-2M8 16v2a2 2 0 002 2h6a2 2 0 002-2v-2H8z"
+                          />
+                        </svg>
+
+                        <span>{$_("templates")}</span>
                       </button>
                     </div>
                     <div class="menu-divider"></div>

@@ -1238,7 +1238,9 @@
       "title": "Error Loading Contents",
       "failed_load_contents": "Failed to load space contents",
       "create_folder_failed": "Failed to create folder",
-      "create_folder_error": "Error creating folder"
+      "create_folder_error": "Error creating folder",
+      "create_schema_failed": "Failed to create schema",
+      "create_schema_error": "Error creating schema"
     },
     "empty": {
       "title": "No Contents Found",
@@ -1295,7 +1297,8 @@
       "create_folder": "Create Folder",
       "open": "Open",
       "view": "View",
-      "delete": "Delete"
+      "delete": "Delete",
+      "create_schema": "Create Schema"
     },
     "filters": {
       "title": "Filters",
@@ -1661,5 +1664,6 @@
   "addedPermissions": "Added Permissions",
   "remove": "Remove",
   "noPermissionsAdded": "No permissions added",
-  "or": "or"
+  "or": "or",
+  "templates": "Templates"
 }

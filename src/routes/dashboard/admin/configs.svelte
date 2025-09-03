@@ -1,19 +1,11 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import {
-    getEntity,
-    getSpaceContents,
-    setDefaultUserRole,
-    createEntity,
-  } from "@/lib/dmart_services";
-  import {
-    successToastMessage,
-    errorToastMessage,
-  } from "@/lib/toasts_messages";
-  import { ResourceType } from "@edraj/tsdmart";
-  import { _, locale } from "@/i18n";
+    import {onMount} from "svelte";
+    import {createEntity, getEntity, getSpaceContents, setDefaultUserRole,} from "@/lib/dmart_services";
+    import {errorToastMessage, successToastMessage,} from "@/lib/toasts_messages";
+    import {ResourceType} from "@edraj/tsdmart";
+    import {_} from "@/i18n";
 
-  let availableRoles = $state([]);
+    let availableRoles = $state([]);
   let selectedDefaultRole = $state("");
   let currentDefaultRole = $state("");
   let isLoading = $state(true);

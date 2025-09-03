@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { Dmart } from "@edraj/tsdmart";
-  import { onMount } from "svelte";
+    import {Dmart} from "@edraj/tsdmart";
+    import {onMount} from "svelte";
 
-  let {
+    let {
     uid = "",
     content = $bindable(""),
     isEditMode = false,

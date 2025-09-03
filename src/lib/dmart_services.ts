@@ -1,19 +1,19 @@
 import {
-  Dmart,
-  type ActionRequest,
-  type ActionResponse,
-  type ApiQueryResponse,
-  type QueryRequest,
-  ContentType,
-  QueryType,
-  RequestType,
-  ResourceType,
-  SortyType,
+    type ActionRequest,
+    type ActionResponse,
+    type ApiQueryResponse,
+    ContentType,
+    Dmart,
+    type QueryRequest,
+    QueryType,
+    RequestType,
+    ResourceType,
+    SortyType,
 } from "@edraj/tsdmart";
-import { user } from "@/stores/user";
-import { get } from "svelte/store";
-import type { Translation } from "@edraj/tsdmart/dmart.model";
-import { getFileType } from "./helpers";
+import {user} from "@/stores/user";
+import {get} from "svelte/store";
+import type {Translation} from "@edraj/tsdmart/dmart.model";
+import {getFileType} from "./helpers";
 
 export async function getProfile() {
   try {
@@ -195,7 +195,8 @@ export async function createEntity(
   subpath: string,
   resourceType: ResourceType = ResourceType.content,
   workflow_shortname: string,
-  schema_shortname: string
+  schema_shortname: string,
+  content_type: string = "json"
 ) {
   let actionRequest: ActionRequest;
   if (workflow_shortname || schema_shortname) {
@@ -213,7 +214,7 @@ export async function createEntity(
             relationships: [],
             tags: data.tags || [],
             payload: {
-              content_type: "json",
+              content_type: content_type,
               schema_shortname: schema_shortname,
               body: data.body,
             },
@@ -385,6 +386,126 @@ export async function updateRole(
   return response.status === "success" && response.records.length > 0
     ? response.records[0].shortname
     : null;
+}
+
+export async function getTemplates(
+  scope: string = "managed",
+  limit = 100,
+  offset = 0,
+  exact_subpath = false
+): Promise<ApiQueryResponse> {
+  const response = await Dmart.query(
+    {
+      type: QueryType.search,
+      space_name: "applications",
+      subpath: "/templates",
+      search: "-@shortname:schema",
+      limit: limit,
+      sort_by: "shortname",
+      sort_type: SortyType.ascending,
+      offset: offset,
+      retrieve_json_payload: true,
+      retrieve_attachments: true,
+      exact_subpath: exact_subpath,
+    },
+    scope
+  );
+  return response;
+}
+
+export async function createTemplate(
+  spaceName: string,
+  subpath: string,
+  shortname: string,
+  data: {
+    title: string;
+    content: string;
+  }
+) {
+  const request: ActionRequest = {
+    space_name: spaceName,
+    request_type: RequestType.create,
+    records: [
+      {
+        resource_type: ResourceType.content,
+        shortname: "auto",
+        subpath: `${subpath}/${shortname}`,
+        attributes: {
+          is_active: true,
+          payload: {
+            content_type: ContentType.json,
+            body: {
+              title: data.title,
+              content: data.content,
+            },
+          },
+        },
+      },
+    ],
+  };
+  const response: ActionResponse = await Dmart.request(request);
+  return response.status == "success" && response.records.length > 0;
+}
+
+export async function updateTemplates(
+  shortname,
+  space_name,
+  subpath,
+  data: any
+) {
+  const attributes: any = {
+    is_active: data.is_active,
+    displayname: data.displayname,
+    relationships: [],
+    tags: data.tags,
+    payload: {
+      content_type: ContentType.json,
+      body: {
+        title: data.title,
+        content: data.content,
+      },
+    },
+  };
+
+  const actionRequest = {
+    space_name,
+    request_type: RequestType.update,
+    records: [
+      {
+        resource_type: ResourceType.content,
+        shortname,
+        subpath,
+        attributes,
+      },
+    ],
+  };
+
+  const response = await Dmart.request(actionRequest);
+  return response.status === "success" && response.records.length > 0
+    ? response.records[0].shortname
+    : null;
+}
+
+export async function deleteTemplate(
+  shortname: string,
+  spaceName: string,
+  subpath: string
+) {
+  const actionRequest: ActionRequest = {
+    space_name: spaceName,
+    request_type: RequestType.delete,
+    records: [
+      {
+        resource_type: ResourceType.content,
+        shortname: shortname,
+        subpath: subpath,
+        attributes: {},
+      },
+    ],
+  };
+
+  const response: ActionResponse = await Dmart.request(actionRequest);
+  return response.status === "success" && response.records.length > 0;
 }
 
 export async function createRole(
@@ -582,12 +703,16 @@ export async function getSpaceContents(
   offset = 0,
   exact_subpath = false
 ): Promise<ApiQueryResponse> {
+  let search = "";
+  if (scope === "public") {
+    search = "-@shortname:schema";
+  }
   const response = await Dmart.query(
     {
       type: QueryType.search,
       space_name: spaceName,
       subpath: subpath,
-      search: "-@shortname:schema",
+      search: search,
       limit: limit,
       sort_by: "shortname",
       sort_type: SortyType.ascending,

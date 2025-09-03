@@ -1,21 +1,13 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import {
-    getAllUsers,
-    getSpaceContents,
-    updateUserRoles,
-  } from "@/lib/dmart_services";
-  import {
-    successToastMessage,
-    errorToastMessage,
-  } from "@/lib/toasts_messages";
-  import { _ } from "@/i18n";
-  import { locale } from "@/i18n";
-  import { formatNumber, formatNumberInText } from "@/lib/helpers";
-  import { derived } from "svelte/store";
-  import { user } from "@/stores/user";
+    import {onMount} from "svelte";
+    import {getAllUsers, getSpaceContents, updateUserRoles,} from "@/lib/dmart_services";
+    import {errorToastMessage, successToastMessage,} from "@/lib/toasts_messages";
+    import {_, locale} from "@/i18n";
+    import {formatNumber} from "@/lib/helpers";
+    import {derived} from "svelte/store";
+    import {user} from "@/stores/user";
 
-  const isRTL = derived(
+    const isRTL = derived(
     locale,
     ($locale) => $locale === "ar" || $locale === "ku"
   );

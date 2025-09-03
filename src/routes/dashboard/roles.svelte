@@ -1,27 +1,15 @@
 <script lang="ts">
-  import { preventDefault } from "svelte/legacy";
+    import {preventDefault} from "svelte/legacy";
 
-  import MetaRoleForm from "@/components/forms/MetaRoleForm.svelte";
-  import {
-    successToastMessage,
-    errorToastMessage,
-  } from "@/lib/toasts_messages";
-  import { onMount } from "svelte";
-  import {
-    getEntity,
-    updateRole,
-    createEntity,
-    getSpaces,
-    getSpaceContents,
-    deleteEntity,
-    createRole,
-  } from "@/lib/dmart_services";
-  import { ResourceType } from "@edraj/tsdmart";
-  import { _ } from "@/i18n";
-  import { locale } from "@/i18n";
-  import { derived } from "svelte/store";
+    import MetaRoleForm from "@/components/forms/MetaRoleForm.svelte";
+    import {errorToastMessage, successToastMessage,} from "@/lib/toasts_messages";
+    import {onMount} from "svelte";
+    import {createRole, deleteEntity, getEntity, getSpaceContents, getSpaces, updateRole,} from "@/lib/dmart_services";
+    import {ResourceType} from "@edraj/tsdmart";
+    import {_, locale} from "@/i18n";
+    import {derived} from "svelte/store";
 
-  const isRTL = derived(
+    const isRTL = derived(
     locale,
     ($locale) => $locale === "ar" || $locale === "ku"
   );

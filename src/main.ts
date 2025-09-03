@@ -1,4 +1,4 @@
-import { mount, hydrate } from "svelte";
+import {hydrate} from "svelte";
 import App from "./App.svelte";
 import "./app.css";
 

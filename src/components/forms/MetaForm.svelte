@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { goto, params } from "@roxi/routify";
-  import { Dmart, RequestType, ResourceType } from "@edraj/tsdmart";
-  import { _ } from "svelte-i18n";
-  $goto;
+    import {goto, params} from "@roxi/routify";
+    import {Dmart, RequestType, ResourceType} from "@edraj/tsdmart";
+    import {_} from "svelte-i18n";
+
+    $goto;
 
   let { isCreate, formData = $bindable(), validateFn = $bindable() } = $props();
 

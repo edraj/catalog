@@ -1,26 +1,27 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { params, goto } from "@roxi/routify";
-  import { getEntity } from "@/lib/dmart_services";
-  import { getRelatedContents } from "@/lib/dmart_services";
-  import { Diamonds } from "svelte-loading-spinners";
-  import { _, locale } from "@/i18n";
-  import { derived } from "svelte/store";
-  import { ResourceType } from "@edraj/tsdmart/dmart.model";
-  import Attachments from "@/components/Attachments.svelte";
-  import { user } from "@/stores/user";
-  import {
-    createComment,
-    createReaction,
-    deleteReactionComment,
-    checkCurrentUserReactedIdea,
-  } from "@/lib/dmart_services";
-  import {
-    successToastMessage,
-    errorToastMessage,
-  } from "@/lib/toasts_messages";
-  import { formatNumberInText } from "@/lib/helpers";
-  $goto;
+    import {onMount} from "svelte";
+    import {goto, params} from "@roxi/routify";
+    import {
+        checkCurrentUserReactedIdea,
+        createComment,
+        createReaction,
+        deleteReactionComment,
+        getEntity,
+        getRelatedContents
+    } from "@/lib/dmart_services";
+    import {Diamonds} from "svelte-loading-spinners";
+    import {_, locale} from "@/i18n";
+    import {derived} from "svelte/store";
+    import {ResourceType} from "@edraj/tsdmart/dmart.model";
+    import Attachments from "@/components/Attachments.svelte";
+    import {user} from "@/stores/user";
+    import {errorToastMessage, successToastMessage,} from "@/lib/toasts_messages";
+    import {formatNumberInText} from "@/lib/helpers";
+    import {marked} from "marked";
+    import {mangle} from "marked-mangle";
+    import {gfmHeadingId} from "marked-gfm-heading-id";
+
+    $goto;
   let isLoading = $state(false);
   let postData = $state(null);
   let relatedContent = $state([]);
@@ -37,7 +38,12 @@
   let isSubmittingReaction = $state(false);
   let userReactionId = $state(null);
   let showLoginPrompt = $state(false);
-
+  marked.use(mangle());
+  marked.use(
+    gfmHeadingId({
+      prefix: "my-prefix-",
+    })
+  );
   const isRTL = derived(
     locale,
     ($locale) => $locale === "ar" || $locale === "ku"
@@ -447,9 +453,61 @@
     return meaningfulKeys.length > 0;
   }
 
-  function renderMarkdown(content) {
-    return content;
-  }
+  // function renderMarkdown(content) {
+  //   if (!content) return "";
+
+  //   let html = content
+  //     // Convert headings
+  //     .replace(/^### (.*$)/gm, "<h3>$1</h3>")
+  //     .replace(/^## (.*$)/gm, "<h2>$1</h2>")
+  //     .replace(/^# (.*$)/gm, "<h1>$1</h1>")
+
+  //     // Convert bold and italic
+  //     .replace(/\*\*\*(.*?)\*\*\*/g, "<strong><em>$1</em></strong>")
+  //     .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+  //     .replace(/\*(.*?)\*/g, "<em>$1</em>")
+  //     .replace(/\_\_\_(.*?)\_\_\_/g, "<strong><em>$1</em></strong>")
+  //     .replace(/\_\_(.*?)\_\_/g, "<strong>$1</strong>")
+  //     .replace(/\_(.*?)\_/g, "<em>$1</em>")
+
+  //     // Convert inline code
+  //     .replace(/`([^`]+)`/g, "<code>$1</code>")
+
+  //     // Convert code blocks
+  //     .replace(/```([\s\S]*?)```/g, "<pre><code>$1</code></pre>")
+
+  //     // Convert blockquotes
+  //     .replace(/^> (.*$)/gm, "<blockquote>$1</blockquote>")
+
+  //     // Convert links
+  //     .replace(
+  //       /\[([^\]]+)\]\(([^)]+)\)/g,
+  //       '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
+  //     )
+
+  //     // Convert line breaks to paragraphs
+  //     .split("\n\n")
+  //     .map((paragraph) => {
+  //       paragraph = paragraph.trim();
+  //       if (!paragraph) return "";
+
+  //       // Don't wrap headings, blockquotes, pre, or other block elements in paragraphs
+  //       if (
+  //         paragraph.startsWith("<h") ||
+  //         paragraph.startsWith("<blockquote") ||
+  //         paragraph.startsWith("<pre") ||
+  //         paragraph.startsWith("<ul") ||
+  //         paragraph.startsWith("<ol")
+  //       ) {
+  //         return paragraph;
+  //       }
+
+  //       return `<p>${paragraph.replace(/\n/g, "<br>")}</p>`;
+  //     })
+  //     .join("\n");
+
+  //   return html;
+  // }
   let prevParams = { shortname: "", subpath: "", space_name: "" };
 
   $effect(() => {
@@ -688,49 +746,74 @@
             <div class="post-content">
               <div class="content-text">
                 {#if postData?.payload?.content_type === "html"}
-                  <div class="prose max-w-none">
+                  <div
+                    class="prose prose-lg max-w-none prose-headings:text-gray-900 prose-headings:font-bold prose-p:text-gray-700 prose-p:leading-relaxed prose-strong:text-gray-900 prose-a:text-blue-600 hover:prose-a:text-blue-800 prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-gray-900 prose-pre:text-gray-100"
+                  >
                     {@html getPostContent(postData)}
                   </div>
                 {:else if postData?.payload?.content_type === "json"}
                   {#if isHtmlContent(getPostContent(postData))}
-                    <div class="prose max-w-none">
+                    <div
+                      class="prose prose-lg max-w-none prose-headings:text-gray-900 prose-headings:font-bold prose-p:text-gray-700 prose-p:leading-relaxed prose-strong:text-gray-900 prose-a:text-blue-600 hover:prose-a:text-blue-800 prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-gray-900 prose-pre:text-gray-100"
+                    >
                       {@html getPostContent(postData)}
                     </div>
                   {:else if isMarkdownContent(getPostContent(postData))}
-                    <div class="prose max-w-none">
-                      {@html renderMarkdown(getPostContent(postData))}
+                    <div
+                      class="markdown-content bg-white p-6 rounded-lg shadow-sm border"
+                    >
+                      <div
+                        class="prose prose-lg max-w-none [enhanced classes from above]"
+                      >
+                        {@html marked(getPostContent(postData))}
+                      </div>
                     </div>
                   {:else if isStructuredData(postData.payload.body)}
-                    <div class="structured-content">
-                      <h4 class="text-lg font-semibold mb-3">
+                    <div
+                      class="structured-content bg-white rounded-lg shadow-sm border p-6"
+                    >
+                      <h4
+                        class="text-xl font-bold text-gray-900 mb-4 border-b pb-2"
+                      >
                         Content Details
                       </h4>
                       {#each Object.entries(postData.payload.body) as [key, value]}
                         {#if key !== "content" && value}
-                          <div class="mb-2">
-                            <span class="font-medium capitalize"
+                          <div class="mb-3 flex flex-wrap">
+                            <span
+                              class="font-semibold text-gray-700 capitalize min-w-24"
                               >{key.replace("_", " ")}:</span
                             >
-                            <span class="ml-2">{value}</span>
+                            <span class="ml-3 text-gray-600 flex-1"
+                              >{value}</span
+                            >
                           </div>
                         {/if}
                       {/each}
 
                       {#if postData.payload.body.content}
-                        <div class="mt-4">
-                          <span class="font-medium">Content:</span>
-                          <div class="mt-2 prose max-w-none">
+                        <div class="mt-6 pt-4 border-t">
+                          <span class="font-semibold text-gray-700 block mb-3"
+                            >Content:</span
+                          >
+                          <div
+                            class="prose prose-lg max-w-none prose-headings:text-gray-900 prose-headings:font-bold prose-p:text-gray-700 prose-p:leading-relaxed prose-strong:text-gray-900 prose-a:text-blue-600 hover:prose-a:text-blue-800"
+                          >
                             {@html postData.payload.body.content}
                           </div>
                         </div>
                       {/if}
                     </div>
                   {:else}
-                    <details class="bg-gray-50 p-4 rounded-lg">
-                      <summary class="cursor-pointer font-medium mb-2"
-                        >View Raw Data</summary
+                    <details
+                      class="bg-gradient-to-r from-gray-50 to-gray-100 p-6 rounded-lg border shadow-sm"
+                    >
+                      <summary
+                        class="cursor-pointer font-semibold text-gray-800 mb-3 hover:text-blue-600 transition-colors duration-200"
+                        >📊 View Raw Data</summary
                       >
-                      <pre class="text-xs overflow-x-auto mt-2">{JSON.stringify(
+                      <pre
+                        class="text-sm overflow-x-auto mt-4 bg-gray-900 text-green-400 p-4 rounded-md font-mono leading-relaxed">{JSON.stringify(
                           postData.payload.body?.content ||
                             postData.payload.body,
                           null,
@@ -738,9 +821,21 @@
                         )}</pre>
                     </details>
                   {/if}
+                {:else if getPostContent(postData) && (getPostContent(postData).includes("#") || getPostContent(postData).includes("*") || getPostContent(postData).includes("_"))}
+                  <div
+                    class="markdown-content bg-white p-6 rounded-lg shadow-sm border"
+                  >
+                    <div
+                      class="prose prose-lg max-w-none [enhanced classes from above]"
+                    >
+                      {@html marked(getPostContent(postData))}
+                    </div>
+                  </div>
                 {:else}
-                  <div class="bg-gray-50 p-4 rounded-lg">
-                    <div class="whitespace-pre-wrap leading-relaxed">
+                  <div class="bg-white p-6 rounded-lg shadow-sm border">
+                    <div
+                      class="whitespace-pre-wrap leading-relaxed text-gray-700 text-base"
+                    >
                       {getPostContent(postData)}
                     </div>
                   </div>

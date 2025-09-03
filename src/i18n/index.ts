@@ -1,15 +1,6 @@
-import {
-  addMessages,
-  getLocaleFromNavigator,
-  locale,
-  init,
-  _,
-  time,
-  date,
-  number,
-} from "svelte-i18n";
-import { website } from "@/config";
-import { derived, writable } from "svelte/store";
+import {_, addMessages, date, getLocaleFromNavigator, init, locale, number, time,} from "svelte-i18n";
+import {website} from "@/config";
+import {derived} from "svelte/store";
 import ar from "./ar.json";
 import en from "./en.json";
 import ku from "./ku.json";

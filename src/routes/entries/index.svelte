@@ -1,34 +1,32 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { params, goto } from "@roxi/routify";
-  import { getMyEntities } from "@/lib/dmart_services";
-  import {
-    formatDate,
-    formatNumberInText,
-    renderStateString,
-    truncateString,
-  } from "@/lib/helpers";
-  import { errorToastMessage } from "@/lib/toasts_messages";
-  import { user } from "@/stores/user";
-  import { _, locale } from "@/i18n";
-  import { derived } from "svelte/store";
-  import {
-    PlusOutline,
-    EditOutline,
-    EyeOutline,
-    HeartSolid,
-    MessagesSolid,
-    ClockOutline,
-    TagOutline,
-    SearchOutline,
-    FilterOutline,
-  } from "flowbite-svelte-icons";
-  $goto;
+    import {onMount} from "svelte";
+    import {goto, params} from "@roxi/routify";
+    import {getMyEntities} from "@/lib/dmart_services";
+    import {formatDate, formatNumberInText, truncateString,} from "@/lib/helpers";
+    import {errorToastMessage} from "@/lib/toasts_messages";
+    import {_, locale} from "@/i18n";
+    import {derived} from "svelte/store";
+    import {
+        ClockOutline,
+        EditOutline,
+        EyeOutline,
+        FilterOutline,
+        FolderOutline,
+        HeartSolid,
+        MessagesSolid,
+        PhoneOutline,
+        PlusOutline,
+        SearchOutline,
+        TagOutline,
+    } from "flowbite-svelte-icons";
+
+    $goto;
   let entities = $state([]);
   let filteredEntities = $state([]);
   let isLoading = $state(true);
   let searchTerm = $state("");
   let statusFilter = $state("all");
+  let resourceTypeFilter = $state("all");
   let sortBy = $state("updated_at");
   let sortOrder = $state("desc");
 
@@ -36,6 +34,60 @@
     locale,
     ($locale) => $locale === "ar" || $locale === "ku"
   );
+
+  function getLocalizedDisplayName(entity) {
+    const displayname = entity.attributes?.displayname;
+    if (!displayname) return $_("my_entries.untitled");
+
+    const localizedName =
+      displayname[$locale] ||
+      displayname.en ||
+      displayname.ar ||
+      displayname.ku;
+    return localizedName || $_("my_entries.untitled");
+  }
+
+  function getContentPreview(entity) {
+    const payload = entity.attributes?.payload;
+    if (!payload) return "";
+
+    if (entity.resource_type === "content") {
+      if (payload.body?.embedded) {
+        return payload.body.embedded;
+      }
+      if (typeof payload.body === "string") {
+        return payload.body;
+      }
+    }
+
+    return "";
+  }
+
+  function getResourceTypeIcon(resourceType) {
+    switch (resourceType) {
+      case "content":
+        return EditOutline;
+      case "media":
+        return PhoneOutline;
+      case "folder":
+        return FolderOutline;
+      default:
+        return EditOutline;
+    }
+  }
+
+  function getResourceTypeColor(resourceType) {
+    switch (resourceType) {
+      case "content":
+        return "bg-blue-100 text-blue-800";
+      case "media":
+        return "bg-purple-100 text-purple-800";
+      case "folder":
+        return "bg-yellow-100 text-yellow-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  }
 
   onMount(async () => {
     await fetchEntities();
@@ -53,21 +105,20 @@
   async function fetchEntities() {
     isLoading = true;
     try {
-      const rawEntities = await getMyEntities();
-      console.log(rawEntities);
+      const response = await getMyEntities();
+      console.log("API Response:", response);
+
+      const rawEntities = response?.records || response || [];
 
       entities = rawEntities.map((entity) => ({
         resource_type: entity?.resource_type || "",
         shortname: entity.shortname,
         uuid: entity?.uuid,
-        title:
-          entity.attributes?.payload?.body?.title ||
-          entity.attributes?.displayname?.en ||
-          $_("my_entries.untitled"),
-        content: entity.attributes?.payload?.body?.content || "",
+        title: getLocalizedDisplayName(entity),
+        content: getContentPreview(entity),
         tags: entity.attributes?.tags || [],
-        state: entity.attributes?.state || "unknown",
-        is_active: entity.attributes?.is_active || false,
+        state: entity.attributes?.state || null,
+        is_active: entity.attributes?.is_active !== false,
         created_at: entity.attributes?.created_at
           ? formatDate(entity.attributes.created_at)
           : "",
@@ -79,7 +130,7 @@
         space_name: entity.attributes?.space_name || "",
         subpath: entity?.subpath || "",
         owner_shortname: entity.attributes?.owner_shortname || "",
-        comment: entity.attachments?.comment?.length ?? 0,
+        comment: entity.attachments?.reply?.length ?? 0,
         reaction: entity.attachments?.reaction?.length ?? 0,
       }));
     } catch (error) {
@@ -101,7 +152,14 @@
         (entity) =>
           entity.title?.toLowerCase().includes(search) ||
           entity.content?.toLowerCase().includes(search) ||
-          entity.tags?.some((tag) => tag.toLowerCase().includes(search))
+          entity.tags?.some((tag) => tag.toLowerCase().includes(search)) ||
+          entity.resource_type?.toLowerCase().includes(search)
+      );
+    }
+
+    if (resourceTypeFilter !== "all") {
+      filtered = filtered.filter(
+        (entity) => entity.resource_type === resourceTypeFilter
       );
     }
 
@@ -116,6 +174,8 @@
             return entity.state === "pending";
           case "approved":
             return entity.state === "approved";
+          case "rejected":
+            return entity.state === "rejected";
           default:
             return true;
         }
@@ -132,7 +192,7 @@
           break;
         case "created_at":
           aValue = new Date(a.raw_created_at);
-          bValue = new Date(b.raw_created_at);
+          bValue = new Date(b.raw_updated_at);
           break;
         case "reactions":
           aValue = a.reaction || 0;
@@ -248,8 +308,9 @@
       </div>
     </div>
 
+    <!-- Updated filters to include resource type filter -->
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <!-- Search -->
         <div class="relative">
           <SearchOutline
@@ -263,6 +324,18 @@
             class="w-full search-input py-3 pl-8 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
           />
         </div>
+
+        <!-- Resource Type Filter -->
+        <select
+          bind:value={resourceTypeFilter}
+          onchange={handleFilterChange}
+          class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 appearance-none bg-white"
+        >
+          <option value="all">All Types</option>
+          <option value="content">Content</option>
+          <option value="media">Media</option>
+          <option value="folder">Folder</option>
+        </select>
 
         <!-- Status Filter -->
         <div class="relative">
@@ -279,6 +352,7 @@
             <option value="inactive">{$_("my_entries.filter.draft")}</option>
             <option value="pending">{$_("my_entries.filter.pending")}</option>
             <option value="approved">{$_("my_entries.filter.approved")}</option>
+            <option value="rejected">Rejected</option>
           </select>
         </div>
 
@@ -444,6 +518,11 @@
                 <th
                   class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider table-header"
                 >
+                  Type
+                </th>
+                <th
+                  class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider table-header"
+                >
                   {$_("my_entries.table.status")}
                 </th>
                 <th
@@ -465,11 +544,18 @@
             </thead>
             <tbody class="divide-y divide-gray-100">
               {#each filteredEntities as entity, index}
+                {@const SvelteComponent = getResourceTypeIcon(
+                  entity.resource_type
+                )}
                 <tr
                   class="hover:bg-gray-50 transition-colors duration-150 group"
                 >
                   <td class="px-6 py-4">
                     <div class="flex items-start space-x-4 entry-content">
+                      <!-- Added resource type icon -->
+                      <div class="flex-shrink-0 mt-1">
+                        <SvelteComponent class="w-5 h-5 text-gray-400" />
+                      </div>
                       <div class="flex-1 min-w-0">
                         <h3
                           class="text-lg font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors duration-150 line-clamp-2"
@@ -509,6 +595,17 @@
                         {/if}
                       </div>
                     </div>
+                  </td>
+
+                  <!-- Added resource type column -->
+                  <td class="px-6 py-4">
+                    <span
+                      class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {getResourceTypeColor(
+                        entity.resource_type
+                      )}"
+                    >
+                      {entity.resource_type}
+                    </span>
                   </td>
 
                   <td class="px-6 py-4">

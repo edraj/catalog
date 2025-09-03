@@ -1,13 +1,9 @@
 <script>
-  import { goto } from "@roxi/routify";
-  import {
-    ShieldCheckSolid,
-    EyeSlashSolid,
-    LockSolid,
-    UsersSolid,
-  } from "flowbite-svelte-icons";
-  import { _ } from "@/i18n";
-  $goto;
+    import {goto} from "@roxi/routify";
+    import {EyeSlashSolid, LockSolid, ShieldCheckSolid, UsersSolid,} from "flowbite-svelte-icons";
+    import {_} from "@/i18n";
+
+    $goto;
 
   function handleContactUs() {
     $goto("/contact");

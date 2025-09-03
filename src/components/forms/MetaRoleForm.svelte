@@ -1,11 +1,10 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { Dmart, QueryType } from "@edraj/tsdmart";
-  import { writable } from "svelte/store";
-  import { _ } from "@/i18n";
-  import { locale } from "@/i18n";
+    import {onMount} from "svelte";
+    import {Dmart, QueryType} from "@edraj/tsdmart";
+    import {writable} from "svelte/store";
+    import {_} from "@/i18n";
 
-  let {
+    let {
     formData = $bindable(),
     validateFn = $bindable(),
   }: {
