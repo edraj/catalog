@@ -1,31 +1,25 @@
 <script lang="ts">
-  import { run, preventDefault } from "svelte/legacy";
+    import {preventDefault, run} from "svelte/legacy";
 
-  import { onMount } from "svelte";
-  import {
-    getAvatar,
-    setAvatar,
-    getEntityAttachmentsCount,
-    getProfile,
-    getEntities,
-    updateProfile,
-    getMyEntities,
-    updatePassword,
-  } from "@/lib/dmart_services";
-  import {
-    errorToastMessage,
-    successToastMessage,
-  } from "@/lib/toasts_messages";
-  import Avatar from "@/components/Avatar.svelte";
-  import { formatDate, renderStateString } from "@/lib/helpers";
-  import { goto, params } from "@roxi/routify";
-  import { Diamonds } from "svelte-loading-spinners";
-  import { _, locale } from "@/i18n";
-  import { loginBy } from "@/stores/user";
-  import { writable } from "svelte/store";
-  import { formatNumberInText } from "@/lib/helpers";
+    import {onMount} from "svelte";
+    import {
+        getAvatar,
+        getMyEntities,
+        getProfile,
+        setAvatar,
+        updatePassword,
+        updateProfile,
+    } from "@/lib/dmart_services";
+    import {errorToastMessage, successToastMessage,} from "@/lib/toasts_messages";
+    import Avatar from "@/components/Avatar.svelte";
+    import {formatDate, formatNumberInText, renderStateString} from "@/lib/helpers";
+    import {goto} from "@roxi/routify";
+    import {Diamonds} from "svelte-loading-spinners";
+    import {_, locale} from "@/i18n";
+    import {loginBy} from "@/stores/user";
+    import {writable} from "svelte/store";
 
-  $goto;
+    $goto;
   const ProfileSection = {
     ME: "ME",
     IDEAS: "IDEAS",

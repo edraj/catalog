@@ -1,22 +1,22 @@
 <script lang="ts">
-  import { goto } from "@roxi/routify";
-  import { _ } from "@/i18n";
-  import { locale } from "@/i18n";
-  import { checkExisting, register, requestOtp } from "@/stores/user";
+    import {goto} from "@roxi/routify";
+    import {_, locale} from "@/i18n";
+    import {checkExisting, register, requestOtp} from "@/stores/user";
 
-  import {
-    UserSolid,
-    EnvelopeSolid,
-    EyeSolid,
-    EyeSlashSolid,
-    CheckCircleSolid,
-    ArrowLeftOutline,
-    LockSolid,
-    PhoneSolid,
-  } from "flowbite-svelte-icons";
-  import { getEntity } from "@/lib/dmart_services";
-  import { ResourceType } from "@edraj/tsdmart";
-  $goto;
+    import {
+        ArrowLeftOutline,
+        CheckCircleSolid,
+        EnvelopeSolid,
+        EyeSlashSolid,
+        EyeSolid,
+        LockSolid,
+        PhoneSolid,
+        UserSolid,
+    } from "flowbite-svelte-icons";
+    import {getEntity} from "@/lib/dmart_services";
+    import {ResourceType} from "@edraj/tsdmart";
+
+    $goto;
   let email = "";
   let phoneNumber = "";
   let password = "";

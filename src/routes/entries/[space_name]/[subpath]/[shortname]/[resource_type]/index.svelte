@@ -1,44 +1,40 @@
 <script lang="ts">
-  import { params } from "@roxi/routify";
-  import { goto } from "@roxi/routify";
-  import { onMount } from "svelte";
-  import {
-    checkCurrentUserReactedIdea,
-    createComment,
-    createReaction,
-    deleteReactionComment,
-    getAvatar,
-    getEntityAttachmentsCount,
-    getEntity,
-  } from "@/lib/dmart_services";
-  import { formatDate, formatNumberInText } from "@/lib/helpers";
-  import Attachments from "@/components/Attachments.svelte";
-  import { ResourceType } from "@edraj/tsdmart";
-  import { user } from "@/stores/user";
-  import {
-    errorToastMessage,
-    successToastMessage,
-  } from "@/lib/toasts_messages";
-  import Avatar from "@/components/Avatar.svelte";
-  import { Diamonds } from "svelte-loading-spinners";
-  import {
-    ArrowLeftOutline,
-    CheckCircleSolid,
-    ClockOutline,
-    CloseCircleSolid,
-    EditOutline,
-    EyeSlashSolid,
-    EyeSolid,
-    HeartSolid,
-    MessagesSolid,
-    TagOutline,
-    TrashBinSolid,
-    UserCircleOutline,
-  } from "flowbite-svelte-icons";
-  import { _, locale } from "@/i18n";
-  import { derived } from "svelte/store";
+    import {goto, params} from "@roxi/routify";
+    import {onMount} from "svelte";
+    import {
+        checkCurrentUserReactedIdea,
+        createComment,
+        createReaction,
+        deleteReactionComment,
+        getAvatar,
+        getEntity,
+        getEntityAttachmentsCount,
+    } from "@/lib/dmart_services";
+    import {formatDate, formatNumberInText} from "@/lib/helpers";
+    import Attachments from "@/components/Attachments.svelte";
+    import {ResourceType} from "@edraj/tsdmart";
+    import {user} from "@/stores/user";
+    import {errorToastMessage, successToastMessage,} from "@/lib/toasts_messages";
+    import Avatar from "@/components/Avatar.svelte";
+    import {Diamonds} from "svelte-loading-spinners";
+    import {
+        ArrowLeftOutline,
+        CheckCircleSolid,
+        ClockOutline,
+        CloseCircleSolid,
+        EditOutline,
+        EyeSlashSolid,
+        EyeSolid,
+        HeartSolid,
+        MessagesSolid,
+        TagOutline,
+        TrashBinSolid,
+        UserCircleOutline,
+    } from "flowbite-svelte-icons";
+    import {_, locale} from "@/i18n";
+    import {derived} from "svelte/store";
 
-  $goto;
+    $goto;
 
   let entity = $state(null);
   let isLoading = $state(false);

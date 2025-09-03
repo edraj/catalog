@@ -1,22 +1,22 @@
 <script lang="ts">
-  import {
-    deleteAllNotification,
-    deleteNotification,
-    fetchMyNotifications,
-    getAvatar,
-    getEntity,
-    markNotification,
-  } from "@/lib/dmart_services";
-  import { user } from "@/stores/user";
-  import { onMount } from "svelte";
-  import { formatDate, truncateString } from "@/lib/helpers";
-  import Avatar from "@/components/Avatar.svelte";
-  import { SyncLoader } from "svelte-loading-spinners";
-  import { newNotificationType } from "@/stores/newNotificationType";
-  import { ResourceType } from "@edraj/tsdmart";
-  import { _ } from "@/i18n";
-  import { goto } from "@roxi/routify";
-  $goto;
+    import {
+        deleteAllNotification,
+        fetchMyNotifications,
+        getAvatar,
+        getEntity,
+        markNotification,
+    } from "@/lib/dmart_services";
+    import {user} from "@/stores/user";
+    import {onMount} from "svelte";
+    import {formatDate, truncateString} from "@/lib/helpers";
+    import Avatar from "@/components/Avatar.svelte";
+    import {SyncLoader} from "svelte-loading-spinners";
+    import {newNotificationType} from "@/stores/newNotificationType";
+    import {ResourceType} from "@edraj/tsdmart";
+    import {_} from "@/i18n";
+    import {goto} from "@roxi/routify";
+
+    $goto;
 
   let notifications = $state([]);
   let isNotificationsLoading = $state(false);

@@ -1,23 +1,13 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import {
-    getSpaceContents,
-    getSpaceContentsByTags,
-    getSpaces,
-    getSpaceTags,
-    searchInCatalog,
-  } from "@/lib/dmart_services";
-  import { Diamonds } from "svelte-loading-spinners";
-  import { goto } from "@roxi/routify";
-  import { _, locale } from "@/i18n";
-  import { derived } from "svelte/store";
-  import { formatNumber, formatNumberInText } from "@/lib/helpers";
-  import {
-    GlobeSolid,
-    MessageCaptionSolid,
-    HeartSolid,
-  } from "flowbite-svelte-icons";
-  $goto;
+    import {onMount} from "svelte";
+    import {getSpaceContents, getSpaces, getSpaceTags, searchInCatalog,} from "@/lib/dmart_services";
+    import {Diamonds} from "svelte-loading-spinners";
+    import {goto} from "@roxi/routify";
+    import {_, locale} from "@/i18n";
+    import {derived} from "svelte/store";
+    import {formatNumber, formatNumberInText} from "@/lib/helpers";
+
+    $goto;
 
   let isLoading = $state(true);
   let spaces = $state([]);

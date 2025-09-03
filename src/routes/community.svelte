@@ -1,13 +1,9 @@
 <script>
-  import { goto } from "@roxi/routify";
-  import {
-    UsersSolid,
-    MessageCaptionSolid,
-    HeartSolid,
-    GlobeSolid,
-  } from "flowbite-svelte-icons";
-  import { _ } from "@/i18n";
-  $goto;
+    import {goto} from "@roxi/routify";
+    import {GlobeSolid, HeartSolid, MessageCaptionSolid, UsersSolid,} from "flowbite-svelte-icons";
+    import {_} from "@/i18n";
+
+    $goto;
 
   const communityFeatures = [
     {

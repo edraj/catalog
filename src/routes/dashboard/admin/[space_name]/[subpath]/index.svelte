@@ -1,17 +1,17 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { params, goto } from "@roxi/routify";
-  import { getSpaceContents, getAvatar } from "@/lib/dmart_services";
-  import { Diamonds } from "svelte-loading-spinners";
-  import { _, locale } from "@/i18n";
-  import { Dmart, ResourceType, RequestType } from "@edraj/tsdmart";
-  import { derived, writable } from "svelte/store";
-  import { deleteEntity } from "@/lib/dmart_services";
-  import MetaForm from "@/components/forms/MetaForm.svelte";
-  import FolderForm from "@/components/forms/FolderForm.svelte";
-  import Avatar from "@/components/Avatar.svelte";
-  import { formatNumber, formatNumberInText } from "@/lib/helpers";
-  $goto;
+    import {onMount} from "svelte";
+    import {goto, params} from "@roxi/routify";
+    import {deleteEntity, getAvatar, getSpaceContents} from "@/lib/dmart_services";
+    import {Diamonds} from "svelte-loading-spinners";
+    import {_, locale} from "@/i18n";
+    import {Dmart, RequestType, ResourceType} from "@edraj/tsdmart";
+    import {derived, writable} from "svelte/store";
+    import MetaForm from "@/components/forms/MetaForm.svelte";
+    import FolderForm from "@/components/forms/FolderForm.svelte";
+    import Avatar from "@/components/Avatar.svelte";
+    import {formatNumber} from "@/lib/helpers";
+
+    $goto;
 
   let isLoading = writable(false);
   let isLoadingMore = writable(false);

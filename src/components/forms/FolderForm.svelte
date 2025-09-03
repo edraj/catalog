@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
-  import { Dmart, QueryType } from "@edraj/tsdmart";
-  import { _ } from "svelte-i18n";
+    import {createEventDispatcher} from "svelte";
+    import {Dmart, QueryType} from "@edraj/tsdmart";
+    import {_} from "svelte-i18n";
 
-  const dispatch = createEventDispatcher();
+    const dispatch = createEventDispatcher();
 
   let {
     content = $bindable({}),

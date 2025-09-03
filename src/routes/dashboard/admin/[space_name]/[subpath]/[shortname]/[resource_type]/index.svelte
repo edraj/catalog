@@ -1,23 +1,17 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { params, goto } from "@roxi/routify";
-  import {
-    deleteEntity,
-    updateEntity,
-    getMyEntities,
-    getEntity,
-  } from "@/lib/dmart_services";
-  import { Diamonds } from "svelte-loading-spinners";
-  import { _, locale } from "@/i18n";
-  import { derived } from "svelte/store";
-  import { ResourceType } from "@edraj/tsdmart";
-  import { writable } from "svelte/store";
-  import Attachment from "@/components/Attachments.svelte";
-  import HtmlEditor from "@/components/editors/HtmlEditor.svelte";
-  import { formatNumberInText } from "@/lib/helpers";
-  import { marked } from "marked";
-  import TemplateEditor from "@/components/editors/TemplateEditor.svelte";
-  $goto;
+    import {onMount} from "svelte";
+    import {goto, params} from "@roxi/routify";
+    import {deleteEntity, getEntity, getMyEntities, updateEntity,} from "@/lib/dmart_services";
+    import {Diamonds} from "svelte-loading-spinners";
+    import {_, locale} from "@/i18n";
+    import {derived, writable} from "svelte/store";
+    import Attachment from "@/components/Attachments.svelte";
+    import HtmlEditor from "@/components/editors/HtmlEditor.svelte";
+    import {formatNumberInText} from "@/lib/helpers";
+    import {marked} from "marked";
+    import TemplateEditor from "@/components/editors/TemplateEditor.svelte";
+
+    $goto;
 
   const isRTL = derived(
     locale,

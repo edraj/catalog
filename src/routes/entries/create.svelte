@@ -1,42 +1,33 @@
 <script lang="ts">
-  import { Button, Card, Input, Select } from "flowbite-svelte";
-  import { goto, params } from "@roxi/routify";
-  import HtmlEditor from "@/components/editors/HtmlEditor.svelte";
-  import {
-    attachAttachmentsToEntity,
-    createEntity,
-    getSpaces,
-    getSpaceContents,
-    getSpaceFolders,
-  } from "@/lib/dmart_services";
-  import {
-    errorToastMessage,
-    successToastMessage,
-  } from "@/lib/toasts_messages";
-  import {
-    ArrowLeftOutline,
-    CloseCircleOutline,
-    CloudArrowUpOutline,
-    FileCheckSolid,
-    FileImportSolid,
-    FilePdfOutline,
-    FloppyDiskSolid,
-    PaperClipOutline,
-    PaperPlaneSolid,
-    PlayOutline,
-    PlusOutline,
-    TagOutline,
-    TextUnderlineOutline,
-    TrashBinSolid,
-    UploadOutline,
-  } from "flowbite-svelte-icons";
-  import { _, locale } from "@/i18n";
-  import { derived, get } from "svelte/store";
-  import { onMount } from "svelte";
-  import { ResourceType } from "@edraj/tsdmart";
-  import { roles } from "@/stores/user";
-  import MarkdownEditor from "@/components/editors/MarkdownEditor.svelte";
-  $goto;
+    import {goto, params} from "@roxi/routify";
+    import HtmlEditor from "@/components/editors/HtmlEditor.svelte";
+    import {attachAttachmentsToEntity, createEntity, getSpaceFolders, getSpaces,} from "@/lib/dmart_services";
+    import {errorToastMessage, successToastMessage,} from "@/lib/toasts_messages";
+    import {
+        ArrowLeftOutline,
+        CloseCircleOutline,
+        CloudArrowUpOutline,
+        FileCheckSolid,
+        FileImportSolid,
+        FilePdfOutline,
+        FloppyDiskSolid,
+        PaperClipOutline,
+        PaperPlaneSolid,
+        PlayOutline,
+        PlusOutline,
+        TagOutline,
+        TextUnderlineOutline,
+        TrashBinSolid,
+        UploadOutline,
+    } from "flowbite-svelte-icons";
+    import {_, locale} from "@/i18n";
+    import {derived} from "svelte/store";
+    import {onMount} from "svelte";
+    import {ResourceType} from "@edraj/tsdmart";
+    import {roles} from "@/stores/user";
+    import MarkdownEditor from "@/components/editors/MarkdownEditor.svelte";
+
+    $goto;
   let isLoading = $state(false);
   let content = $state("");
   let resource_type = ResourceType.content;

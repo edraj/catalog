@@ -1,10 +1,9 @@
 <script>
-  import { onMount } from "svelte";
-  import { getTemplates } from "@/lib/dmart_services";
-  import { derived, writable } from "svelte/store";
-  import { createEventDispatcher } from "svelte";
+    import {createEventDispatcher, onMount} from "svelte";
+    import {getTemplates} from "@/lib/dmart_services";
+    import {derived, writable} from "svelte/store";
 
-  const dispatch = createEventDispatcher();
+    const dispatch = createEventDispatcher();
   export let content = "";
   let onContentChange = (newContent) => {
     content = newContent;

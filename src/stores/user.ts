@@ -1,14 +1,7 @@
-import { type Writable, writable } from "svelte/store";
-import {
-  Dmart,
-  ResourceType,
-  type ActionRequestRecord,
-  type SendOTPRequest,
-} from "@edraj/tsdmart";
-import { authToken } from "@/stores/auth";
-import { getLocaleFromNavigator } from "svelte-i18n";
-import { Toast } from "flowbite-svelte";
-import { FireOutline } from "flowbite-svelte-icons";
+import {type Writable, writable} from "svelte/store";
+import {type ActionRequestRecord, Dmart, ResourceType, type SendOTPRequest,} from "@edraj/tsdmart";
+import {authToken} from "@/stores/auth";
+import {getLocaleFromNavigator} from "svelte-i18n";
 
 enum Locale {
   ar = "ar",

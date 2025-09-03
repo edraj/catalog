@@ -1,10 +1,11 @@
 <script>
-  import { getEntityAttachmentsCount, getEntities } from "@/lib/dmart_services";
-  import { formatDate, renderStateString } from "@/lib/helpers";
-  import { goto } from "@roxi/routify";
-  import { _ } from "@/i18n";
-  import { SyncLoader } from "svelte-loading-spinners";
-  $goto;
+    import {getEntities, getEntityAttachmentsCount} from "@/lib/dmart_services";
+    import {formatDate, renderStateString} from "@/lib/helpers";
+    import {goto} from "@roxi/routify";
+    import {_} from "@/i18n";
+    import {SyncLoader} from "svelte-loading-spinners";
+
+    $goto;
   let isProjectBeingFetched = $state(false);
   let modalOpen = $state(false);
   let searchString = $state("");

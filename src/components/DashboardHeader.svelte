@@ -1,13 +1,13 @@
 <script lang="ts">
-  import SearchBar from "./SearchBar.svelte";
-  import { onDestroy, onMount } from "svelte";
-  import { website } from "@/config.js";
-  import { newNotificationType } from "@/stores/newNotificationType";
-  import { _ } from "@/i18n";
-  import { locale, switchLocale } from "@/i18n";
-  import { user, signout, roles } from "@/stores/user";
-  import { goto } from "@roxi/routify";
-  $goto;
+    import SearchBar from "./SearchBar.svelte";
+    import {onDestroy, onMount} from "svelte";
+    import {website} from "@/config.js";
+    import {newNotificationType} from "@/stores/newNotificationType";
+    import {_, locale, switchLocale} from "@/i18n";
+    import {roles, signout, user} from "@/stores/user";
+    import {goto} from "@roxi/routify";
+
+    $goto;
 
   let ws = $state(null);
   let isMenuOpen = $state(false);

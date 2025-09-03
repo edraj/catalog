@@ -1,14 +1,14 @@
 <script>
-  import DashboardHeader from "@/components/DashboardHeader.svelte";
-  import { signout, user } from "@/stores/user";
-  import { onMount } from "svelte";
-  import { getProfile } from "@/lib/dmart_services";
-  import { goto } from "@roxi/routify";
-  import { Dmart } from "@edraj/tsdmart";
-  import { website } from "@/config";
-  import axios from "axios";
+    import DashboardHeader from "@/components/DashboardHeader.svelte";
+    import {signout} from "@/stores/user";
+    import {onMount} from "svelte";
+    import {getProfile} from "@/lib/dmart_services";
+    import {goto} from "@roxi/routify";
+    import {Dmart} from "@edraj/tsdmart";
+    import {website} from "@/config";
+    import axios from "axios";
 
-  $goto;
+    $goto;
 
   const publicRoutes = [
     "/register",

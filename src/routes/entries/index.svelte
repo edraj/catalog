@@ -1,31 +1,26 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { params, goto } from "@roxi/routify";
-  import { getMyEntities } from "@/lib/dmart_services";
-  import {
-    formatDate,
-    formatNumberInText,
-    renderStateString,
-    truncateString,
-  } from "@/lib/helpers";
-  import { errorToastMessage } from "@/lib/toasts_messages";
-  import { user } from "@/stores/user";
-  import { _, locale } from "@/i18n";
-  import { derived } from "svelte/store";
-  import {
-    PlusOutline,
-    EditOutline,
-    EyeOutline,
-    HeartSolid,
-    MessagesSolid,
-    ClockOutline,
-    TagOutline,
-    SearchOutline,
-    FilterOutline,
-    FolderOutline,
-    PhoneOutline,
-  } from "flowbite-svelte-icons";
-  $goto;
+    import {onMount} from "svelte";
+    import {goto, params} from "@roxi/routify";
+    import {getMyEntities} from "@/lib/dmart_services";
+    import {formatDate, formatNumberInText, truncateString,} from "@/lib/helpers";
+    import {errorToastMessage} from "@/lib/toasts_messages";
+    import {_, locale} from "@/i18n";
+    import {derived} from "svelte/store";
+    import {
+        ClockOutline,
+        EditOutline,
+        EyeOutline,
+        FilterOutline,
+        FolderOutline,
+        HeartSolid,
+        MessagesSolid,
+        PhoneOutline,
+        PlusOutline,
+        SearchOutline,
+        TagOutline,
+    } from "flowbite-svelte-icons";
+
+    $goto;
   let entities = $state([]);
   let filteredEntities = $state([]);
   let isLoading = $state(true);

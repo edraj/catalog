@@ -1,16 +1,16 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { params, goto } from "@roxi/routify";
-  import { getSpaceContents } from "@/lib/dmart_services";
-  import { Diamonds } from "svelte-loading-spinners";
-  import { _, locale } from "@/i18n";
-  import { derived } from "svelte/store";
-  import { Dmart, ResourceType, RequestType } from "@edraj/tsdmart";
-  import { deleteEntity } from "@/lib/dmart_services";
-  import FolderForm from "@/components/forms/FolderForm.svelte";
-  import MetaForm from "@/components/forms/MetaForm.svelte";
-  import { formatNumberInText } from "@/lib/helpers";
-  $goto;
+    import {onMount} from "svelte";
+    import {goto, params} from "@roxi/routify";
+    import {deleteEntity, getSpaceContents} from "@/lib/dmart_services";
+    import {Diamonds} from "svelte-loading-spinners";
+    import {_, locale} from "@/i18n";
+    import {derived} from "svelte/store";
+    import {Dmart, RequestType, ResourceType} from "@edraj/tsdmart";
+    import FolderForm from "@/components/forms/FolderForm.svelte";
+    import MetaForm from "@/components/forms/MetaForm.svelte";
+    import {formatNumberInText} from "@/lib/helpers";
+
+    $goto;
 
   const isRTL = derived(
     locale,

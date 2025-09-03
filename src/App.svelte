@@ -1,10 +1,9 @@
 <script module lang="ts">
-  import { Router, createRouter } from "@roxi/routify";
-  import routes from "../.routify/routes.default";
-  import { SvelteToast } from "@zerodevx/svelte-toast";
-  import { website } from "@/config";
+    import {createRouter, Router} from "@roxi/routify";
+    import routes from "../.routify/routes.default";
+    import {SvelteToast} from "@zerodevx/svelte-toast";
 
-  const prefix = "";
+    const prefix = "";
 </script>
 
 <script lang="ts">

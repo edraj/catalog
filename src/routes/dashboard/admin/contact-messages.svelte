@@ -1,14 +1,11 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { _ } from "../../../i18n";
-  import { locale } from "@/i18n";
+    import {onMount} from "svelte";
+    import {_} from "../../../i18n";
+    import {locale} from "@/i18n";
 
-  import {
-    fetchContactMessages,
-    markMessageAsReplied,
-  } from "../../../lib/dmart_services";
+    import {fetchContactMessages, markMessageAsReplied,} from "../../../lib/dmart_services";
 
-  let messages: any[] = $state([]);
+    let messages: any[] = $state([]);
   let loading = $state(true);
   let error = $state("");
   let currentPage = $state(0);

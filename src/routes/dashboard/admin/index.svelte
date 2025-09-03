@@ -1,21 +1,15 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import {
-    getSpaces,
-    createSpace,
-    editSpace,
-    deleteSpace,
-    searchInCatalog,
-  } from "@/lib/dmart_services";
-  import { Diamonds } from "svelte-loading-spinners";
-  import { goto } from "@roxi/routify";
-  import { _ } from "@/i18n";
-  import { locale } from "@/i18n";
-  import { user } from "@/stores/user";
-  import MetaForm from "@/components/forms/MetaForm.svelte";
-  import { derived } from "svelte/store";
-  import { formatNumberInText } from "@/lib/helpers";
-  $goto;
+    import {onMount} from "svelte";
+    import {createSpace, deleteSpace, editSpace, getSpaces, searchInCatalog,} from "@/lib/dmart_services";
+    import {Diamonds} from "svelte-loading-spinners";
+    import {goto} from "@roxi/routify";
+    import {_, locale} from "@/i18n";
+    import {user} from "@/stores/user";
+    import MetaForm from "@/components/forms/MetaForm.svelte";
+    import {derived} from "svelte/store";
+    import {formatNumberInText} from "@/lib/helpers";
+
+    $goto;
   let isLoading = $state(true);
   let spaces = $state([]);
   let displayedSpaces = $state([]);

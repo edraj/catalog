@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { ResourceType } from "@edraj/tsdmart";
-  import { marked } from "marked";
+    import {ResourceType} from "@edraj/tsdmart";
+    import {marked} from "marked";
 
-  export let attributes: any = {};
+    export let attributes: any = {};
   export let resource_type: ResourceType;
   export let url: string;
   export let displayname: string = undefined;

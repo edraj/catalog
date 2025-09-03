@@ -1,19 +1,19 @@
 <script>
-  import { goto } from "@roxi/routify";
-  $goto;
-  import {
-    HeartSolid,
-    BellSolid,
-    UserSolid,
-    EyeSolid,
-    GlobeSolid,
-    EditSolid,
-    MessageCaptionSolid,
-    MessagesOutline,
-  } from "flowbite-svelte-icons";
-  import { _ } from "@/i18n";
+    import {goto} from "@roxi/routify";
+    import {
+        BellSolid,
+        EditSolid,
+        EyeSolid,
+        HeartSolid,
+        MessageCaptionSolid,
+        MessagesOutline,
+        UserSolid,
+    } from "flowbite-svelte-icons";
+    import {_} from "@/i18n";
 
-  const features = [
+    $goto;
+
+    const features = [
     {
       icon: HeartSolid,
       title: $_("InteractiveEngagement"),

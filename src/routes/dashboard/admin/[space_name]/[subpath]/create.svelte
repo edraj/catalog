@@ -1,11 +1,11 @@
 <script>
-  import { onMount } from "svelte";
-  import { marked } from "marked";
-  import { createEntity, getTemplates } from "@/lib/dmart_services";
-  import { ContentType, ResourceType } from "@edraj/tsdmart";
-  import { params } from "@roxi/routify";
+    import {onMount} from "svelte";
+    import {marked} from "marked";
+    import {createEntity, getTemplates} from "@/lib/dmart_services";
+    import {ContentType, ResourceType} from "@edraj/tsdmart";
+    import {params} from "@roxi/routify";
 
-  let templates = [];
+    let templates = [];
   let selectedTemplate = null;
   let templateFields = [];
   let fieldValues = {};

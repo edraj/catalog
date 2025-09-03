@@ -1,20 +1,19 @@
 import {
-  Dmart,
-  type ActionRequest,
-  type ActionResponse,
-  type ApiQueryResponse,
-  type QueryRequest,
-  ContentType,
-  QueryType,
-  RequestType,
-  ResourceType,
-  SortyType,
+    type ActionRequest,
+    type ActionResponse,
+    type ApiQueryResponse,
+    ContentType,
+    Dmart,
+    type QueryRequest,
+    QueryType,
+    RequestType,
+    ResourceType,
+    SortyType,
 } from "@edraj/tsdmart";
-import { user } from "@/stores/user";
-import { get } from "svelte/store";
-import type { Translation } from "@edraj/tsdmart/dmart.model";
-import { getFileType } from "./helpers";
-import { t } from "svelte-i18n";
+import {user} from "@/stores/user";
+import {get} from "svelte/store";
+import type {Translation} from "@edraj/tsdmart/dmart.model";
+import {getFileType} from "./helpers";
 
 export async function getProfile() {
   try {

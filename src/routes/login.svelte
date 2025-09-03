@@ -1,15 +1,10 @@
 <script lang="ts">
-  import { goto } from "@roxi/routify";
-  import { _ } from "@/i18n";
-  import { locale } from "@/i18n";
-  import {
-    UserSolid,
-    EyeSolid,
-    EyeSlashSolid,
-    LockSolid,
-  } from "flowbite-svelte-icons";
-  import { loginBy, signin } from "@/stores/user";
-  $goto;
+    import {goto} from "@roxi/routify";
+    import {_, locale} from "@/i18n";
+    import {EyeSlashSolid, EyeSolid, LockSolid, UserSolid,} from "flowbite-svelte-icons";
+    import {loginBy, signin} from "@/stores/user";
+
+    $goto;
   let identifier = "";
   let password = "";
   let showPassword = false;

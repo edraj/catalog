@@ -1,18 +1,17 @@
 <script>
-  import { goto } from "@roxi/routify";
-  import { _ } from "@/i18n";
-  import { locale } from "@/i18n";
-  import {
-    EnvelopeSolid,
-    UserSolid,
-    CheckCircleSolid,
-    ArrowLeftOutline,
-    MessagesSolid,
-    MailBoxOutline,
-  } from "flowbite-svelte-icons";
-  import { contactUs } from "@/stores/user";
+    import {goto} from "@roxi/routify";
+    import {_, locale} from "@/i18n";
+    import {
+        ArrowLeftOutline,
+        CheckCircleSolid,
+        EnvelopeSolid,
+        MailBoxOutline,
+        MessagesSolid,
+        UserSolid,
+    } from "flowbite-svelte-icons";
+    import {contactUs} from "@/stores/user";
 
-  const isRTL = $locale === "ar" || $locale === "ku";
+    const isRTL = $locale === "ar" || $locale === "ku";
 
   let name = "";
   let email = "";

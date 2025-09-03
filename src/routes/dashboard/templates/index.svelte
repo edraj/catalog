@@ -1,14 +1,9 @@
 <script lang="ts">
-  import MarkdownEditor from "@/components/editors/MarkdownEditor.svelte";
-  import {
-    createTemplate,
-    getTemplates,
-    deleteTemplate,
-    updateTemplates,
-  } from "@/lib/dmart_services";
-  import { onMount } from "svelte";
+    import MarkdownEditor from "@/components/editors/MarkdownEditor.svelte";
+    import {createTemplate, deleteTemplate, getTemplates, updateTemplates,} from "@/lib/dmart_services";
+    import {onMount} from "svelte";
 
-  let templates = $state([]);
+    let templates = $state([]);
   let isLoading = $state(true);
   let loadError = $state("");
 

@@ -1,5 +1,4 @@
-import { ContentType, ResourceType } from "@edraj/tsdmart";
-import { locale } from "@/i18n";
+import {ContentType, ResourceType} from "@edraj/tsdmart";
 
 export function formatDate(dateString: string): string {
   const date = new Date(dateString);
