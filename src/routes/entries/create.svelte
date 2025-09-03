@@ -727,7 +727,16 @@
       <div class="section-content">
         <div class="editor-container">
           {#if selectedEditorType === "html"}
-            <HtmlEditor bind:content={htmlEditor} uid="main-editor" />
+            <!-- <HtmlEditor bind:content={htmlEditor} uid="main-editor" /> -->
+            <HtmlEditor
+              bind:content={htmlEditor}
+              uid="main-editor"
+              {attachments}
+              {resource_type}
+              space_name={selectedSpace}
+              subpath={selectedSubpath}
+              parent_shortname={shortname}
+            />
           {:else}
             <MarkdownEditor
               bind:content={markdownEditor}

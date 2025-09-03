@@ -213,7 +213,7 @@
       <h1>Templates</h1>
       <p>Manage your application templates collection.</p>
     </div>
-    <button class="btn btn-primary" on:click={openCreateModal}>
+    <button class="btn btn-primary" onclick={openCreateModal}>
       Create Template
     </button>
   </header>
@@ -229,7 +229,7 @@
     <div class="error-alert">
       <strong>Error!</strong>
       {loadError}
-      <button class="btn btn-sm" on:click={loadTemplates}>Retry</button>
+      <button class="btn btn-sm" onclick={loadTemplates}>Retry</button>
     </div>
   {/if}
 
@@ -239,7 +239,7 @@
         <div class="empty-icon">📄</div>
         <h3>No templates found</h3>
         <p>Get started by creating your first template.</p>
-        <button class="btn btn-primary" on:click={openCreateModal}>
+        <button class="btn btn-primary" onclick={openCreateModal}>
           Create Your First Template
         </button>
       </div>
@@ -272,13 +272,13 @@
                 <td class="actions">
                   <button
                     class="btn btn-sm btn-outline"
-                    on:click={() => openEditModal(template)}
+                    onclick={() => openEditModal(template)}
                   >
                     Edit
                   </button>
                   <button
                     class="btn btn-sm btn-danger"
-                    on:click={() => openDeleteModal(template)}
+                    onclick={() => openDeleteModal(template)}
                   >
                     Delete
                   </button>
@@ -294,11 +294,27 @@
 
 <!-- Create Modal -->
 {#if showCreateModal}
-  <div class="modal-overlay" on:click={closeModals}>
-    <div class="modal" on:click|stopPropagation>
+  <div
+    class="modal-overlay"
+    role="button"
+    tabindex="0"
+    onclick={closeModals}
+    onkeydown={(e) => {
+      if (e.key === "Enter" || e.key === " ") closeModals();
+    }}
+  >
+    <div
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      onclick={(event) => event.stopPropagation()}
+      onkeydown={(event) => event.stopPropagation()}
+    >
       <div class="modal-header">
         <h2>Create New Template</h2>
-        <button class="close-btn" on:click={closeModals}>&times;</button>
+        <button class="close-btn" type="button" onclick={closeModals}
+          >&times;</button
+        >
       </div>
 
       <div class="modal-body">
@@ -348,7 +364,7 @@
       <div class="modal-footer">
         <button
           class="btn btn-primary"
-          on:click={handleSave}
+          onclick={handleSave}
           disabled={isSaving || !templateName.trim()}
         >
           {#if isSaving}
@@ -360,7 +376,7 @@
         </button>
         <button
           class="btn btn-secondary"
-          on:click={closeModals}
+          onclick={closeModals}
           disabled={isSaving}
         >
           Cancel
@@ -372,11 +388,11 @@
 
 <!-- Edit Modal -->
 {#if showEditModal}
-  <div class="modal-overlay" on:click={closeModals}>
-    <div class="modal" on:click|stopPropagation>
+  <div class="modal-overlay" onclick={closeModals}>
+    <div class="modal" onclick={(event) => event.stopPropagation()}>
       <div class="modal-header">
         <h2>Edit Template</h2>
-        <button class="close-btn" on:click={closeModals}>&times;</button>
+        <button class="close-btn" onclick={closeModals}>&times;</button>
       </div>
 
       <div class="modal-body">
@@ -431,7 +447,7 @@
       <div class="modal-footer">
         <button
           class="btn btn-primary"
-          on:click={handleSave}
+          onclick={handleSave}
           disabled={isSaving || !templateName.trim()}
         >
           {#if isSaving}
@@ -443,7 +459,7 @@
         </button>
         <button
           class="btn btn-secondary"
-          on:click={closeModals}
+          onclick={closeModals}
           disabled={isSaving}
         >
           Cancel
@@ -455,11 +471,11 @@
 
 <!-- Delete Confirmation Modal -->
 {#if showDeleteModal}
-  <div class="modal-overlay" on:click={closeModals}>
-    <div class="modal modal-sm" on:click|stopPropagation>
+  <div class="modal-overlay" onclick={closeModals}>
+    <div class="modal modal-sm" onclick={(event) => event.stopPropagation()}>
       <div class="modal-header">
         <h2>Confirm Delete</h2>
-        <button class="close-btn" on:click={closeModals}>&times;</button>
+        <button class="close-btn" onclick={closeModals}>&times;</button>
       </div>
 
       <div class="modal-body">
@@ -483,7 +499,7 @@
       <div class="modal-footer">
         <button
           class="btn btn-danger"
-          on:click={handleDelete}
+          onclick={handleDelete}
           disabled={isDeleting}
         >
           {#if isDeleting}
@@ -495,7 +511,7 @@
         </button>
         <button
           class="btn btn-secondary"
-          on:click={closeModals}
+          onclick={closeModals}
           disabled={isDeleting}
         >
           Cancel
@@ -867,10 +883,10 @@
 
   /* Editor Container */
   .editor-container {
-    border: 1px solid #d1d5db;
-    border-radius: 0.5rem;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
     overflow: hidden;
-    height: 400px;
+    height: 500px;
     margin-bottom: 1.5rem;
   }
 
