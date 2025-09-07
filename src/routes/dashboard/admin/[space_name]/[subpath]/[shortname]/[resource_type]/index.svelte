@@ -1,17 +1,23 @@
 <script lang="ts">
-    import {onMount} from "svelte";
-    import {goto, params} from "@roxi/routify";
-    import {deleteEntity, getEntity, getMyEntities, updateEntity,} from "@/lib/dmart_services";
-    import {Diamonds} from "svelte-loading-spinners";
-    import {_, locale} from "@/i18n";
-    import {derived, writable} from "svelte/store";
-    import Attachment from "@/components/Attachments.svelte";
-    import HtmlEditor from "@/components/editors/HtmlEditor.svelte";
-    import {formatNumberInText} from "@/lib/helpers";
-    import {marked} from "marked";
-    import TemplateEditor from "@/components/editors/TemplateEditor.svelte";
+  import { onMount } from "svelte";
+  import { goto, params } from "@roxi/routify";
+  import {
+    deleteEntity,
+    getEntity,
+    getMyEntities,
+    updateEntity,
+  } from "@/lib/dmart_services";
+  import { Diamonds } from "svelte-loading-spinners";
+  import { _, locale } from "@/i18n";
+  import { derived, writable } from "svelte/store";
+  import Attachment from "@/components/Attachments.svelte";
+  import HtmlEditor from "@/components/editors/HtmlEditor.svelte";
+  import { formatNumberInText } from "@/lib/helpers";
+  import { marked } from "marked";
+  import TemplateEditor from "@/components/editors/TemplateEditor.svelte";
+  import JsonEditor from "@/components/editors/JsonEditor.svelte";
 
-    $goto;
+  $goto;
 
   const isRTL = derived(
     locale,
@@ -39,7 +45,7 @@
   let htmlEditor: string = $state("");
   let isTemplateBasedItem = $state(false);
   let templateEditorContent = $state("");
-
+  let jsonEditorContent = $state({});
   const editForm = writable({
     title: "",
     content: "",
@@ -56,6 +62,10 @@
     is_active: true,
   });
 
+  const jsonEditForm = writable({});
+
+  let jsonEditFormValue = $state({});
+
   function getItemContent(item) {
     if (!item?.payload) return "";
 
@@ -65,23 +75,31 @@
       return marked(item.payload.body || "");
     } else if (contentType === "json") {
       if (item.payload.body && typeof item.payload.body === "object") {
-        return item.payload.body.content || "";
+        return item.payload.body;
       }
-      return "";
+      return {};
     }
 
     return item.payload.body || "";
   }
 
   function prepareContentForSave(content, originalContentType) {
+    console.log(jsonEditFormValue);
+
     if (originalContentType === "json") {
-      return {
-        title: editFormValue.title,
-        content: content || "",
-      };
+      return jsonEditFormValue;
     }
 
     return content || "";
+  }
+
+  function handleJsonContentChange(event) {
+    jsonEditorContent = event.detail;
+    jsonEditFormValue = JSON.stringify(jsonEditorContent);
+    jsonEditForm.update((form) => ({
+      ...form,
+      content: jsonEditFormValue,
+    }));
   }
 
   onMount(async () => {
@@ -180,12 +198,19 @@
 
         const content = getItemContent(response);
 
+        if (response.payload?.content_type === "json") {
+          jsonEditorContent = content;
+        }
+
         const tags = response.tags || [];
         const tagsString = Array.from(tags).join(", ");
 
         editFormValue = {
           title: currentDisplayName,
-          content: content || getDescription(response),
+          content:
+            response.payload?.content_type === "json"
+              ? JSON.stringify(content)
+              : content || getDescription(response),
           tags: Array.isArray(tags) ? tags : Array.from(tags),
           tagsString: tagsString,
           is_active: response.is_active,
@@ -199,7 +224,8 @@
           templateEditorContent = content || "";
         }
 
-        htmlEditor = content || "";
+        htmlEditor =
+          response.payload?.content_type === "json" ? "" : content || "";
       } else {
         console.error("No valid response found for item:", itemShortnameValue);
         error.set($_("admin_item_detail.error.item_not_found"));
@@ -223,8 +249,14 @@
     event.preventDefault();
 
     try {
-      const htmlContent =
-        htmlEditor || editFormValue.content || templateEditorContent;
+      let htmlContent;
+
+      if (itemDataValue?.payload?.content_type === "json") {
+        htmlContent = JSON.stringify(jsonEditorContent);
+      } else {
+        htmlContent =
+          htmlEditor || editFormValue.content || templateEditorContent;
+      }
 
       const tagsArray = editFormValue.tagsString
         .split(",")
@@ -238,6 +270,7 @@
 
       const contentType = itemDataValue?.payload?.content_type;
       let preparedContent = prepareContentForSave(htmlContent, contentType);
+      console.log("-------------", preparedContent, contentType);
 
       const entityData = {
         displayname: updatedDisplayname,
@@ -1957,12 +1990,9 @@
       </div>
 
       <div class="modal-content">
-        <!-- Fixed form onsubmit to use proper event handler with preventDefault -->
         <form class="modal-form" onsubmit={handleUpdateItem}>
           <div class="form-grid">
-            <!-- Left Column - Basic Fields -->
             <div class="form-column">
-              <!-- Title Field -->
               <div class="form-group">
                 <label
                   for="editTitle"
@@ -2124,6 +2154,12 @@
                       content={templateEditorContent}
                       on:contentChange={(e) =>
                         handleTemplateContentChange(e.detail)}
+                    />
+                  {:else if itemDataValue?.payload?.content_type === "json"}
+                    <JsonEditor
+                      content={jsonEditorContent}
+                      isEditMode={true}
+                      on:contentChange={handleJsonContentChange}
                     />
                   {:else}
                     <HtmlEditor

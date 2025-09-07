@@ -65,7 +65,6 @@
         type,
         filename,
       };
-      console.log(currentPreview);
 
       previewModal = true;
     }

@@ -1,25 +1,32 @@
 <script lang="ts">
-    import {preventDefault, run} from "svelte/legacy";
+  import { preventDefault, run } from "svelte/legacy";
 
-    import {onMount} from "svelte";
-    import {
-        getAvatar,
-        getMyEntities,
-        getProfile,
-        setAvatar,
-        updatePassword,
-        updateProfile,
-    } from "@/lib/dmart_services";
-    import {errorToastMessage, successToastMessage,} from "@/lib/toasts_messages";
-    import Avatar from "@/components/Avatar.svelte";
-    import {formatDate, formatNumberInText, renderStateString} from "@/lib/helpers";
-    import {goto} from "@roxi/routify";
-    import {Diamonds} from "svelte-loading-spinners";
-    import {_, locale} from "@/i18n";
-    import {loginBy} from "@/stores/user";
-    import {writable} from "svelte/store";
+  import { onMount } from "svelte";
+  import {
+    getAvatar,
+    getMyEntities,
+    getProfile,
+    setAvatar,
+    updatePassword,
+    updateProfile,
+  } from "@/lib/dmart_services";
+  import {
+    errorToastMessage,
+    successToastMessage,
+  } from "@/lib/toasts_messages";
+  import Avatar from "@/components/Avatar.svelte";
+  import {
+    formatDate,
+    formatNumberInText,
+    renderStateString,
+  } from "@/lib/helpers";
+  import { goto } from "@roxi/routify";
+  import { Diamonds } from "svelte-loading-spinners";
+  import { _, locale } from "@/i18n";
+  import { loginBy } from "@/stores/user";
+  import { writable } from "svelte/store";
 
-    $goto;
+  $goto;
   const ProfileSection = {
     ME: "ME",
     IDEAS: "IDEAS",
@@ -178,11 +185,6 @@
 
     updatedDisplayname[$locale] = $displayname.trim();
     updatedDescription[$locale] = $description.trim();
-
-    console.log("Updating profile with:", {
-      displayname: updatedDisplayname,
-      description: updatedDescription,
-    });
 
     const response = await updateProfile({
       shortname: $user.shortname,

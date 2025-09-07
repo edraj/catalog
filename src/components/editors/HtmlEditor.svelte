@@ -99,8 +99,6 @@
         h("div", { style: "text-align: justify" }, children),
     });
 
-    console.log("Editor initialized with content:", content);
-
     editor = new Editor({
       root: maindiv,
       html: content || "",
@@ -349,7 +347,6 @@
       // Ensure content is a string and not null/undefined
       const newContent = content || "";
       if (newContent !== currentHtml) {
-        console.log("Updating editor content:", newContent);
         editor.setHTML(newContent);
       }
     }

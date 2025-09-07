@@ -1,9 +1,9 @@
 <script>
-    import {createEventDispatcher, onMount} from "svelte";
-    import {getTemplates} from "@/lib/dmart_services";
-    import {derived, writable} from "svelte/store";
+  import { createEventDispatcher, onMount } from "svelte";
+  import { getTemplates } from "@/lib/dmart_services";
+  import { derived, writable } from "svelte/store";
 
-    const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher();
   export let content = "";
   let onContentChange = (newContent) => {
     content = newContent;
@@ -13,6 +13,7 @@
   let originalTemplate = null;
   let templateFields = [];
   let fieldValues = {};
+  console.log("Template Editor Content:", content);
 
   const originalTemplateStore = writable(originalTemplate);
   const templateFieldsStore = writable(templateFields);
