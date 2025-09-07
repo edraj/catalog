@@ -1,5 +1,9 @@
 import {toast} from "@zerodevx/svelte-toast";
 
+/**
+ * Displays a success toast message with green styling
+ * @param message - The success message to display
+ */
 export function successToastMessage(message: string){
     toast.push(message, {
         theme: {
@@ -10,6 +14,11 @@ export function successToastMessage(message: string){
     })
 }
 
+/**
+ * Displays an error toast message with red styling
+ * @param message - The error message to display
+ * @param noClose - If true, the toast will not auto-close (default: false)
+ */
 export function errorToastMessage(message: string, noClose: boolean = false){
     const option: any = {
         theme: {

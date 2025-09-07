@@ -1,97 +1,43 @@
 <script lang="ts">
     import {Accordion, AccordionItem, Button, Card, Checkbox, Input, Label, Select, Textarea} from "flowbite-svelte";
     import {onMount} from "svelte";
+    import {
+        initializeContentFromSchema,
+        createArrayItemFromSchema,
+        getSchemaPropertyByPath,
+        isPropertyRequired,
+        setNestedProperty,
+        getNestedProperty
+    } from "../../lib/formUtils";
+    import type { Schema } from "../../lib/types";
 
     let {
         content = $bindable({}),
         schema,
     } : {
-        content: any,
-        schema: any,
+        content: Record<string, any>,
+        schema: Schema,
     } = $props();
 
     onMount(() => {
         if (schema && schema.properties) {
-            initializeContent(schema.properties);
+            content = initializeContentFromSchema(schema.properties, content);
         }
     });
 
-    function initializeContent(properties) {
-        for (const key in properties) {
-            const prop = properties[key];
-
-            if (content[key] !== undefined) continue;
-
-            if (prop.type === 'string') {
-                content[key] = prop.default || '';
-            } else if (prop.type === 'number' || prop.type === 'integer') {
-                content[key] = prop.default !== undefined ? prop.default : null;
-            } else if (prop.type === 'boolean') {
-                content[key] = prop.default || false;
-            } else if (prop.type === 'array') {
-                content[key] = prop.default || [];
-            } else if (prop.type === 'object' && prop.properties) {
-                content[key] = {};
-                initializeContent(prop.properties);
-            } else {
-                content[key] = null;
-            }
-        }
-
-        content = { ...content };
-    }
-
     function addArrayItem(path) {
-        let target = content;
-        const parts = path.split('.');
-
-        for (let i = 0; i < parts.length; i++) {
-            if (!target[parts[i]]) {
-                target[parts[i]] = [];
-            }
-            target = target[parts[i]];
+        let target = getNestedProperty(content, path);
+        if (!target) {
+            target = [];
+            setNestedProperty(content, path, target);
         }
-
-        let schemaProp = schema.properties;
-        for (let i = 0; i < parts.length; i++) {
-            if (schemaProp[parts[i]]) {
-                schemaProp = schemaProp[parts[i]];
-            }
+        
+        const schemaProp = getSchemaPropertyByPath(schema, path);
+        if (schemaProp?.items) {
+            const newItem = createArrayItemFromSchema(schemaProp.items);
+            target.push(newItem);
+            content = { ...content };
         }
-
-        let newItem = {};
-        if (schemaProp.items && schemaProp.items.type === 'object' && schemaProp.items.properties) {
-            for (const key in schemaProp.items.properties) {
-                const prop = schemaProp.items.properties[key];
-                if (prop.type === 'string') {
-                    newItem[key] = '';
-                } else if (prop.type === 'number' || prop.type === 'integer') {
-                    newItem[key] = null;
-                } else if (prop.type === 'boolean') {
-                    newItem[key] = false;
-                } else if (prop.type === 'array') {
-                    newItem[key] = [];
-                } else if (prop.type === 'object') {
-                    newItem[key] = {};
-                } else {
-                    newItem[key] = null;
-                }
-            }
-        } else if (schemaProp.items) {
-            if (schemaProp.items.type === 'string') {
-                newItem = '';
-            } else if (schemaProp.items.type === 'number' || schemaProp.items.type === 'integer') {
-                newItem = null;
-            } else if (schemaProp.items.type === 'boolean') {
-                newItem = false;
-            } else {
-                newItem = null;
-            }
-        }
-
-        target.push(newItem);
-
-        content = { ...content };
     }
 
     function removeArrayItem(path, index) {
@@ -111,28 +57,8 @@
         content = { ...content };
     }
 
-    function getSchemaProperty(path) {
-        if (!schema || !schema.properties) return null;
-
-        const parts = path.split('.');
-        let current = schema.properties;
-
-        for (const part of parts) {
-            if (!current[part]) return null;
-            current = current[part];
-
-            if (current.type === 'array' && parts.indexOf(part) < parts.length - 1) {
-                current = current.items.properties;
-            } else if (current.type === 'object' && current.properties) {
-                current = current.properties;
-            }
-        }
-
-        return current;
-    }
-
     function isRequired(propertyName) {
-        return schema.required && schema.required.includes(propertyName);
+        return isPropertyRequired(schema, propertyName);
     }
 </script>
 

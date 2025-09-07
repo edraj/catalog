@@ -19,6 +19,10 @@ export interface User {
 const KEY = "user";
 
 const fallback_locale = Locale.ar;
+/**
+ * Guesses the user's preferred locale based on browser navigator language
+ * @returns The guessed locale or fallback locale if not found
+ */
 function guess_locale(): Locale {
   const _locale = getLocaleFromNavigator();
 
@@ -45,6 +49,11 @@ const data =
     : JSON.stringify(signedout);
 user = writable<User>(JSON.parse(data) || signedout);
 
+/**
+ * Signs in a user with username and password
+ * @param username - The username to sign in with
+ * @param password - The password for authentication
+ */
 export async function signin(username: string, password: string) {
   const response = await Dmart.login(username, password);
   if (response.status == "success" && response.records.length > 0) {
@@ -129,7 +138,7 @@ export async function checkExisting(
 ): Promise<boolean> {
   try {
     const response = await Dmart.check_existing(prop, value);
-    return response.attributes.unique;
+    return (response as any).attributes.unique;
   } catch (error: any) {
     if (error.response?.data?.error?.message) {
       throw new Error(error.response.data.error.message);

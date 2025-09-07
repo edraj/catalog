@@ -12,6 +12,10 @@ addMessages("ku", ku);
 let l17ns = { ar: ar, en: en, ku: ku };
 let available_locales = ["ar", "en", "ku"];
 
+/**
+ * Switches the application locale and reloads the page
+ * @param _locale - The locale code to switch to (e.g., 'ar', 'en', 'ku')
+ */
 function switchLocale(_locale: string) {
   if (!(_locale in website.languages)) {
     _locale = website.default_language;
@@ -23,6 +27,10 @@ function switchLocale(_locale: string) {
   window.location.reload();
 }
 
+/**
+ * Determines the preferred locale based on localStorage and browser settings
+ * @returns The preferred locale code as a string
+ */
 function getPreferredLocale(): string {
   let preferred_locale = "en";
 
@@ -64,6 +72,9 @@ function getPreferredLocale(): string {
   return _locale;
 }
 
+/**
+ * Initializes the internationalization system with the preferred locale
+ */
 function setupI18n() {
   let _locale: string = getPreferredLocale();
 

@@ -1,6 +1,7 @@
 <script lang="ts">
     import {Dmart} from "@edraj/tsdmart";
     import {onMount} from "svelte";
+    import {getFileExtension} from "../../lib/fileUtils";
 
     let {
     uid = "",
@@ -284,10 +285,6 @@
     toolbar.appendChild(button);
   }
 
-  export function getFileExtension(filename: string) {
-    let ext = /^.+\.([^.]+)$/.exec(filename);
-    return ext == null ? "" : ext[1];
-  }
 
   function insertAttachment(attachment) {
     const filename = attachment?.attributes?.payload?.body;

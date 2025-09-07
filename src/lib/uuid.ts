@@ -1,3 +1,8 @@
+/**
+ * Generates a random UUID v4 string using timestamp and performance.now() for randomness
+ * @returns A randomly generated UUID v4 string in the format xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+ * @license Public Domain/MIT
+ */
 export function generateUUID() {
   // Public Domain/MIT
   var d = new Date().getTime(); //Timestamp

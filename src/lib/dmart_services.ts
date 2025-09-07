@@ -15,6 +15,10 @@ import {get} from "svelte/store";
 import type {Translation} from "@edraj/tsdmart/dmart.model";
 import {getFileType} from "./helpers";
 
+/**
+ * Retrieves the current user's profile information
+ * @returns The user's profile record if successful, null if no profile found, or error object if failed
+ */
 export async function getProfile() {
   try {
     const profile = await Dmart.get_profile();
@@ -31,6 +35,11 @@ export async function getProfile() {
   }
 }
 
+/**
+ * Retrieves the avatar URL for a specific user
+ * @param shortname - The shortname of the user whose avatar to retrieve
+ * @returns The avatar URL if found, null if no avatar exists
+ */
 export async function getAvatar(shortname: string) {
   const query: QueryRequest = {
     filter_shortnames: [],
@@ -59,6 +68,12 @@ export async function getAvatar(shortname: string) {
   );
 }
 
+/**
+ * Sets/uploads an avatar image for a specific user
+ * @param shortname - The shortname of the user
+ * @param attachment - The image file to set as avatar
+ * @returns True if avatar was successfully set, false otherwise
+ */
 export async function setAvatar(shortname: string, attachment: File) {
   const response = await Dmart.upload_with_payload(
     "personal",
@@ -72,6 +87,11 @@ export async function setAvatar(shortname: string, attachment: File) {
   return response.status == "success" && response.records.length > 0;
 }
 
+/**
+ * Updates a user's profile information including displayname, description, and email
+ * @param data - Object containing user data with shortname, displayname, description, and email
+ * @returns True if profile was successfully updated, false otherwise
+ */
 export async function updateProfile(data: any) {
   const request = {
     resource_type: ResourceType.user,
@@ -87,6 +107,11 @@ export async function updateProfile(data: any) {
   return response.status == "success";
 }
 
+/**
+ * Updates a user's password
+ * @param data - Object containing user shortname and new password
+ * @returns True if password was successfully updated, false otherwise
+ */
 export async function updatePassword(data: any) {
   const request = {
     resource_type: ResourceType.user,
