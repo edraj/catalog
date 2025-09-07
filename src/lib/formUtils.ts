@@ -1,7 +1,7 @@
 /**
  * Form utility functions for schema-based forms and property initialization
  */
-import type { Schema, SchemaProperty, ValidationResult } from './types';
+import type {Schema, SchemaProperty, ValidationResult} from './types';
 
 /**
  * Initialize content properties based on schema definition

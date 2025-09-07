@@ -2,14 +2,14 @@
     import {Accordion, AccordionItem, Button, Card, Checkbox, Input, Label, Select, Textarea} from "flowbite-svelte";
     import {onMount} from "svelte";
     import {
-        initializeContentFromSchema,
         createArrayItemFromSchema,
+        getNestedProperty,
         getSchemaPropertyByPath,
+        initializeContentFromSchema,
         isPropertyRequired,
-        setNestedProperty,
-        getNestedProperty
+        setNestedProperty
     } from "../../lib/formUtils";
-    import type { Schema } from "../../lib/types";
+    import type {Schema} from "../../lib/types";
 
     let {
         content = $bindable({}),

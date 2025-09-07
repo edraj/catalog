@@ -6,15 +6,15 @@
     import {_} from "@/i18n";
     import {
         getFileExtension,
-        removeFileExtension,
-        isImageFile,
-        isVideoFile,
-        isPdfFile,
+        getFileTypeIcon,
         isAudioFile,
-        getFileTypeIcon
+        isImageFile,
+        isPdfFile,
+        isVideoFile,
+        removeFileExtension
     } from "../lib/fileUtils";
-    import type { Attachment } from "../lib/types";
-    import { log } from "../lib/logger";
+    import type {Attachment} from "../lib/types";
+    import {log} from "../lib/logger";
 
     let {
     attachments = [],

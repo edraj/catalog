@@ -25,16 +25,9 @@
     import {
         categorizeAttachments,
         generateBreadcrumbs,
-        getPostContent,
-        getReactionEmoji,
-        getReactionType,
-        getCommentText,
-        getCommentState,
         getAuthorInfo,
-        getDisplayName,
         getDescription,
-        type Breadcrumb,
-        type CategorizedAttachments
+        getDisplayName
     } from "@/lib/utils/postUtils";
 
     $goto;

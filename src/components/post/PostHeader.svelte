@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { _ } from "@/i18n";
-  import { getPostTitle, formatDate } from "@/lib/utils/postUtils";
-  
-  export let postData: any;
+    import {_} from "@/i18n";
+    import {formatDate, getPostTitle} from "@/lib/utils/postUtils";
+
+    export let postData: any;
   export let locale: string;
   export let isOwner: boolean;
 </script>

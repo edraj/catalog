@@ -1,10 +1,7 @@
 <script lang="ts">
-  import {
-    transformFormToJson,
-    transformJsonToForm,
-  } from "@/lib/schemaEditorUtils";
+    import {transformFormToJson, transformJsonToForm,} from "@/lib/schemaEditorUtils";
 
-  let {
+    let {
     content = $bindable({}),
   }: {
     content: any;

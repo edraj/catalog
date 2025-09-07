@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { _ } from "@/i18n";
-  import { marked } from "marked";
-  import { getPostContent } from "@/lib/utils/postUtils";
-  
-  export let postData: any;
+    import {_} from "@/i18n";
+    import {marked} from "marked";
+    import {getPostContent} from "@/lib/utils/postUtils";
+
+    export let postData: any;
   
   function isHtmlContent(content: string): boolean {
     if (typeof content !== "string") return false;

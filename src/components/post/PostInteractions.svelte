@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { _ } from "@/i18n";
-  import { formatNumberInText } from "@/lib/helpers";
-  import { getReactionType, getReactionEmoji, getCommentText } from "@/lib/utils/postUtils";
-  
-  export let reactions: any[];
+    import {_} from "@/i18n";
+    import {formatNumberInText} from "@/lib/helpers";
+    import {getCommentText, getReactionEmoji, getReactionType} from "@/lib/utils/postUtils";
+
+    export let reactions: any[];
   export let comments: any[];
   export let locale: string;
 </script>

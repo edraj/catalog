@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { _ } from "@/i18n";
-  
-  export let newComment: string;
+    import {_} from "@/i18n";
+
+    export let newComment: string;
   export let isSubmittingComment: boolean;
   export let isSubmittingReaction: boolean;
   export let userReactionId: string | null;

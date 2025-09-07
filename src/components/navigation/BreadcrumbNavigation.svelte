@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { _ } from "@/i18n";
-  import type { Breadcrumb } from "@/lib/utils/postUtils";
-  
-  export let breadcrumbs: Breadcrumb[];
+    import {_} from "@/i18n";
+    import type {Breadcrumb} from "@/lib/utils/postUtils";
+
+    export let breadcrumbs: Breadcrumb[];
   export let onNavigate: (path: string) => void;
   export let onGoBack: () => void;
 </script>

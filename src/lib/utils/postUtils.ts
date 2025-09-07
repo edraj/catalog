@@ -1,4 +1,4 @@
-import { ResourceType } from '@edraj/tsdmart/dmart.model';
+import {ResourceType} from '@edraj/tsdmart/dmart.model';
 
 export function getDisplayName(item: any, locale?: string): string {
   if (item.displayname) {
