@@ -1,22 +1,18 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { goto, params } from "@roxi/routify";
-  import {
-    deleteEntity,
-    getAvatar,
-    getSpaceContents,
-  } from "@/lib/dmart_services";
-  import { Diamonds } from "svelte-loading-spinners";
-  import { _, locale } from "@/i18n";
-  import { Dmart, RequestType, ResourceType } from "@edraj/tsdmart";
-  import { derived, writable } from "svelte/store";
-  import MetaForm from "@/components/forms/MetaForm.svelte";
-  import FolderForm from "@/components/forms/FolderForm.svelte";
-  import Avatar from "@/components/Avatar.svelte";
-  import { formatNumber } from "@/lib/helpers";
-  import SchemaForm from "@/components/forms/SchemaForm.svelte";
+    import {onMount} from "svelte";
+    import {goto, params} from "@roxi/routify";
+    import {deleteEntity, getAvatar, getSpaceContents,} from "@/lib/dmart_services";
+    import {Diamonds} from "svelte-loading-spinners";
+    import {_, locale} from "@/i18n";
+    import {Dmart, RequestType, ResourceType} from "@edraj/tsdmart";
+    import {derived, writable} from "svelte/store";
+    import MetaForm from "@/components/forms/MetaForm.svelte";
+    import FolderForm from "@/components/forms/FolderForm.svelte";
+    import Avatar from "@/components/Avatar.svelte";
+    import {formatNumber} from "@/lib/helpers";
+    import SchemaForm from "@/components/forms/SchemaForm.svelte";
 
-  $goto;
+    $goto;
 
   let isLoading = writable(false);
   let isLoadingMore = writable(false);
@@ -657,7 +653,6 @@
   async function handleSaveschema(event) {
     event.preventDefault();
     isCreatingSchema = true;
-    console.log("-------------", schemaContent);
 
     try {
       const response = await Dmart.request({

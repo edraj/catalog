@@ -43,7 +43,7 @@
 
         const _entities = [];
         for (const item of results) {
-          const counts = await getEntityAttachmentsCount(item.shortname);
+          const counts = await getEntityAttachmentsCount(item.shortname, item.space_name, item.subpath);
 
           _entities.push({
             shortname: item.shortname,

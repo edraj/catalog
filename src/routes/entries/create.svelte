@@ -1,40 +1,56 @@
 <script lang="ts">
-    import {goto, params} from "@roxi/routify";
-    import HtmlEditor from "@/components/editors/HtmlEditor.svelte";
-    import {attachAttachmentsToEntity, createEntity, getSpaceFolders, getSpaces,} from "@/lib/dmart_services";
-    import {errorToastMessage, successToastMessage,} from "@/lib/toasts_messages";
-    import {
-        ArrowLeftOutline,
-        CloseCircleOutline,
-        CloudArrowUpOutline,
-        FileCheckSolid,
-        FileImportSolid,
-        FilePdfOutline,
-        FloppyDiskSolid,
-        PaperClipOutline,
-        PaperPlaneSolid,
-        PlayOutline,
-        PlusOutline,
-        TagOutline,
-        TextUnderlineOutline,
-        TrashBinSolid,
-        UploadOutline,
-    } from "flowbite-svelte-icons";
-    import {_, locale} from "@/i18n";
-    import {derived} from "svelte/store";
-    import {onMount} from "svelte";
-    import {ResourceType} from "@edraj/tsdmart";
-    import {roles} from "@/stores/user";
-    import MarkdownEditor from "@/components/editors/MarkdownEditor.svelte";
+  import { goto, params } from "@roxi/routify";
+  import HtmlEditor from "@/components/editors/HtmlEditor.svelte";
+  import {
+    attachAttachmentsToEntity,
+    createEntity,
+    getSpaceFolders,
+    getSpaces,
+    getSpaceSchema,
+  } from "@/lib/dmart_services";
+  import {
+    errorToastMessage,
+    successToastMessage,
+  } from "@/lib/toasts_messages";
+  import {
+    ArrowLeftOutline,
+    CloseCircleOutline,
+    CloudArrowUpOutline,
+    FileCheckSolid,
+    FileImportSolid,
+    FilePdfOutline,
+    FloppyDiskSolid,
+    PaperClipOutline,
+    PaperPlaneSolid,
+    PlayOutline,
+    PlusOutline,
+    TagOutline,
+    TextUnderlineOutline,
+    TrashBinSolid,
+    UploadOutline,
+  } from "flowbite-svelte-icons";
+  import { _, locale } from "@/i18n";
+  import { derived } from "svelte/store";
+  import { onMount } from "svelte";
+  import { ResourceType } from "@edraj/tsdmart";
+  import { roles } from "@/stores/user";
+  import MarkdownEditor from "@/components/editors/MarkdownEditor.svelte";
+  import DynamicSchemaBasedForms from "@/components/forms/DynamicSchemaBasedForms.svelte";
+  $goto;
 
-    $goto;
   let isLoading = $state(false);
-  let content = $state("");
-  let resource_type = ResourceType.content;
+  let content = "";
+  let resource_type = $state(ResourceType.content);
   let itemResourceType;
   let isAdmin = $state(false);
   let selectedEditorType = $state("html");
 
+  let entryType = $state("content");
+  let availableSchemas = $state([]);
+  let selectedSchema = $state(null);
+  let loadingSchemas = $state(false);
+  let jsonFormData = $state({});
+  let entity;
   const isRTL = derived(
     locale,
     ($locale) => $locale === "ar" || $locale === "ku"
@@ -51,7 +67,7 @@
   let isEditing = $state(false);
   let isEditingShortname = $state(false);
   let selectedSpace = $state("");
-  let selectedSubpath = "posts";
+  let selectedSubpath = $state("posts");
   let spaces = $state([]);
   let subpathHierarchy = $state([]);
   let currentPath = $state("");
@@ -61,6 +77,56 @@
   let workflow_shortname = "";
   let schema_shortname = "";
   let markdownEditor = $state(null);
+  let schemas;
+
+  async function handleEntryTypeChange() {
+    if (entryType === "json" && selectedSpace) {
+      await loadSchemasForSpace();
+    }
+  }
+
+  async function loadSchemasForSpace() {
+    if (!selectedSpace) return;
+
+    loadingSchemas = true;
+    try {
+      const response = await getSpaceSchema(selectedSpace, "schema", "managed");
+      if (response?.status === "success" && response?.records) {
+        availableSchemas = response.records.map((record) => ({
+          shortname: record.shortname,
+          title: record.attributes?.displayname?.en || record.shortname,
+          schema: record.attributes?.payload?.body,
+          description: record.attributes?.description?.en || "",
+        }));
+      } else {
+        availableSchemas = [];
+      }
+    } catch (error) {
+      errorToastMessage("Failed to load schemas");
+      console.error("Error loading schemas:", error);
+      availableSchemas = [];
+    } finally {
+      loadingSchemas = false;
+    }
+  }
+
+  async function handleSpaceChange(event) {
+    selectedSpace = event.target.value;
+    if (selectedSpace) {
+      await initializeSubpathHierarchy(selectedSpace);
+      if (entryType === "json") {
+        await loadSchemasForSpace();
+      }
+    }
+  }
+
+  function handleSchemaChange(event) {
+    const schemaShortname = event.target.value;
+    selectedSchema = availableSchemas.find(
+      (s) => s.shortname === schemaShortname
+    );
+    jsonFormData = {};
+  }
 
   onMount(async () => {
     await loadSpaces();
@@ -104,7 +170,6 @@
         parentPath || "/",
         "managed"
       );
-      console.log(response);
 
       const folders = response.records.filter(
         (item) => item.resource_type === "folder"
@@ -189,11 +254,6 @@
     }
   }
 
-  async function handleSpaceChange(event) {
-    selectedSpace = event.target.value;
-    await initializeSubpathHierarchy(selectedSpace);
-  }
-
   function handleLabelClick() {
     isEditing = true;
   }
@@ -260,17 +320,24 @@
     }
 
     isLoading = true;
-
-    const entity = {
-      body: {
-        title: title,
-        content: getContent(),
-      },
-      tags: tags,
-      is_active: isPublish,
-      ...(isAdmin && shortname ? { shortname } : {}),
-    };
-
+    if (entryType === "json") {
+      entity = {
+        body: jsonFormData,
+        tags: tags,
+        is_active: isPublish,
+        ...(isAdmin && shortname ? { shortname } : {}),
+      };
+    } else {
+      entity = {
+        body: {
+          title: title,
+          content: getContent(),
+        },
+        tags: tags,
+        is_active: isPublish,
+        ...(isAdmin && shortname ? { shortname } : {}),
+      };
+    }
     const response = await createEntity(
       entity,
       selectedSpace,
@@ -324,7 +391,7 @@
   }
 
   async function loadPrefilledData() {
-    const prefilledSpace = $params.space_name;
+    const prefilledSpace = $params.spaceName;
     const prefilledSubpath = $params.subpath;
 
     if (prefilledSpace) {
@@ -400,7 +467,10 @@
           <button
             aria-label={$_("create_entry.buttons.save_draft")}
             class="draft-button"
-            onclick={() => handlePublish(false)}
+            onclick={(event) => {
+              event.preventDefault();
+              handlePublish(false);
+            }}
             disabled={isLoading || !canCreateEntry}
           >
             <FloppyDiskSolid class="icon button-icon" />
@@ -413,7 +483,10 @@
           <button
             aria-label={$_("create_entry.buttons.publish_now")}
             class="publish-button"
-            onclick={() => handlePublish(true)}
+            onclick={(event) => {
+              event.preventDefault();
+              handlePublish(true);
+            }}
             disabled={isLoading || !canCreateEntry}
           >
             <PaperPlaneSolid class="icon button-icon" />
@@ -427,7 +500,43 @@
       </div>
     </div>
 
-    <!-- Space and Subpath Selection Section -->
+    <div class="section">
+      <div class="section-header">
+        <FileCheckSolid class="section-icon" />
+        <h2>Entry Type</h2>
+      </div>
+      <div class="section-content">
+        <div class="entry-type-selector">
+          <label class="entry-type-option">
+            <input
+              type="radio"
+              bind:group={entryType}
+              value="content"
+              onchange={handleEntryTypeChange}
+            />
+            <span class="entry-type-label">
+              <strong>Content Entry</strong>
+              <small
+                >Create a traditional content entry with rich text editor</small
+              >
+            </span>
+          </label>
+          <label class="entry-type-option">
+            <input
+              type="radio"
+              bind:group={entryType}
+              value="json"
+              onchange={handleEntryTypeChange}
+            />
+            <span class="entry-type-label">
+              <strong>JSON Entry</strong>
+              <small>Create a structured entry based on a schema</small>
+            </span>
+          </label>
+        </div>
+      </div>
+    </div>
+
     <div class="section">
       <div class="section-header">
         <TagOutline class="section-icon" />
@@ -462,9 +571,9 @@
         <!-- Hierarchical Subpath Navigation -->
         {#if subpathHierarchy.length > 0}
           <div class="subpath-hierarchy">
-            <label class="selector-label"
-              >{$_("create_entry.destination.path_navigation")}</label
-            >
+            <div class="selector-label">
+              {$_("create_entry.destination.path_navigation")}
+            </div>
             <div class="hierarchy-levels">
               {#each subpathHierarchy as levelData, index}
                 <div class="hierarchy-level">
@@ -555,7 +664,6 @@
       </div>
       <div class="section-content">
         {#if isEditing}
-          <label for="title-input"></label>
           <input
             type="text"
             bind:value={title}
@@ -563,6 +671,7 @@
             class="title-input"
             placeholder={$_("create_entry.title.placeholder")}
             id="title-input"
+            aria-label={$_("create_entry.title.placeholder")}
           />
         {:else}
           <div
@@ -595,7 +704,6 @@
         </div>
         <div class="section-content">
           {#if isEditingShortname}
-            <label for="shortname-input"></label>
             <input
               type="text"
               bind:value={shortname}
@@ -603,6 +711,7 @@
               class="shortname-input"
               placeholder={$_("create_entry.shortname.placeholder")}
               id="shortname-input"
+              aria-label={$_("create_entry.shortname.placeholder")}
             />
           {:else}
             <div
@@ -638,9 +747,6 @@
       </div>
       <div class="section-content">
         <div class="tag-input-container">
-          <label for="tag-input" class="tag-label"
-            >{$_("create_entry.tags.placeholder")}</label
-          >
           <input
             type="text"
             id="tag-input"
@@ -687,148 +793,210 @@
       </div>
     </div>
 
-    <div class="section">
-      <div class="section-header">
-        <FileCheckSolid class="section-icon" />
-        <h2>{$_("create_entry.content.section_title")}</h2>
-        <div class="editor-selector">
-          <label class="editor-selector-label"
-            >{$_("create_entry.content.editor_type")}</label
-          >
-          <div class="editor-toggle">
-            <button
-              class="editor-toggle-btn"
-              class:active={selectedEditorType === "html"}
-              onclick={() => (selectedEditorType = "html")}
-            >
-              <span class="editor-icon">🎨</span>
-              <span>{$_("create_entry.content.html_editor")}</span>
-            </button>
-            <button
-              class="editor-toggle-btn"
-              class:active={selectedEditorType === "markdown"}
-              onclick={() => (selectedEditorType = "markdown")}
-            >
-              <span class="editor-icon">📝</span>
-              <span>{$_("create_entry.content.markdown_editor")}</span>
-            </button>
+    {#if entryType === "content"}
+      <div class="section">
+        <div class="section-header">
+          <FileCheckSolid class="section-icon" />
+          <h2>{$_("create_entry.content.section_title")}</h2>
+          <div class="editor-selector">
+            <div class="editor-selector-label">
+              {$_("create_entry.content.editor_type")}
+            </div>
+            <div class="editor-toggle">
+              <button
+                class="editor-toggle-btn"
+                class:active={selectedEditorType === "html"}
+                onclick={() => (selectedEditorType = "html")}
+              >
+                <span class="editor-icon">🎨</span>
+                <span>{$_("create_entry.content.html_editor")}</span>
+              </button>
+              <button
+                class="editor-toggle-btn"
+                class:active={selectedEditorType === "markdown"}
+                onclick={() => (selectedEditorType = "markdown")}
+              >
+                <span class="editor-icon">📝</span>
+                <span>{$_("create_entry.content.markdown_editor")}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="section-content">
+          <div class="editor-container">
+            {#if selectedEditorType === "html"}
+              <HtmlEditor
+                bind:content={htmlEditor}
+                uid="main-editor"
+                {attachments}
+                {resource_type}
+                space_name={selectedSpace}
+                subpath={selectedSubpath}
+                parent_shortname={shortname}
+              />
+            {:else}
+              <MarkdownEditor
+                bind:content={markdownEditor}
+                bind:this={markdownEditor}
+              />
+            {/if}
           </div>
         </div>
       </div>
-      <div class="section-content">
-        <div class="editor-container">
-          {#if selectedEditorType === "html"}
-            <!-- <HtmlEditor bind:content={htmlEditor} uid="main-editor" /> -->
-            <HtmlEditor
-              bind:content={htmlEditor}
-              uid="main-editor"
-              {attachments}
-              {resource_type}
-              space_name={selectedSpace}
-              subpath={selectedSubpath}
-              parent_shortname={shortname}
-            />
+
+      <!-- Attachments Section -->
+      <div class="section">
+        <div class="section-header">
+          <PaperClipOutline class="section-icon" />
+          <h2>
+            {$_("create_entry.attachments.section_title", {
+              values: { count: attachments.length },
+            })}
+          </h2>
+          <input
+            type="file"
+            id="fileInput"
+            multiple
+            onchange={handleFileChange}
+            style="display: none;"
+          />
+          <button
+            aria-label={$_("create_entry.attachments.add_files")}
+            class="add-files-button"
+            onclick={() => document.getElementById("fileInput").click()}
+          >
+            <UploadOutline class="icon button-icon" />
+            <span>{$_("create_entry.attachments.add_files")}</span>
+          </button>
+        </div>
+        <div class="section-content">
+          {#if attachments.length > 0}
+            <div class="attachments-grid">
+              {#each attachments as attachment, index}
+                <div class="attachment-card">
+                  <div class="attachment-preview">
+                    {#if getPreviewUrl(attachment)}
+                      {#if attachment.type.startsWith("image/")}
+                        <img
+                          src={getPreviewUrl(attachment) || "/placeholder.svg"}
+                          alt={attachment.name || "no-image"}
+                          class="attachment-image"
+                        />
+                      {:else if attachment.type.startsWith("video/")}
+                        <video
+                          src={getPreviewUrl(attachment)}
+                          class="attachment-video"
+                        >
+                          <track
+                            kind="captions"
+                            src=""
+                            srclang="en"
+                            label="English"
+                          />
+                        </video>
+                        <div class="video-overlay">
+                          <PlayOutline class="play-icon" />
+                        </div>
+                      {:else if attachment.type === "application/pdf"}
+                        <div class="file-preview">
+                          <FilePdfOutline class="file-icon pdf" />
+                        </div>
+                      {/if}
+                    {:else}
+                      <div class="file-preview">
+                        <FileImportSolid class="file-icon" />
+                      </div>
+                    {/if}
+                  </div>
+                  <div class="attachment-info">
+                    <p class="attachment-name">{attachment.name}</p>
+                    <p class="attachment-size">
+                      {(attachment.size / 1024).toFixed(1)} KB
+                    </p>
+                  </div>
+                  <button
+                    aria-label={$_("create_entry.attachments.remove_file", {
+                      values: { name: attachment.name },
+                    })}
+                    class="remove-attachment"
+                    onclick={() => removeAttachment(index)}
+                  >
+                    <TrashBinSolid class="icon" />
+                  </button>
+                </div>
+              {/each}
+            </div>
           {:else}
-            <MarkdownEditor
-              bind:content={markdownEditor}
-              bind:this={markdownEditor}
-            />
+            <div class="empty-attachments">
+              <CloudArrowUpOutline class="empty-icon" />
+              <h3>{$_("create_entry.attachments.empty_title")}</h3>
+              <p>{$_("create_entry.attachments.empty_description")}</p>
+            </div>
           {/if}
         </div>
       </div>
-    </div>
-
-    <div class="section">
-      <div class="section-header">
-        <PaperClipOutline class="section-icon" />
-        <h2>
-          {$_("create_entry.attachments.section_title", {
-            values: { count: attachments.length },
-          })}
-        </h2>
-        <label for="fileInput"></label>
-        <input
-          type="file"
-          id="fileInput"
-          multiple
-          onchange={handleFileChange}
-          style="display: none;"
-        />
-        <button
-          aria-label={$_("create_entry.attachments.add_files")}
-          class="add-files-button"
-          onclick={() => document.getElementById("fileInput").click()}
-        >
-          <UploadOutline class="icon button-icon" />
-          <span>{$_("create_entry.attachments.add_files")}</span>
-        </button>
-      </div>
-      <div class="section-content">
-        {#if attachments.length > 0}
-          <div class="attachments-grid">
-            {#each attachments as attachment, index}
-              <div class="attachment-card">
-                <div class="attachment-preview">
-                  {#if getPreviewUrl(attachment)}
-                    {#if attachment.type.startsWith("image/")}
-                      <img
-                        src={getPreviewUrl(attachment) || "/placeholder.svg"}
-                        alt={attachment.name || "no-image"}
-                        class="attachment-image"
-                      />
-                    {:else if attachment.type.startsWith("video/")}
-                      <video
-                        src={getPreviewUrl(attachment)}
-                        class="attachment-video"
-                      >
-                        <track
-                          kind="captions"
-                          src=""
-                          srclang="en"
-                          label="English"
-                        />
-                      </video>
-                      <div class="video-overlay">
-                        <PlayOutline class="play-icon" />
-                      </div>
-                    {:else if attachment.type === "application/pdf"}
-                      <div class="file-preview">
-                        <FilePdfOutline class="file-icon pdf" />
-                      </div>
-                    {/if}
-                  {:else}
-                    <div class="file-preview">
-                      <FileImportSolid class="file-icon" />
-                    </div>
+    {:else if entryType === "json"}
+      <!-- Schema Selection Section -->
+      <div class="section">
+        <div class="section-header">
+          <FileCheckSolid class="section-icon" />
+          <h2>Schema Selection</h2>
+        </div>
+        <div class="section-content">
+          {#if loadingSchemas}
+            <div class="loading-state">
+              <p>Loading schemas...</p>
+            </div>
+          {:else if availableSchemas.length > 0}
+            <div class="schema-selector">
+              <label for="schema-select" class="selector-label"
+                >Select Schema</label
+              >
+              <select
+                id="schema-select"
+                onchange={handleSchemaChange}
+                class="destination-select"
+              >
+                <option value="">Choose a schema...</option>
+                {#each availableSchemas as schema}
+                  <option value={schema.shortname}>{schema.title}</option>
+                {/each}
+              </select>
+              {#if selectedSchema}
+                <div class="schema-info">
+                  <h4>{selectedSchema.title}</h4>
+                  {#if selectedSchema.description}
+                    <p class="schema-description">
+                      {selectedSchema.description}
+                    </p>
                   {/if}
                 </div>
-                <div class="attachment-info">
-                  <p class="attachment-name">{attachment.name}</p>
-                  <p class="attachment-size">
-                    {(attachment.size / 1024).toFixed(1)} KB
-                  </p>
-                </div>
-                <button
-                  aria-label={$_("create_entry.attachments.remove_file", {
-                    values: { name: attachment.name },
-                  })}
-                  class="remove-attachment"
-                  onclick={() => removeAttachment(index)}
-                >
-                  <TrashBinSolid class="icon" />
-                </button>
-              </div>
-            {/each}
-          </div>
-        {:else}
-          <div class="empty-attachments">
-            <CloudArrowUpOutline class="empty-icon" />
-            <h3>{$_("create_entry.attachments.empty_title")}</h3>
-            <p>{$_("create_entry.attachments.empty_description")}</p>
-          </div>
-        {/if}
+              {/if}
+            </div>
+          {:else}
+            <div class="empty-state">
+              <FileCheckSolid class="empty-icon" />
+              <p>No schemas available for the selected space.</p>
+            </div>
+          {/if}
+        </div>
       </div>
-    </div>
+
+      {#if selectedSchema && selectedSchema.schema}
+        <div class="section">
+          <div class="section-header">
+            <FileCheckSolid class="section-icon" />
+            <h2>Entry Data</h2>
+          </div>
+          <div class="section-content">
+            <DynamicSchemaBasedForms
+              bind:content={jsonFormData}
+              schema={selectedSchema.schema}
+            />
+          </div>
+        </div>
+      {/if}
+    {/if}
   </div>
 </div>
 
@@ -1679,6 +1847,100 @@
 
     .editor-icon {
       font-size: 0.875rem;
+    }
+  }
+
+  /* Added styles for entry type selection */
+  .entry-type-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .entry-type-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .entry-type-option:hover {
+    border-color: var(--primary-color);
+    background: var(--gray-50);
+  }
+
+  .entry-type-option input[type="radio"] {
+    margin-top: 0.125rem;
+  }
+
+  .entry-type-option input[type="radio"]:checked + .entry-type-label {
+    color: var(--primary-color);
+  }
+
+  .entry-type-option:has(:global(input[type="radio"]:checked)) {
+    border-color: var(--primary-color);
+    background: rgba(37, 99, 235, 0.05);
+  }
+
+  .entry-type-label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .entry-type-label strong {
+    font-weight: 600;
+    color: var(--gray-800);
+  }
+
+  .entry-type-label small {
+    color: var(--gray-600);
+    font-size: 0.875rem;
+  }
+
+  .schema-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .schema-info {
+    padding: 1rem;
+    background: var(--gray-50);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--gray-200);
+  }
+
+  .schema-info h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--gray-800);
+  }
+
+  .schema-description {
+    margin: 0;
+    color: var(--gray-600);
+    font-size: 0.875rem;
+  }
+
+  .loading-state {
+    text-align: center;
+    padding: 2rem;
+    color: var(--gray-500);
+  }
+
+  @media (max-width: 768px) {
+    .entry-type-selector {
+      gap: 0.75rem;
+    }
+
+    .entry-type-option {
+      padding: 0.75rem;
     }
   }
 </style>

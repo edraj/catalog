@@ -14,12 +14,21 @@
     import {derived} from "svelte/store";
     import {ResourceType} from "@edraj/tsdmart/dmart.model";
     import Attachments from "@/components/Attachments.svelte";
+    import PostHeader from "@/components/post/PostHeader.svelte";
+    import PostContent from "@/components/post/PostContent.svelte";
+    import PostInteractions from "@/components/post/PostInteractions.svelte";
+    import InteractiveForm from "@/components/post/InteractiveForm.svelte";
+    import BreadcrumbNavigation from "@/components/navigation/BreadcrumbNavigation.svelte";
     import {user} from "@/stores/user";
     import {errorToastMessage, successToastMessage,} from "@/lib/toasts_messages";
-    import {formatNumberInText} from "@/lib/helpers";
-    import {marked} from "marked";
-    import {mangle} from "marked-mangle";
-    import {gfmHeadingId} from "marked-gfm-heading-id";
+    import {formatDate, formatNumberInText} from "@/lib/helpers"
+    import {
+        categorizeAttachments,
+        generateBreadcrumbs,
+        getAuthorInfo,
+        getDescription,
+        getDisplayName
+    } from "@/lib/utils/postUtils";
 
     $goto;
   let isLoading = $state(false);
@@ -38,12 +47,6 @@
   let isSubmittingReaction = $state(false);
   let userReactionId = $state(null);
   let showLoginPrompt = $state(false);
-  marked.use(mangle());
-  marked.use(
-    gfmHeadingId({
-      prefix: "my-prefix-",
-    })
-  );
   const isRTL = derived(
     locale,
     ($locale) => $locale === "ar" || $locale === "ku"
@@ -59,28 +62,12 @@
     itemShortname = $params.shortname;
 
     actualSubpath = subpath.replace(/-/g, "/");
-
-    const pathParts = actualSubpath
-      .split("/")
-      .filter((part) => part.length > 0);
-    breadcrumbs = [
-      { name: $_("post_detail.breadcrumb.catalogs"), path: "/catalogs" },
-      { name: spaceName, path: `/catalog/${spaceName}` },
-    ];
-
-    let currentUrlPath = "";
-    pathParts.forEach((part, index) => {
-      currentUrlPath += (index === 0 ? "" : "-") + part;
-      breadcrumbs.push({
-        name: part,
-        path: `/catalog/${spaceName}/${currentUrlPath}`,
-      });
-    });
-
-    breadcrumbs.push({
-      name: itemShortname,
-      path: null,
-    });
+    breadcrumbs = generateBreadcrumbs(
+      spaceName, 
+      actualSubpath, 
+      itemShortname, 
+      $_("post_detail.breadcrumb.catalogs")
+    );
 
     loadPostData();
   }
@@ -157,142 +144,6 @@
     window.history.back();
   }
 
-  function getDisplayName(item) {
-    if (item.displayname) {
-      return (
-        item.displayname[$locale] ||
-        item.displayname.ar ||
-        item.displayname.en ||
-        item.shortname
-      );
-    }
-    return item.attributes?.payload?.body?.title || item.shortname;
-  }
-
-  function getDescription(item) {
-    if (item.description) {
-      return (
-        item.description[$locale] ||
-        item.description.ar ||
-        item.description.en ||
-        ""
-      );
-    }
-    return "";
-  }
-
-  function formatDate(dateString) {
-    if (!dateString) return $_("common.not_available");
-    return new Date(dateString).toLocaleDateString($locale, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  }
-
-  function getAuthorInfo(item) {
-    const relationships = item.attributes?.relationships || [];
-    const author = relationships.find(
-      (rel) => rel.attributes?.role === "editor"
-    );
-    return (
-      author?.related_to?.shortname ||
-      item.owner_shortname ||
-      $_("common.unknown")
-    );
-  }
-
-  function getPostTitle(postData) {
-    if (postData?.payload?.body?.title) {
-      return postData.payload.body.title;
-    }
-    return getDisplayName(postData);
-  }
-
-  function getPostContent(postData) {
-    if (postData?.payload?.body?.content) {
-      return postData.payload.body.content;
-    }
-    if (postData?.payload?.body && typeof postData.payload.body === "string") {
-      return postData.payload.body;
-    }
-    return "";
-  }
-
-  function categorizeAttachments(item) {
-    const reactions = [];
-    const comments = [];
-    const mediaFiles = [];
-
-    if (item.attachments) {
-      Object.keys(item.attachments).forEach((key) => {
-        if (Array.isArray(item.attachments[key])) {
-          item.attachments[key].forEach((attachment) => {
-            if (attachment.resource_type === ResourceType.reaction) {
-              reactions.push(attachment);
-            } else if (attachment.resource_type === ResourceType.comment) {
-              comments.push(attachment);
-            } else if (
-              attachment.resource_type === ResourceType.media ||
-              (attachment.attributes?.payload?.content_type &&
-                (attachment.attributes.payload.content_type.startsWith(
-                  "image/"
-                ) ||
-                  attachment.attributes.payload.content_type.startsWith(
-                    "video/"
-                  ) ||
-                  attachment.attributes.payload.content_type.startsWith(
-                    "audio/"
-                  ) ||
-                  attachment.attributes.payload.content_type ===
-                    "application/pdf"))
-            ) {
-              mediaFiles.push(attachment);
-            }
-          });
-        }
-      });
-    }
-
-    return { reactions, comments, mediaFiles };
-  }
-
-  function getReactionType(reaction) {
-    return (
-      reaction?.attributes?.payload?.body?.body?.type ||
-      reaction?.payload?.body?.body?.type ||
-      "unknown"
-    );
-  }
-
-  function getCommentText(comment) {
-    return (
-      comment?.attributes?.displayname?.ar ||
-      comment?.attributes?.displayname?.en ||
-      comment?.attributes?.payload?.body?.body ||
-      comment?.payload?.body?.body ||
-      $_("post_detail.comments.no_content")
-    );
-  }
-
-  function getCommentState(comment) {
-    return (
-      comment?.attributes?.payload?.body?.state ||
-      comment?.payload?.body?.state ||
-      "unknown"
-    );
-  }
-
-  function getReactionEmoji(type) {
-    switch (type) {
-      case "like":
-        return "👍";
-      case "love":
-        return "❤️";
-      default:
-        return "❤️";
-    }
-  }
 
   async function handleAddComment() {
     if (!$user || !$user.shortname) {
@@ -426,88 +277,7 @@
     });
   }
 
-  function isHtmlContent(content) {
-    if (typeof content !== "string") return false;
-    const htmlRegex = /<[^>]*>/;
-    return htmlRegex.test(content);
-  }
 
-  function isMarkdownContent(content) {
-    if (typeof content !== "string") return false;
-    const markdownPatterns = [
-      /^#{1,6}\s+/m,
-      /\*\*.*?\*\*/,
-      /\*.*?\*/,
-      /\[.*?\]$$.*?$$/,
-      /^[-*+]\s+/m,
-      /\`\`\`[\s\S]*?\`\`\`/,
-    ];
-    return markdownPatterns.some((pattern) => pattern.test(content));
-  }
-
-  function isStructuredData(data) {
-    if (!data || typeof data !== "object") return false;
-    const meaningfulKeys = Object.keys(data).filter(
-      (key) => key !== "content" && data[key] && data[key].toString().trim()
-    );
-    return meaningfulKeys.length > 0;
-  }
-
-  // function renderMarkdown(content) {
-  //   if (!content) return "";
-
-  //   let html = content
-  //     // Convert headings
-  //     .replace(/^### (.*$)/gm, "<h3>$1</h3>")
-  //     .replace(/^## (.*$)/gm, "<h2>$1</h2>")
-  //     .replace(/^# (.*$)/gm, "<h1>$1</h1>")
-
-  //     // Convert bold and italic
-  //     .replace(/\*\*\*(.*?)\*\*\*/g, "<strong><em>$1</em></strong>")
-  //     .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-  //     .replace(/\*(.*?)\*/g, "<em>$1</em>")
-  //     .replace(/\_\_\_(.*?)\_\_\_/g, "<strong><em>$1</em></strong>")
-  //     .replace(/\_\_(.*?)\_\_/g, "<strong>$1</strong>")
-  //     .replace(/\_(.*?)\_/g, "<em>$1</em>")
-
-  //     // Convert inline code
-  //     .replace(/`([^`]+)`/g, "<code>$1</code>")
-
-  //     // Convert code blocks
-  //     .replace(/```([\s\S]*?)```/g, "<pre><code>$1</code></pre>")
-
-  //     // Convert blockquotes
-  //     .replace(/^> (.*$)/gm, "<blockquote>$1</blockquote>")
-
-  //     // Convert links
-  //     .replace(
-  //       /\[([^\]]+)\]\(([^)]+)\)/g,
-  //       '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
-  //     )
-
-  //     // Convert line breaks to paragraphs
-  //     .split("\n\n")
-  //     .map((paragraph) => {
-  //       paragraph = paragraph.trim();
-  //       if (!paragraph) return "";
-
-  //       // Don't wrap headings, blockquotes, pre, or other block elements in paragraphs
-  //       if (
-  //         paragraph.startsWith("<h") ||
-  //         paragraph.startsWith("<blockquote") ||
-  //         paragraph.startsWith("<pre") ||
-  //         paragraph.startsWith("<ul") ||
-  //         paragraph.startsWith("<ol")
-  //       ) {
-  //         return paragraph;
-  //       }
-
-  //       return `<p>${paragraph.replace(/\n/g, "<br>")}</p>`;
-  //     })
-  //     .join("\n");
-
-  //   return html;
-  // }
   let prevParams = { shortname: "", subpath: "", space_name: "" };
 
   $effect(() => {
@@ -525,55 +295,7 @@
 </script>
 
 <div class="page-container" class:rtl={$isRTL}>
-  <header class="page-header">
-    <div class="header-content">
-      <nav class="breadcrumbs" aria-label={$_("post_detail.breadcrumb.label")}>
-        <ol class="breadcrumb-list">
-          {#each breadcrumbs as crumb, index}
-            <li class="breadcrumb-item">
-              {#if index > 0}
-                <svg
-                  class="breadcrumb-separator"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fill-rule="evenodd"
-                    d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                    clip-rule="evenodd"
-                  ></path>
-                </svg>
-              {/if}
-              {#if crumb.path}
-                <button
-                  aria-label={`Navigate to ${crumb.name}`}
-                  onclick={() => navigateToBreadcrumb(crumb.path)}
-                  class="breadcrumb-link"
-                >
-                  {crumb.name}
-                </button>
-              {:else}
-                <span class="breadcrumb-current">{crumb.name}</span>
-              {/if}
-            </li>
-          {/each}
-        </ol>
-      </nav>
-
-      <button aria-label={`Go back`} onclick={goBack} class="back-button">
-        <svg
-          class="back-icon"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <line x1="19" y1="12" x2="5" y2="12" />
-          <polyline points="12 19 5 12 12 5" />
-        </svg>
-        <span>{$_("post_detail.navigation.back_to_contents")}</span>
-      </button>
-    </div>
-  </header>
+  <BreadcrumbNavigation {breadcrumbs} onNavigate={navigateToBreadcrumb} onGoBack={goBack} />
 
   <main class="main-content">
     {#if isLoading}
@@ -602,104 +324,9 @@
         categorizeAttachments(postData)}
 
       <article class="post-card">
-        <header class="post-header">
-          <div class="post-title-section">
-            <div class="post-icon">
-              <span>📝</span>
-            </div>
-            <div class="post-title-content">
-              <h1 class="post-title">{getPostTitle(postData)}</h1>
-              <div class="post-badges">
-                <span class="badge badge-primary">
-                  {postData.payload?.schema_shortname ||
-                    $_("post_detail.content_type.content")}
-                </span>
-                <span
-                  class="badge {postData.is_active
-                    ? 'badge-success'
-                    : 'badge-error'}"
-                >
-                  <div
-                    class="status-dot {postData.is_active
-                      ? 'status-active'
-                      : 'status-inactive'}"
-                  ></div>
-                  {postData.is_active
-                    ? $_("post_detail.status.active")
-                    : $_("post_detail.status.inactive")}
-                </span>
-              </div>
-            </div>
+        <PostHeader {postData} locale={$locale} {isOwner} />
 
-            <div class="meta-card">
-              <div class="meta-row">
-                <div class="meta-item-compact">
-                  <svg
-                    class="meta-icon-small"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                    <circle cx="12" cy="7" r="4" />
-                  </svg>
-                  <span class="meta-text">{getAuthorInfo(postData)}</span>
-                </div>
-                <div class="meta-item-compact">
-                  <svg
-                    class="meta-icon-small"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                    <line x1="16" y1="2" x2="16" y2="6" />
-                    <line x1="8" y1="2" x2="8" y2="6" />
-                    <line x1="3" y1="10" x2="21" y2="10" />
-                  </svg>
-                  <span class="meta-text"
-                    >{formatDate(postData.created_at)}</span
-                  >
-                </div>
-              </div>
-              <div class="meta-row">
-                <div class="meta-item-compact">
-                  <svg
-                    class="meta-icon-small"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      d="M9 12h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                    />
-                  </svg>
-                  <span class="meta-text"
-                    >{postData.payload?.content_type ||
-                      $_("common.unknown")}</span
-                  >
-                </div>
-                <div class="meta-item-compact">
-                  <svg
-                    class="meta-icon-small"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                    <line x1="16" y1="2" x2="16" y2="6" />
-                    <line x1="8" y1="2" x2="8" y2="6" />
-                    <line x1="3" y1="10" x2="21" y2="10" />
-                  </svg>
-                  <span class="meta-text"
-                    >{formatDate(postData.updated_at)}</span
-                  >
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {#if getDescription(postData)}
+          {#if getDescription(postData, $locale)}
             <div class="description-section">
               <h3 class="section-title">
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -734,260 +361,18 @@
               </div>
             </div>
           {/if}
-        </header>
 
-        {#if getPostContent(postData)}
-          <section class="content-section">
-            <h3 class="content-title">
-              <span class="title-accent"></span>
-              {$_("post_detail.sections.content")}
-            </h3>
+        <PostContent {postData} />
 
-            <div class="post-content">
-              <div class="content-text">
-                {#if postData?.payload?.content_type === "html"}
-                  <div
-                    class="prose prose-lg max-w-none prose-headings:text-gray-900 prose-headings:font-bold prose-p:text-gray-700 prose-p:leading-relaxed prose-strong:text-gray-900 prose-a:text-blue-600 hover:prose-a:text-blue-800 prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-gray-900 prose-pre:text-gray-100"
-                  >
-                    {@html getPostContent(postData)}
-                  </div>
-                {:else if postData?.payload?.content_type === "json"}
-                  {#if isHtmlContent(getPostContent(postData))}
-                    <div
-                      class="prose prose-lg max-w-none prose-headings:text-gray-900 prose-headings:font-bold prose-p:text-gray-700 prose-p:leading-relaxed prose-strong:text-gray-900 prose-a:text-blue-600 hover:prose-a:text-blue-800 prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-gray-900 prose-pre:text-gray-100"
-                    >
-                      {@html getPostContent(postData)}
-                    </div>
-                  {:else if isMarkdownContent(getPostContent(postData))}
-                    <div
-                      class="markdown-content bg-white p-6 rounded-lg shadow-sm border"
-                    >
-                      <div
-                        class="prose prose-lg max-w-none [enhanced classes from above]"
-                      >
-                        {@html marked(getPostContent(postData))}
-                      </div>
-                    </div>
-                  {:else if isStructuredData(postData.payload.body)}
-                    <div
-                      class="structured-content bg-white rounded-lg shadow-sm border p-6"
-                    >
-                      <h4
-                        class="text-xl font-bold text-gray-900 mb-4 border-b pb-2"
-                      >
-                        Content Details
-                      </h4>
-                      {#each Object.entries(postData.payload.body) as [key, value]}
-                        {#if key !== "content" && value}
-                          <div class="mb-3 flex flex-wrap">
-                            <span
-                              class="font-semibold text-gray-700 capitalize min-w-24"
-                              >{key.replace("_", " ")}:</span
-                            >
-                            <span class="ml-3 text-gray-600 flex-1"
-                              >{value}</span
-                            >
-                          </div>
-                        {/if}
-                      {/each}
-
-                      {#if postData.payload.body.content}
-                        <div class="mt-6 pt-4 border-t">
-                          <span class="font-semibold text-gray-700 block mb-3"
-                            >Content:</span
-                          >
-                          <div
-                            class="prose prose-lg max-w-none prose-headings:text-gray-900 prose-headings:font-bold prose-p:text-gray-700 prose-p:leading-relaxed prose-strong:text-gray-900 prose-a:text-blue-600 hover:prose-a:text-blue-800"
-                          >
-                            {@html postData.payload.body.content}
-                          </div>
-                        </div>
-                      {/if}
-                    </div>
-                  {:else}
-                    <details
-                      class="bg-gradient-to-r from-gray-50 to-gray-100 p-6 rounded-lg border shadow-sm"
-                    >
-                      <summary
-                        class="cursor-pointer font-semibold text-gray-800 mb-3 hover:text-blue-600 transition-colors duration-200"
-                        >📊 View Raw Data</summary
-                      >
-                      <pre
-                        class="text-sm overflow-x-auto mt-4 bg-gray-900 text-green-400 p-4 rounded-md font-mono leading-relaxed">{JSON.stringify(
-                          postData.payload.body?.content ||
-                            postData.payload.body,
-                          null,
-                          2
-                        )}</pre>
-                    </details>
-                  {/if}
-                {:else if getPostContent(postData) && (getPostContent(postData).includes("#") || getPostContent(postData).includes("*") || getPostContent(postData).includes("_"))}
-                  <div
-                    class="markdown-content bg-white p-6 rounded-lg shadow-sm border"
-                  >
-                    <div
-                      class="prose prose-lg max-w-none [enhanced classes from above]"
-                    >
-                      {@html marked(getPostContent(postData))}
-                    </div>
-                  </div>
-                {:else}
-                  <div class="bg-white p-6 rounded-lg shadow-sm border">
-                    <div
-                      class="whitespace-pre-wrap leading-relaxed text-gray-700 text-base"
-                    >
-                      {getPostContent(postData)}
-                    </div>
-                  </div>
-                {/if}
-              </div>
-            </div>
-          </section>
-        {/if}
-
-        {#if reactions.length > 0 || comments.length > 0}
-          <section class="interactions-section">
-            <h3 class="section-title-large">
-              <span class="title-accent"></span>
-              {$_("post_detail.sections.interactions")}
-            </h3>
-
-            {#if reactions.length > 0}
-              <div class="reactions-summary">
-                <h4 class="simple-subtitle">
-                  {$_("post_detail.reactions.title")}
-                </h4>
-                <div class="reactions-simple">
-                  {#each Object.entries(reactions.reduce((acc, reaction) => {
-                      const type = getReactionType(reaction);
-                      acc[type] = (acc[type] || 0) + 1;
-                      return acc;
-                    }, {})) as [type, count]}
-                    <span class="reaction-count">
-                      {getReactionEmoji(type)}
-                      {formatNumberInText(Number(count), $locale)}
-                    </span>
-                  {/each}
-                </div>
-              </div>
-            {/if}
-
-            {#if comments.length > 0}
-              <div class="comments-simple">
-                <h4 class="simple-subtitle">
-                  {$_("post_detail.comments.title", {
-                    values: {
-                      count: formatNumberInText(comments.length, $locale),
-                    },
-                  })}
-                </h4>
-                <div class="comments-list-simple">
-                  {#each comments as comment}
-                    <div class="comment-simple">
-                      {getCommentText(comment)}
-                    </div>
-                  {/each}
-                </div>
-              </div>
-            {/if}
-          </section>
-        {/if}
-        <section class="interactive-section">
-          <h3 class="section-title-large">
-            <span class="title-accent-blue"></span>
-            {$_("post_detail.sections.interact")}
-          </h3>
-
-          <div class="comment-form">
-            <h4 class="comment-form-title">
-              {$_("post_detail.comments.add_comment")}
-            </h4>
-            <div class="comment-input-group">
-              <textarea
-                bind:value={newComment}
-                placeholder={$_("post_detail.comments.placeholder")}
-                class="comment-textarea"
-                rows="3"
-                disabled={isSubmittingComment}
-              ></textarea>
-              <div class="comment-actions">
-                <button
-                  aria-label={`Submit comment`}
-                  onclick={handleAddComment}
-                  disabled={isSubmittingComment || !newComment.trim()}
-                  class="submit-comment-button"
-                >
-                  {#if isSubmittingComment}
-                    <svg
-                      class="animate-spin w-4 h-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        class="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        stroke-width="4"
-                      ></circle>
-                      <path
-                        class="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    {$_("post_detail.comments.submitting")}
-                  {:else}
-                    <svg
-                      class="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-                      ></path>
-                    </svg>
-                    {$_("post_detail.comments.submit")}
-                  {/if}
-                </button>
-                <button
-                  aria-label={`Toggle reaction`}
-                  class="interaction-button reaction-button {userReactionId
-                    ? 'active'
-                    : ''}"
-                  onclick={handleToggleReaction}
-                  disabled={isSubmittingReaction}
-                >
-                  <svg
-                    class="interaction-icon"
-                    fill={userReactionId ? "currentColor" : "none"}
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                    ></path>
-                  </svg>
-                  {#if isSubmittingReaction}
-                    {$_("post_detail.reactions.processing")}
-                  {:else if userReactionId}
-                    {$_("post_detail.reactions.liked")}
-                  {:else}
-                    {$_("post_detail.reactions.like")}
-                  {/if}
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
+        <PostInteractions {reactions} {comments} locale={$locale} />
+        <InteractiveForm 
+          bind:newComment={newComment}
+          {isSubmittingComment}
+          {isSubmittingReaction}
+          {userReactionId}
+          onAddComment={handleAddComment}
+          onToggleReaction={handleToggleReaction}
+        />
         {#if mediaFiles.length > 0}
           <section class="media-section">
             <h3 class="section-title-large">

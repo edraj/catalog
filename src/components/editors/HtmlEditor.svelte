@@ -1,6 +1,7 @@
 <script lang="ts">
     import {Dmart} from "@edraj/tsdmart";
     import {onMount} from "svelte";
+    import {getFileExtension} from "../../lib/fileUtils";
 
     let {
     uid = "",
@@ -97,8 +98,6 @@
       render: (attributes, children) =>
         h("div", { style: "text-align: justify" }, children),
     });
-
-    console.log("Editor initialized with content:", content);
 
     editor = new Editor({
       root: maindiv,
@@ -284,10 +283,6 @@
     toolbar.appendChild(button);
   }
 
-  export function getFileExtension(filename: string) {
-    let ext = /^.+\.([^.]+)$/.exec(filename);
-    return ext == null ? "" : ext[1];
-  }
 
   function insertAttachment(attachment) {
     const filename = attachment?.attributes?.payload?.body;
@@ -352,7 +347,6 @@
       // Ensure content is a string and not null/undefined
       const newContent = content || "";
       if (newContent !== currentHtml) {
-        console.log("Updating editor content:", newContent);
         editor.setHTML(newContent);
       }
     }

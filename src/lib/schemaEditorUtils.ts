@@ -1,11 +1,20 @@
-// FORM -> JSON
+/**
+ * Schema transformation utilities for converting between form and JSON representations
+ */
 import {generateUUID} from "./uuid";
 
-export function transformFormToJson(obj: any) {
-    if (obj === null){
+/**
+ * Transform form data to JSON schema format
+ * @param obj - Form object to transform
+ * @returns Transformed JSON object
+ */
+export function transformFormToJson(obj: any): any {
+    if (obj === null) {
         return null;
     }
-    if(obj.id){
+    
+    // Remove form-specific id field
+    if (obj?.id) {
         delete obj.id;
     }
 
@@ -17,6 +26,7 @@ export function transformFormToJson(obj: any) {
         return obj.map(transformFormToJson);
     }
 
+    // Deep transform all properties except id
     for (const key in obj) {
         if (key !== "id") {
             obj[key] = transformFormToJson(obj[key]);
@@ -26,22 +36,20 @@ export function transformFormToJson(obj: any) {
         }
     }
 
-    if (obj.type === "array" || obj.type === "array"){
-        if (obj.items) {
-            if (Object.keys(obj?.items?.properties ?? []).length === 1) {
-                obj.items.type = obj.items.properties[Object.keys(obj.items.properties)[0]].type;
-                // Also set type for items
-                obj.items.type = obj.items.type;
-            } else {
-                obj.items.type = "object";
-                obj.items.type = "object";
-                if (obj.items.additionalProperties === undefined) {
-                    obj.items.additionalProperties = false;
-                }
-            }
-
-            if (obj.items.type) {
-                delete obj.items.type;
+    // Handle array type items configuration
+    if (obj.type === "array" && obj.items) {
+        const itemProperties = obj.items?.properties;
+        const propertyCount = Object.keys(itemProperties ?? {}).length;
+        
+        if (propertyCount === 1) {
+            // Single property - use its type
+            const firstPropertyKey = Object.keys(itemProperties)[0];
+            obj.items.type = itemProperties[firstPropertyKey].type;
+        } else if (propertyCount > 1) {
+            // Multiple properties - object type
+            obj.items.type = "object";
+            if (obj.items.additionalProperties === undefined) {
+                obj.items.additionalProperties = false;
             }
         }
     }
@@ -49,6 +57,11 @@ export function transformFormToJson(obj: any) {
     return obj;
 }
 
+/**
+ * Converts an array of form items to an object keyed by the 'name' property
+ * @param arr - Array of form items with 'name' properties
+ * @returns Object with keys from item names and values from item data
+ */
 export function convertArrayToObject(arr) {
     if (!Array.isArray(arr)) {
         return arr;
@@ -63,7 +76,11 @@ export function convertArrayToObject(arr) {
     return obj;
 }
 
-// JSON -> FORM
+/**
+ * Transform JSON schema format to form data representation
+ * @param obj - JSON object to transform to form format
+ * @returns Transformed form object with added id fields and array conversions
+ */
 export function transformJsonToForm(obj: any) {
     if (!obj || typeof obj !== "object") {
         return obj;
@@ -89,6 +106,11 @@ export function transformJsonToForm(obj: any) {
     return result;
 }
 
+/**
+ * Converts an object to an array with keys as 'name' properties
+ * @param obj - Object to convert to array format
+ * @returns Array of items with 'name' property containing the original key
+ */
 export function convertObjectToArray(obj) {
     if (!obj || typeof obj !== "object") {
         return obj;

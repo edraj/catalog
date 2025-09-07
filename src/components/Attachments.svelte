@@ -4,6 +4,17 @@
     import {successToastMessage} from "@/lib/toasts_messages";
     import {CloseOutline, DownloadOutline, EyeOutline, TrashBinSolid,} from "flowbite-svelte-icons";
     import {_} from "@/i18n";
+    import {
+        getFileExtension,
+        getFileTypeIcon,
+        isAudioFile,
+        isImageFile,
+        isPdfFile,
+        isVideoFile,
+        removeFileExtension
+    } from "../lib/fileUtils";
+    import type {Attachment} from "../lib/types";
+    import {log} from "../lib/logger";
 
     let {
     attachments = [],
@@ -12,7 +23,7 @@
     parent_shortname,
     isOwner = false,
   }: {
-    attachments: Array<any>;
+    attachments: Attachment[];
     resource_type: ResourceType;
     space_name: string;
     subpath: string;
@@ -23,56 +34,10 @@
   let previewModal = $state(false);
   let currentPreview = $state(null);
 
-  export function getFileExtension(filename: string) {
-    let ext = /^.+\.([^.]+)$/.exec(filename);
-    return ext == null ? "" : ext[1];
-  }
 
-  function isImageFile(filename: string) {
-    const ext = getFileExtension(filename).toLowerCase();
-    return ["jpg", "jpeg", "png", "gif", "bmp", "webp", "svg"].includes(ext);
-  }
-
-  function isVideoFile(filename: string) {
-    const ext = getFileExtension(filename).toLowerCase();
-    return ["mp4", "webm", "ogg", "mov", "avi", "mkv"].includes(ext);
-  }
-
-  function isPdfFile(filename: string) {
-    const ext = getFileExtension(filename).toLowerCase();
-    return ext === "pdf";
-  }
-
-  function isAudioFile(filename: string) {
-    const ext = getFileExtension(filename).toLowerCase();
-    return ["mp3", "wav", "ogg", "aac", "flac", "m4a", "wma"].includes(ext);
-  }
-
-  function getFileTypeIcon(filename: string) {
-    const ext = getFileExtension(filename).toLowerCase();
-
-    if (isImageFile(filename)) return "🖼️";
-    if (isVideoFile(filename)) return "🎥";
-    if (isAudioFile(filename)) return "🎵";
-    if (["pdf"].includes(ext)) return "📄";
-    if (["doc", "docx"].includes(ext)) return "📝";
-    if (["xls", "xlsx"].includes(ext)) return "📊";
-    if (["ppt", "pptx"].includes(ext)) return "📊";
-    if (["zip", "rar", "7z"].includes(ext)) return "📦";
-    if (["txt"].includes(ext)) return "📄";
-
-    return "📎";
-  }
-
-  export function removeFileExtension(filename: string) {
-    if (!filename) return "";
-    const lastDotIndex = filename.lastIndexOf(".");
-    return lastDotIndex > 0 ? filename.substring(0, lastDotIndex) : filename;
-  }
-
-  function openPreview(attachment: any) {
+  function openPreview(attachment: Attachment) {
     const filename = attachment?.attributes?.payload?.body;
-    console.log(filename);
+    log.debug("Opening preview for file:", filename);
 
     if (
       isImageFile(filename) ||
@@ -89,7 +54,7 @@
       currentPreview = {
         ...attachment,
         url: Dmart.get_attachment_url(
-          attachment.resource_type,
+          ResourceType[attachment.resource_type as keyof typeof ResourceType],
           space_name,
           subpath,
           parent_shortname,
@@ -100,7 +65,6 @@
         type,
         filename,
       };
-      console.log(currentPreview);
 
       previewModal = true;
     }
@@ -111,10 +75,10 @@
     currentPreview = null;
   }
 
-  function downloadFile(attachment: any) {
+  function downloadFile(attachment: Attachment) {
     const filename = attachment.attributes?.payload?.body;
     const url = Dmart.get_attachment_url(
-      attachment.resource_type,
+      ResourceType[attachment.resource_type as keyof typeof ResourceType],
       space_name,
       subpath,
       parent_shortname,
@@ -131,13 +95,9 @@
     document.body.removeChild(link);
   }
 
-  async function handleDelete(item: {
-    shortname: string;
-    subpath: string;
-    resource_type: ResourceType;
-  }) {
+  async function handleDelete(attachment: Attachment) {
     if (
-      confirm(`Are you sure want to delete ${item.shortname} attachment`) ===
+      confirm(`Are you sure want to delete ${attachment.shortname} attachment`) ===
       false
     ) {
       return;
@@ -148,9 +108,9 @@
       request_type: RequestType.delete,
       records: [
         {
-          resource_type: item.resource_type,
-          shortname: item.shortname,
-          subpath: `${item.subpath}/${parent_shortname}`,
+          resource_type: attachment.resource_type,
+          shortname: attachment.shortname,
+          subpath: `${attachment.subpath}/${parent_shortname}`,
           attributes: {},
         },
       ],
@@ -158,7 +118,7 @@
     const response = await Dmart.request(request_dict);
     if (response.status === "success") {
       attachments = attachments.filter(
-        (e: { shortname: string }) => e.shortname !== item.shortname
+        (e: { shortname: string }) => e.shortname !== attachment.shortname
       );
       successToastMessage(`Attachment deleted successfully.`);
     } else {
@@ -229,7 +189,7 @@
             {#if attachment && [ResourceType.media, ResourceType.comment].includes(attachment.resource_type)}
               <div class="media-wrapper">
                 <Media
-                  resource_type={ResourceType[attachment.resource_type]}
+                  resource_type={attachment.resource_type}
                   attributes={attachment.attributes}
                   displayname={attachment.shortname}
                   url={Dmart.get_attachment_url(
@@ -441,10 +401,6 @@
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   }
 
-  .modal-audio::-webkit-media-controls-panel {
-    background-color: white;
-    border-radius: 8px;
-  }
 
   .no-attachments {
     text-align: center;
