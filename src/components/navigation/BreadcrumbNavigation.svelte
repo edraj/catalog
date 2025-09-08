@@ -1,8 +1,8 @@
 <script lang="ts">
-    import {_} from "@/i18n";
-    import type {Breadcrumb} from "@/lib/utils/postUtils";
+  import { _ } from "@/i18n";
+  import type { Breadcrumb } from "@/lib/utils/postUtils";
 
-    export let breadcrumbs: Breadcrumb[];
+  export let breadcrumbs: Breadcrumb[];
   export let onNavigate: (path: string) => void;
   export let onGoBack: () => void;
 </script>
@@ -61,7 +61,7 @@
   .page-header {
     background: white;
     border-bottom: 1px solid #e5e7eb;
-    padding: 16px 0;
+    padding: 16px 16px;
     margin-bottom: 24px;
   }
 

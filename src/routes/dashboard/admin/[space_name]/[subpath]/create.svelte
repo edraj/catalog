@@ -1,11 +1,11 @@
 <script>
-    import {onMount} from "svelte";
-    import {marked} from "marked";
-    import {createEntity, getTemplates} from "@/lib/dmart_services";
-    import {ContentType, ResourceType} from "@edraj/tsdmart";
-    import {params} from "@roxi/routify";
+  import { onMount } from "svelte";
+  import { marked } from "marked";
+  import { createEntity, getTemplates } from "@/lib/dmart_services";
+  import { ContentType, ResourceType } from "@edraj/tsdmart";
+  import { goto, params } from "@roxi/routify";
 
-    let templates = [];
+  let templates = [];
   let selectedTemplate = null;
   let templateFields = [];
   let fieldValues = {};
@@ -154,6 +154,7 @@
 
       if (result) {
         createMessage = `Entity created successfully with shortname: ${result}`;
+        $goto(`/dashboard/admin/${$params.space_name}/templates`);
         resetForm();
       } else {
         createMessage = "Failed to create entity";

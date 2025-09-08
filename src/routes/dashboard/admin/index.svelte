@@ -1,15 +1,21 @@
 <script lang="ts">
-    import {onMount} from "svelte";
-    import {createSpace, deleteSpace, editSpace, getSpaces, searchInCatalog,} from "@/lib/dmart_services";
-    import {Diamonds} from "svelte-loading-spinners";
-    import {goto} from "@roxi/routify";
-    import {_, locale} from "@/i18n";
-    import {user} from "@/stores/user";
-    import MetaForm from "@/components/forms/MetaForm.svelte";
-    import {derived} from "svelte/store";
-    import {formatNumberInText} from "@/lib/helpers";
+  import { onMount } from "svelte";
+  import {
+    createSpace,
+    deleteSpace,
+    editSpace,
+    getSpaces,
+    searchInCatalog,
+  } from "@/lib/dmart_services";
+  import { Diamonds } from "svelte-loading-spinners";
+  import { goto } from "@roxi/routify";
+  import { _, locale } from "@/i18n";
+  import { user } from "@/stores/user";
+  import MetaForm from "@/components/forms/MetaForm.svelte";
+  import { derived } from "svelte/store";
+  import { formatNumberInText } from "@/lib/helpers";
 
-    $goto;
+  $goto;
   let isLoading = $state(true);
   let spaces = $state([]);
   let displayedSpaces = $state([]);
@@ -1016,10 +1022,7 @@
                       }}
                     >
                       <td class="px-6 py-4 whitespace-nowrap">
-                        <div
-                          class="flex items-center"
-                          class:flex-row-reverse={$isRTL}
-                        >
+                        <div class="flex items-center">
                           <div class="flex-shrink-0 h-12 w-12 mx-4">
                             <div
                               class="h-12 w-12 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-md"
@@ -1073,10 +1076,7 @@
                         </span>
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap">
-                        <div
-                          class="flex items-center"
-                          class:flex-row-reverse={$isRTL}
-                        >
+                        <div class="flex items-center">
                           <div
                             class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center mr-2"
                             class:ml-2={$isRTL}
@@ -1352,13 +1352,13 @@
         <div class="space-details">
           <p>
             <strong>{$_("admin_dashboard.modal.delete.space_label")}:</strong>
-            {$deletingSpace ? getDisplayName($deletingSpace) : ""}
+            {deletingSpace ? getDisplayName(deletingSpace) : ""}
           </p>
           <p>
             <strong
               >{$_("admin_dashboard.modal.delete.shortname_label")}:</strong
             >
-            {$deletingSpace ? $deletingSpace.shortname : ""}
+            {deletingSpace ? deletingSpace.shortname : ""}
           </p>
         </div>
 

@@ -84,8 +84,6 @@
   }
 
   function prepareContentForSave(content, originalContentType) {
-    console.log(jsonEditFormValue);
-
     if (originalContentType === "json") {
       return jsonEditFormValue;
     }
@@ -270,7 +268,6 @@
 
       const contentType = itemDataValue?.payload?.content_type;
       let preparedContent = prepareContentForSave(htmlContent, contentType);
-      console.log("-------------", preparedContent, contentType);
 
       const entityData = {
         displayname: updatedDisplayname,
@@ -906,70 +903,94 @@
                             </div>
                           {:else if itemDataValue.payload.content_type === "json"}
                             <div class="bg-gray-50 p-4 rounded-lg space-y-3">
-                              {#if itemDataValue.payload.body.title}
+                              {#each Object.entries(itemDataValue.payload.body) as [key, value]}
                                 <div>
-                                  <span class="font-semibold text-gray-700"
-                                    >{$_("Title")}</span
-                                  >
-                                  <span class="ml-2"
-                                    >{itemDataValue.payload.body.title}</span
-                                  >
-                                </div>
-                              {/if}
-
-                              {#if itemDataValue.payload.body.content}
-                                <div
-                                  class="mt-1 pl-4 border-l-2 border-blue-200"
-                                >
-                                  <!-- Render HTML content with @html instead of stripping tags -->
-                                  <div class="prose max-w-none">
-                                    {@html itemDataValue.payload.body.content
-                                      .replace(/&nbsp;/g, " ")
-                                      .replace(/&amp;/g, "&")
-                                      .replace(/&lt;/g, "<")
-                                      .replace(/&gt;/g, ">")
-                                      .replace(/&quot;/g, '"')
-                                      .trim()}
-                                  </div>
-                                </div>
-                              {/if}
-
-                              <div class="border-t border-gray-300 pt-2"></div>
-
-                              {#if itemDataValue.payload.body.tags && itemDataValue.payload.body.tags.length > 0}
-                                <div>
-                                  <span class="font-semibold text-gray-700"
-                                    >{$_("Tags")}:</span
-                                  >
-                                  <div class="mt-1 flex flex-wrap gap-1">
-                                    {#each itemDataValue.payload.body.tags as tag}
-                                      <span
-                                        class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                                      >
-                                        {tag}
-                                      </span>
-                                    {/each}
-                                  </div>
-                                </div>
-                              {/if}
-
-                              {#if itemDataValue.payload.body.is_active !== undefined}
-                                <div>
-                                  <span class="font-semibold text-gray-700"
-                                    >{$_("status")}:</span
-                                  >
                                   <span
-                                    class="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {itemDataValue
-                                      .payload.body.is_active
-                                      ? 'bg-green-100 text-green-800'
-                                      : 'bg-red-100 text-red-800'}"
+                                    class="font-semibold text-gray-700 capitalize"
                                   >
-                                    {itemDataValue.payload.body.is_active
-                                      ? "Active"
-                                      : "Inactive"}
+                                    {key.replace(/_/g, " ")}:
                                   </span>
+
+                                  {#if key === "tags" && Array.isArray(value)}
+                                    <div class="mt-1 flex flex-wrap gap-1">
+                                      {#each value as tag}
+                                        <span
+                                          class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                                        >
+                                          {tag}
+                                        </span>
+                                      {/each}
+                                    </div>
+                                  {:else if key === "is_active" || key === "active"}
+                                    <span
+                                      class="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {value
+                                        ? 'bg-green-100 text-green-800'
+                                        : 'bg-red-100 text-red-800'}"
+                                    >
+                                      {value ? "Active" : "Inactive"}
+                                    </span>
+                                  {:else if key === "content" && typeof value === "string"}
+                                    <div
+                                      class="mt-1 pl-4 border-l-2 border-blue-200"
+                                    >
+                                      <div class="prose max-w-none">
+                                        {@html value
+                                          .replace(/&nbsp;/g, " ")
+                                          .replace(/&amp;/g, "&")
+                                          .replace(/&lt;/g, "<")
+                                          .replace(/&gt;/g, ">")
+                                          .replace(/&quot;/g, '"')
+                                          .trim()}
+                                      </div>
+                                    </div>
+                                  {:else if key === "description" && typeof value === "string"}
+                                    <div
+                                      class="mt-1 pl-4 border-l-2 border-blue-200"
+                                    >
+                                      <div
+                                        class="text-sm text-gray-600 whitespace-pre-wrap"
+                                      >
+                                        {value}
+                                      </div>
+                                    </div>
+                                  {:else if key === "level" && typeof value === "number"}
+                                    <span
+                                      class="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"
+                                    >
+                                      Level {value}
+                                    </span>
+                                  {:else if Array.isArray(value)}
+                                    <div class="mt-1">
+                                      <ul
+                                        class="list-disc list-inside text-sm text-gray-600"
+                                      >
+                                        {#each value as item}
+                                          <li>
+                                            {typeof item === "object"
+                                              ? JSON.stringify(item)
+                                              : item}
+                                          </li>
+                                        {/each}
+                                      </ul>
+                                    </div>
+                                  {:else if typeof value === "object" && value !== null}
+                                    <div
+                                      class="mt-1 pl-4 border-l-2 border-gray-200"
+                                    >
+                                      <pre
+                                        class="text-sm text-gray-600 whitespace-pre-wrap">{JSON.stringify(
+                                          value,
+                                          null,
+                                          2
+                                        )}</pre>
+                                    </div>
+                                  {:else}
+                                    <span class="ml-2 text-gray-600"
+                                      >{value}</span
+                                    >
+                                  {/if}
                                 </div>
-                              {/if}
+                              {/each}
                             </div>
                           {:else}
                             <div class="bg-gray-50 p-4 rounded-lg">
