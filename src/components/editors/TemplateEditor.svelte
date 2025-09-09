@@ -13,7 +13,6 @@
   let originalTemplate = null;
   let templateFields = [];
   let fieldValues = {};
-  console.log("Template Editor Content:", content);
 
   const originalTemplateStore = writable(originalTemplate);
   const templateFieldsStore = writable(templateFields);

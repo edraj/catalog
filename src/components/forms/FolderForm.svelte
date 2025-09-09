@@ -1,14 +1,16 @@
 <script lang="ts">
-    import {createEventDispatcher} from "svelte";
-    import {Dmart, QueryType} from "@edraj/tsdmart";
-    import {_} from "svelte-i18n";
+  import { createEventDispatcher } from "svelte";
+  import { Dmart, QueryType } from "@edraj/tsdmart";
+  import { _ } from "svelte-i18n";
 
-    const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher();
 
   let {
     content = $bindable({}),
+    space_name = $bindable(""),
   }: {
     content: any;
+    space_name: any;
   } = $props();
 
   content = {
@@ -266,7 +268,7 @@
       <div class="field-group">
         <select class="select-field" onchange={addSchemaShortname}>
           <option value="">{$_("options.select_schema_to_add")}</option>
-          {#await Dmart.query( { space_name: "template_test", type: QueryType.search, subpath: "/schema", search: "", retrieve_json_payload: true, limit: 99 } ) then schemas}
+          {#await Dmart.query( { space_name: space_name, type: QueryType.search, subpath: "/schema", search: "", retrieve_json_payload: true, limit: 99 } ) then schemas}
             {#each schemas.records.map((e) => e.shortname) as schema}
               <option value={schema}>{schema}</option>
             {/each}

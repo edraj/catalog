@@ -1,13 +1,13 @@
 <script lang="ts">
-    import {_} from "@/i18n";
-    import {formatDate, getPostTitle} from "@/lib/utils/postUtils";
+  import { _ } from "@/i18n";
+  import { formatDate, getPostTitle } from "@/lib/utils/postUtils";
 
-    export let postData: any;
+  export let postData: any;
   export let locale: string;
   export let isOwner: boolean;
 </script>
 
-<header class="post-header">
+<header class="post-header mx-6 my-6">
   <div class="post-title-section">
     <div class="post-icon">
       <span>📝</span>
@@ -20,9 +20,7 @@
             $_("post_detail.content_type.content")}
         </span>
         <span
-          class="badge {postData.is_active
-            ? 'badge-success'
-            : 'badge-error'}"
+          class="badge {postData.is_active ? 'badge-success' : 'badge-error'}"
         >
           <div
             class="status-dot {postData.is_active
@@ -41,13 +39,21 @@
         <div class="meta-item">
           <span class="meta-label">{$_("post_detail.meta.created")}</span>
           <span class="meta-value">
-            {formatDate(postData.created_at, locale, $_("common.not_available"))}
+            {formatDate(
+              postData.created_at,
+              locale,
+              $_("common.not_available")
+            )}
           </span>
         </div>
         <div class="meta-item">
           <span class="meta-label">{$_("post_detail.meta.updated")}</span>
           <span class="meta-value">
-            {formatDate(postData.updated_at, locale, $_("common.not_available"))}
+            {formatDate(
+              postData.updated_at,
+              locale,
+              $_("common.not_available")
+            )}
           </span>
         </div>
       </div>
@@ -59,16 +65,6 @@
         <div class="meta-item">
           <span class="meta-label">{$_("post_detail.meta.uuid")}</span>
           <span class="meta-value uuid-text">{postData.uuid}</span>
-        </div>
-      </div>
-      <div class="meta-row">
-        <div class="meta-item">
-          <span class="meta-label">{$_("post_detail.meta.resource_type")}</span>
-          <span class="meta-value">{postData.resource_type}</span>
-        </div>
-        <div class="meta-item">
-          <span class="meta-label">{$_("post_detail.meta.subpath")}</span>
-          <span class="meta-value">{postData.subpath}</span>
         </div>
       </div>
     </div>
@@ -206,7 +202,7 @@
   }
 
   .uuid-text {
-    font-family: 'Courier New', monospace;
+    font-family: "Courier New", monospace;
     font-size: 12px;
     word-break: break-all;
   }

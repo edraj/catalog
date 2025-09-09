@@ -36,6 +36,7 @@
   import { roles } from "@/stores/user";
   import MarkdownEditor from "@/components/editors/MarkdownEditor.svelte";
   import DynamicSchemaBasedForms from "@/components/forms/DynamicSchemaBasedForms.svelte";
+  import { log } from "@/lib/logger";
   $goto;
 
   let isLoading = $state(false);
@@ -47,9 +48,12 @@
 
   let entryType = $state("content");
   let availableSchemas = $state([]);
+  let availableTemplates = $state([]);
   let selectedSchema = $state(null);
+  let selectedTemplate = $state(null); // Added selectedTemplate state
   let loadingSchemas = $state(false);
   let jsonFormData = $state({});
+  let templateFormData = $state({}); // Added templateFormData state
   let entity;
   const isRTL = derived(
     locale,
@@ -82,6 +86,39 @@
   async function handleEntryTypeChange() {
     if (entryType === "json" && selectedSpace) {
       await loadSchemasForSpace();
+    }
+    if (entryType === "template" && selectedSpace) {
+      await loadTemplatesForSpace();
+    }
+  }
+
+  async function loadTemplatesForSpace() {
+    if (!selectedSpace) return;
+
+    loadingSchemas = true;
+    try {
+      const response = await getSpaceSchema(
+        selectedSpace,
+        "templates",
+        "managed"
+      );
+
+      if (response?.status === "success" && response?.records) {
+        availableTemplates = response.records.map((record) => ({
+          shortname: record.shortname,
+          title: record.attributes?.payload?.body?.title || record.shortname,
+          schema: record.attributes?.payload?.body?.content,
+          description: record.attributes?.description?.en || "",
+        }));
+      } else {
+        availableTemplates = [];
+      }
+    } catch (error) {
+      errorToastMessage("Failed to load templates");
+      console.error("Error loading templates:", error);
+      availableTemplates = [];
+    } finally {
+      loadingSchemas = false;
     }
   }
 
@@ -117,6 +154,9 @@
       if (entryType === "json") {
         await loadSchemasForSpace();
       }
+      if (entryType === "template") {
+        await loadTemplatesForSpace();
+      }
     }
   }
 
@@ -126,6 +166,14 @@
       (s) => s.shortname === schemaShortname
     );
     jsonFormData = {};
+  }
+
+  function handleTemplateChange(event) {
+    const templateShortname = event.target.value;
+    selectedTemplate = availableTemplates.find(
+      (t) => t.shortname === templateShortname
+    );
+    templateFormData = {};
   }
 
   onMount(async () => {
@@ -327,6 +375,16 @@
         is_active: isPublish,
         ...(isAdmin && shortname ? { shortname } : {}),
       };
+    } else if (entryType === "template") {
+      entity = {
+        body: {
+          title: title,
+          content: generateContentFromTemplate(),
+        },
+        tags: tags,
+        is_active: isPublish,
+        ...(isAdmin && shortname ? { shortname } : {}),
+      };
     } else {
       entity = {
         body: {
@@ -388,6 +446,87 @@
     } else {
       return markdownEditor.getContent();
     }
+  }
+
+  function generateContentFromTemplate() {
+    if (!selectedTemplate || !selectedTemplate.schema) {
+      return "";
+    }
+
+    let content = selectedTemplate.schema;
+
+    Object.keys(templateFormData).forEach((key) => {
+      // Match both {{key}} and {{key:type}} patterns
+      const placeholderPattern = new RegExp(
+        `\\{\\{${key}(?::[^}]+)?\\}\\}`,
+        "g"
+      );
+      const value = templateFormData[key] || "";
+      content = content.replace(placeholderPattern, value);
+    });
+
+    return content;
+  }
+
+  function parseTemplateFields(templateContent) {
+    if (!templateContent) return [];
+
+    const placeholderRegex = /\{\{([^:}]+)(?::([^}]+))?\}\}/g;
+    const fields = [];
+    const seen = new Set();
+    let match;
+
+    while ((match = placeholderRegex.exec(templateContent)) !== null) {
+      const fieldName = match[1].trim();
+      const fieldType = match[2]?.trim() || "string";
+
+      if (!seen.has(fieldName)) {
+        seen.add(fieldName);
+
+        let inputType = "text";
+        switch (fieldType.toLowerCase()) {
+          case "number":
+          case "int":
+          case "integer":
+            inputType = "number";
+            break;
+          case "email":
+            inputType = "email";
+            break;
+          case "url":
+            inputType = "url";
+            break;
+          case "date":
+            inputType = "date";
+            break;
+          case "time":
+            inputType = "time";
+            break;
+          case "password":
+            inputType = "password";
+            break;
+          case "textarea":
+          case "text":
+          case "string":
+          default:
+            inputType =
+              fieldType.toLowerCase() === "textarea" ? "textarea" : "text";
+            break;
+        }
+
+        fields.push({
+          name: fieldName,
+          label: fieldName
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (l) => l.toUpperCase()),
+          type: inputType,
+          originalType: fieldType,
+          required: true,
+        });
+      }
+    }
+
+    return fields;
   }
 
   async function loadPrefilledData() {
@@ -531,6 +670,18 @@
             <span class="entry-type-label">
               <strong>JSON Entry</strong>
               <small>Create a structured entry based on a schema</small>
+            </span>
+          </label>
+          <label class="entry-type-option">
+            <input
+              type="radio"
+              bind:group={entryType}
+              value="template"
+              onchange={handleEntryTypeChange}
+            />
+            <span class="entry-type-label">
+              <strong>Template Entry</strong>
+              <small>Create a structured entry based on a template</small>
             </span>
           </label>
         </div>
@@ -995,6 +1146,128 @@
             />
           </div>
         </div>
+      {/if}
+    {:else if entryType === "template"}
+      <!-- Added template section -->
+      <!-- Template Selection Section -->
+      <div class="section">
+        <div class="section-header">
+          <FileCheckSolid class="section-icon" />
+          <h2>Template Selection</h2>
+        </div>
+        <div class="section-content">
+          {#if loadingSchemas}
+            <div class="loading-state">
+              <p>Loading templates...</p>
+            </div>
+          {:else if availableTemplates.length > 0}
+            <div class="template-selector">
+              <label for="template-select" class="selector-label"
+                >Select Template</label
+              >
+              <select
+                id="template-select"
+                onchange={handleTemplateChange}
+                class="destination-select"
+              >
+                <option value="">Choose a template...</option>
+                {#each availableTemplates as template}
+                  <option value={template.shortname}>{template.title}</option>
+                {/each}
+              </select>
+              {#if selectedTemplate}
+                <div class="template-info">
+                  <h4>{selectedTemplate.title}</h4>
+                  {#if selectedTemplate.description}
+                    <p class="template-description">
+                      {selectedTemplate.description}
+                    </p>
+                  {/if}
+                </div>
+              {/if}
+            </div>
+          {:else}
+            <div class="empty-state">
+              <FileCheckSolid class="empty-icon" />
+              <p>No templates available for the selected space.</p>
+            </div>
+          {/if}
+        </div>
+      </div>
+
+      {#if selectedTemplate && selectedTemplate.schema}
+        <!-- Template Preview Section -->
+        <div class="section">
+          <div class="section-header">
+            <FileCheckSolid class="section-icon" />
+            <h2>Template Preview</h2>
+          </div>
+          <div class="section-content">
+            <div class="template-preview">
+              <pre class="template-content">{selectedTemplate.schema}</pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- Template Form Section -->
+        <div class="section">
+          <div class="section-header">
+            <FileCheckSolid class="section-icon" />
+            <h2>Fill Template Data</h2>
+          </div>
+          <div class="section-content">
+            <div class="template-form">
+              {#each parseTemplateFields(selectedTemplate.schema) as field}
+                <div class="form-field">
+                  <label for="template-{field.name}" class="field-label">
+                    {field.label}
+                    {#if field.required}
+                      <span class="required-indicator">*</span>
+                    {/if}
+                    <!-- Added type indicator for clarity -->
+                    <span class="field-type">({field.originalType})</span>
+                  </label>
+                  <!-- Handle textarea separately from regular inputs -->
+                  {#if field.type === "textarea"}
+                    <textarea
+                      id="template-{field.name}"
+                      bind:value={templateFormData[field.name]}
+                      class="field-input"
+                      placeholder="Enter {field.label.toLowerCase()}"
+                      required={field.required}
+                      rows="3"
+                    ></textarea>
+                  {:else}
+                    <input
+                      id="template-{field.name}"
+                      type={field.type}
+                      bind:value={templateFormData[field.name]}
+                      class="field-input"
+                      placeholder="Enter {field.label.toLowerCase()}"
+                      required={field.required}
+                    />
+                  {/if}
+                </div>
+              {/each}
+            </div>
+          </div>
+        </div>
+
+        <!-- Generated Content Preview -->
+        {#if Object.keys(templateFormData).length > 0}
+          <div class="section">
+            <div class="section-header">
+              <FileCheckSolid class="section-icon" />
+              <h2>Generated Content Preview</h2>
+            </div>
+            <div class="section-content">
+              <div class="content-preview">
+                <pre
+                  class="generated-content">{generateContentFromTemplate()}</pre>
+              </div>
+            </div>
+          </div>
+        {/if}
       {/if}
     {/if}
   </div>
@@ -1942,5 +2215,103 @@
     .entry-type-option {
       padding: 0.75rem;
     }
+  }
+
+  .template-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .template-info {
+    padding: 1rem;
+    background-color: var(--color-surface-secondary);
+    border-radius: 0.5rem;
+    border: 1px solid var(--color-border);
+  }
+
+  .template-info h4 {
+    margin: 0 0 0.5rem 0;
+    color: var(--color-text-primary);
+    font-weight: 600;
+  }
+
+  .template-description {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+  }
+
+  .template-preview {
+    background-color: var(--color-surface-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    padding: 1rem;
+  }
+
+  .template-content {
+    margin: 0;
+    font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--color-text-primary);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  .template-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .field-label {
+    font-weight: 600;
+    color: var(--color-text-primary);
+    font-size: 0.875rem;
+  }
+
+  .required-indicator {
+    color: var(--color-error);
+    margin-left: 0.25rem;
+  }
+
+  .field-input {
+    padding: 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.375rem;
+    background-color: var(--color-surface-primary);
+    color: var(--color-text-primary);
+    font-size: 0.875rem;
+    transition: border-color 0.2s ease;
+  }
+
+  .field-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-alpha);
+  }
+
+  .content-preview {
+    background-color: var(--color-surface-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    padding: 1rem;
+  }
+
+  .generated-content {
+    margin: 0;
+    font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--color-text-primary);
+    white-space: pre-wrap;
+    word-wrap: break-word;
   }
 </style>

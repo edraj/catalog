@@ -7,6 +7,8 @@
     updateTemplates,
   } from "@/lib/dmart_services";
   import { onMount } from "svelte";
+  import { _, locale } from "@/i18n";
+  import { params } from "@roxi/routify";
 
   let templates = $state([]);
   let isLoading = $state(true);
@@ -115,7 +117,7 @@
         );
       } else {
         success = await createTemplate(
-          "applications",
+          $params.space_name || "",
           "templates",
           templateName.trim(),
           data
@@ -209,26 +211,28 @@
 <div class="page-container">
   <header class="page-header">
     <div class="header-content">
-      <h1>Templates</h1>
-      <p>Manage your application templates collection.</p>
+      <h1>{$_("templates.title")}</h1>
+      <p>{$_("templates.subtitle")}</p>
     </div>
     <button class="btn btn-primary" onclick={openCreateModal}>
-      Create Template
+      {$_("templates.create_button")}
     </button>
   </header>
 
   {#if isLoading}
     <div class="loading-container">
       <div class="spinner"></div>
-      <span>Loading templates...</span>
+      <span>{$_("templates.loading")}</span>
     </div>
   {/if}
 
   {#if loadError}
     <div class="error-alert">
-      <strong>Error!</strong>
+      <strong>{$_("common.error")}</strong>
       {loadError}
-      <button class="btn btn-sm" onclick={loadTemplates}>Retry</button>
+      <button class="btn btn-sm" onclick={loadTemplates}
+        >{$_("common.retry")}</button
+      >
     </div>
   {/if}
 
@@ -236,10 +240,10 @@
     {#if templates.length === 0}
       <div class="empty-state">
         <div class="empty-icon">📄</div>
-        <h3>No templates found</h3>
-        <p>Get started by creating your first template.</p>
+        <h3>{$_("templates.empty_title")}</h3>
+        <p>{$_("templates.empty_subtitle")}</p>
         <button class="btn btn-primary" onclick={openCreateModal}>
-          Create Your First Template
+          {$_("templates.empty_create_button")}
         </button>
       </div>
     {:else}
@@ -247,12 +251,12 @@
         <table class="templates-table">
           <thead>
             <tr>
-              <th>Template</th>
-              <th>UUID</th>
-              <th>Owner</th>
-              <th>Created</th>
-              <th>Updated</th>
-              <th>Actions</th>
+              <th>{$_("templates.table.template")}</th>
+              <th>{$_("templates.table.uuid")}</th>
+              <th>{$_("templates.table.owner")}</th>
+              <th>{$_("templates.table.created")}</th>
+              <th>{$_("templates.table.updated")}</th>
+              <th>{$_("templates.table.actions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -273,13 +277,13 @@
                     class="btn btn-sm btn-outline"
                     onclick={() => openEditModal(template)}
                   >
-                    Edit
+                    {$_("templates.table.edit")}
                   </button>
                   <button
                     class="btn btn-sm btn-danger"
                     onclick={() => openDeleteModal(template)}
                   >
-                    Delete
+                    {$_("templates.table.delete")}
                   </button>
                 </td>
               </tr>
@@ -310,7 +314,7 @@
       onkeydown={(event) => event.stopPropagation()}
     >
       <div class="modal-header">
-        <h2>Create New Template</h2>
+        <h2>{$_("templates.create_modal.title")}</h2>
         <button class="close-btn" type="button" onclick={closeModals}
           >&times;</button
         >
@@ -318,26 +322,28 @@
 
       <div class="modal-body">
         <div class="form-group">
-          <label for="create-template-name">Template Name</label>
+          <label for="create-template-name"
+            >{$_("templates.form.name_label")}</label
+          >
           <input
             id="create-template-name"
             type="text"
             bind:value={templateName}
-            placeholder="Enter template name..."
+            placeholder={$_("templates.form.name_placeholder")}
             disabled={isSaving}
           />
         </div>
 
         {#if saveMessage}
           <div class="alert alert-success">
-            <strong>Success!</strong>
+            <strong>{$_("common.success")}</strong>
             {saveMessage}
           </div>
         {/if}
 
         {#if saveError}
           <div class="alert alert-error">
-            <strong>Error!</strong>
+            <strong>{$_("common.error")}</strong>
             {saveError}
           </div>
         {/if}
@@ -347,15 +353,21 @@
         </div>
 
         <div class="template-info">
-          <h3>Template Information</h3>
+          <h3>{$_("templates.info.title")}</h3>
           <div class="info-grid">
-            <div><strong>Space:</strong> applications</div>
             <div>
-              <strong>Subpath:</strong> templates/{templateName ||
-                "[template-name]"}
+              <strong>{$_("templates.info.space")}</strong> applications
             </div>
-            <div><strong>Content Type:</strong> Markdown</div>
-            <div><strong>Resource Type:</strong> Template</div>
+            <div>
+              <strong>{$_("templates.info.subpath")}</strong>
+              templates/{templateName || "[template-name]"}
+            </div>
+            <div>
+              <strong>{$_("templates.info.content_type")}</strong> Markdown
+            </div>
+            <div>
+              <strong>{$_("templates.info.resource_type")}</strong> Template
+            </div>
           </div>
         </div>
       </div>
@@ -368,9 +380,9 @@
         >
           {#if isSaving}
             <span class="spinner-sm"></span>
-            Saving...
+            {$_("common.saving")}
           {:else}
-            Save Template
+            {$_("templates.form.save_button")}
           {/if}
         </button>
         <button
@@ -378,7 +390,7 @@
           onclick={closeModals}
           disabled={isSaving}
         >
-          Cancel
+          {$_("common.cancel")}
         </button>
       </div>
     </div>
@@ -390,32 +402,34 @@
   <div class="modal-overlay" onclick={closeModals}>
     <div class="modal" onclick={(event) => event.stopPropagation()}>
       <div class="modal-header">
-        <h2>Edit Template</h2>
+        <h2>{$_("templates.edit_modal.title")}</h2>
         <button class="close-btn" onclick={closeModals}>&times;</button>
       </div>
 
       <div class="modal-body">
         <div class="form-group">
-          <label for="edit-template-name">Template Name</label>
+          <label for="edit-template-name"
+            >{$_("templates.form.name_label")}</label
+          >
           <input
             id="edit-template-name"
             type="text"
             bind:value={templateName}
-            placeholder="Enter template name..."
+            placeholder={$_("templates.form.name_placeholder")}
             disabled={isSaving}
           />
         </div>
 
         {#if saveMessage}
           <div class="alert alert-success">
-            <strong>Success!</strong>
+            <strong>{$_("common.success")}</strong>
             {saveMessage}
           </div>
         {/if}
 
         {#if saveError}
           <div class="alert alert-error">
-            <strong>Error!</strong>
+            <strong>{$_("common.error")}</strong>
             {saveError}
           </div>
         {/if}
@@ -426,16 +440,22 @@
 
         {#if editingTemplate}
           <div class="template-info">
-            <h3>Template Information</h3>
+            <h3>{$_("templates.info.title")}</h3>
             <div class="info-grid">
-              <div><strong>UUID:</strong> {editingTemplate.uuid}</div>
               <div>
-                <strong>Space:</strong>
+                <strong>{$_("templates.info.uuid")}</strong>
+                {editingTemplate.uuid}
+              </div>
+              <div>
+                <strong>{$_("templates.info.space")}</strong>
                 {editingTemplate.attributes.space_name}
               </div>
-              <div><strong>Subpath:</strong> {editingTemplate.subpath}</div>
               <div>
-                <strong>Owner:</strong>
+                <strong>{$_("templates.info.subpath")}</strong>
+                {editingTemplate.subpath}
+              </div>
+              <div>
+                <strong>{$_("templates.info.owner")}</strong>
                 {editingTemplate.attributes.owner_shortname}
               </div>
             </div>
@@ -451,9 +471,9 @@
         >
           {#if isSaving}
             <span class="spinner-sm"></span>
-            Updating...
+            {$_("common.updating")}
           {:else}
-            Update Template
+            {$_("templates.form.update_button")}
           {/if}
         </button>
         <button
@@ -461,7 +481,7 @@
           onclick={closeModals}
           disabled={isSaving}
         >
-          Cancel
+          {$_("common.cancel")}
         </button>
       </div>
     </div>
@@ -470,26 +490,39 @@
 
 <!-- Delete Confirmation Modal -->
 {#if showDeleteModal}
-  <div class="modal-overlay" onclick={closeModals}>
-    <div class="modal modal-sm" onclick={(event) => event.stopPropagation()}>
+  <div
+    class="modal-overlay"
+    role="button"
+    tabindex="0"
+    onclick={closeModals}
+    onkeydown={(e) => {
+      if (e.key === "Enter" || e.key === " ") closeModals();
+    }}
+  >
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div
+      onclick={(event) => event.stopPropagation()}
+      onkeydown={(event) => event.stopPropagation()}
+    >
       <div class="modal-header">
-        <h2>Confirm Delete</h2>
+        <h2>{$_("templates.delete_modal.title")}</h2>
         <button class="close-btn" onclick={closeModals}>&times;</button>
       </div>
 
       <div class="modal-body">
         {#if deletingTemplate}
           <p>
-            Are you sure you want to delete the template <strong
-              >"{getTemplateTitle(deletingTemplate)}"</strong
-            >?
+            {$_(
+              "templates.delete_modal.confirm",
+              getTemplateTitle(deletingTemplate)
+            )}
           </p>
-          <p class="warning-text">This action cannot be undone.</p>
+          <p class="warning-text">{$_("templates.delete_modal.warning")}</p>
         {/if}
 
         {#if deleteError}
           <div class="alert alert-error">
-            <strong>Error!</strong>
+            <strong>{$_("common.error")}</strong>
             {deleteError}
           </div>
         {/if}
@@ -503,9 +536,9 @@
         >
           {#if isDeleting}
             <span class="spinner-sm"></span>
-            Deleting...
+            {$_("common.deleting")}
           {:else}
-            Delete Template
+            {$_("templates.delete_modal.delete_button")}
           {/if}
         </button>
         <button
@@ -513,7 +546,7 @@
           onclick={closeModals}
           disabled={isDeleting}
         >
-          Cancel
+          {$_("common.cancel")}
         </button>
       </div>
     </div>

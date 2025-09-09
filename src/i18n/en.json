@@ -1,4 +1,43 @@
 {
+  "templates.title": "Templates",
+  "templates.subtitle": "Manage your application templates collection.",
+  "templates.create_button": "Create Template",
+  "templates.loading": "Loading templates...",
+  "common.error": "Error!",
+  "common.success": "Success!",
+  "common.retry": "Retry",
+  "common.cancel": "Cancel",
+  "common.saving": "Saving...",
+  "common.updating": "Updating...",
+  "common.deleting": "Deleting...",
+  "templates.empty_title": "No templates found",
+  "templates.empty_subtitle": "Get started by creating your first template.",
+  "templates.empty_create_button": "Create Your First Template",
+  "templates.table.template": "Template",
+  "templates.table.uuid": "UUID",
+  "templates.table.owner": "Owner",
+  "templates.table.created": "Created",
+  "templates.table.updated": "Updated",
+  "templates.table.actions": "Actions",
+  "templates.table.edit": "Edit",
+  "templates.table.delete": "Delete",
+  "templates.create_modal.title": "Create New Template",
+  "templates.edit_modal.title": "Edit Template",
+  "templates.delete_modal.title": "Confirm Delete",
+  "templates.delete_modal.confirm": "Are you sure you want to delete the template \"{name}\"?",
+  "templates.delete_modal.warning": "This action cannot be undone.",
+  "templates.delete_modal.delete_button": "Delete Template",
+  "templates.form.name_label": "Template Name",
+  "templates.form.name_placeholder": "Enter template name...",
+  "templates.form.save_button": "Save Template",
+  "templates.form.update_button": "Update Template",
+  "templates.info.title": "Template Information",
+  "templates.info.space": "Space:",
+  "templates.info.subpath": "Subpath:",
+  "templates.info.content_type": "Content Type:",
+  "templates.info.resource_type": "Resource Type:",
+  "templates.info.uuid": "UUID:",
+  "templates.info.owner": "Owner:",
   "Loading": "Loading...",
   "Welcome": "Welcome",
   "Back": "Back",
@@ -717,10 +756,13 @@
       "inactive": "Inactive"
     },
     "meta": {
-      "author": "Author",
       "created": "Created",
       "updated": "Updated",
-      "content_type": "Content Type"
+      "content_type": "Content Type",
+      "owner": "Owner",
+      "uuid": "UUID",
+      "resource_type": "Resource Type",
+      "subpath": "Subpath"
     },
     "media": {
       "title": "Media & Files ({count})"
@@ -1253,10 +1295,17 @@
       "close": "Close modal",
       "cancel": "Cancel",
       "creating": "Creating...",
+      "updating": "Updating...",
       "create_folder": "Create Folder",
+      "updatebtn": "Update",
+      "createbtn": "Create",
       "create": {
         "title": "Create New Folder",
         "subtitle": "Configure folder settings and permissions"
+      },
+      "edit": {
+        "title": "Edit Folder",
+        "subtitle": "Update folder settings and permissions"
       },
       "basic_info": {
         "title": "Basic Information",

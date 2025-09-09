@@ -1,7 +1,7 @@
 <script lang="ts">
-    import {_} from "@/i18n";
+  import { _ } from "@/i18n";
 
-    export let newComment: string;
+  export let newComment: string;
   export let isSubmittingComment: boolean;
   export let isSubmittingReaction: boolean;
   export let userReactionId: string | null;
@@ -9,7 +9,7 @@
   export let onToggleReaction: () => void;
 </script>
 
-<section class="interactive-section">
+<section class="interactive-section mx-6 my-4">
   <h3 class="section-title-large">
     <span class="title-accent-blue"></span>
     {$_("post_detail.sections.interact")}
@@ -35,11 +35,7 @@
           class="submit-comment-button"
         >
           {#if isSubmittingComment}
-            <svg
-              class="animate-spin w-4 h-4"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
+            <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
               <circle
                 class="opacity-25"
                 cx="12"

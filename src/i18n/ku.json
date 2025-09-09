@@ -1,4 +1,43 @@
 {
+  "templates.title": "داڕێژەکان",
+  "templates.subtitle": "کۆمەڵەی داڕێژەی بەرنامەکەت بەڕێوەبەرێ.",
+  "templates.create_button": "دروستکردنی داڕێژە",
+  "templates.loading": "داڕێژەکان لە بارکردنە...",
+  "common.error": "هەڵە!",
+  "common.success": "سەرکەوتوویی!",
+  "common.retry": "دووبارە هەوڵبدە",
+  "common.cancel": "هەڵوەشاندنەوە",
+  "common.saving": "لە پاشەکەوتکردنە...",
+  "common.updating": "لە نوێکردنەوەیە...",
+  "common.deleting": "لە سڕینەوەیە...",
+  "templates.empty_title": "هیچ داڕێژەیەک نەدۆزرایەوە",
+  "templates.empty_subtitle": "دەست پێبکە بە دروستکردنی یەکەم داڕێژەکەت.",
+  "templates.empty_create_button": "یەکەم داڕێژەکەت دروست بکە",
+  "templates.table.template": "داڕێژە",
+  "templates.table.uuid": "ناسنامەی یەکتا",
+  "templates.table.owner": "خاوەن",
+  "templates.table.created": "دروستکراو",
+  "templates.table.updated": "نوێکرایەوە",
+  "templates.table.actions": "کردارەکان",
+  "templates.table.edit": "دەستکاری",
+  "templates.table.delete": "سڕینەوە",
+  "templates.create_modal.title": "دروستکردنی داڕێژەی نوێ",
+  "templates.edit_modal.title": "دەستکاری داڕێژە",
+  "templates.delete_modal.title": "دڵنیایی لە سڕینەوە",
+  "templates.delete_modal.confirm": "دڵنیایت کە دەتەوێت داڕێژەکە \"{name}\" بسڕیتەوە؟",
+  "templates.delete_modal.warning": "ئەم کردارە ناتوانرێت پاشگەز بکرێت.",
+  "templates.delete_modal.delete_button": "داڕێژە بسڕەوە",
+  "templates.form.name_label": "ناوی داڕێژە",
+  "templates.form.name_placeholder": "ناوی داڕێژە بنووسە...",
+  "templates.form.save_button": "داڕێژە پاشەکەوت بکە",
+  "templates.form.update_button": "داڕێژە نوێ بکە",
+  "templates.info.title": "زانیاری داڕێژە",
+  "templates.info.space": "بۆشایی:",
+  "templates.info.subpath": "ڕێڕەوی زیاتر:",
+  "templates.info.content_type": "جۆری ناوەڕۆک:",
+  "templates.info.resource_type": "جۆری سەرچاوە:",
+  "templates.info.uuid": "ناسنامەی یەکتا:",
+  "templates.info.owner": "خاوەن:",
   "Loading": "لە بارکردن...",
   "Welcome": "بەخێربێیت",
   "Back": "گەڕانەوە",
@@ -624,10 +663,13 @@
       "inactive": "ناچالاک"
     },
     "meta": {
-      "author": "نووسەر",
       "created": "دروستکراوە",
       "updated": "نوێکراوە",
-      "content_type": "جۆری ناوەڕۆک"
+      "content_type": "جۆری ناوەڕۆک",
+      "owner": "بەکارهێنەر",
+      "uuid": "بەش",
+      "resource_type": "جۆری سەرچاوە",
+      "subpath": "ڕێڕەوی ژێر"
     },
     "media": {
       "title": "مێدیا و فایلەکان ({count})"
@@ -1143,11 +1185,18 @@
     "modal": {
       "close": "داخستنی مۆداڵ",
       "cancel": "هەڵوەشاندنەوە",
+      "updating": "نوێکردنەوە...",
       "creating": "دروستکردن...",
       "create_folder": "دروستکردنی فۆڵدەر",
+      "updatebtn": "نوێکردنەوە",
+      "createbtn": "دروستکردن",
       "create": {
-        "title": "دروستکردنی فۆڵدەرێکی نوێ",
-        "subtitle": "ڕێکخستنی ڕێکخراوی فۆڵدەر و مۆڵەتەکان"
+        "title": "دروستکردنی فۆڵدەر نوێ",
+        "subtitle": "ڕێکخستنی ڕووکاری فۆڵدەر و مۆڵەتەکان"
+      },
+      "edit": {
+        "title": "تحریر فۆڵدەر",
+        "subtitle": "نوێکردنەوەی ڕووکاری فۆڵدەر و مۆڵەتەکان"
       },
       "basic_info": {
         "title": "زانیاری بنەڕەتی",

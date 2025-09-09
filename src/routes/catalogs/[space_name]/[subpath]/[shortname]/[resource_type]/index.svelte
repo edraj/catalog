@@ -1,36 +1,39 @@
 <script lang="ts">
-    import {onMount} from "svelte";
-    import {goto, params} from "@roxi/routify";
-    import {
-        checkCurrentUserReactedIdea,
-        createComment,
-        createReaction,
-        deleteReactionComment,
-        getEntity,
-        getRelatedContents
-    } from "@/lib/dmart_services";
-    import {Diamonds} from "svelte-loading-spinners";
-    import {_, locale} from "@/i18n";
-    import {derived} from "svelte/store";
-    import {ResourceType} from "@edraj/tsdmart/dmart.model";
-    import Attachments from "@/components/Attachments.svelte";
-    import PostHeader from "@/components/post/PostHeader.svelte";
-    import PostContent from "@/components/post/PostContent.svelte";
-    import PostInteractions from "@/components/post/PostInteractions.svelte";
-    import InteractiveForm from "@/components/post/InteractiveForm.svelte";
-    import BreadcrumbNavigation from "@/components/navigation/BreadcrumbNavigation.svelte";
-    import {user} from "@/stores/user";
-    import {errorToastMessage, successToastMessage,} from "@/lib/toasts_messages";
-    import {formatDate, formatNumberInText} from "@/lib/helpers"
-    import {
-        categorizeAttachments,
-        generateBreadcrumbs,
-        getAuthorInfo,
-        getDescription,
-        getDisplayName
-    } from "@/lib/utils/postUtils";
+  import { onMount } from "svelte";
+  import { goto, params } from "@roxi/routify";
+  import {
+    checkCurrentUserReactedIdea,
+    createComment,
+    createReaction,
+    deleteReactionComment,
+    getEntity,
+    getRelatedContents,
+  } from "@/lib/dmart_services";
+  import { Diamonds } from "svelte-loading-spinners";
+  import { _, locale } from "@/i18n";
+  import { derived } from "svelte/store";
+  import { ResourceType } from "@edraj/tsdmart/dmart.model";
+  import Attachments from "@/components/Attachments.svelte";
+  import PostHeader from "@/components/post/PostHeader.svelte";
+  import PostContent from "@/components/post/PostContent.svelte";
+  import PostInteractions from "@/components/post/PostInteractions.svelte";
+  import InteractiveForm from "@/components/post/InteractiveForm.svelte";
+  import BreadcrumbNavigation from "@/components/navigation/BreadcrumbNavigation.svelte";
+  import { user } from "@/stores/user";
+  import {
+    errorToastMessage,
+    successToastMessage,
+  } from "@/lib/toasts_messages";
+  import { formatDate, formatNumberInText } from "@/lib/helpers";
+  import {
+    categorizeAttachments,
+    generateBreadcrumbs,
+    getAuthorInfo,
+    getDescription,
+    getDisplayName,
+  } from "@/lib/utils/postUtils";
 
-    $goto;
+  $goto;
   let isLoading = $state(false);
   let postData = $state(null);
   let relatedContent = $state([]);
@@ -63,9 +66,9 @@
 
     actualSubpath = subpath.replace(/-/g, "/");
     breadcrumbs = generateBreadcrumbs(
-      spaceName, 
-      actualSubpath, 
-      itemShortname, 
+      spaceName,
+      actualSubpath,
+      itemShortname,
       $_("post_detail.breadcrumb.catalogs")
     );
 
@@ -143,7 +146,6 @@
   function goBack() {
     window.history.back();
   }
-
 
   async function handleAddComment() {
     if (!$user || !$user.shortname) {
@@ -277,7 +279,6 @@
     });
   }
 
-
   let prevParams = { shortname: "", subpath: "", space_name: "" };
 
   $effect(() => {
@@ -295,7 +296,11 @@
 </script>
 
 <div class="page-container" class:rtl={$isRTL}>
-  <BreadcrumbNavigation {breadcrumbs} onNavigate={navigateToBreadcrumb} onGoBack={goBack} />
+  <BreadcrumbNavigation
+    {breadcrumbs}
+    onNavigate={navigateToBreadcrumb}
+    onGoBack={goBack}
+  />
 
   <main class="main-content">
     {#if isLoading}
@@ -326,47 +331,47 @@
       <article class="post-card">
         <PostHeader {postData} locale={$locale} {isOwner} />
 
-          {#if getDescription(postData, $locale)}
-            <div class="description-section">
-              <h3 class="section-title">
-                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    d="M20.59 13.41L10.59 3.41A2 2 0 0 0 9.17 3H4a2 2 0 0 0-2 2v5.17a2 2 0 0 0 .59 1.42l10 10a2 2 0 0 0 2.83 0l5.17-5.17a2 2 0 0 0 0-2.83z"
-                  />
-                  <circle cx="7.5" cy="7.5" r="1.5" />
-                </svg>
-                {$_("post_detail.sections.description")}
-              </h3>
-              <p class="description-text">{getDescription(postData)}</p>
-            </div>
-          {/if}
+        {#if getDescription(postData, $locale)}
+          <div class="description-section">
+            <h3 class="section-title">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  d="M20.59 13.41L10.59 3.41A2 2 0 0 0 9.17 3H4a2 2 0 0 0-2 2v5.17a2 2 0 0 0 .59 1.42l10 10a2 2 0 0 0 2.83 0l5.17-5.17a2 2 0 0 0 0-2.83z"
+                />
+                <circle cx="7.5" cy="7.5" r="1.5" />
+              </svg>
+              {$_("post_detail.sections.description")}
+            </h3>
+            <p class="description-text">{getDescription(postData)}</p>
+          </div>
+        {/if}
 
-          {#if postData.tags && postData.tags.length > 0 && postData.tags[0] !== ""}
-            <div class="tags-section">
-              <h3 class="section-title">
-                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    d="M20.59 13.41L10.59 3.41A2 2 0 0 0 9.17 3H4a2 2 0 0 0-2 2v5.17a2 2 0 0 0 .59 1.42l10 10a2 2 0 0 0 2.83 0l5.17-5.17a2 2 0 0 0 0-2.83z"
-                  />
-                  <circle cx="7.5" cy="7.5" r="1.5" />
-                </svg>
-                {$_("post_detail.sections.tags")}
-              </h3>
-              <div class="tags-container">
-                {#each postData.tags as tag}
-                  {#if tag && tag.trim()}
-                    <span class="tag">#{tag}</span>
-                  {/if}
-                {/each}
-              </div>
+        {#if postData.tags && postData.tags.length > 0 && postData.tags[0] !== ""}
+          <div class="tags-section mx-6 my-6 p-2">
+            <h3 class="section-title">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  d="M20.59 13.41L10.59 3.41A2 2 0 0 0 9.17 3H4a2 2 0 0 0-2 2v5.17a2 2 0 0 0 .59 1.42l10 10a2 2 0 0 0 2.83 0l5.17-5.17a2 2 0 0 0 0-2.83z"
+                />
+                <circle cx="7.5" cy="7.5" r="1.5" />
+              </svg>
+              {$_("post_detail.sections.tags")}
+            </h3>
+            <div class="tags-container my-4">
+              {#each postData.tags as tag}
+                {#if tag && tag.trim()}
+                  <span class="tag">#{tag}</span>
+                {/if}
+              {/each}
             </div>
-          {/if}
+          </div>
+        {/if}
 
         <PostContent {postData} />
 
         <PostInteractions {reactions} {comments} locale={$locale} />
-        <InteractiveForm 
-          bind:newComment={newComment}
+        <InteractiveForm
+          bind:newComment
           {isSubmittingComment}
           {isSubmittingReaction}
           {userReactionId}
@@ -491,7 +496,7 @@
                         {formatDate(item.attributes?.updated_at)}
                       </span>
                       <span class="related-content-author">
-                        {getAuthorInfo(item)}
+                        {getAuthorInfo(item, $locale)}
                       </span>
                     </div>
                     {#if item.tags && item.tags.length > 0}
@@ -918,6 +923,12 @@
   }
 
   .tags-section {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb;
+    margin-bottom: 24px;
     margin-top: 1.5rem;
   }
 

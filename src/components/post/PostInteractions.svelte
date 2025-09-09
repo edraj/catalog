@@ -1,15 +1,19 @@
 <script lang="ts">
-    import {_} from "@/i18n";
-    import {formatNumberInText} from "@/lib/helpers";
-    import {getCommentText, getReactionEmoji, getReactionType} from "@/lib/utils/postUtils";
+  import { _ } from "@/i18n";
+  import { formatNumberInText } from "@/lib/helpers";
+  import {
+    getCommentText,
+    getReactionEmoji,
+    getReactionType,
+  } from "@/lib/utils/postUtils";
 
-    export let reactions: any[];
+  export let reactions: any[];
   export let comments: any[];
   export let locale: string;
 </script>
 
 {#if reactions.length > 0 || comments.length > 0}
-  <section class="interactions-section">
+  <section class="interactions-section mx-6 my-4">
     <h3 class="section-title-large">
       <span class="title-accent"></span>
       {$_("post_detail.sections.interactions")}

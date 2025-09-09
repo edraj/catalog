@@ -1,4 +1,43 @@
 {
+  "templates.title": "القوالب",
+  "templates.subtitle": "إدارة مجموعة قوالب التطبيق الخاصة بك.",
+  "templates.create_button": "إنشاء قالب",
+  "templates.loading": "جارٍ تحميل القوالب...",
+  "common.error": "خطأ!",
+  "common.success": "نجاح!",
+  "common.retry": "إعادة المحاولة",
+  "common.cancel": "إلغاء",
+  "common.saving": "جارٍ الحفظ...",
+  "common.updating": "جارٍ التحديث...",
+  "common.deleting": "جارٍ الحذف...",
+  "templates.empty_title": "لا توجد قوالب",
+  "templates.empty_subtitle": "ابدأ بإنشاء أول قالب لك.",
+  "templates.empty_create_button": "أنشئ أول قالب لك",
+  "templates.table.template": "القالب",
+  "templates.table.uuid": "المعرف الفريد",
+  "templates.table.owner": "المالك",
+  "templates.table.created": "تاريخ الإنشاء",
+  "templates.table.updated": "تاريخ التحديث",
+  "templates.table.actions": "الإجراءات",
+  "templates.table.edit": "تعديل",
+  "templates.table.delete": "حذف",
+  "templates.create_modal.title": "إنشاء قالب جديد",
+  "templates.edit_modal.title": "تعديل القالب",
+  "templates.delete_modal.title": "تأكيد الحذف",
+  "templates.delete_modal.confirm": "هل أنت متأكد أنك تريد حذف القالب \"{name}\"؟",
+  "templates.delete_modal.warning": "لا يمكن التراجع عن هذا الإجراء.",
+  "templates.delete_modal.delete_button": "حذف القالب",
+  "templates.form.name_label": "اسم القالب",
+  "templates.form.name_placeholder": "أدخل اسم القالب...",
+  "templates.form.save_button": "حفظ القالب",
+  "templates.form.update_button": "تحديث القالب",
+  "templates.info.title": "معلومات القالب",
+  "templates.info.space": "المجال:",
+  "templates.info.subpath": "المسار الفرعي:",
+  "templates.info.content_type": "نوع المحتوى:",
+  "templates.info.resource_type": "نوع المورد:",
+  "templates.info.uuid": "المعرف الفريد:",
+  "templates.info.owner": "المالك:",
   "Loading": "جارٍ التحميل...",
   "Welcome": "مرحبًا",
   "Back": "عودة",
@@ -606,10 +645,13 @@
       "inactive": "غير نشط"
     },
     "meta": {
-      "author": "المؤلف",
-      "created": "تاريخ الإنشاء",
-      "updated": "تاريخ التحديث",
-      "content_type": "نوع المحتوى"
+      "created": "تم الإنشاء",
+      "updated": "تم التحديث",
+      "content_type": "نوع المحتوى",
+      "owner": "المالك",
+      "uuid": "UUID",
+      "resource_type": "نوع المورد",
+      "subpath": "المسار الفرعي"
     },
     "media": {
       "title": "الوسائط والملفات ({count})"
@@ -1241,11 +1283,18 @@
     "modal": {
       "close": "إغلاق النافذة",
       "cancel": "إلغاء",
+      "updating": "جاري التحديث...",
       "creating": "جاري الإنشاء...",
       "create_folder": "إنشاء مجلد",
+      "updatebtn": "تحديث",
+      "createbtn": "إنشاء",
       "create": {
         "title": "إنشاء مجلد جديد",
         "subtitle": "تكوين إعدادات المجلد والأذونات"
+      },
+      "edit": {
+        "title": "تحرير المجلد",
+        "subtitle": "تحديث إعدادات المجلد والأذونات"
       },
       "basic_info": {
         "title": "المعلومات الأساسية",

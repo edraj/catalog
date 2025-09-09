@@ -1,4 +1,4 @@
-import {ResourceType} from '@edraj/tsdmart/dmart.model';
+import { ResourceType } from "@edraj/tsdmart/dmart.model";
 
 export function getDisplayName(item: any, locale?: string): string {
   if (item.displayname) {
@@ -24,7 +24,11 @@ export function getDescription(item: any, locale?: string): string {
   return "";
 }
 
-export function formatDate(dateString: string, locale: string, fallback: string): string {
+export function formatDate(
+  dateString: string,
+  locale: string,
+  fallback: string
+): string {
   if (!dateString) return fallback;
   return new Date(dateString).toLocaleDateString(locale, {
     year: "numeric",
@@ -38,11 +42,7 @@ export function getAuthorInfo(item: any, fallback: string): string {
   const author = relationships.find(
     (rel: any) => rel.attributes?.role === "editor"
   );
-  return (
-    author?.related_to?.shortname ||
-    item.owner_shortname ||
-    fallback
-  );
+  return author?.related_to?.shortname || item.owner_shortname || fallback;
 }
 
 export function getPostTitle(postData: any): string {
@@ -59,6 +59,13 @@ export function getPostContent(postData: any): string {
   if (postData?.payload?.body && typeof postData.payload.body === "string") {
     return postData.payload.body;
   }
+  if (postData?.payload?.body && typeof postData.payload.body === "object") {
+    const entries = Object.entries(postData.payload.body);
+    if (entries.length > 0) {
+      return entries.map(([key, value]) => `${key}: ${value}`).join("\n");
+    }
+  }
+
   return "";
 }
 
@@ -84,10 +91,17 @@ export function categorizeAttachments(item: any): CategorizedAttachments {
           } else if (
             attachment.resource_type === ResourceType.media ||
             (attachment.attributes?.payload?.content_type &&
-              (attachment.attributes.payload.content_type.startsWith("image/") ||
-                attachment.attributes.payload.content_type.startsWith("video/") ||
-                attachment.attributes.payload.content_type.startsWith("audio/") ||
-                attachment.attributes.payload.content_type === "application/pdf"))
+              (attachment.attributes.payload.content_type.startsWith(
+                "image/"
+              ) ||
+                attachment.attributes.payload.content_type.startsWith(
+                  "video/"
+                ) ||
+                attachment.attributes.payload.content_type.startsWith(
+                  "audio/"
+                ) ||
+                attachment.attributes.payload.content_type ===
+                  "application/pdf"))
           ) {
             mediaFiles.push(attachment);
           }
@@ -147,10 +161,8 @@ export function generateBreadcrumbs(
   itemShortname: string,
   catalogsLabel: string
 ): Breadcrumb[] {
-  const pathParts = actualSubpath
-    .split("/")
-    .filter((part) => part.length > 0);
-    
+  const pathParts = actualSubpath.split("/").filter((part) => part.length > 0);
+
   const breadcrumbs: Breadcrumb[] = [
     { name: catalogsLabel, path: "/catalogs" },
     { name: spaceName, path: `/catalog/${spaceName}` },

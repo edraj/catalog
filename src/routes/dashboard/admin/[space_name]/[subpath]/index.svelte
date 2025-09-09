@@ -1,18 +1,23 @@
 <script lang="ts">
-    import {onMount} from "svelte";
-    import {goto, params} from "@roxi/routify";
-    import {deleteEntity, getAvatar, getSpaceContents,} from "@/lib/dmart_services";
-    import {Diamonds} from "svelte-loading-spinners";
-    import {_, locale} from "@/i18n";
-    import {Dmart, RequestType, ResourceType} from "@edraj/tsdmart";
-    import {derived, writable} from "svelte/store";
-    import MetaForm from "@/components/forms/MetaForm.svelte";
-    import FolderForm from "@/components/forms/FolderForm.svelte";
-    import Avatar from "@/components/Avatar.svelte";
-    import {formatNumber} from "@/lib/helpers";
-    import SchemaForm from "@/components/forms/SchemaForm.svelte";
+  import { onMount } from "svelte";
+  import { goto, params } from "@roxi/routify";
+  import {
+    deleteEntity,
+    getAvatar,
+    getSpaceContents,
+  } from "@/lib/dmart_services";
+  import { Diamonds } from "svelte-loading-spinners";
+  import { _, locale } from "@/i18n";
+  import { Dmart, RequestType, ResourceType } from "@edraj/tsdmart";
+  import { derived, writable } from "svelte/store";
+  import MetaForm from "@/components/forms/MetaForm.svelte";
+  import FolderForm from "@/components/forms/FolderForm.svelte";
+  import Avatar from "@/components/Avatar.svelte";
+  import { formatNumber } from "@/lib/helpers";
+  import SchemaForm from "@/components/forms/SchemaForm.svelte";
+  import CreateTemplateModal from "@/components/CreateTemplateModal.svelte";
 
-    $goto;
+  $goto;
 
   let isLoading = writable(false);
   let isLoadingMore = writable(false);
@@ -321,18 +326,26 @@
     }
   }
 
+  let showCreateTemplateModal = $state(false);
+
   function handleCreateItem() {
-    if (containTemplates) {
-      $goto("/dashboard/admin/[space_name]/[subpath]/create", {
+    if (subpath === "templates") {
+      $goto("/dashboard/templates", {
         space_name: spaceName,
         subpath: $actualSubpath,
       });
+      // showCreateTemplateModal = true;
     } else {
       $goto("/entries/create", {
         space_name: spaceName,
         subpath: $actualSubpath,
       });
     }
+  }
+
+  function handleTemplateModalClose() {
+    showCreateTemplateModal = false;
+    loadContents(true);
   }
 
   async function handleDeleteItem(item, event) {
@@ -670,6 +683,7 @@
                 body: schemaContent,
                 content_type: "json",
               },
+              is_active: true,
             },
           },
         ],
@@ -754,7 +768,7 @@
           {#if $actualSubpath !== "/" && $actualSubpath !== ""}
             <button
               onclick={handleCreateItem}
-              class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+              class="bg-green-500 hover:bg-green-600 text-white mx-2 px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
               aria-label={$_("admin_content.actions.create_new_item")}
             >
               <svg
@@ -775,7 +789,7 @@
 
             <button
               onclick={handleCreateFolder}
-              class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+              class="bg-yellow-500 hover:bg-yellow-600 mx-2 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
               class:flex-row-reverse={$isRTL}
               aria-label={$_("admin_content.actions.create_folder")}
             >
@@ -1391,7 +1405,11 @@
               {$_("admin_content.modal.folder_config.description")}
             </p>
           </div>
-          <FolderForm bind:content={folderContent} on:foo={handleSaveFolder} />
+          <FolderForm
+            bind:content={folderContent}
+            space_name={spaceName}
+            on:submit={handleSaveFolder}
+          />
         </div>
       </div>
 
@@ -1452,7 +1470,12 @@
         </button>
       </div>
 
-      <form onsubmit={handleSaveschema}>
+      <form
+        onsubmit={(event) => {
+          event.preventDefault();
+          handleSaveschema(event);
+        }}
+      >
         <div class="modal-content">
           <div class="form-section">
             <div class="section-header" class:text-right={$isRTL}>
@@ -1509,6 +1532,18 @@
     </div>
   </div>
 {/if}
+
+<!-- {#if showCreateTemplateModal}
+  <CreateTemplateModal
+    currentSpace={spaceName}
+    currentSubpath={$actualSubpath}
+    onClose={handleTemplateModalClose}
+    onSuccess={() => {
+      // Refresh the content list after successful creation
+      loadContents(true);
+    }}
+  />
+{/if} -->
 
 <style>
   .admin-contents-page {

@@ -1,16 +1,16 @@
 <script lang="ts">
-    import {onMount} from "svelte";
-    import {goto, params} from "@roxi/routify";
-    import {deleteEntity, getSpaceContents} from "@/lib/dmart_services";
-    import {Diamonds} from "svelte-loading-spinners";
-    import {_, locale} from "@/i18n";
-    import {derived} from "svelte/store";
-    import {Dmart, RequestType, ResourceType} from "@edraj/tsdmart";
-    import FolderForm from "@/components/forms/FolderForm.svelte";
-    import MetaForm from "@/components/forms/MetaForm.svelte";
-    import {formatNumberInText} from "@/lib/helpers";
+  import { onMount } from "svelte";
+  import { goto, params } from "@roxi/routify";
+  import { deleteEntity, getSpaceContents } from "@/lib/dmart_services";
+  import { Diamonds } from "svelte-loading-spinners";
+  import { _, locale } from "@/i18n";
+  import { derived } from "svelte/store";
+  import { Dmart, RequestType, ResourceType } from "@edraj/tsdmart";
+  import FolderForm from "@/components/forms/FolderForm.svelte";
+  import MetaForm from "@/components/forms/MetaForm.svelte";
+  import { formatNumberInText } from "@/lib/helpers";
 
-    $goto;
+  $goto;
 
   const isRTL = derived(
     locale,
@@ -1067,7 +1067,11 @@
               {$_("admin_space.modal.folder_config.description")}
             </p>
           </div>
-          <FolderForm bind:content={folderContent} on:foo={handleSaveFolder} />
+          <FolderForm
+            bind:content={folderContent}
+            space_name={spaceName}
+            on:foo={handleSaveFolder}
+          />
         </div>
       </div>
 
@@ -1091,8 +1095,8 @@
               : $_("admin_space.modal.creating")}
           {:else}
             {isEditMode
-              ? $_("admin_space.modal.update")
-              : $_("admin_space.modal.create")}
+              ? $_("admin_space.modal.updatebtn")
+              : $_("admin_space.modal.createbtn")}
           {/if}
         </button>
       </div>

@@ -1,10 +1,10 @@
 <script lang="ts">
-    import {_} from "@/i18n";
-    import {marked} from "marked";
-    import {getPostContent} from "@/lib/utils/postUtils";
+  import { _ } from "@/i18n";
+  import { marked } from "marked";
+  import { getPostContent } from "@/lib/utils/postUtils";
 
-    export let postData: any;
-  
+  export let postData: any;
+
   function isHtmlContent(content: string): boolean {
     if (typeof content !== "string") return false;
     const htmlRegex = /<[^>]*>/;
@@ -17,7 +17,7 @@
       /^#{1,6}\s+/m,
       /\*\*.*?\*\*/,
       /\*.*?\*/,
-      /\[.*?\]$$.*?$$/,
+      /\[.*?\]\(.*?\)/,
       /^[-*+]\s+/m,
       /\`\`\`[\s\S]*?\`\`\`/,
     ];
@@ -31,31 +31,48 @@
     );
     return meaningfulKeys.length > 0;
   }
+
+  function hasDirectContent(postData: any): boolean {
+    return !!(
+      postData?.payload?.body?.content ||
+      (postData?.payload?.body && typeof postData.payload.body === "string")
+    );
+  }
 </script>
 
 {#if getPostContent(postData)}
-  <section class="content-section">
+  <section class="content-section mx-6 my-4">
     <h3 class="content-title">
       <span class="title-accent"></span>
       {$_("post_detail.sections.content")}
     </h3>
 
     <div class="post-content">
-      <div class="content-text">
+      <div class="content-text my-4 mx-6">
         {#if postData?.payload?.content_type === "html"}
           <div
             class="prose prose-lg max-w-none prose-headings:text-gray-900 prose-headings:font-bold prose-p:text-gray-700 prose-p:leading-relaxed prose-strong:text-gray-900 prose-a:text-blue-600 hover:prose-a:text-blue-800 prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-gray-900 prose-pre:text-gray-100"
           >
             {@html getPostContent(postData)}
           </div>
+        {:else if postData?.payload?.content_type === "markdown"}
+          <div
+            class="markdown-content bg-white p-6 rounded-lg shadow-sm border"
+          >
+            <div
+              class="prose prose-lg max-w-none prose-headings:text-gray-900 prose-headings:font-bold prose-p:text-gray-700 prose-p:leading-relaxed prose-strong:text-gray-900 prose-a:text-blue-600 hover:prose-a:text-blue-800 prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-gray-900 prose-pre:text-gray-100"
+            >
+              {@html marked(getPostContent(postData))}
+            </div>
+          </div>
         {:else if postData?.payload?.content_type === "json"}
-          {#if isHtmlContent(getPostContent(postData))}
+          {#if hasDirectContent(postData) && isHtmlContent(getPostContent(postData))}
             <div
               class="prose prose-lg max-w-none prose-headings:text-gray-900 prose-headings:font-bold prose-p:text-gray-700 prose-p:leading-relaxed prose-strong:text-gray-900 prose-a:text-blue-600 hover:prose-a:text-blue-800 prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-gray-900 prose-pre:text-gray-100"
             >
               {@html getPostContent(postData)}
             </div>
-          {:else if isMarkdownContent(getPostContent(postData))}
+          {:else if hasDirectContent(postData) && isMarkdownContent(getPostContent(postData))}
             <div
               class="markdown-content bg-white p-6 rounded-lg shadow-sm border"
             >
@@ -69,9 +86,7 @@
             <div
               class="structured-content bg-white rounded-lg shadow-sm border p-6"
             >
-              <h4
-                class="text-xl font-bold text-gray-900 mb-4 border-b pb-2"
-              >
+              <h4 class="text-xl font-bold text-gray-900 mb-4 border-b pb-2">
                 Content Details
               </h4>
               {#each Object.entries(postData.payload.body) as [key, value]}
@@ -79,11 +94,9 @@
                   <div class="mb-3 flex flex-wrap">
                     <span
                       class="font-semibold text-gray-700 capitalize min-w-24"
-                      >{key.replace("_", " ")}:</span
+                      >{key.replace(/_/g, " ")}:</span
                     >
-                    <span class="ml-3 text-gray-600 flex-1"
-                      >{value}</span
-                    >
+                    <span class="ml-3 text-gray-600 flex-1">{value}</span>
                   </div>
                 {/if}
               {/each}
@@ -102,21 +115,14 @@
               {/if}
             </div>
           {:else}
-            <details
-              class="bg-gradient-to-r from-gray-50 to-gray-100 p-6 rounded-lg border shadow-sm"
-            >
-              <summary
-                class="cursor-pointer font-semibold text-gray-800 mb-3 hover:text-blue-600 transition-colors duration-200"
-                >📊 View Raw Data</summary
+            <!-- Fallback for simple structured data display -->
+            <div class="bg-white p-6 rounded-lg shadow-sm border">
+              <div
+                class="whitespace-pre-wrap leading-relaxed text-gray-700 text-base font-mono"
               >
-              <pre
-                class="text-sm overflow-x-auto mt-4 bg-gray-900 text-green-400 p-4 rounded-md font-mono leading-relaxed">{JSON.stringify(
-                  postData.payload.body?.content ||
-                    postData.payload.body,
-                  null,
-                  2
-                )}</pre>
-            </details>
+                {getPostContent(postData)}
+              </div>
+            </div>
           {/if}
         {:else if getPostContent(postData) && (getPostContent(postData).includes("#") || getPostContent(postData).includes("*") || getPostContent(postData).includes("_"))}
           <div
@@ -192,6 +198,8 @@
   }
 
   .markdown-content {
-    font-feature-settings: "kern" 1, "liga" 1;
+    font-feature-settings:
+      "kern" 1,
+      "liga" 1;
   }
 </style>
