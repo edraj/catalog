@@ -69,7 +69,6 @@
         type,
         filename,
       };
-      console.log("currentPreview : ", currentPreview.url);
 
       previewModal = true;
     }

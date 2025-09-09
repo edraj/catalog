@@ -2,7 +2,6 @@
   import { createEventDispatcher, onMount } from "svelte";
   import { getTemplates } from "@/lib/dmart_services";
   import { derived, writable } from "svelte/store";
-  import { log } from "@/lib/logger";
 
   const dispatch = createEventDispatcher();
   export let content = "";
@@ -73,8 +72,6 @@
     }
 
     for (const template of templates) {
-      console.log("Checking template:", template);
-
       const templateContent = template?.attributes?.payload?.body.content;
 
       const fields = extractFields(templateContent);
@@ -85,11 +82,6 @@
           templateContent,
           fields
         );
-
-        console.log("actualContent:", actualContent);
-        console.log("templateContent:", templateContent);
-        console.log("fields:", fields);
-        console.log("filledValues:", filledValues);
 
         if (
           filledValues &&
