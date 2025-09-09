@@ -345,6 +345,7 @@
                 body: folderContent,
                 content_type: "json",
               },
+              is_active: true,
             },
           },
         ],

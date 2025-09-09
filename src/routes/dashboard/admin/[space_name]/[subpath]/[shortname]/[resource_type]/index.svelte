@@ -93,7 +93,7 @@
 
   function handleJsonContentChange(event) {
     jsonEditorContent = event.detail;
-    jsonEditFormValue = JSON.stringify(jsonEditorContent);
+    jsonEditFormValue = jsonEditorContent;
     jsonEditForm.update((form) => ({
       ...form,
       content: jsonEditFormValue,
@@ -892,7 +892,7 @@
                           {#if itemDataValue.payload.content_type === "html"}
                             <div class="bg-gray-50 p-4 rounded-lg">
                               <div class="text-sm prose max-w-none">
-                                {@html itemDataValue.payload.body
+                                {@html itemDataValue?.payload?.body
                                   .replace(/&nbsp;/g, " ")
                                   .replace(/&amp;/g, "&")
                                   .replace(/&lt;/g, "<")
@@ -2173,6 +2173,7 @@
                   {#if isTemplateBasedItem}
                     <TemplateEditor
                       content={templateEditorContent}
+                      space_name={spaceNameValue}
                       on:contentChange={(e) =>
                         handleTemplateContentChange(e.detail)}
                     />
