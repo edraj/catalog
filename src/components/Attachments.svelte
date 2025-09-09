@@ -1,22 +1,27 @@
 <script lang="ts">
-    import {Dmart, RequestType, ResourceType} from "@edraj/tsdmart";
-    import Media from "./Media.svelte";
-    import {successToastMessage} from "@/lib/toasts_messages";
-    import {CloseOutline, DownloadOutline, EyeOutline, TrashBinSolid,} from "flowbite-svelte-icons";
-    import {_} from "@/i18n";
-    import {
-        getFileExtension,
-        getFileTypeIcon,
-        isAudioFile,
-        isImageFile,
-        isPdfFile,
-        isVideoFile,
-        removeFileExtension
-    } from "../lib/fileUtils";
-    import type {Attachment} from "../lib/types";
-    import {log} from "../lib/logger";
+  import { Dmart, RequestType, ResourceType } from "@edraj/tsdmart";
+  import Media from "./Media.svelte";
+  import { successToastMessage } from "@/lib/toasts_messages";
+  import {
+    CloseOutline,
+    DownloadOutline,
+    EyeOutline,
+    TrashBinSolid,
+  } from "flowbite-svelte-icons";
+  import { _ } from "@/i18n";
+  import {
+    getFileExtension,
+    getFileTypeIcon,
+    isAudioFile,
+    isImageFile,
+    isPdfFile,
+    isVideoFile,
+    removeFileExtension,
+  } from "../lib/fileUtils";
+  import type { Attachment } from "../lib/types";
+  import { log } from "../lib/logger";
 
-    let {
+  let {
     attachments = [],
     space_name,
     subpath,
@@ -33,7 +38,6 @@
 
   let previewModal = $state(false);
   let currentPreview = $state(null);
-
 
   function openPreview(attachment: Attachment) {
     const filename = attachment?.attributes?.payload?.body;
@@ -65,6 +69,7 @@
         type,
         filename,
       };
+      console.log("currentPreview : ", currentPreview.url);
 
       previewModal = true;
     }
@@ -97,8 +102,9 @@
 
   async function handleDelete(attachment: Attachment) {
     if (
-      confirm(`Are you sure want to delete ${attachment.shortname} attachment`) ===
-      false
+      confirm(
+        `Are you sure want to delete ${attachment.shortname} attachment`
+      ) === false
     ) {
       return;
     }
@@ -400,7 +406,6 @@
     background: white;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   }
-
 
   .no-attachments {
     text-align: center;

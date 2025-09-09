@@ -72,11 +72,7 @@
     const contentType = item.payload.content_type;
 
     if (contentType === "html") {
-      if (item.payload.schema_shortname === "templates") {
-        return item.payload.body.content || "";
-      } else {
-        return marked(item.payload.body || "");
-      }
+      return marked(item.payload.body || "");
     } else if (contentType === "json") {
       if (item.payload.body && typeof item.payload.body === "object") {
         return item.payload.body;
@@ -896,7 +892,7 @@
                           {#if itemDataValue.payload.content_type === "html"}
                             <div class="bg-gray-50 p-4 rounded-lg">
                               <div class="text-sm prose max-w-none">
-                                {@html itemDataValue.payload.body
+                                {@html itemDataValue?.payload?.body
                                   .replace(/&nbsp;/g, " ")
                                   .replace(/&amp;/g, "&")
                                   .replace(/&lt;/g, "<")

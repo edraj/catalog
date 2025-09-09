@@ -26,7 +26,14 @@
     ([$originalTemplate, $templateFields, $fieldValues]) => {
       if (!$originalTemplate) return "";
 
-      let newContent = $originalTemplate.attributes.payload.body.content;
+      let newContent = $originalTemplate?.attributes?.payload?.body;
+      if (typeof newContent === "object" && newContent?.content) {
+        newContent = newContent.content;
+      }
+
+      if (typeof newContent !== "string") {
+        newContent = String(newContent ?? "");
+      }
 
       $templateFields.forEach((field) => {
         const placeholder = `{{${field.name}:${field.type}}}`;
@@ -54,21 +61,22 @@
     if (!content || templates.length === 0) return;
 
     let actualContent = content;
-    if (typeof content === "object" && content.content) {
-      actualContent = content.content;
+
+    if (typeof content === "object" && content) {
+      actualContent = content;
     } else if (typeof content === "string") {
       try {
-        const parsed = JSON.parse(content);
-        if (parsed.content) {
-          actualContent = parsed.content;
-        }
+        actualContent = content;
       } catch (e) {
         actualContent = content;
       }
     }
 
     for (const template of templates) {
-      const templateContent = template.attributes.payload.body.content;
+      console.log("Checking template:", template);
+
+      const templateContent = template?.attributes?.payload?.body.content;
+
       const fields = extractFields(templateContent);
 
       if (fields.length > 0) {
@@ -77,6 +85,11 @@
           templateContent,
           fields
         );
+
+        console.log("actualContent:", actualContent);
+        console.log("templateContent:", templateContent);
+        console.log("fields:", fields);
+        console.log("filledValues:", filledValues);
 
         if (
           filledValues &&
@@ -110,44 +123,43 @@
   }
 
   function extractValuesFromContent(filledContent, templateContent, fields) {
-    let values = {};
-    let tempContent = templateContent;
+    const values = {};
 
-    fields.forEach((field) => {
+    const plainContent = filledContent.replace(/<[^>]+>/g, "");
+
+    for (const field of fields) {
       const placeholder = `{{${field.name}:${field.type}}}`;
-      tempContent = tempContent.replace(placeholder, `__FIELD_${field.name}__`);
-    });
 
-    let escapedTemplate = tempContent.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const templateLine = templateContent
+        .split("\n")
+        .find((line) => line.includes(placeholder));
 
-    fields.forEach((field) => {
-      const marker = `__FIELD_${field.name}__`;
-      escapedTemplate = escapedTemplate.replace(marker, "(.+?)");
-    });
+      if (!templateLine) continue;
 
-    try {
-      const regex = new RegExp(escapedTemplate, "s");
-      const match = filledContent.match(regex);
+      const prefix = templateLine.split(placeholder)[0].trim();
 
+      const regex = new RegExp(
+        prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s*:?\\s*(.+)",
+        "i"
+      );
+
+      const match = plainContent.match(regex);
       if (match) {
-        fields.forEach((field, index) => {
-          let value = match[index + 1] || "";
-          if (field.type === "checkbox") {
-            if (typeof value === "string") {
-              value = value === "true" || value === "1" || value === "on";
-            } else {
-              value = !!value;
-            }
-          }
-          values[field.name] = value;
-        });
-        return values;
+        let value = match[1].trim();
+
+        if (field.type === "number") {
+          value = Number(value);
+        } else if (field.type === "checkbox") {
+          value = ["true", "1", "on"].includes(value.toLowerCase());
+        }
+
+        values[field.name] = value;
+      } else {
+        return null;
       }
-    } catch (error) {
-      console.error("Error extracting values:", error);
     }
 
-    return null;
+    return values;
   }
 
   function getFieldType(type) {
@@ -177,7 +189,7 @@
   <div class="template-editor">
     <div class="template-info">
       <h4>
-        Editing Template: {originalTemplate.attributes.payload.body.title}
+        Editing Template: {originalTemplate.shortname || "Template"}
       </h4>
       <p class="template-description">
         Edit the dynamic fields below. The template structure will remain

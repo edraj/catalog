@@ -378,10 +378,7 @@
       };
     } else if (entryType === "template") {
       entity = {
-        body: {
-          title: title,
-          content: generateContentFromTemplate(),
-        },
+        body: generateContentFromTemplate(),
         tags: tags,
         is_active: isPublish,
         ...(isAdmin && shortname ? { shortname } : {}),
@@ -458,7 +455,6 @@
     let content = selectedTemplate.schema;
 
     Object.keys(templateFormData).forEach((key) => {
-      // Match both {{key}} and {{key:type}} patterns
       const placeholderPattern = new RegExp(
         `\\{\\{${key}(?::[^}]+)?\\}\\}`,
         "g"
@@ -1198,7 +1194,6 @@
       </div>
 
       {#if selectedTemplate && selectedTemplate.schema}
-        <!-- Template Preview Section -->
         <div class="section">
           <div class="section-header">
             <FileCheckSolid class="section-icon" />
@@ -1211,7 +1206,6 @@
           </div>
         </div>
 
-        <!-- Template Form Section -->
         <div class="section">
           <div class="section-header">
             <FileCheckSolid class="section-icon" />
@@ -1226,10 +1220,8 @@
                     {#if field.required}
                       <span class="required-indicator">*</span>
                     {/if}
-                    <!-- Added type indicator for clarity -->
                     <span class="field-type">({field.originalType})</span>
                   </label>
-                  <!-- Handle textarea separately from regular inputs -->
                   {#if field.type === "textarea"}
                     <textarea
                       id="template-{field.name}"
@@ -1255,7 +1247,6 @@
           </div>
         </div>
 
-        <!-- Generated Content Preview -->
         {#if Object.keys(templateFormData).length > 0}
           <div class="section">
             <div class="section-header">
