@@ -45,15 +45,16 @@
   let itemResourceType;
   let isAdmin = $state(false);
   let selectedEditorType = $state("html");
+  let contentType = $state("json");
 
   let entryType = $state("content");
   let availableSchemas = $state([]);
   let availableTemplates = $state([]);
   let selectedSchema = $state(null);
-  let selectedTemplate = $state(null); // Added selectedTemplate state
+  let selectedTemplate = $state(null);
   let loadingSchemas = $state(false);
   let jsonFormData = $state({});
-  let templateFormData = $state({}); // Added templateFormData state
+  let templateFormData = $state({});
   let entity;
   const isRTL = derived(
     locale,
@@ -385,16 +386,16 @@
         is_active: isPublish,
         ...(isAdmin && shortname ? { shortname } : {}),
       };
+      contentType = "html";
+      schema_shortname = "templates";
     } else {
       entity = {
-        body: {
-          title: title,
-          content: getContent(),
-        },
+        body: getContent(),
         tags: tags,
         is_active: isPublish,
         ...(isAdmin && shortname ? { shortname } : {}),
       };
+      contentType = "html";
     }
     const response = await createEntity(
       entity,
@@ -402,7 +403,8 @@
       selectedSubpath,
       resource_type,
       workflow_shortname,
-      schema_shortname
+      schema_shortname,
+      contentType
     );
     const msg = isPublish
       ? $_("create_entry.success.published")

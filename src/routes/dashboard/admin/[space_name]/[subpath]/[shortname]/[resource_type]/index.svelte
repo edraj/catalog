@@ -72,7 +72,11 @@
     const contentType = item.payload.content_type;
 
     if (contentType === "html") {
-      return marked(item.payload.body || "");
+      if (item.payload.schema_shortname === "templates") {
+        return item.payload.body.content || "";
+      } else {
+        return marked(item.payload.body || "");
+      }
     } else if (contentType === "json") {
       if (item.payload.body && typeof item.payload.body === "object") {
         return item.payload.body;
@@ -93,7 +97,7 @@
 
   function handleJsonContentChange(event) {
     jsonEditorContent = event.detail;
-    jsonEditFormValue = JSON.stringify(jsonEditorContent);
+    jsonEditFormValue = jsonEditorContent;
     jsonEditForm.update((form) => ({
       ...form,
       content: jsonEditFormValue,
@@ -2173,6 +2177,7 @@
                   {#if isTemplateBasedItem}
                     <TemplateEditor
                       content={templateEditorContent}
+                      space_name={spaceNameValue}
                       on:contentChange={(e) =>
                         handleTemplateContentChange(e.detail)}
                     />

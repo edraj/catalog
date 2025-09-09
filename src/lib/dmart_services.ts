@@ -239,8 +239,8 @@ export async function createEntity(
             relationships: [],
             tags: data.tags || [],
             payload: {
-              content_type: content_type,
               schema_shortname: schema_shortname,
+              content_type: content_type,
               body: data.body,
             },
           },
@@ -261,7 +261,7 @@ export async function createEntity(
             relationships: [],
             tags: data.tags,
             payload: {
-              content_type: "json",
+              content_type: content_type,
               body: data.body,
             },
           },
@@ -414,6 +414,7 @@ export async function updateRole(
 }
 
 export async function getTemplates(
+  space_name: string = "applications",
   scope: string = "managed",
   limit = 100,
   offset = 0,
@@ -422,7 +423,7 @@ export async function getTemplates(
   const response = await Dmart.query(
     {
       type: QueryType.search,
-      space_name: "applications",
+      space_name: space_name,
       subpath: "/templates",
       search: "-@shortname:schema",
       limit: limit,

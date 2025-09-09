@@ -2,9 +2,12 @@
   import { createEventDispatcher, onMount } from "svelte";
   import { getTemplates } from "@/lib/dmart_services";
   import { derived, writable } from "svelte/store";
+  import { log } from "@/lib/logger";
 
   const dispatch = createEventDispatcher();
   export let content = "";
+  export let space_name = "";
+
   let onContentChange = (newContent) => {
     content = newContent;
   };
@@ -41,7 +44,7 @@
   }
 
   onMount(async () => {
-    const response = await getTemplates();
+    const response = await getTemplates(space_name);
     templates = response.records;
 
     await detectAndParseTemplate();
@@ -50,13 +53,27 @@
   async function detectAndParseTemplate() {
     if (!content || templates.length === 0) return;
 
+    let actualContent = content;
+    if (typeof content === "object" && content.content) {
+      actualContent = content.content;
+    } else if (typeof content === "string") {
+      try {
+        const parsed = JSON.parse(content);
+        if (parsed.content) {
+          actualContent = parsed.content;
+        }
+      } catch (e) {
+        actualContent = content;
+      }
+    }
+
     for (const template of templates) {
       const templateContent = template.attributes.payload.body.content;
       const fields = extractFields(templateContent);
 
       if (fields.length > 0) {
         const filledValues = extractValuesFromContent(
-          content,
+          actualContent,
           templateContent,
           fields
         );
