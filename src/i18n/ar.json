@@ -1824,5 +1824,6 @@
   "schema_editor.max_items_placeholder": "الحد الأقصى للعناصر",
   "schema_editor.object_options_title": "خيارات الكائن",
   "schema_editor.remove_property_button": "إزالة الخاصية",
-  "schema_editor.empty_state": "لم يتم تعريف أي خصائص. انقر على \"إضافة خاصية\" للبدء."
+  "schema_editor.empty_state": "لم يتم تعريف أي خصائص. انقر على \"إضافة خاصية\" للبدء.",
+  "chat": "دردشة"
 }

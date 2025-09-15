@@ -1,40 +1,43 @@
 <script lang="ts">
-    import {goto, params} from "@roxi/routify";
-    import {onMount} from "svelte";
-    import {
-        checkCurrentUserReactedIdea,
-        createComment,
-        createReaction,
-        deleteReactionComment,
-        getAvatar,
-        getEntity,
-        getEntityAttachmentsCount,
-    } from "@/lib/dmart_services";
-    import {formatDate, formatNumberInText} from "@/lib/helpers";
-    import Attachments from "@/components/Attachments.svelte";
-    import {ResourceType} from "@edraj/tsdmart";
-    import {user} from "@/stores/user";
-    import {errorToastMessage, successToastMessage,} from "@/lib/toasts_messages";
-    import Avatar from "@/components/Avatar.svelte";
-    import {Diamonds} from "svelte-loading-spinners";
-    import {
-        ArrowLeftOutline,
-        CheckCircleSolid,
-        ClockOutline,
-        CloseCircleSolid,
-        EditOutline,
-        EyeSlashSolid,
-        EyeSolid,
-        HeartSolid,
-        MessagesSolid,
-        TagOutline,
-        TrashBinSolid,
-        UserCircleOutline,
-    } from "flowbite-svelte-icons";
-    import {_, locale} from "@/i18n";
-    import {derived} from "svelte/store";
+  import { goto, params } from "@roxi/routify";
+  import { onMount } from "svelte";
+  import {
+    checkCurrentUserReactedIdea,
+    createComment,
+    createReaction,
+    deleteReactionComment,
+    getAvatar,
+    getEntity,
+    getEntityAttachmentsCount,
+  } from "@/lib/dmart_services";
+  import { formatDate, formatNumberInText } from "@/lib/helpers";
+  import Attachments from "@/components/Attachments.svelte";
+  import { ResourceType } from "@edraj/tsdmart";
+  import { user } from "@/stores/user";
+  import {
+    errorToastMessage,
+    successToastMessage,
+  } from "@/lib/toasts_messages";
+  import Avatar from "@/components/Avatar.svelte";
+  import { Diamonds } from "svelte-loading-spinners";
+  import {
+    ArrowLeftOutline,
+    CheckCircleSolid,
+    ClockOutline,
+    CloseCircleSolid,
+    EditOutline,
+    EyeSlashSolid,
+    EyeSolid,
+    HeartSolid,
+    MessagesSolid,
+    TagOutline,
+    TrashBinSolid,
+    UserCircleOutline,
+  } from "flowbite-svelte-icons";
+  import { _, locale } from "@/i18n";
+  import { derived } from "svelte/store";
 
-    $goto;
+  $goto;
 
   let entity = $state(null);
   let isLoading = $state(false);
@@ -145,6 +148,14 @@
       "managed"
     );
     if (entity) {
+      // Calculate counts directly from entity attachments
+      counts = {
+        reaction: entity.attachments?.reaction?.length || 0,
+        reply: entity.attachments?.comment?.length || 0,
+        comment: entity.attachments?.comment?.length || 0,
+        media: entity.attachments?.media?.length || 0,
+      };
+
       userReactionEntry = await checkCurrentUserReactedIdea(
         $user.shortname,
         entity.shortname,
@@ -155,13 +166,15 @@
   }
 
   async function refreshCounts() {
-    counts = await getEntityAttachmentsCount(
-      entity.shortname,
-      $params.space_name,
-      $params.subpath
-    );
-    if (counts.length > 0) {
-      counts = counts[0].attributes;
+    // Counts are now calculated directly in refreshIdea()
+    // This function is kept for compatibility with existing calls
+    if (entity) {
+      counts = {
+        reaction: entity.attachments?.reaction?.length || 0,
+        reply: entity.attachments?.comment?.length || 0,
+        comment: entity.attachments?.comment?.length || 0,
+        media: entity.attachments?.media?.length || 0,
+      };
     }
   }
 
@@ -486,9 +499,9 @@
         </div>
 
         <!-- Comments List -->
-        {#if entity.attachments && entity.attachments.reply && entity.attachments.reply.length > 0}
+        {#if entity.attachments && entity.attachments.comment && entity.attachments.comment.length > 0}
           <div class="comments-list">
-            {#each entity.attachments.reply as reply}
+            {#each entity.attachments.comment as reply}
               <div class="comment-item">
                 <div class="comment-avatar">
                   {#await getAvatar(reply.attributes.owner_shortname) then avatar}
@@ -523,7 +536,7 @@
                   </div>
                   <p class="comment-text">
                     {reply.attributes.payload?.body?.embedded ||
-                      reply.attributes.payload?.body ||
+                      reply.attributes.payload?.body?.body ||
                       $_("entry_detail.no_content")}
                   </p>
                 </div>

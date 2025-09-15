@@ -1728,5 +1728,6 @@
   "schema_editor.max_items_placeholder": "زۆرترین ئایتم",
   "schema_editor.object_options_title": "هەڵبژاردەکانی شێوە",
   "schema_editor.remove_property_button": "سڕینەوەی خاسیەت",
-  "schema_editor.empty_state": "هیچ خاسیەتێک نەدراوە. کرتە بکە لە \"زیادکردنی خاسیەت\" بۆ دەستپێکردن."
+  "schema_editor.empty_state": "هیچ خاسیەتێک نەدراوە. کرتە بکە لە \"زیادکردنی خاسیەت\" بۆ دەستپێکردن.",
+  "chat": "چات"
 }

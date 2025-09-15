@@ -1,33 +1,40 @@
 <script lang="ts">
-    import {goto, params} from "@roxi/routify";
-    import {onMount} from "svelte";
-    import HtmlEditor from "@/components/editors/HtmlEditor.svelte";
-    import Attachments from "@/components/Attachments.svelte";
-    import {attachAttachmentsToEntity, getEntity, updateEntity,} from "@/lib/dmart_services";
-    import {errorToastMessage, successToastMessage,} from "@/lib/toasts_messages";
-    import {ResourceType} from "@edraj/tsdmart";
-    import {
-        ArrowLeftOutline,
-        CloseCircleOutline,
-        CloudArrowUpOutline,
-        FileCheckSolid,
-        FileImportSolid,
-        FloppyDiskSolid,
-        PaperClipOutline,
-        PaperPlaneSolid,
-        PlusOutline,
-        StarOutline,
-        TagOutline,
-        TextUnderlineOutline,
-        TrashBinSolid,
-        UploadOutline,
-    } from "flowbite-svelte-icons";
-    import {Diamonds} from "svelte-loading-spinners";
-    import {_, locale} from "@/i18n";
-    import {derived} from "svelte/store";
-    import {formatNumberInText} from "@/lib/helpers";
+  import { goto, params } from "@roxi/routify";
+  import { onMount } from "svelte";
+  import HtmlEditor from "@/components/editors/HtmlEditor.svelte";
+  import Attachments from "@/components/Attachments.svelte";
+  import {
+    attachAttachmentsToEntity,
+    getEntity,
+    updateEntity,
+  } from "@/lib/dmart_services";
+  import {
+    errorToastMessage,
+    successToastMessage,
+  } from "@/lib/toasts_messages";
+  import { ResourceType } from "@edraj/tsdmart";
+  import {
+    ArrowLeftOutline,
+    CloseCircleOutline,
+    CloudArrowUpOutline,
+    FileCheckSolid,
+    FileImportSolid,
+    FloppyDiskSolid,
+    PaperClipOutline,
+    PaperPlaneSolid,
+    PlusOutline,
+    StarOutline,
+    TagOutline,
+    TextUnderlineOutline,
+    TrashBinSolid,
+    UploadOutline,
+  } from "flowbite-svelte-icons";
+  import { Diamonds } from "svelte-loading-spinners";
+  import { _, locale } from "@/i18n";
+  import { derived } from "svelte/store";
+  import { formatNumberInText } from "@/lib/helpers";
 
-    let entity = $state(null);
+  let entity = $state(null);
   let isLoading = $state(false);
   let isLoadingPage = $state(true);
   let content = "";
@@ -111,7 +118,7 @@
       $params.resource_type,
       entityData,
       entity.workflow_shortname,
-      entity.attributes?.payload?.schema_shortname
+      entity.payload?.schema_shortname
     );
     const msg = isPublish
       ? $_("entry_edit.published")

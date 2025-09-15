@@ -41,26 +41,57 @@
 
   function getLocalizedDisplayName(entity) {
     const displayname = entity.attributes?.displayname;
-    if (!displayname) return $_("my_entries.untitled");
 
+    // If displayname is null or undefined, use shortname as fallback
+    if (!displayname) {
+      return entity.shortname || $_("my_entries.untitled");
+    }
+
+    // If displayname is a string (not an object), return it directly
+    if (typeof displayname === "string") {
+      return displayname;
+    }
+
+    // If displayname is an object with localized names
     const localizedName =
       displayname[$locale] ||
       displayname.en ||
       displayname.ar ||
       displayname.ku;
-    return localizedName || $_("my_entries.untitled");
+    return localizedName || entity.shortname || $_("my_entries.untitled");
   }
 
   function getContentPreview(entity) {
     const payload = entity.attributes?.payload;
-    if (!payload) return "";
+    if (!payload || !payload.body) return "";
 
+    const body = payload.body;
+
+    // Handle different content types
     if (entity.resource_type === "content") {
-      if (payload.body?.embedded) {
-        return payload.body.embedded;
+      // For HTML content type, body is a string
+      if (payload.content_type === "html" && typeof body === "string") {
+        return body;
       }
-      if (typeof payload.body === "string") {
-        return payload.body;
+
+      // For JSON content type, body might be an object
+      if (payload.content_type === "json") {
+        if (typeof body === "object") {
+          // Try to extract meaningful text from JSON object
+          if (body.body && typeof body.body === "string") {
+            return body.body;
+          }
+          // If it's an empty object or complex structure, return a summary
+          return JSON.stringify(body).substring(0, 100) + "...";
+        }
+        if (typeof body === "string") {
+          return body;
+        }
+      }
+
+      // For other content types or if body is a string
+      if (typeof body === "string") {
+        return body;
       }
     }
 
@@ -110,6 +141,7 @@
     isLoading = true;
     try {
       const response = await getMyEntities();
+      console.log("Fetched entities:", response);
 
       const rawEntities = response?.records || response || [];
 
@@ -133,8 +165,10 @@
         space_name: entity.attributes?.space_name || "",
         subpath: entity?.subpath || "",
         owner_shortname: entity.attributes?.owner_shortname || "",
-        comment: entity.attachments?.reply?.length ?? 0,
+        comment: entity.attachments?.comment?.length ?? 0,
         reaction: entity.attachments?.reaction?.length ?? 0,
+        // Store the full entity for debugging
+        _raw: entity,
       }));
     } catch (error) {
       console.error("Error fetching entities:", error);
@@ -195,7 +229,7 @@
           break;
         case "created_at":
           aValue = new Date(a.raw_created_at);
-          bValue = new Date(b.raw_updated_at);
+          bValue = new Date(b.raw_created_at);
           break;
         case "reactions":
           aValue = a.reaction || 0;

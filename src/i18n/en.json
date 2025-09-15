@@ -1832,5 +1832,6 @@
   "schema_editor.max_items_placeholder": "Max items",
   "schema_editor.object_options_title": "Object Options",
   "schema_editor.remove_property_button": "Remove Property",
-  "schema_editor.empty_state": "No properties defined. Click \"Add Property\" to start."
+  "schema_editor.empty_state": "No properties defined. Click \"Add Property\" to start.",
+  "chat": "Chat"
 }
