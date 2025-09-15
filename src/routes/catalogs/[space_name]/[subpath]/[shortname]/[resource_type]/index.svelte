@@ -429,9 +429,9 @@
                   </div>
                   <div class="relationship-meta">
                     <span class="relationship-type">
-                      {relationship.related_to?.resource_type || "unknown"}
+                      {relationship.attributes?.relation || "unknown"}
                     </span>
-                    {#if relationship.attributes?.role === "editor"}
+                    {#if relationship.attributes?.relation === "editor"}
                       <svg
                         class="click-icon"
                         fill="none"

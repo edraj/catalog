@@ -1,13 +1,19 @@
 <script lang="ts">
-    import {onMount} from "svelte";
-    import {getSpaceContents, getSpaces, getSpaceTags, searchInCatalog,} from "@/lib/dmart_services";
-    import {Diamonds} from "svelte-loading-spinners";
-    import {goto} from "@roxi/routify";
-    import {_, locale} from "@/i18n";
-    import {derived} from "svelte/store";
-    import {formatNumber, formatNumberInText} from "@/lib/helpers";
+  import { onMount } from "svelte";
+  import {
+    getSpaceContents,
+    getSpaces,
+    getSpaceTags,
+    searchInCatalog,
+  } from "@/lib/dmart_services";
+  import { Diamonds } from "svelte-loading-spinners";
+  import { goto } from "@roxi/routify";
+  import { _, locale } from "@/i18n";
+  import { derived } from "svelte/store";
+  import { formatNumber, formatNumberInText } from "@/lib/helpers";
+  import { QueryType } from "@edraj/tsdmart";
 
-    $goto;
+  $goto;
 
   let isLoading = $state(true);
   let spaces = $state([]);
@@ -33,7 +39,15 @@
       const response = await getSpaces(false, "public");
 
       const statsPromises = response.records.map(async (space) => {
-        const data = await getSpaceContents(space.shortname, "/", "public");
+        const data = await getSpaceContents(
+          space.shortname,
+          "/",
+          "public",
+          100,
+          0,
+          false,
+          QueryType.counters
+        );
         const tags = await getSpaceTags(space.shortname);
 
         if (tags.status === "success" && tags.records.length > 0) {

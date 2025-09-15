@@ -1,7 +1,11 @@
 <script lang="ts">
-    import {transformFormToJson, transformJsonToForm,} from "@/lib/schemaEditorUtils";
+  import {
+    transformFormToJson,
+    transformJsonToForm,
+  } from "@/lib/schemaEditorUtils";
+  import { _, locale } from "@/i18n";
 
-    let {
+  let {
     content = $bindable({}),
   }: {
     content: any;
@@ -143,26 +147,30 @@
 </script>
 
 <div class="schema-editor">
-  <h2 class="schema-title">Schema Editor</h2>
+  <h2 class="schema-title">{$_("schema_editor.title")}</h2>
 
   <div class="schema-content">
     <!-- Schema Metadata -->
     <div class="metadata-section">
       <div class="form-group">
-        <label for="schema-title">Schema Title</label>
+        <label for="schema-title"
+          >{$_("schema_editor.schema_title_label")}</label
+        >
         <input
           id="schema-title"
           type="text"
-          placeholder="Schema title"
+          placeholder={$_("schema_editor.schema_title_placeholder")}
           bind:value={formContent.title}
         />
       </div>
       <div class="form-group">
-        <label for="schema-description">Schema Description</label>
+        <label for="schema-description"
+          >{$_("schema_editor.schema_description_label")}</label
+        >
         <input
           id="schema-description"
           type="text"
-          placeholder="Schema description"
+          placeholder={$_("schema_editor.schema_description_placeholder")}
           bind:value={formContent.description}
         />
       </div>
@@ -171,13 +179,13 @@
     <!-- Properties -->
     <div class="properties-section">
       <div class="section-header">
-        <h3>Properties</h3>
+        <h3>{$_("schema_editor.properties_title")}</h3>
         <button
           type="button"
           class="btn btn-primary btn-sm"
           onclick={() => addProperty()}
         >
-          Add Property
+          {$_("schema_editor.add_property_button")}
         </button>
       </div>
 
@@ -193,13 +201,15 @@
               >
                 <div class="property-info">
                   <span class="property-name"
-                    >{property.name || "New Property"}</span
+                    >{property.name || $_("schema_editor.new_property")}</span
                   >
                   {#if property.type}
                     <span class="badge badge-type">{property.type}</span>
                   {/if}
                   {#if isRequired(property.name)}
-                    <span class="badge badge-required">Required</span>
+                    <span class="badge badge-required"
+                      >{$_("schema_editor.required")}</span
+                    >
                   {/if}
                 </div>
                 <svg
@@ -219,17 +229,21 @@
                 <div class="property-form">
                   <div class="form-grid">
                     <div class="form-group">
-                      <label for={`property-name-${index}`}>Property Name</label
+                      <label for={`property-name-${index}`}
+                        >{$_("schema_editor.property_name_label")}</label
                       >
                       <input
                         id={`property-name-${index}`}
                         type="text"
-                        placeholder="Property name"
+                        placeholder={$_(
+                          "schema_editor.property_name_placeholder"
+                        )}
                         bind:value={property.name}
                       />
                     </div>
                     <div class="form-group">
-                      <label for={`property-type-${index}`}>Property Type</label
+                      <label for={`property-type-${index}`}
+                        >{$_("schema_editor.property_type_label")}</label
                       >
                       <select
                         id={`property-type-${index}`}
@@ -241,22 +255,28 @@
                       </select>
                     </div>
                     <div class="form-group">
-                      <label for={`property-title-${index}`}>Title</label>
+                      <label for={`property-title-${index}`}
+                        >{$_("schema_editor.property_title_label")}</label
+                      >
                       <input
                         id={`property-title-${index}`}
                         type="text"
-                        placeholder="Title"
+                        placeholder={$_(
+                          "schema_editor.property_title_placeholder"
+                        )}
                         bind:value={property.title}
                       />
                     </div>
                     <div class="form-group">
                       <label for={`property-description-${index}`}
-                        >Description</label
+                        >{$_("schema_editor.property_description_label")}</label
                       >
                       <input
                         id={`property-description-${index}`}
                         type="text"
-                        placeholder="Description"
+                        placeholder={$_(
+                          "schema_editor.property_description_placeholder"
+                        )}
                         bind:value={property.description}
                       />
                     </div>
@@ -265,91 +285,117 @@
                   <!-- Type-specific options -->
                   {#if property.type === "string"}
                     <div class="type-options">
-                      <h4>String Options</h4>
+                      <h4>{$_("schema_editor.string_options_title")}</h4>
                       <div class="form-grid">
                         <div class="form-group">
                           <label for={`property-minLength-${index}`}
-                            >Min Length</label
+                            >{$_("schema_editor.min_length_label")}</label
                           >
                           <input
                             id={`property-minLength-${index}`}
                             type="number"
-                            placeholder="Min length"
+                            placeholder={$_(
+                              "schema_editor.min_length_placeholder"
+                            )}
                             bind:value={property.minLength}
                           />
                         </div>
                         <div class="form-group">
                           <label for={`property-maxLength-${index}`}
-                            >Max Length</label
+                            >{$_("schema_editor.max_length_label")}</label
                           >
                           <input
                             id={`property-maxLength-${index}`}
                             type="number"
-                            placeholder="Max length"
+                            placeholder={$_(
+                              "schema_editor.max_length_placeholder"
+                            )}
                             bind:value={property.maxLength}
                           />
                         </div>
                         <div class="form-group">
                           <label for={`property-pattern-${index}`}
-                            >Pattern (regex)</label
+                            >{$_("schema_editor.pattern_label")}</label
                           >
                           <input
                             id={`property-pattern-${index}`}
                             type="text"
-                            placeholder="Pattern"
+                            placeholder={$_(
+                              "schema_editor.pattern_placeholder"
+                            )}
                             bind:value={property.pattern}
                           />
                         </div>
                         <div class="form-group">
-                          <label for={`property-format-${index}`}>Format</label>
+                          <label for={`property-format-${index}`}
+                            >{$_("schema_editor.format_label")}</label
+                          >
                           <select
                             id={`property-format-${index}`}
                             bind:value={property.format}
                           >
-                            <option value="">None</option>
-                            <option value="date-time">Date-Time</option>
-                            <option value="date">Date</option>
-                            <option value="time">Time</option>
-                            <option value="email">Email</option>
-                            <option value="uri">URI</option>
+                            <option value=""
+                              >{$_("schema_editor.format_none")}</option
+                            >
+                            <option value="date-time"
+                              >{$_("schema_editor.format_date_time")}</option
+                            >
+                            <option value="date"
+                              >{$_("schema_editor.format_date")}</option
+                            >
+                            <option value="time"
+                              >{$_("schema_editor.format_time")}</option
+                            >
+                            <option value="email"
+                              >{$_("schema_editor.format_email")}</option
+                            >
+                            <option value="uri"
+                              >{$_("schema_editor.format_uri")}</option
+                            >
                           </select>
                         </div>
                       </div>
                     </div>
                   {:else if property.type === "number" || property.type === "integer"}
                     <div class="type-options">
-                      <h4>Number Options</h4>
+                      <h4>{$_("schema_editor.number_options_title")}</h4>
                       <div class="form-grid">
                         <div class="form-group">
                           <label for={`property-minimum-${index}`}
-                            >Minimum</label
+                            >{$_("schema_editor.minimum_label")}</label
                           >
                           <input
                             id={`property-minimum-${index}`}
                             type="number"
-                            placeholder="Minimum value"
+                            placeholder={$_(
+                              "schema_editor.minimum_placeholder"
+                            )}
                             bind:value={property.minimum}
                           />
                         </div>
                         <div class="form-group">
                           <label for={`property-maximum-${index}`}
-                            >Maximum</label
+                            >{$_("schema_editor.maximum_label")}</label
                           >
                           <input
                             id={`property-maximum-${index}`}
                             type="number"
-                            placeholder="Maximum value"
+                            placeholder={$_(
+                              "schema_editor.maximum_placeholder"
+                            )}
                             bind:value={property.maximum}
                           />
                         </div>
                         <div class="form-group">
                           <label for={`property-multipleOf-${index}`}
-                            >Multiple Of</label
+                            >{$_("schema_editor.multiple_of_label")}</label
                           >
                           <input
                             id={`property-multipleOf-${index}`}
                             type="number"
-                            placeholder="Multiple of"
+                            placeholder={$_(
+                              "schema_editor.multiple_of_placeholder"
+                            )}
                             bind:value={property.multipleOf}
                           />
                         </div>
@@ -357,16 +403,16 @@
                     </div>
                   {:else if property.type === "array"}
                     <div class="type-options">
-                      <h4>Array Options</h4>
+                      <h4>{$_("schema_editor.array_options_title")}</h4>
                       <div class="array-section">
                         <div class="array-header">
-                          <span>Array Items</span>
+                          <span>{$_("schema_editor.array_items_label")}</span>
                           <button
                             type="button"
                             class="btn btn-secondary btn-sm"
                             onclick={() => addArrayItem(`properties.${index}`)}
                           >
-                            Configure Items
+                            {$_("schema_editor.configure_items_button")}
                           </button>
                         </div>
 
@@ -393,14 +439,18 @@
                             {#if property.items.type === "object" && property.items.properties}
                               <div class="nested-section">
                                 <div class="nested-header">
-                                  <span>Object Properties</span>
+                                  <span
+                                    >{$_(
+                                      "schema_editor.object_properties_label"
+                                    )}</span
+                                  >
                                   <button
                                     type="button"
                                     class="btn btn-secondary btn-sm"
                                     onclick={() =>
                                       addProperty(`properties.${index}.items`)}
                                   >
-                                    Add Property
+                                    {$_("schema_editor.add_property_button")}
                                   </button>
                                 </div>
 
@@ -412,19 +462,25 @@
                                           <div class="form-group">
                                             <label
                                               for={`item-property-name-${index}-${itemIndex}`}
-                                              >Name</label
+                                              >{$_(
+                                                "schema_editor.property_name_label"
+                                              )}</label
                                             >
                                             <input
                                               id={`item-property-name-${index}-${itemIndex}`}
                                               type="text"
-                                              placeholder="Property name"
+                                              placeholder={$_(
+                                                "schema_editor.property_name_placeholder"
+                                              )}
                                               bind:value={itemProperty.name}
                                             />
                                           </div>
                                           <div class="form-group">
                                             <label
                                               for={`item-property-type-${index}-${itemIndex}`}
-                                              >Type</label
+                                              >{$_(
+                                                "schema_editor.property_type_label"
+                                              )}</label
                                             >
                                             <select
                                               id={`item-property-type-${index}-${itemIndex}`}
@@ -448,7 +504,7 @@
                                                 itemIndex
                                               )}
                                           >
-                                            Remove
+                                            {$_("schema_editor.remove_button")}
                                           </button>
                                         </div>
                                       </div>
@@ -461,23 +517,27 @@
                             <div class="form-grid">
                               <div class="form-group">
                                 <label for={`array-minItems-${index}`}
-                                  >Min Items</label
+                                  >{$_("schema_editor.min_items_label")}</label
                                 >
                                 <input
                                   id={`array-minItems-${index}`}
                                   type="number"
-                                  placeholder="Min items"
+                                  placeholder={$_(
+                                    "schema_editor.min_items_placeholder"
+                                  )}
                                   bind:value={property.minItems}
                                 />
                               </div>
                               <div class="form-group">
                                 <label for={`array-maxItems-${index}`}
-                                  >Max Items</label
+                                  >{$_("schema_editor.max_items_label")}</label
                                 >
                                 <input
                                   id={`array-maxItems-${index}`}
                                   type="number"
-                                  placeholder="Max items"
+                                  placeholder={$_(
+                                    "schema_editor.max_items_placeholder"
+                                  )}
                                   bind:value={property.maxItems}
                                 />
                               </div>
@@ -488,16 +548,18 @@
                     </div>
                   {:else if property.type === "object"}
                     <div class="type-options">
-                      <h4>Object Options</h4>
+                      <h4>{$_("schema_editor.object_options_title")}</h4>
                       <div class="object-section">
                         <div class="object-header">
-                          <span>Object Properties</span>
+                          <span
+                            >{$_("schema_editor.object_properties_label")}</span
+                          >
                           <button
                             type="button"
                             class="btn btn-secondary btn-sm"
                             onclick={() => addProperty(`properties.${index}`)}
                           >
-                            Add Property
+                            {$_("schema_editor.add_property_button")}
                           </button>
                         </div>
 
@@ -509,19 +571,25 @@
                                   <div class="form-group">
                                     <label
                                       for={`nested-property-name-${index}-${nestedIndex}`}
-                                      >Name</label
+                                      >{$_(
+                                        "schema_editor.property_name_label"
+                                      )}</label
                                     >
                                     <input
                                       id={`nested-property-name-${index}-${nestedIndex}`}
                                       type="text"
-                                      placeholder="Property name"
+                                      placeholder={$_(
+                                        "schema_editor.property_name_placeholder"
+                                      )}
                                       bind:value={nestedProperty.name}
                                     />
                                   </div>
                                   <div class="form-group">
                                     <label
                                       for={`nested-property-type-${index}-${nestedIndex}`}
-                                      >Type</label
+                                      >{$_(
+                                        "schema_editor.property_type_label"
+                                      )}</label
                                     >
                                     <select
                                       id={`nested-property-type-${index}-${nestedIndex}`}
@@ -545,7 +613,7 @@
                                         nestedIndex
                                       )}
                                   >
-                                    Remove
+                                    {$_("schema_editor.remove_button")}
                                   </button>
                                 </div>
                               </div>
@@ -564,7 +632,9 @@
                         checked={isRequired(property.name)}
                         onchange={() => toggleRequired(property.name)}
                       />
-                      <label for={`property-required-${index}`}>Required</label>
+                      <label for={`property-required-${index}`}
+                        >{$_("schema_editor.required")}</label
+                      >
                     </div>
 
                     <div class="property-actions">
@@ -573,7 +643,7 @@
                         class="btn btn-danger btn-sm"
                         onclick={() => removeProperty("properties", index)}
                       >
-                        Remove Property
+                        {$_("schema_editor.remove_property_button")}
                       </button>
                     </div>
                   </div>
@@ -584,7 +654,7 @@
         </div>
       {:else}
         <div class="empty-state">
-          <p>No properties defined. Click "Add Property" to start.</p>
+          <p>{$_("schema_editor.empty_state")}</p>
         </div>
       {/if}
     </div>
