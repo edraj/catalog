@@ -1533,18 +1533,6 @@
   </div>
 {/if}
 
-<!-- {#if showCreateTemplateModal}
-  <CreateTemplateModal
-    currentSpace={spaceName}
-    currentSubpath={$actualSubpath}
-    onClose={handleTemplateModalClose}
-    onSuccess={() => {
-      // Refresh the content list after successful creation
-      loadContents(true);
-    }}
-  />
-{/if} -->
-
 <style>
   .admin-contents-page {
     min-height: 100vh;

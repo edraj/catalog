@@ -640,7 +640,7 @@
     <div class="section">
       <div class="section-header">
         <FileCheckSolid class="section-icon" />
-        <h2>Entry Type</h2>
+        <h2>{$_("create_entry.entry_type.title")}</h2>
       </div>
       <div class="section-content">
         <div class="entry-type-selector">
@@ -652,10 +652,8 @@
               onchange={handleEntryTypeChange}
             />
             <span class="entry-type-label">
-              <strong>Content Entry</strong>
-              <small
-                >Create a traditional content entry with rich text editor</small
-              >
+              <strong>{$_("create_entry.entry_type.content_title")}</strong>
+              <small>{$_("create_entry.entry_type.content_description")}</small>
             </span>
           </label>
           <label class="entry-type-option">
@@ -666,8 +664,8 @@
               onchange={handleEntryTypeChange}
             />
             <span class="entry-type-label">
-              <strong>JSON Entry</strong>
-              <small>Create a structured entry based on a schema</small>
+              <strong>{$_("create_entry.entry_type.json_title")}</strong>
+              <small>{$_("create_entry.entry_type.json_description")}</small>
             </span>
           </label>
           <label class="entry-type-option">
@@ -678,8 +676,9 @@
               onchange={handleEntryTypeChange}
             />
             <span class="entry-type-label">
-              <strong>Template Entry</strong>
-              <small>Create a structured entry based on a template</small>
+              <strong>{$_("create_entry.entry_type.template_title")}</strong>
+              <small>{$_("create_entry.entry_type.template_description")}</small
+              >
             </span>
           </label>
         </div>
@@ -1089,24 +1088,26 @@
       <div class="section">
         <div class="section-header">
           <FileCheckSolid class="section-icon" />
-          <h2>Schema Selection</h2>
+          <h2>{$_("create_entry.schema.selection_title")}</h2>
         </div>
         <div class="section-content">
           {#if loadingSchemas}
             <div class="loading-state">
-              <p>Loading schemas...</p>
+              <p>{$_("create_entry.schema.loading")}</p>
             </div>
           {:else if availableSchemas.length > 0}
             <div class="schema-selector">
               <label for="schema-select" class="selector-label"
-                >Select Schema</label
+                >{$_("create_entry.schema.select_label")}</label
               >
               <select
                 id="schema-select"
                 onchange={handleSchemaChange}
                 class="destination-select"
               >
-                <option value="">Choose a schema...</option>
+                <option value=""
+                  >{$_("create_entry.schema.choose_option")}</option
+                >
                 {#each availableSchemas as schema}
                   <option value={schema.shortname}>{schema.title}</option>
                 {/each}
@@ -1125,7 +1126,7 @@
           {:else}
             <div class="empty-state">
               <FileCheckSolid class="empty-icon" />
-              <p>No schemas available for the selected space.</p>
+              <p>{$_("create_entry.schema.no_schemas")}</p>
             </div>
           {/if}
         </div>
@@ -1135,7 +1136,7 @@
         <div class="section">
           <div class="section-header">
             <FileCheckSolid class="section-icon" />
-            <h2>Entry Data</h2>
+            <h2>{$_("create_entry.schema.entry_data_title")}</h2>
           </div>
           <div class="section-content">
             <DynamicSchemaBasedForms
@@ -1151,24 +1152,26 @@
       <div class="section">
         <div class="section-header">
           <FileCheckSolid class="section-icon" />
-          <h2>Template Selection</h2>
+          <h2>{$_("create_entry.template.selection_title")}</h2>
         </div>
         <div class="section-content">
           {#if loadingSchemas}
             <div class="loading-state">
-              <p>Loading templates...</p>
+              <p>{$_("create_entry.template.loading")}</p>
             </div>
           {:else if availableTemplates.length > 0}
             <div class="template-selector">
               <label for="template-select" class="selector-label"
-                >Select Template</label
+                >{$_("create_entry.template.select_label")}</label
               >
               <select
                 id="template-select"
                 onchange={handleTemplateChange}
                 class="destination-select"
               >
-                <option value="">Choose a template...</option>
+                <option value=""
+                  >{$_("create_entry.template.choose_option")}</option
+                >
                 {#each availableTemplates as template}
                   <option value={template.shortname}>{template.title}</option>
                 {/each}
@@ -1187,7 +1190,7 @@
           {:else}
             <div class="empty-state">
               <FileCheckSolid class="empty-icon" />
-              <p>No templates available for the selected space.</p>
+              <p>{$_("create_entry.template.no_templates")}</p>
             </div>
           {/if}
         </div>
@@ -1197,7 +1200,7 @@
         <div class="section">
           <div class="section-header">
             <FileCheckSolid class="section-icon" />
-            <h2>Template Preview</h2>
+            <h2>{$_("create_entry.template.preview_title")}</h2>
           </div>
           <div class="section-content">
             <div class="template-preview">
@@ -1209,7 +1212,7 @@
         <div class="section">
           <div class="section-header">
             <FileCheckSolid class="section-icon" />
-            <h2>Fill Template Data</h2>
+            <h2>{$_("create_entry.template.fill_data_title")}</h2>
           </div>
           <div class="section-content">
             <div class="template-form">
@@ -1251,7 +1254,7 @@
           <div class="section">
             <div class="section-header">
               <FileCheckSolid class="section-icon" />
-              <h2>Generated Content Preview</h2>
+              <h2>{$_("create_entry.template.generated_content_title")}</h2>
             </div>
             <div class="section-content">
               <div class="content-preview">

@@ -474,13 +474,13 @@
         >
           <button
             onclick={() => showEditModal.set(true)}
-            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200"
+            class="bg-blue-600 hover:bg-blue-700 mx-2 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200"
           >
             {$_("admin_item_detail.actions.edit_item")}
           </button>
           <button
             onclick={handleDeleteItem}
-            class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200"
+            class="bg-red-600 hover:bg-red-700 mx-2 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200"
           >
             {$_("admin_item_detail.actions.delete_item")}
           </button>

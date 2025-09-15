@@ -727,7 +727,8 @@ export async function getSpaceContents(
   scope: string,
   limit = 100,
   offset = 0,
-  exact_subpath = false
+  exact_subpath = false,
+  queryType: QueryType = QueryType.search
 ): Promise<ApiQueryResponse> {
   let search = "";
   if (scope === "public") {
@@ -735,7 +736,7 @@ export async function getSpaceContents(
   }
   const response = await Dmart.query(
     {
-      type: QueryType.search,
+      type: queryType,
       space_name: spaceName,
       subpath: subpath,
       search: search,
@@ -877,7 +878,7 @@ export async function getSpaceTags(
       space_name: spaceName,
       subpath: "/",
       search: "",
-      limit: 1000,
+      limit: 10,
       sort_by: "",
       sort_type: SortyType.ascending,
       offset: 0,
@@ -1507,4 +1508,139 @@ export async function searchInCatalog(search: string = "") {
   const allRecordsArrays = await Promise.all(promises);
 
   return allRecordsArrays.flat();
+}
+
+export async function createMessages(data: any) {
+  let actionRequest: ActionRequest;
+
+  const messageId = `msg_${Date.now()}_${Math.random()
+    .toString(36)
+    .substring(2, 9)}`;
+
+  actionRequest = {
+    space_name: "messages",
+    request_type: RequestType.create,
+    records: [
+      {
+        resource_type: ResourceType.json,
+        shortname: messageId,
+        subpath: "messages",
+        attributes: {
+          is_active: true,
+          relationships: [],
+          tags: [],
+          payload: {
+            content_type: ContentType.json,
+            body: data,
+          },
+        },
+      },
+    ],
+  };
+
+  const response: ActionResponse = await Dmart.request(actionRequest);
+  if (response.status == "success" && response.records.length > 0) {
+    return response.records[0].shortname;
+  }
+  return null;
+}
+
+export async function fetchMessages(
+  currentUserShortname: string,
+  otherUserShortname: string
+) {
+  try {
+    const query = {
+      type: QueryType.search,
+      space_name: "messages",
+      subpath: "messages",
+      search: "",
+      sort_by: "created_at",
+      sort_type: SortyType.ascending,
+      retrieve_json_payload: true,
+      exact_subpath: true,
+      filter_shortnames: [],
+      retrieve_attachments: true,
+    };
+
+    const response = await Dmart.query(query);
+
+    if (response && response.status === "success") {
+      const filteredRecords = response.records.filter((record) => {
+        const payload = record.attributes.payload;
+        if (!payload || !payload.sender || !payload.receiver) return false;
+
+        return (
+          (payload.sender === currentUserShortname &&
+            payload.receiver === otherUserShortname) ||
+          (payload.sender === otherUserShortname &&
+            payload.receiver === currentUserShortname)
+        );
+      });
+
+      return {
+        ...response,
+        records: filteredRecords,
+      };
+    } else {
+      throw new Error("Failed to fetch messages");
+    }
+  } catch (err) {
+    console.error("Error fetching messages:", err);
+    return { status: "error", records: [] };
+  }
+}
+
+export async function getUserConversations(userShortname: string) {
+  try {
+    const query = {
+      type: QueryType.search,
+      space_name: "messages",
+      subpath: "messages",
+      search: "",
+      sort_by: "created_at",
+      sort_type: SortyType.descending,
+      retrieve_json_payload: true,
+      exact_subpath: true,
+      filter_shortnames: [],
+      retrieve_attachments: false,
+    };
+
+    const response = await Dmart.query(query);
+
+    if (response && response.status === "success") {
+      const userMessages = response.records.filter((record) => {
+        const payload = record.attributes.payload.body;
+        return (
+          payload &&
+          (payload.sender === userShortname ||
+            payload.receiver === userShortname)
+        );
+      });
+      const conversations = new Map();
+      userMessages.forEach((record) => {
+        const payload = record.attributes.payload.body;
+        const partnerId =
+          payload.sender === userShortname ? payload.receiver : payload.sender;
+
+        if (
+          !conversations.has(partnerId) ||
+          new Date(record.attributes.created_at) >
+            new Date(conversations.get(partnerId).attributes.created_at)
+        ) {
+          conversations.set(partnerId, record);
+        }
+      });
+
+      return {
+        status: "success",
+        records: Array.from(conversations.values()),
+      };
+    } else {
+      throw new Error("Failed to fetch conversations");
+    }
+  } catch (err) {
+    console.error("Error fetching conversations:", err);
+    return { status: "error", records: [] };
+  }
 }

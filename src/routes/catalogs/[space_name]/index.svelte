@@ -122,40 +122,61 @@
         return;
       }
 
-      const enhancedItems = await Promise.all(
-        response.records.map(async (item) => {
-          const enhancedItem = await enhanceItem(item);
-          return enhancedItem;
-        })
-      );
+      // Create basic items with loading states first
+      const basicItems = response.records.map((item) => ({
+        ...item,
+        owner_avatar: null,
+        reactionCount: 0,
+        commentCount: 0,
+        mediaCount: 0,
+        reportCount: 0,
+        shareCount: 0,
+        contentTags: [],
+        title:
+          item.attributes?.displayname?.[$locale] ||
+          item.attributes?.displayname?.en ||
+          item.attributes?.displayname?.ar ||
+          item.attributes?.payload?.body?.title ||
+          item.shortname,
+        folderPath: item.subpath || "/",
+        folderName: getFolderNameFromPath(item.subpath || "/"),
+        isLoading: true, // Flag to show shimmer
+      }));
 
+      // Display basic items immediately
       if (reset) {
         if (isTagFiltered) {
-          tagFilteredContents = enhancedItems;
-          tagFilteredHasMore = enhancedItems.length === itemsPerLoad;
+          tagFilteredContents = basicItems;
+          tagFilteredHasMore = basicItems.length === itemsPerLoad;
         } else {
-          allContents = enhancedItems;
-          extractContentTags(enhancedItems);
+          allContents = basicItems;
+          extractContentTags(basicItems);
         }
       } else {
         if (isTagFiltered) {
-          tagFilteredContents = [...tagFilteredContents, ...enhancedItems];
-          tagFilteredHasMore = enhancedItems.length === itemsPerLoad;
+          tagFilteredContents = [...tagFilteredContents, ...basicItems];
+          tagFilteredHasMore = basicItems.length === itemsPerLoad;
         } else {
-          allContents = [...allContents, ...enhancedItems];
-          extractContentTags(enhancedItems, false);
+          allContents = [...allContents, ...basicItems];
+          extractContentTags(basicItems, false);
         }
       }
+
+      // Apply filters immediately with basic items
+      applyFiltersAndSort();
+
+      // Now enhance items asynchronously
+      enhanceItemsAsync(basicItems);
 
       if (isTagFiltered) {
         tagFilteredOffset += itemsPerLoad;
       } else {
         currentOffset += itemsPerLoad;
-        hasMoreItems = enhancedItems.length === itemsPerLoad;
+        hasMoreItems = enhanceItem.length === itemsPerLoad;
       }
 
       if (reset) {
-        totalItemsCount = enhancedItems.length;
+        totalItemsCount = enhanceItem.length;
       }
 
       applyFiltersAndSort();
@@ -191,14 +212,31 @@
     try {
       const results = await searchInCatalog(query.trim());
 
-      const enhancedSearchResults = await Promise.all(
-        results.map(async (item) => {
-          const enhancedItem = await enhanceItem(item);
-          return enhancedItem;
-        })
-      );
+      // Create basic search results first
+      const basicSearchResults = results.map((item) => ({
+        ...item,
+        owner_avatar: null,
+        reactionCount: 0,
+        commentCount: 0,
+        mediaCount: 0,
+        reportCount: 0,
+        shareCount: 0,
+        contentTags: [],
+        title:
+          item.attributes?.displayname?.[$locale] ||
+          item.attributes?.displayname?.en ||
+          item.attributes?.displayname?.ar ||
+          item.attributes?.payload?.body?.title ||
+          item.shortname,
+        folderPath: item.subpath || "/",
+        folderName: getFolderNameFromPath(item.subpath || "/"),
+        isLoading: true,
+      }));
 
-      searchResults = enhancedSearchResults;
+      searchResults = basicSearchResults;
+
+      // Enhance search results asynchronously
+      enhanceSearchResultsAsync(basicSearchResults);
 
       const sortedResults = [...searchResults];
       sortedResults.sort((a, b) => {
@@ -291,6 +329,103 @@
         folderPath: item.subpath || "/",
         folderName: getFolderNameFromPath(item.subpath || "/"),
       };
+    }
+  }
+
+  // Enhance items asynchronously and update the reactive state
+  async function enhanceItemsAsync(items) {
+    for (const item of items) {
+      try {
+        const [avatar, attachmentCounts] = await Promise.all([
+          getAvatar(item.attributes?.owner_shortname || item.shortname),
+          getEntityAttachmentsCount(
+            item.shortname,
+            spaceName,
+            item.subpath || "/"
+          ),
+        ]);
+
+        const attachmentData = attachmentCounts?.[0]?.attributes || {};
+        const contentTags = extractItemTags(item);
+
+        const enhancedData = {
+          owner_avatar: avatar,
+          reactionCount: attachmentData.reaction || 0,
+          commentCount: attachmentData.comment || 0,
+          mediaCount: attachmentData.media || 0,
+          reportCount: attachmentData.report || 0,
+          shareCount: attachmentData.share || 0,
+          contentTags: contentTags,
+          isLoading: false,
+        };
+
+        // Update the item in both possible arrays
+        updateItemInArray(allContents, item.shortname, enhancedData);
+        updateItemInArray(tagFilteredContents, item.shortname, enhancedData);
+
+        // Trigger reactivity update
+        allContents = allContents;
+        tagFilteredContents = tagFilteredContents;
+        applyFiltersAndSort();
+      } catch (error) {
+        console.warn(`Error enhancing item ${item.shortname}:`, error);
+        // Mark as loaded even if enhancement failed
+        updateItemInArray(allContents, item.shortname, { isLoading: false });
+        updateItemInArray(tagFilteredContents, item.shortname, {
+          isLoading: false,
+        });
+        allContents = allContents;
+        tagFilteredContents = tagFilteredContents;
+      }
+    }
+  }
+
+  // Helper function to update an item in an array
+  function updateItemInArray(array, shortname, updates) {
+    const index = array.findIndex((item) => item.shortname === shortname);
+    if (index !== -1) {
+      array[index] = { ...array[index], ...updates };
+    }
+  }
+
+  // Enhance search results asynchronously
+  async function enhanceSearchResultsAsync(items) {
+    for (const item of items) {
+      try {
+        const [avatar, attachmentCounts] = await Promise.all([
+          getAvatar(item.attributes?.owner_shortname || item.shortname),
+          getEntityAttachmentsCount(
+            item.shortname,
+            spaceName,
+            item.subpath || "/"
+          ),
+        ]);
+
+        const attachmentData = attachmentCounts?.[0]?.attributes || {};
+        const contentTags = extractItemTags(item);
+
+        const enhancedData = {
+          owner_avatar: avatar,
+          reactionCount: attachmentData.reaction || 0,
+          commentCount: attachmentData.comment || 0,
+          mediaCount: attachmentData.media || 0,
+          reportCount: attachmentData.report || 0,
+          shareCount: attachmentData.share || 0,
+          contentTags: contentTags,
+          isLoading: false,
+        };
+
+        // Update the item in search results
+        updateItemInArray(searchResults, item.shortname, enhancedData);
+
+        // Trigger reactivity update
+        searchResults = searchResults;
+      } catch (error) {
+        console.warn(`Error enhancing search item ${item.shortname}:`, error);
+        // Mark as loaded even if enhancement failed
+        updateItemInArray(searchResults, item.shortname, { isLoading: false });
+        searchResults = searchResults;
+      }
     }
   }
 
@@ -983,7 +1118,7 @@
                   {#if item.attributes?.payload?.body}
                     <div class="card-preview">
                       {#if item.attributes?.payload.content_type === "html"}
-                        {@const cleanText = item.attributes.payload.body
+                        {@const cleanText = item?.attributes?.payload?.body
                           .replace(/<[^>]*>/g, "")
                           .replace(/\s+/g, " ")
                           .trim()}
@@ -1004,26 +1139,26 @@
                             </div>
                           {/if}
                         </div>
-                      {:else if item.attributes?.payload.content_type === "json"}
+                      {:else if item?.attributes?.payload?.content_type === "json"}
                         <div class="p-3 preview-content">
-                          {#if typeof item.attributes.payload.body === "object"}
-                            {#if item.attributes.payload.body.title}
+                          {#if typeof item?.attributes?.payload?.body === "object"}
+                            {#if item?.attributes?.payload?.body?.title}
                               <h4
                                 class="text-sm font-semibold mb-2 text-gray-800"
                               >
-                                {item.attributes.payload.body.title}
+                                {item?.attributes?.payload?.body?.title}
                               </h4>
                             {/if}
-                            {#if item.attributes.payload.body.content}
+                            {#if item?.attributes?.payload?.body?.content}
                               {@const cleanContent =
-                                typeof item.attributes.payload.body.content ===
-                                "string"
-                                  ? item.attributes.payload.body.content
+                                typeof item?.attributes?.payload?.body
+                                  ?.content === "string"
+                                  ? item?.attributes?.payload?.body?.content
                                       .replace(/<[^>]*>/g, "")
                                       .replace(/\s+/g, " ")
                                       .trim()
                                   : JSON.stringify(
-                                      item.attributes.payload.body.content
+                                      item?.attributes?.payload?.body?.content
                                     )}
                               <div
                                 class="text-xs text-gray-600 leading-relaxed"
@@ -1034,32 +1169,31 @@
                                 {/if}
                               </div>
                             {/if}
-                            {#if item.attributes.payload.body.description}
+                            {#if item?.attributes?.payload?.body?.description}
                               <div class="text-xs text-gray-500 mt-1 italic">
-                                {item.attributes.payload.body.description}
+                                {item?.attributes?.payload?.body?.description}
                               </div>
                             {/if}
                           {:else}
                             {@const jsonPreview = JSON.stringify(
-                              item.attributes.payload.body,
+                              item?.attributes?.payload?.body,
                               null,
                               2
                             )}
                             <pre
                               class="text-xs overflow-hidden text-gray-700 font-mono bg-white p-2 rounded border">
-            {jsonPreview.substring(0, 200)}
-            {#if jsonPreview.length > 200}
+                              {jsonPreview.substring(0, 200)}
+                              {#if jsonPreview.length > 200}
                                 <span class="text-gray-400">...</span>
                               {/if}
-          </pre>
+                            </pre>
                           {/if}
                         </div>
-                      {:else}
-                        <!-- Plain text or other content types -->
-                        {@const cleanText = item.attributes.payload.body
-                          .replace(/<[^>]*>/g, "") // Remove HTML tags
-                          .replace(/\s+/g, " ") // Normalize whitespace
-                          .trim()}
+                        <!-- {:else}
+                        {@const cleanText = item?.attributes?.payload?.body
+                          ?.replace(/<[^>]*>/g, "")
+                          ?.replace(/\s+/g, " ")
+                          ?.trim()}
                         <div
                           class="bg-gray-50 p-3 rounded-lg preview-content border"
                         >
@@ -1093,6 +1227,7 @@
                             </div>
                           {/if}
                         </div>
+                      {/if} -->
                       {/if}
                     </div>
                   {/if}
