@@ -10,6 +10,11 @@
     getConversationPartners,
     getUsersByShortnames,
   } from "@/lib/dmart_services";
+  import { _ } from "@/i18n";
+  import {
+    successToastMessage,
+    errorToastMessage,
+  } from "@/lib/toasts_messages";
 
   let socket = null;
   let isConnected = $state(false);
@@ -53,16 +58,16 @@
       currentUser = $user;
 
       if (!currentUser?.shortname) {
-        console.error("No current user found - user might not be logged in");
-        connectionStatus = "User not logged in";
+        errorToastMessage($_("messaging.toast_user_not_logged_in"));
+        connectionStatus = $_("messaging.toast_user_not_logged_in");
         return;
       }
 
       await loadUsers();
       connectWebSocket();
     } catch (error) {
-      console.error("Failed to initialize chat:", error);
-      connectionStatus = "Failed to initialize";
+      errorToastMessage($_("messaging.toast_failed_initialize") + ": " + error);
+      connectionStatus = $_("messaging.toast_failed_initialize");
     }
   }
 
@@ -71,7 +76,7 @@
       isUsersLoading = true;
 
       if (!currentUser?.shortname) {
-        console.error("No current user shortname available");
+        errorToastMessage($_("messaging.toast_no_user_shortname"));
         users = [];
         return;
       }
@@ -107,7 +112,6 @@
         );
 
         if (conversationPartners.length === 0) {
-          console.log("No conversation partners found");
           users = [];
           return;
         }
@@ -135,12 +139,11 @@
             })
             .filter((user) => user.isActive);
         } else {
-          console.log("Failed to fetch conversation partner details");
           users = [];
         }
       }
     } catch (error) {
-      console.error("Failed to load users:", error);
+      errorToastMessage($_("messaging.toast_failed_load_users") + ": " + error);
       users = [];
     } finally {
       isUsersLoading = false;
@@ -174,7 +177,9 @@
           const data = JSON.parse(event.data);
           handleWebSocketMessage(data);
         } catch (error) {
-          console.error("Failed to parse WebSocket message:", error);
+          errorToastMessage(
+            $_("messaging.toast_failed_parse_ws") + ": " + error
+          );
         }
       };
 
@@ -190,19 +195,19 @@
       };
 
       socket.onerror = (error) => {
-        console.error("WebSocket error:", error);
-        connectionStatus = "Connection Error";
+        errorToastMessage($_("messaging.toast_ws_error") + ": " + error);
+        connectionStatus = $_("messaging.toast_ws_error");
       };
     } catch (error) {
-      console.error("Failed to connect WebSocket:", error);
-      connectionStatus = "Failed to Connect";
+      errorToastMessage($_("messaging.toast_failed_connect_ws") + ": " + error);
+      connectionStatus = $_("messaging.toast_failed_connect_ws");
     }
   }
 
   function handleWebSocketMessage(data) {
     if (data.type === "connection_response") {
       if (data.message?.status === "success") {
-        console.log("WebSocket connection confirmed");
+        successToastMessage($_("messaging.toast_ws_connected"));
       }
       return;
     }
@@ -289,10 +294,12 @@
           }
         }
       } else {
-        console.log("No user selected, cannot determine message relevance");
+        errorToastMessage($_("messaging.toast_no_user_selected"));
       }
     } catch (error) {
-      console.error("Failed to fetch message by shortname:", error);
+      errorToastMessage(
+        $_("messaging.toast_failed_fetch_by_shortname") + ": " + error
+      );
     }
   }
 
@@ -311,7 +318,9 @@
         const cacheKey = `chat_${currentUser?.shortname}_${selectedUser.shortname}`;
         localStorage.setItem(cacheKey, JSON.stringify(messages));
       } catch (error) {
-        console.warn("Failed to update localStorage cache:", error);
+        errorToastMessage(
+          $_("messaging.toast_failed_update_cache") + ": " + error
+        );
       }
     }
 
@@ -350,7 +359,6 @@
               new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
           );
       } else {
-        console.log("No messages found or error in response");
         messages = [];
       }
 
@@ -362,10 +370,14 @@
           JSON.stringify(messages)
         );
       } catch (error) {
-        console.warn("Failed to cache messages in localStorage:", error);
+        errorToastMessage(
+          $_("messaging.toast_failed_load_cache") + ": " + error
+        );
       }
     } catch (error) {
-      console.error("Failed to load chat history:", error);
+      errorToastMessage(
+        $_("messaging.toast_failed_load_history") + ": " + error
+      );
       messages = conversationMessages.get(user.shortname) || [];
 
       if (messages.length === 0) {
@@ -377,7 +389,9 @@
             messages = JSON.parse(cachedMessages);
           }
         } catch (error) {
-          console.warn("Failed to load from localStorage cache:", error);
+          errorToastMessage(
+            $_("messaging.toast_failed_load_cache") + ": " + error
+          );
           messages = [];
         }
       }
@@ -439,11 +453,13 @@
           selectUser(selectedUser);
         }, 1000);
       } else {
-        console.error("Failed to persist message - no ID returned");
+        errorToastMessage($_("messaging.toast_failed_persist_message"));
         messages = messages.filter((msg) => msg.id !== tempId);
       }
     } catch (error) {
-      console.error("Failed to send message:", error);
+      errorToastMessage(
+        $_("messaging.toast_failed_send_message") + ": " + error
+      );
       messages = messages.filter((msg) => msg.id !== tempId);
     }
 
@@ -458,7 +474,9 @@
         const cacheKey = `chat_${currentUser?.shortname}_${selectedUser.shortname}`;
         localStorage.setItem(cacheKey, JSON.stringify(updatedMessages));
       } catch (error) {
-        console.warn("Failed to update localStorage cache:", error);
+        errorToastMessage(
+          $_("messaging.toast_failed_update_cache") + ": " + error
+        );
       }
     }
   }
@@ -478,20 +496,6 @@
     });
   }
 
-  function formatLastSeen(date) {
-    const now = new Date();
-    const lastSeen = new Date(date);
-    const diffMs = now.getTime() - lastSeen.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return "Just now";
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    return `${diffDays}d ago`;
-  }
-
   function handleKeydown(event) {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
@@ -508,7 +512,7 @@
 <div class="chat-container">
   <!-- Header -->
   <div class="chat-header">
-    <h1>Chat</h1>
+    <h1>{$_("messaging.title")}</h1>
     <div
       class="connection-status"
       class:connected={isConnected}
@@ -524,7 +528,9 @@
     <div class="users-sidebar">
       <div class="users-header">
         <h3>
-          {showAllUsers ? "All Users" : "Conversations"} ({users.length})
+          {showAllUsers
+            ? $_("messaging.all_users")
+            : $_("messaging.conversations")} ({users.length})
         </h3>
         <div class="users-header-actions">
           <button
@@ -557,13 +563,13 @@
           <div class="no-users">
             {#if showAllUsers}
               <div class="no-users-message">
-                <p>No users found</p>
+                <p>{$_("messaging.no_users_found")}</p>
               </div>
             {:else}
               <div class="no-conversations-message">
-                <p>No conversations yet</p>
+                <p>{$_("messaging.no_conversations_yet")}</p>
                 <button class="start-conversation-btn" onclick={toggleUserView}>
-                  Browse all users to start chatting
+                  {$_("messaging.browse_users_to_start")}
                 </button>
               </div>
             {/if}
@@ -606,10 +612,6 @@
                 <div class="user-status">
                   {#if user.online}
                     <span class="online-text">Online</span>
-                  {:else}
-                    <span class="offline-text"
-                      >Last seen {formatLastSeen(user.lastSeen)}</span
-                    >
                   {/if}
                 </div>
               </div>
@@ -646,10 +648,6 @@
               <div class="chat-user-status">
                 {#if selectedUser.online}
                   <span class="online-text">Online</span>
-                {:else}
-                  <span class="offline-text"
-                    >Last seen {formatLastSeen(selectedUser.lastSeen)}</span
-                  >
                 {/if}
               </div>
             </div>
@@ -662,7 +660,7 @@
             <div class="loading">Loading messages...</div>
           {:else if messages.length === 0}
             <div class="no-messages">
-              <p>No messages yet. Start the conversation!</p>
+              <p>{$_("messaging.no_messages_yet")}</p>
             </div>
           {:else}
             {#each messages as message (message.id)}
@@ -683,7 +681,7 @@
           <div class="message-input">
             <textarea
               bind:value={currentMessage}
-              placeholder="Type a message..."
+              placeholder={$_("messaging.type_a_message")}
               disabled={!isConnected}
               rows="1"
               onkeydown={handleKeydown}
@@ -710,8 +708,8 @@
       {:else}
         <div class="no-chat-selected">
           <div class="no-chat-message">
-            <h3>Select a user to start chatting</h3>
-            <p>Choose someone from the users list to begin a conversation</p>
+            <h3>{$_("messaging.select_user_to_chat")}</h3>
+            <p>{$_("messaging.choose_someone_from_list")}</p>
           </div>
         </div>
       {/if}
@@ -893,6 +891,7 @@
   .user-avatar {
     position: relative;
     margin-right: 0.75rem;
+    margin-left: 0.75rem;
   }
 
   .user-avatar img,
