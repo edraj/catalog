@@ -1703,8 +1703,6 @@ export async function getMessageByShortname(shortname: string) {
 
 export async function getConversationPartners(currentUserShortname: string) {
   try {
-    console.log("Fetching conversation partners for:", currentUserShortname);
-
     const query = {
       type: QueryType.search,
       space_name: "messages",
@@ -1720,7 +1718,6 @@ export async function getConversationPartners(currentUserShortname: string) {
     };
 
     const response = await Dmart.query(query);
-    console.log("Messages query response:", response);
 
     if (response && response.status === "success" && response.records) {
       const partnerShortnames = new Set<string>();
@@ -1740,11 +1737,9 @@ export async function getConversationPartners(currentUserShortname: string) {
       });
 
       const partners = Array.from(partnerShortnames);
-      console.log("Found conversation partners:", partners);
 
       return partners;
     } else {
-      console.log("No messages found or error in response");
       return [];
     }
   } catch (error) {
@@ -1776,8 +1771,6 @@ export async function getUsersByShortnames(
       );
     }
 
-    console.log("Fetching users by shortnames:", shortnames);
-
     const query: QueryRequest = {
       filter_shortnames: shortnames,
       type: QueryType.search,
@@ -1794,12 +1787,10 @@ export async function getUsersByShortnames(
     };
 
     const response = await Dmart.query(query, "managed");
-    console.log("Users by shortnames response:", response);
 
     return response;
   } catch (error) {
     console.error("Error fetching users by shortnames:", error);
-    // Return an empty response that matches the expected structure
     return await Dmart.query(
       {
         type: QueryType.search,

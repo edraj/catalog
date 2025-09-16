@@ -141,7 +141,6 @@
     isLoading = true;
     try {
       const response = await getMyEntities();
-      console.log("Fetched entities:", response);
 
       const rawEntities = response?.records || response || [];
 
