@@ -709,7 +709,6 @@
         <div class="no-chat-selected">
           <div class="no-chat-message">
             <h3>{$_("messaging.select_user_to_chat")}</h3>
-            <p>{$_("messaging.choose_someone_from_list")}</p>
           </div>
         </div>
       {/if}

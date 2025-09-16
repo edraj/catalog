@@ -1,171 +1,352 @@
 <script lang="ts">
-    import {
-        deleteAllNotification,
-        fetchMyNotifications,
-        getAvatar,
-        getEntity,
-        markNotification,
-    } from "@/lib/dmart_services";
-    import {user} from "@/stores/user";
-    import {onMount} from "svelte";
-    import {formatDate, truncateString} from "@/lib/helpers";
-    import Avatar from "@/components/Avatar.svelte";
-    import {SyncLoader} from "svelte-loading-spinners";
-    import {newNotificationType} from "@/stores/newNotificationType";
-    import {ResourceType} from "@edraj/tsdmart";
-    import {_} from "@/i18n";
-    import {goto} from "@roxi/routify";
+  import {
+    deleteAllNotification,
+    fetchMyNotifications,
+    getAvatar,
+    getEntity,
+    markNotification,
+  } from "@/lib/dmart_services";
+  import { user } from "@/stores/user";
+  import { onMount, onDestroy } from "svelte";
+  import { formatDate, truncateString } from "@/lib/helpers";
+  import Avatar from "@/components/Avatar.svelte";
+  import { SyncLoader } from "svelte-loading-spinners";
+  import { newNotificationType } from "@/stores/newNotificationType";
+  import { ResourceType } from "@edraj/tsdmart";
+  import { _ } from "@/i18n";
+  import { goto } from "@roxi/routify";
+  import { website } from "@/config";
+  import {
+    successToastMessage,
+    errorToastMessage,
+  } from "@/lib/toasts_messages";
 
-    $goto;
+  $goto;
 
   let notifications = $state([]);
   let isNotificationsLoading = $state(false);
+  let ws = $state(null);
+  let connectionStatus = $state("Disconnected");
+  let notificationError = $state(null);
 
   onMount(async () => {
     $newNotificationType = "";
     await loadNotifications();
+    connectWebSocket();
   });
+
+  onDestroy(() => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.close();
+    }
+  });
+
+  function connectWebSocket() {
+    if (!$user.signedin || !website.websocket) {
+      return;
+    }
+
+    try {
+      connectionStatus = "Connecting...";
+      const authToken = localStorage.getItem("authToken") || "";
+      ws = new WebSocket(`${website.websocket}?token=${authToken}`);
+
+      ws.onopen = () => {
+        connectionStatus = "Connected";
+        ws.send(
+          JSON.stringify({
+            type: "notification_subscription",
+            space_name: "Reports",
+            subpath: "__ALL__",
+          })
+        );
+
+        ws.send(
+          JSON.stringify({
+            type: "notification_subscription",
+            space_name: "personal",
+            subpath: `people/${$user.shortname}/notifications`,
+          })
+        );
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          handleWebSocketMessage(data);
+        } catch (error) {
+          errorToastMessage("Failed to parse notification");
+        }
+      };
+
+      ws.onclose = () => {
+        connectionStatus = "Disconnected";
+        setTimeout(() => {
+          if (connectionStatus === "Disconnected") {
+            connectWebSocket();
+          }
+        }, 3000);
+      };
+
+      ws.onerror = (error) => {
+        connectionStatus = "Error";
+        errorToastMessage("WebSocket connection error");
+      };
+    } catch (error) {
+      connectionStatus = "Error";
+      errorToastMessage("Failed to connect to notifications");
+    }
+  }
+
+  function handleWebSocketMessage(data) {
+    if (data.type === "connection_response") {
+      if (data.message?.status === "success") {
+        successToastMessage("WebSocket connected");
+      }
+      return;
+    }
+
+    if (data.type === "notification" && data.message) {
+      const message = data.message;
+
+      if (
+        message.action_type === "create" &&
+        (message.resource_type === "comment" ||
+          message.resource_type === "reaction")
+      ) {
+        $newNotificationType = `create_${message.resource_type}`;
+        loadNotifications(true);
+      }
+      return;
+    }
+
+    if (data.type === "notification_subscription" && data.message) {
+      const message = data.message;
+
+      if (
+        message.action_type === "create" &&
+        (message.space === "Reports" || message.space === "catalog")
+      ) {
+        $newNotificationType = message.action_type;
+        loadNotifications(true);
+      }
+      return;
+    }
+  }
 
   async function loadNotifications(force: boolean = false) {
     isNotificationsLoading = true;
-    let _notifications = await fetchMyNotifications($user.shortname);
+    notificationError = null;
 
-    const __notifications = await Promise.all(
-      _notifications.map(async (n) => {
-        const {
-          action_by,
-          entry_shortname,
-          entry_subpath,
-          resource_type,
-          is_read,
-        } = n.attributes.payload.body;
+    try {
+      let _notifications = await fetchMyNotifications($user.shortname);
 
-        const resourceTypeString = (function () {
-          switch (resource_type) {
-            case "ticket":
-              return "new updates";
-            case "reaction":
-              return "reacted";
-            case "comment":
-              return "New comment";
-          }
-        })();
+      const __notifications = await Promise.all(
+        _notifications.map(async (n) => {
+          try {
+            const {
+              action_by,
+              entry_shortname,
+              entry_subpath,
+              resource_type,
+              is_read,
+            } = n.attributes.payload.body;
 
-        let _notification: any = {
-          shortname: n.shortname,
-          created_at: formatDate(n.attributes.created_at),
-          action_by,
-          entry_shortname,
-          entry_subpath,
-          resource_type,
-          resourceTypeString: resourceTypeString,
-          is_read,
-        };
+            const resourceTypeString = (function () {
+              switch (resource_type) {
+                case "ticket":
+                  return "new updates";
+                case "reaction":
+                  return "reacted";
+                case "comment":
+                  return "New comment";
+                default:
+                  return "notification";
+              }
+            })();
 
-        if (
-          [ResourceType.comment, ResourceType.reaction].includes(
-            _notification.resource_type
-          ) &&
-          n.attributes.relationships.length
-        ) {
-          const parent_shortname =
-            n.attributes.relationships[0].related_to.shortname;
-          _notification.parent_shortname = parent_shortname;
-          let entity = await getEntity(
-            resource_type === ResourceType.ticket
-              ? entry_shortname
-              : parent_shortname
-          );
-          if (entity) {
-            _notification.title = entity.payload.body.title;
-            if (_notification.resource_type === ResourceType.comment) {
-              const attachments = entity.attachments as { comment?: any[] };
-              const r = (attachments.comment ?? []).filter((c) => {
-                return (
-                  c.shortname === n.attributes.payload.body.entry_shortname
+            let _notification: any = {
+              shortname: n.shortname,
+              created_at: formatDate(n.attributes.created_at),
+              action_by,
+              entry_shortname,
+              entry_subpath,
+              resource_type,
+              resourceTypeString: resourceTypeString,
+              is_read,
+              title: "Notification",
+              body: "",
+            };
+
+            if (
+              [ResourceType.comment, ResourceType.reaction].includes(
+                resource_type
+              ) &&
+              n.attributes.relationships?.length > 0
+            ) {
+              const parent_shortname =
+                n.attributes.relationships[0].related_to.shortname;
+              _notification.parent_shortname = parent_shortname;
+
+              try {
+                let entity = await getEntity(
+                  resource_type === ResourceType.ticket
+                    ? entry_shortname
+                    : parent_shortname,
+                  "catalog",
+                  "/",
+                  ResourceType.content,
+                  "public"
                 );
-              });
-              if (r.length) {
-                _notification.body = r[0].attributes.payload.body.body;
+
+                if (entity) {
+                  _notification.title = entity.payload?.body?.title || "Post";
+
+                  if (_notification.resource_type === ResourceType.comment) {
+                    const attachments = entity.attachments as {
+                      comment?: any[];
+                    };
+                    const commentAttachment = (attachments.comment ?? []).find(
+                      (c) =>
+                        c.shortname ===
+                        n.attributes.payload.body.entry_shortname
+                    );
+                    if (commentAttachment) {
+                      _notification.body =
+                        commentAttachment.attributes.payload.body.body;
+                    }
+                  }
+                }
+              } catch (entityError) {
+                _notification.title = "Content";
               }
             }
+
+            return _notification;
+          } catch (notificationError) {
+            return {
+              shortname: n.shortname,
+              created_at: formatDate(n.attributes.created_at),
+              action_by: n.attributes.payload.body.action_by || "Unknown",
+              resource_type:
+                n.attributes.payload.body.resource_type || "unknown",
+              resourceTypeString: "notification",
+              is_read: n.attributes.payload.body.is_read || "no",
+              title: "Notification",
+              body: "",
+            };
           }
-        }
+        })
+      );
 
-        return _notification;
-      })
-    );
+      if (notifications.length === 0 || force) {
+        notifications = __notifications;
+      } else {
+        const newNotifications = __notifications.filter((__notification) => {
+          return !notifications.some(
+            (notification) =>
+              __notification.shortname === notification.shortname
+          );
+        });
 
-    if (notifications.length === 0 || force) {
-      notifications = __notifications;
-    } else {
-      const newNotifications = __notifications.filter((__notification) => {
-        return !notifications.some(
-          (notification) => __notification.shortname === notification.shortname
-        );
-      });
+        const removedNotifications = notifications.filter((notification) => {
+          return !__notifications.some(
+            (__notification) =>
+              __notification.shortname === notification.shortname
+          );
+        });
 
-      const removedNotifications = notifications.filter((notification) => {
-        return !__notifications.some(
-          (__notification) =>
-            __notification.shortname === notification.shortname
-        );
-      });
+        notifications = notifications.filter((notification) => {
+          return !removedNotifications.some(
+            (removedNotification) =>
+              removedNotification.shortname === notification.shortname
+          );
+        });
 
-      notifications = notifications.filter((notification) => {
-        return !removedNotifications.some(
-          (removedNotification) =>
-            removedNotification.shortname === notification.shortname
-        );
-      });
-
-      notifications = [...notifications, ...newNotifications];
+        notifications = [...newNotifications, ...notifications];
+      }
+    } catch (error) {
+      errorToastMessage("Failed to load notifications");
     }
 
     isNotificationsLoading = false;
   }
 
   async function handleNotificationClick(notification) {
-    await markNotification($user.shortname, notification.shortname);
-    $goto("/dashboard/[shortname]", {
-      shortname: notification.parent_shortname,
-    });
+    try {
+      await markNotification($user.shortname, notification.shortname);
+
+      if (notification.parent_shortname) {
+        $goto("/dashboard/[shortname]", {
+          shortname: notification.parent_shortname,
+        });
+      } else if (notification.entry_shortname) {
+        $goto("/dashboard/[shortname]", {
+          shortname: notification.entry_shortname,
+        });
+      } else {
+        $goto("/dashboard");
+      }
+    } catch (error) {
+      errorToastMessage("Failed to open notification");
+    }
   }
 
   $effect(() => {
     if ($newNotificationType) {
-      loadNotifications().then((_) => {
+      loadNotifications(true).then((_) => {
         $newNotificationType = "";
       });
     }
   });
 
   async function handleReadAll() {
-    await Promise.all(
-      notifications.map(async (notification) => {
-        await markNotification($user.shortname, notification.shortname);
-      })
-    );
-    await loadNotifications(true);
+    try {
+      await Promise.all(
+        notifications.map(async (notification) => {
+          if (notification.is_read !== "yes") {
+            await markNotification($user.shortname, notification.shortname);
+          }
+        })
+      );
+      await loadNotifications(true);
+      successToastMessage("All notifications marked as read");
+    } catch (error) {
+      errorToastMessage("Failed to mark all as read");
+    }
   }
 
   async function handleUnReadAll() {
-    await Promise.all(
-      notifications.map(async (notification) => {
-        await markNotification($user.shortname, notification.shortname, false);
-      })
-    );
-    await loadNotifications(true);
+    try {
+      await Promise.all(
+        notifications.map(async (notification) => {
+          if (notification.is_read === "yes") {
+            await markNotification(
+              $user.shortname,
+              notification.shortname,
+              false
+            );
+          }
+        })
+      );
+      await loadNotifications(true);
+      successToastMessage("All notifications marked as unread");
+    } catch (error) {
+      errorToastMessage("Failed to mark all as unread");
+    }
   }
 
   async function handleDeleteAll() {
-    await Promise.all(
-      notifications.map(async (notification) => {
-        await deleteAllNotification(notification.shortname);
-      })
-    );
-    await loadNotifications(true);
+    try {
+      const shortnames = notifications.map((n) => n.shortname);
+      await deleteAllNotification(shortnames);
+      await loadNotifications(true);
+      successToastMessage("All notifications deleted");
+    } catch (error) {
+      errorToastMessage("Failed to delete all notifications");
+    }
   }
+
   async function handleRefresh() {
     await loadNotifications(true);
   }
@@ -186,10 +367,24 @@
       </div>
 
       <div class="flex items-center gap-2">
+        <!-- Connection Status Indicator -->
+        <div class="flex items-center gap-2 text-xs">
+          <div class="flex items-center gap-1">
+            <div
+              class="w-2 h-2 rounded-full {connectionStatus === 'Connected'
+                ? 'bg-green-500'
+                : connectionStatus === 'Connecting...'
+                  ? 'bg-yellow-500'
+                  : 'bg-red-500'}"
+            ></div>
+            <span class="text-gray-600">{connectionStatus}</span>
+          </div>
+        </div>
+
         <button
           onclick={handleRefresh}
           class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors duration-200"
-          aria-label="Mark all as read"
+          aria-label="Refresh notifications"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -204,7 +399,7 @@
             ></path>
           </svg>
           <span class="hidden sm:inline">
-            {$_("ReadAll")}
+            {$_("Refresh")}
           </span>
         </button>
         <button
@@ -282,6 +477,42 @@
       </div>
     </div>
 
+    <!-- Error Banner -->
+    {#if notificationError}
+      <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+        <div class="flex items-start gap-3">
+          <svg
+            class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+              clip-rule="evenodd"
+            ></path>
+          </svg>
+          <div class="flex-1">
+            <p class="text-sm font-medium text-red-800">Error</p>
+            <p class="text-sm text-red-700">{notificationError}</p>
+          </div>
+          <button
+            onclick={() => (notificationError = null)}
+            class="text-red-400 hover:text-red-600"
+            aria-label="Close error message"
+          >
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fill-rule="evenodd"
+                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                clip-rule="evenodd"
+              ></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    {/if}
+
     {#if isNotificationsLoading}
       <div class="flex justify-center py-16">
         <SyncLoader color="#3b82f6" size="50" unit="px" />
@@ -337,6 +568,8 @@
               <div class="flex-shrink-0">
                 {#await getAvatar(notification.action_by) then avatar}
                   <Avatar src={avatar} size="48" />
+                {:catch error}
+                  <Avatar src={null} size="48" />
                 {/await}
               </div>
 
@@ -355,7 +588,7 @@
                     </div>
 
                     <h4 class="font-medium text-gray-800 mb-2 line-clamp-2">
-                      {notification.title}
+                      {notification.title || "Notification"}
                     </h4>
 
                     <div class="text-gray-600 mb-3">
@@ -365,7 +598,7 @@
                             >{notification.resourceTypeString}</span
                           > to your post
                         </p>
-                      {:else if notification.resource_type === ResourceType.ticket}
+                      {:else if notification.resource_type === ResourceType.ticket || notification.resource_type === "ticket"}
                         <p>
                           Has <span class="font-medium text-blue-600"
                             >{notification.resourceTypeString}</span
@@ -375,7 +608,15 @@
                         <p>
                           <span class="font-medium text-green-600"
                             >{notification.resourceTypeString}</span
-                          >: {truncateString(notification.body)}
+                          >: {notification.body
+                            ? truncateString(notification.body)
+                            : "New comment"}
+                        </p>
+                      {:else}
+                        <p>
+                          <span class="font-medium text-gray-600"
+                            >{notification.resourceTypeString}</span
+                          >
                         </p>
                       {/if}
                     </div>

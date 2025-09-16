@@ -32,7 +32,7 @@
           ws.send(
             JSON.stringify({
               type: "notification_subscription",
-              space_name: "catalog",
+              space_name: "__ALL__",
               subpath: "__ALL__",
             })
           );
