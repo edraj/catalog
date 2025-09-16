@@ -1,13 +1,13 @@
 <script lang="ts">
-    import SearchBar from "./SearchBar.svelte";
-    import {onDestroy, onMount} from "svelte";
-    import {website} from "@/config.js";
-    import {newNotificationType} from "@/stores/newNotificationType";
-    import {_, locale, switchLocale} from "@/i18n";
-    import {roles, signout, user} from "@/stores/user";
-    import {goto} from "@roxi/routify";
+  import SearchBar from "./SearchBar.svelte";
+  import { onDestroy, onMount } from "svelte";
+  import { website } from "@/config.js";
+  import { newNotificationType } from "@/stores/newNotificationType";
+  import { _, locale, switchLocale } from "@/i18n";
+  import { roles, signout, user } from "@/stores/user";
+  import { goto } from "@roxi/routify";
 
-    $goto;
+  $goto;
 
   let ws = $state(null);
   let isMenuOpen = $state(false);
@@ -373,6 +373,27 @@
                         />
                       </svg>
                       <span>{$_("entries")}</span>
+                    </button>
+                    <button
+                      aria-label={`Chat & Messaging`}
+                      onclick={() => handleMenuItemClick("/messaging")}
+                      class="menu-item"
+                    >
+                      <svg
+                        class="menu-icon"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M7 8h10M7 12h6m-9 8l2-4h10a4 4 0 004-4V6a4 4 0 00-4-4H6a4 4 0 00-4 4v10a4 4 0 004 4z"
+                        />
+                      </svg>
+
+                      <span>{$_("chat")}</span>
                     </button>
                     <button
                       aria-label={`Notifications`}

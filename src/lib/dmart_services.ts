@@ -158,7 +158,9 @@ export async function getMyEntities(shortname: string = "") {
 
   const promises = spaces.map(async (space) => {
     let currentUser = get(user);
-    const search = `@owner_shortname:${shortname || currentUser.shortname}`;
+    const search = `@owner_shortname:${
+      shortname || currentUser.shortname
+    } and -@space_name:messages`;
 
     const queryRequest: QueryRequest = {
       filter_shortnames: [],
@@ -1522,7 +1524,7 @@ export async function createMessages(data: any) {
     request_type: RequestType.create,
     records: [
       {
-        resource_type: ResourceType.json,
+        resource_type: ResourceType.content,
         shortname: messageId,
         subpath: "messages",
         attributes: {
@@ -1545,10 +1547,7 @@ export async function createMessages(data: any) {
   return null;
 }
 
-export async function fetchMessages(
-  currentUserShortname: string,
-  otherUserShortname: string
-) {
+export async function getUserConversations(userShortname: string) {
   try {
     const query = {
       type: QueryType.search,
@@ -1560,66 +1559,25 @@ export async function fetchMessages(
       retrieve_json_payload: true,
       exact_subpath: true,
       filter_shortnames: [],
-      retrieve_attachments: true,
-    };
-
-    const response = await Dmart.query(query);
-
-    if (response && response.status === "success") {
-      const filteredRecords = response.records.filter((record) => {
-        const payload = record.attributes.payload;
-        if (!payload || !payload.sender || !payload.receiver) return false;
-
-        return (
-          (payload.sender === currentUserShortname &&
-            payload.receiver === otherUserShortname) ||
-          (payload.sender === otherUserShortname &&
-            payload.receiver === currentUserShortname)
-        );
-      });
-
-      return {
-        ...response,
-        records: filteredRecords,
-      };
-    } else {
-      throw new Error("Failed to fetch messages");
-    }
-  } catch (err) {
-    console.error("Error fetching messages:", err);
-    return { status: "error", records: [] };
-  }
-}
-
-export async function getUserConversations(userShortname: string) {
-  try {
-    const query = {
-      type: QueryType.search,
-      space_name: "messages",
-      subpath: "messages",
-      search: "",
-      sort_by: "created_at",
-      sort_type: SortyType.descending,
-      retrieve_json_payload: true,
-      exact_subpath: true,
-      filter_shortnames: [],
       retrieve_attachments: false,
+      limit: 1000,
     };
 
     const response = await Dmart.query(query);
 
     if (response && response.status === "success") {
       const userMessages = response.records.filter((record) => {
-        const payload = record.attributes.payload.body;
+        const payload = record.attributes.payload;
         return (
           payload &&
           (payload.sender === userShortname ||
             payload.receiver === userShortname)
         );
       });
+
       const conversations = new Map();
       userMessages.forEach((record) => {
-        const payload = record.attributes.payload.body;
+        const payload = record.attributes.payload;
         const partnerId =
           payload.sender === userShortname ? payload.receiver : payload.sender;
 
@@ -1642,5 +1600,212 @@ export async function getUserConversations(userShortname: string) {
   } catch (err) {
     console.error("Error fetching conversations:", err);
     return { status: "error", records: [] };
+  }
+}
+
+export async function getMessagesBetweenUsers(
+  currentUserShortname: string,
+  otherUserShortname: string
+) {
+  try {
+    const query = {
+      type: QueryType.search,
+      space_name: "messages",
+      subpath: "messages",
+      search: "",
+      sort_by: "created_at",
+      sort_type: SortyType.descending,
+      retrieve_json_payload: true,
+      exact_subpath: true,
+      filter_shortnames: [],
+      retrieve_attachments: false,
+    };
+
+    const response = await Dmart.query(query);
+
+    if (response && response.status === "success") {
+      const filteredRecords = response.records.filter((record) => {
+        const payload = record.attributes.payload?.body;
+        if (!payload) return false;
+
+        const isConversation =
+          (payload.sender === currentUserShortname &&
+            payload.receiver === otherUserShortname) ||
+          (payload.sender === otherUserShortname &&
+            payload.receiver === currentUserShortname);
+
+        return isConversation;
+      });
+
+      return {
+        status: "success",
+        records: filteredRecords,
+      };
+    } else {
+      throw new Error("Failed to fetch messages");
+    }
+  } catch (err) {
+    console.error("Error fetching messages between users:", err);
+    return { status: "error", records: [] };
+  }
+}
+
+export async function getMessageByShortname(shortname: string) {
+  try {
+    const query: QueryRequest = {
+      filter_shortnames: [shortname],
+      type: QueryType.search,
+      space_name: "messages",
+      subpath: "messages",
+      limit: 1,
+      sort_by: "created_at",
+      sort_type: SortyType.descending,
+      offset: 0,
+      search: "",
+      retrieve_json_payload: true,
+      retrieve_attachments: false,
+      exact_subpath: true,
+    };
+
+    const response = await Dmart.query(query);
+
+    if (
+      response &&
+      response.status === "success" &&
+      response.records &&
+      response.records.length > 0
+    ) {
+      const record = response.records[0];
+      const payload = record.attributes.payload;
+      const body = payload?.body;
+
+      if (!body) {
+        console.error("No message body found in payload");
+        return null;
+      }
+
+      return {
+        id: record.shortname,
+        senderId: body.sender,
+        receiverId: body.receiver,
+        content: body.content,
+        timestamp: new Date(record.attributes.created_at || Date.now()),
+        messageType: body.message_type || "text",
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error("Failed to fetch message by shortname:", error);
+    return null;
+  }
+}
+
+export async function getConversationPartners(currentUserShortname: string) {
+  try {
+    const query = {
+      type: QueryType.search,
+      space_name: "messages",
+      subpath: "messages",
+      search: "",
+      sort_by: "created_at",
+      sort_type: SortyType.descending,
+      retrieve_json_payload: true,
+      exact_subpath: true,
+      filter_shortnames: [],
+      retrieve_attachments: false,
+      limit: 1000, // Get more messages to find all conversation partners
+    };
+
+    const response = await Dmart.query(query);
+
+    if (response && response.status === "success" && response.records) {
+      const partnerShortnames = new Set<string>();
+
+      response.records.forEach((record) => {
+        const payload = record.attributes.payload?.body;
+        if (!payload) return;
+
+        // If current user is sender, add receiver as conversation partner
+        if (payload.sender === currentUserShortname && payload.receiver) {
+          partnerShortnames.add(payload.receiver);
+        }
+        // If current user is receiver, add sender as conversation partner
+        else if (payload.receiver === currentUserShortname && payload.sender) {
+          partnerShortnames.add(payload.sender);
+        }
+      });
+
+      const partners = Array.from(partnerShortnames);
+
+      return partners;
+    } else {
+      return [];
+    }
+  } catch (error) {
+    console.error("Error fetching conversation partners:", error);
+    return [];
+  }
+}
+
+export async function getUsersByShortnames(
+  shortnames: string[]
+): Promise<ApiQueryResponse> {
+  try {
+    if (shortnames.length === 0) {
+      return await Dmart.query(
+        {
+          type: QueryType.search,
+          space_name: "management",
+          subpath: "users",
+          limit: 0,
+          sort_by: "shortname",
+          sort_type: SortyType.ascending,
+          offset: 0,
+          search: "",
+          retrieve_json_payload: true,
+          retrieve_attachments: false,
+          exact_subpath: true,
+        },
+        "managed"
+      );
+    }
+
+    const query: QueryRequest = {
+      filter_shortnames: shortnames,
+      type: QueryType.search,
+      space_name: "management",
+      subpath: "users",
+      limit: shortnames.length,
+      sort_by: "shortname",
+      sort_type: SortyType.ascending,
+      offset: 0,
+      search: "",
+      retrieve_json_payload: true,
+      retrieve_attachments: false,
+      exact_subpath: true,
+    };
+
+    const response = await Dmart.query(query, "managed");
+
+    return response;
+  } catch (error) {
+    console.error("Error fetching users by shortnames:", error);
+    return await Dmart.query(
+      {
+        type: QueryType.search,
+        space_name: "management",
+        subpath: "users",
+        limit: 0,
+        sort_by: "shortname",
+        sort_type: SortyType.ascending,
+        offset: 0,
+        search: "",
+        retrieve_json_payload: true,
+        retrieve_attachments: false,
+        exact_subpath: true,
+      },
+      "managed"
+    );
   }
 }

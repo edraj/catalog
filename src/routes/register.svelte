@@ -1,22 +1,22 @@
 <script lang="ts">
-    import {goto} from "@roxi/routify";
-    import {_, locale} from "@/i18n";
-    import {checkExisting, register, requestOtp} from "@/stores/user";
+  import { goto } from "@roxi/routify";
+  import { _, locale } from "@/i18n";
+  import { checkExisting, register, requestOtp } from "@/stores/user";
 
-    import {
-        ArrowLeftOutline,
-        CheckCircleSolid,
-        EnvelopeSolid,
-        EyeSlashSolid,
-        EyeSolid,
-        LockSolid,
-        PhoneSolid,
-        UserSolid,
-    } from "flowbite-svelte-icons";
-    import {getEntity} from "@/lib/dmart_services";
-    import {ResourceType} from "@edraj/tsdmart";
+  import {
+    ArrowLeftOutline,
+    CheckCircleSolid,
+    EnvelopeSolid,
+    EyeSlashSolid,
+    EyeSolid,
+    LockSolid,
+    PhoneSolid,
+    UserSolid,
+  } from "flowbite-svelte-icons";
+  import { getEntity } from "@/lib/dmart_services";
+  import { ResourceType } from "@edraj/tsdmart";
 
-    $goto;
+  $goto;
   let email = "";
   let phoneNumber = "";
   let password = "";
@@ -167,7 +167,6 @@
         true,
         false
       );
-      console.log(defaultRole);
 
       const role =
         defaultRole.payload.body.items.find(

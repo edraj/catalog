@@ -322,7 +322,7 @@
   "HeroDescription": "کاتالۆگ شوێنێکە کە خەریکی دروستکردنە بەرەوپێشکارەکان فکری خۆیان دابەش دەکەن، پەیوەندی دەکەن، و پەیوەندیدانی گرنگ دەدەن. بەشداربە لە کۆمەڵگەیەک کە گفتوگۆی ڕاستەقینە و ناوەڕۆکی بەرز بەهێز دەکات.",
   "StartExploring": "دەست پێبکە بە گەڕان",
   "InteractiveEngagement": "پەیوەندیدانی چالاک",
-  "InteractiveEngagementDesc": "لەسەر بڵاوکراوەکان لایک بکە و لێدوان بنووس بۆ پەیوەندی کردن. پەیوەندیدانی گرنگ دروست بکە لە ڕێگەی هاوچەرخی ڕاستەقینەوە.",
+  "InteractiveEngagementDesc": "لەسەر بڵاوکراوەکان لایک بکە و لێدوان بنووس بۆ پەیوەندیدان. پەیوەندیدانی گرنگ دروست بکە لە ڕێگەی هاوچەرخی ڕاستەقینەوە.",
   "RealtimeNotifications": "ئاگادارکردنەوەی کاتەوا",
   "RealtimeNotificationsDesc": "زۆر بەخێرایی ئاگاداری بەدەست بێنە کاتێک کەسێک وەڵام دەدات بە بڵاوکراوەکانت. پەیوەندیت پەیوەندەبە و هیچ شتێکی گرنگ مەبەست.",
   "PersonalProfile": "پرۆفایلی کەسی",
@@ -605,7 +605,7 @@
     "features": {
       "connect": {
         "title": "پەیوەندی لەگەڵ کەسانی تر",
-        "description": "بەشداری کۆمەڵگایەکی گیانەوەر بکە لە دروستکەران، کۆکەرەوەکان، و ئارەزوومەندان کە زانیاری و بیرۆکە بەشدەکەن."
+        "description": "بەشداری کۆمەڵگایەکی گیانەوەر بکە لە دروستکەران، کۆکەرەوەکان، و آرەزوومەندان کە زانیاری و بیرۆکە بەشدەکەن."
       },
       "discussions": {
         "title": "گفتوگۆی دەوڵەمەند",
@@ -773,7 +773,7 @@
     },
     "comments": {
       "add_comment": "لێدوانێک زیاد بکە",
-      "placeholder": "بیرۆکەت بنووسە...",
+      "placeholder": "بیرۆکەکانت هاوبەش بکە...",
       "submit": "ناردنی لێدوان",
       "submitting": "لە ناردنەوەیە...",
       "empty_comment": "تکایە پێش ناردن لێدوانێک بنووسە.",
@@ -896,7 +896,7 @@
       "placeholder": "ناوی کورتی تایبەت بنووسە (ئیختیاری)...",
       "edit_aria": "دەستکاری ناوی کورت",
       "click_to_set": "کلیک بکە بۆ دانانی ناوی کورتی تایبەت (ئیختیاری)...",
-      "help_text": "بەتاڵی بهێڵەرەوە بۆ دروستکردنی خۆکار لە ناونیشانەوە. تەنها پیت و ژما��ە و هێڵی ژێرەوە ڕێگەپێدراون."
+      "help_text": "بەتاڵی بهێڵەرەوە بۆ دروستکردنی خۆکار لە ناونیشانەوە. تەنها پیت و ژمارە و هێڵی ژێرەوە ڕێگەپێدراون."
     },
     "tags": {
       "section_title": "تاگەکان",
@@ -1097,7 +1097,7 @@
   "permission_info": "زانیاری مۆڵەت",
   "loading_permission_data": "بارکردنی داتای مۆڵەت...",
   "permission": "مۆڵەتەکان",
-  "update": "نوێکردنەوە",
+  "update": "نوێکردن",
   "create": "دروستکردن",
   "permission_type": "جۆری مۆڵەت",
   "available_spaces": "شوێنە بەردەستەکان",
@@ -1147,7 +1147,7 @@
       "admin_access": "دەستڕاگەیشتنی بەڕێوەبەر",
       "full": "تەواو",
       "role": "ڕۆڵ",
-      "super_admin": "سەربەڕێوەبەر"
+      "super_admin": "سەربەڕێوەەر"
     },
     "manage_spaces": "بەڕێوەبردنی مەکانەکان ({count})",
     "admin_access_description": "دەستڕاگەیشتنی بەڕێوەبەری بۆ هەموو مەکانەکان",
@@ -1177,7 +1177,7 @@
       "title": "هەڵە لە بارکردنی مەکانەکان",
       "failed_load_spaces": "شکستی هێنا لە بارکردنی مەکانەکان",
       "fill_required_fields": "تکایە هەموو خانە پێویستەکان لە فۆرمی میتاداتادا پڕ بکەرەوە.",
-      "invalid_shortname": "تکایە ناوی کورتێکی دروست بۆ مەکانەکە بدە.",
+      "invalid_shortname": "تکایە ناوی کورتی دروست بۆ مەکانەکە بدە.",
       "create_failed": "شکستی هێنا لە دروستکردنی مەکان. تکایە دووبارە هەوڵ بدەرەوە.",
       "update_failed": "شکستی هێنا لە نوێکردنەوەی مەکان. تکایە دووبارە هەوڵ بدەرەوە."
     },
@@ -1216,11 +1216,11 @@
       "user": "بەکارهێنەر",
       "media": "مێدیا",
       "active": "چالاک",
-      "inactive": "نەچالاک"
+      "inactive": "ناچالاک"
     },
     "sort": {
       "name": "ناو",
-      "created": "بەرواری درووستبوون",
+      "created": "بەرواری دروستبوون",
       "updated": "بەرواری نوێکردنەوە",
       "owner": "خاوەن"
     },
@@ -1252,8 +1252,8 @@
       "delete_item": "دڵنیایت کە دەتەوێت \"{name}\" بسڕیتەوە؟"
     },
     "modal": {
-      "close": "داخستنی مۆداڵ",
-      "cancel": "هەڵوەشاندنەوە",
+      "close": "داخه",
+      "cancel": "پهشیمانبكه‌ره‌وه",
       "updating": "نوێکردنەوە...",
       "creating": "دروستکردن...",
       "create_folder": "دروستکردنی فۆڵدەر",
@@ -1296,7 +1296,7 @@
   },
   "admin_content": {
     "title": "ناوهڕۆكی {name}",
-    "subtitle": "بەڕێوەبردنی ناوهڕۆك له {spaceName} له {subpath}",
+    "subtitle": "بەڕێوەبردنی ناوهڕۆک له {spaceName} له {subpath}",
     "loading": "ناوهڕۆك بار دهكرێت...",
     "error": {
       "title": "ههڵهی باركردنی ناوهڕۆك",
@@ -1311,7 +1311,7 @@
       "delete_item": "ئایا دڵنیایت دهتهوێت '{name}' بسڕیتەوە؟"
     },
     "empty": {
-      "title": "هیچ ناوهڕۆكێك نەدۆزرایەوە",
+      "title": "هیچ ناوهڕۆكێک نەدۆزرایەوە",
       "description": "ئهم شوێنه بهتاڵه. بۆ دهستپێكردن شتی نوێ دروست بكه.",
       "no_matches": "هیچ شتێك نەدۆزرایەوە كە بگونجێت لهگهڵ بهندەكانی گهڕان."
     },
@@ -1549,7 +1549,7 @@
     "ascending": "بەرەو سەرەوە",
     "descending": "بەرەو خوارەوە",
     "select_type": "جۆرێک هەڵبژێرە...",
-    "select_schema_to_add": "سکیماێک هەڵبژێرە بۆ زیادکردن...",
+    "select_schema_to_add": "سکیماێک هەڵbژێرە بۆ زیادکردن...",
     "select_workflow_to_add": "ڕێکاری کارێک هەڵبژێرە بۆ زیادکردن..."
   },
   "resource_types": {
@@ -1690,7 +1690,7 @@
   "schema_editor.new_property": "خاسیەتی نوێ",
   "schema_editor.required": "پێویستە",
   "schema_editor.property_name_label": "ناوی خاسیەت",
-  "schema_editor.property_name_placeholder": "ناوی خاسیەت",
+  "schema_editor.property_name_placeholder": "ناونیشانی خاسیەت بنووسە",
   "schema_editor.property_type_label": "جۆری خاسیەت",
   "schema_editor.property_title_label": "ناونیشان",
   "schema_editor.property_title_placeholder": "ناونیشان",
@@ -1728,5 +1728,55 @@
   "schema_editor.max_items_placeholder": "زۆرترین ئایتم",
   "schema_editor.object_options_title": "هەڵبژاردەکانی شێوە",
   "schema_editor.remove_property_button": "سڕینەوەی خاسیەت",
-  "schema_editor.empty_state": "هیچ خاسیەتێک نەدراوە. کرتە بکە لە \"زیادکردنی خاسیەت\" بۆ دەستپێکردن."
+  "schema_editor.empty_state": "هیچ خاسیەتێک نەدراوە. کرتە بکە لە \"زیادکردنی خاسیەت\" بۆ دەستپێکردن.",
+  "chat": "چات",
+  "messaging.title": "چات",
+  "messaging.status.disconnecting": "پەیوەندی دەبریتەوە...",
+  "messaging.status.connecting": "پەیوەندی دەکرێت...",
+  "messaging.status.connected": "پەیوەندیدار",
+  "messaging.status.disconnected": "بێ پەیوەندی",
+  "messaging.status.connection_error": "هەڵەی پەیوەندی",
+  "messaging.status.failed_connect": "پەیوەندی سەرکەوتوو نەبوو",
+  "messaging.status.not_logged_in": "بەکارهێنەر چوونەژوورەوە نەکردووە",
+  "messaging.status.failed_initialize": "شکستی دەستپێکردنی چات",
+  "messaging.error.no_user": "بەکارهێنەری ئێستا نەدۆزرایەوە - ڕەگەز نەکردووە",
+  "messaging.error.websocket": "هەڵەی WebSocket:",
+  "messaging.users": "بەکارهێنەران",
+  "messaging.all_users": "هەموو بەکارهێنەران",
+  "messaging.conversations": "گفتوگۆکان",
+  "messaging.show_conversations": "تەنها هاوبەشانی گفتوگۆ پیشان بدە",
+  "messaging.show_all_users": "هەموو بەکارهێنەران پیشان بدە",
+  "messaging.refresh_users": "نوێکردنەوەی بەکارهێنەران",
+  "messaging.loading_users": "بەکارهێنەران لە بارکردنە...",
+  "messaging.no_users_found": "هیچ بەکارهێنەرێک نەدۆزرایەوە",
+  "messaging.no_conversations": "هیچ گفتوگۆیەک نەبوو",
+  "messaging.browse_all_users": "هەموو بەکارهێنەران بگەڕێ بۆ دەستپێکردنی چات",
+  "messaging.select_user": "بەکارهێنەرێک هەلبژێرە بۆ دەستپێکردنی چات",
+  "messaging.choose_user": "کەسێک لە لیستی بەکارهێنەران هەلبژێرە بۆ دەستپێکردنی گفتوگۆ",
+  "messaging.online": "پەیوەندیدار",
+  "messaging.last_seen": "کۆتا بینراو",
+  "messaging.loading_messages": "نامەکان لە بارکردنە...",
+  "messaging.no_messages": "هیچ نامەیەک نەبوو. گفتوگۆ دەستپێبکە!",
+  "messaging.type_message": "نامە بنووسە...",
+  "messaging.send_message": "نامە بنێرە",
+  "messaging.browse_users_to_start": "بگەڕێ بۆ بەکارهێنەران بۆ دەستپێکردنی چات",
+  "messaging.no_conversations_yet": "هیچ گفتوگۆیەک نەبوو. دەستپێکردنی چات لەگەڵ بەکارهێنەرێک",
+  "messaging.no_messages_yet": "هیچ نامەیەک نەبوو. گفتوگۆ دەستپێبکە!",
+  "messaging.type_a_message": "نامە بنووسە...",
+  "messaging.select_user_to_chat": "بەکارهێنەرێک هەلبژێرە بۆ چاتکردن",
+  "messaging.toast_user_not_logged_in": "بەکارهێنەر چوونەژوورەوە نەکردووە",
+  "messaging.toast_failed_initialize": "شکستی دەستپێکردنی چات",
+  "messaging.toast_no_user_shortname": "ناوی کورتی بەکارهێنەری ئێستا بەردەست نییە",
+  "messaging.toast_failed_load_users": "شکستی بارکردنی بەکارهێنەران",
+  "messaging.toast_failed_connect_ws": "شکستی پەیوەندیکردن بە WebSocket",
+  "messaging.toast_failed_parse_ws": "شکستی وەرگرتنی پەیامی WebSocket",
+  "messaging.toast_ws_error": "هەڵەی WebSocket",
+  "messaging.toast_ws_connected": "پەیوەندی WebSocket پەسەندکرا",
+  "messaging.toast_failed_fetch_by_shortname": "شکستی وەرگرتنی پەیام بە ناوی کورت",
+  "messaging.toast_no_user_selected": "هیچ بەکارهێنەرێک هەڵبژێردراوە، ناتوانرێت گرنگی دیاری بکرێت",
+  "messaging.toast_failed_load_history": "شکستی بارکردنی مێژووی چات",
+  "messaging.toast_failed_load_cache": "شکستی بارکردن لە cache ی localStorage",
+  "messaging.toast_failed_persist_message": "شکستی پاشەکەوتکردنی پەیام - ناسنامە نەگەیشتووە",
+  "messaging.toast_failed_send_message": "شکستی ناردنی پەیام",
+  "messaging.toast_failed_update_cache": "شکستی نوێکردنەوەی cache ی localStorage"
 }
