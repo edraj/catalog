@@ -1063,14 +1063,17 @@ export async function deleteNotification(shortname: string) {
   return response.status == "success";
 }
 
-export async function deleteAllNotification(shortnames: string[]) {
+export async function deleteAllNotification(
+  user_shortname: string,
+  shortnames: string[]
+) {
   const response = await Dmart.request({
     space_name: "personal",
     request_type: RequestType.delete,
     records: shortnames.map((shortname) => ({
       resource_type: ResourceType.content,
       shortname: shortname,
-      subpath: `people/${shortname}/notifications`,
+      subpath: `people/${user_shortname}/notifications`,
       attributes: {},
     })),
   });

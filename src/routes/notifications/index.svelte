@@ -148,6 +148,7 @@
               action_by,
               entry_shortname,
               entry_subpath,
+              entry_space,
               resource_type,
               is_read,
             } = n.attributes.payload.body;
@@ -171,6 +172,7 @@
               action_by,
               entry_shortname,
               entry_subpath,
+              entry_space,
               resource_type,
               resourceTypeString: resourceTypeString,
               is_read,
@@ -184,17 +186,18 @@
               ) &&
               n.attributes.relationships?.length > 0
             ) {
-              const parent_shortname =
-                n.attributes.relationships[0].related_to.shortname;
-              _notification.parent_shortname = parent_shortname;
+              const relationshipData = n.attributes.relationships[0].related_to;
+              _notification.parent_shortname = relationshipData.shortname;
+              _notification.parent_space_name = relationshipData.space_name;
+              _notification.parent_subpath = relationshipData.subpath;
 
               try {
                 let entity = await getEntity(
                   resource_type === ResourceType.ticket
                     ? entry_shortname
-                    : parent_shortname,
-                  "catalog",
-                  "/",
+                    : _notification.parent_shortname,
+                  _notification.parent_space_name || "catalog",
+                  _notification.parent_subpath || "/",
                   ResourceType.content,
                   "public"
                 );
@@ -276,16 +279,37 @@
     try {
       await markNotification($user.shortname, notification.shortname);
 
-      if (notification.parent_shortname) {
-        $goto("/dashboard/[shortname]", {
-          shortname: notification.parent_shortname,
-        });
-      } else if (notification.entry_shortname) {
-        $goto("/dashboard/[shortname]", {
-          shortname: notification.entry_shortname,
-        });
+      if (
+        notification.parent_shortname &&
+        notification.parent_space_name &&
+        notification.parent_subpath
+      ) {
+        $goto(
+          "/dashboard/admin/[space_name]/[subpath]/[shortname]/[resource_type]",
+          {
+            space_name: notification.parent_space_name,
+            subpath: notification.parent_subpath.startsWith("/")
+              ? notification.parent_subpath.substring(1)
+              : notification.parent_subpath,
+            shortname: notification.parent_shortname,
+            resource_type: "content",
+          }
+        );
+      } else if (notification.entry_shortname && notification.entry_subpath) {
+        // Fallback to entry data if available
+        $goto(
+          "/dashboard/admin/[space_name]/[subpath]/[shortname]/[resource_type]",
+          {
+            space_name: notification.entry_space || "catalog",
+            subpath: notification.entry_subpath.startsWith("/")
+              ? notification.entry_subpath.substring(1)
+              : notification.entry_subpath,
+            shortname: notification.entry_shortname,
+            resource_type: "content",
+          }
+        );
       } else {
-        $goto("/dashboard");
+        $goto("/dashboard/admin");
       }
     } catch (error) {
       errorToastMessage("Failed to open notification");
@@ -339,7 +363,7 @@
   async function handleDeleteAll() {
     try {
       const shortnames = notifications.map((n) => n.shortname);
-      await deleteAllNotification(shortnames);
+      await deleteAllNotification($user.shortname, shortnames);
       await loadNotifications(true);
       successToastMessage("All notifications deleted");
     } catch (error) {
