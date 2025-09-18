@@ -143,7 +143,6 @@
         isLoading: true, // Flag to show shimmer
       }));
 
-      // Display basic items immediately
       if (reset) {
         if (isTagFiltered) {
           tagFilteredContents = basicItems;
@@ -162,21 +161,19 @@
         }
       }
 
-      // Apply filters immediately with basic items
       applyFiltersAndSort();
 
-      // Now enhance items asynchronously
       enhanceItemsAsync(basicItems);
 
       if (isTagFiltered) {
         tagFilteredOffset += itemsPerLoad;
       } else {
         currentOffset += itemsPerLoad;
-        hasMoreItems = enhanceItem.length === itemsPerLoad;
+        hasMoreItems = basicItems.length === itemsPerLoad;
       }
 
       if (reset) {
-        totalItemsCount = enhanceItem.length;
+        totalItemsCount = basicItems.length;
       }
 
       applyFiltersAndSort();
