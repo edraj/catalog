@@ -1,3 +1,4 @@
+import tailwindcss from "@tailwindcss/vite";
 // import { VitePWA } from "vite-plugin-pwa";
 // <reference types="vitest" />
 import { defineConfig } from "vite";
@@ -21,7 +22,12 @@ export default defineConfig({
       "~": process.cwd() + "/node_modules",
     },
   },
+  optimizeDeps: {
+    include: ["flowbite", "@roxi/routify"],
+    exclude: ["@vite/client", "@vite/env"],
+  },
   plugins: [
+    tailwindcss(),
     svelteMd(),
     viteStaticCopy({
       targets: [
@@ -33,21 +39,15 @@ export default defineConfig({
     }),
     routify({
       forceLogging: true,
-      render: {
-        ssg: true,
-        ssr: true,
-      },
+      render: { ssg: false, ssr: false },
       routesDir: {
         default: "src/routes",
         "lang-ar": "src/routes",
       },
-      // ssr: { enable: false /*production*/ },
     }),
     svelte({
       exclude: ["node_modules/flowbite-svelte"],
-      compilerOptions: {
-        dev: !production,
-      },
+      compilerOptions: { dev: !production },
       extensions: [".md", ".svelte"],
       preprocess: [
         preprocess(),
@@ -64,8 +64,7 @@ export default defineConfig({
       onwarn: (warning, defaultHandler) => {
         // Ignore a11y_click_events_have_key_events warning from sveltestrap
         if (
-          warning.code?.startsWith("a11y") ||
-          // warning.filename?.startsWith("/node_modules/svelte-jsoneditor")
+          warning.code?.startsWith("a11y") || // warning.filename?.startsWith("/node_modules/svelte-jsoneditor")
           warning.filename?.startsWith("/node_modules")
         )
           return;
@@ -74,20 +73,57 @@ export default defineConfig({
     }),
   ],
   build: {
-    chunkSizeWarningLimit: 512,
+    cssCodeSplit: true,
     cssMinify: "lightningcss",
+    chunkSizeWarningLimit: 512,
+    minify: "esbuild", // Use esbuild instead of terser (faster and built-in)
+    target: "esnext",
     rollupOptions: {
       output: {
+        assetFileNames: (assetInfo) => {
+          const name = assetInfo.name || "asset";
+          if (name.endsWith(".css")) {
+            return "assets/css/[name]-[hash][extname]";
+          }
+          if (name.match(/\.(woff2?|eot|ttf|otf)$/)) {
+            return "assets/fonts/[name]-[hash][extname]";
+          }
+          return "assets/[name]-[hash][extname]";
+        },
+        chunkFileNames: "assets/js/[name]-[hash].js",
+        entryFileNames: "assets/js/[name]-[hash].js",
         manualChunks(id) {
+          // Vendor chunks
           if (id.includes("node_modules")) {
-            return id
-              .toString()
-              .split("node_modules/")[1]
-              .split("/")[0]
-              .toString();
+            // Split flowbite into its own chunk
+            if (id.includes("flowbite")) {
+              return "vendor-flowbite";
+            }
+            // Split tailwind into its own chunk
+            if (id.includes("tailwind")) {
+              return "vendor-tailwind";
+            }
+            // Split svelte into its own chunk
+            if (id.includes("svelte")) {
+              return "vendor-svelte";
+            }
+            // Other large libraries
+            if (id.includes("@roxi/routify")) {
+              return "vendor-routify";
+            }
+            // Everything else in vendor
+            return "vendor";
           }
         },
       },
+    },
+  },
+  esbuild: {
+    drop: production ? ["console", "debugger"] : [],
+  },
+  css: {
+    lightningcss: {
+      // minify: true, // This is handled by cssMinify above
     },
   },
   server: { port: 1337 },

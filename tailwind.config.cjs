@@ -8,4 +8,8 @@ module.exports = {
     extend: {},
   },
   plugins: [rtl(), require("flowbite/plugin")],
+  corePlugins: {
+    preflight: false,
+    container: false,
+  },
 };

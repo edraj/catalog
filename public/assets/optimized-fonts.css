@@ -1,0 +1,55 @@
+/* Optimized font loading - only essential fonts and modern formats */
+
+/* Uthman font - Regular weight only, modern format */
+@font-face {
+  font-family: "Uthman";
+  src: url("/assets/uthman/uthmantn1_v10.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap; /* Improves loading performance */
+}
+
+/* IranYekan - Only essential weights (Regular, Medium, Bold) with modern formats first */
+@font-face {
+  font-family: "IranYekan";
+  src: url("/assets/iranyekan/woff2/iranyekanwebregular.woff2") format("woff2"),
+    url("/assets/iranyekan/woff/iranyekanwebregular.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "IranYekan";
+  src: url("/assets/iranyekan/woff2/iranyekanwebmedium.woff2") format("woff2"),
+    url("/assets/iranyekan/woff/iranyekanwebmedium.woff") format("woff");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "IranYekan";
+  src: url("/assets/iranyekan/woff2/iranyekanwebbold.woff2") format("woff2"),
+    url("/assets/iranyekan/woff/iranyekanwebbold.woff") format("woff");
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Font fallbacks for better loading */
+:root {
+  --font-main: "Uthman", "IranYekan", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+  font-family: var(--font-main);
+}
+
+/* Remove the heavy !important from universal selector */
+*,
+*::before,
+*::after {
+  font-family: var(--font-main);
+}
