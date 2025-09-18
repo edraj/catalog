@@ -4,6 +4,35 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Discover a wide range of curated catalogs from our community. Find content that interests you and connect with creators."
+    />
+
+    <!-- Preload critical fonts -->
+    <link
+      rel="preload"
+      href="/assets/iranyekan/woff2/iranyekanwebregular.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/assets/iranyekan/woff2/iranyekanwebmedium.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+
+    <!-- Preload critical CSS -->
+    <link
+      rel="preload"
+      href="/assets/style.css"
+      as="style"
+      onload="this.onload=null;this.rel='stylesheet'"
+    />
+    <noscript><link rel="stylesheet" href="/assets/style.css" /></noscript>
     <title>Catalog</title>
   </head>
   <body>
