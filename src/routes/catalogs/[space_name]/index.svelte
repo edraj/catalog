@@ -122,15 +122,14 @@
         return;
       }
 
-      // Create basic items with loading states first
       const basicItems = response.records.map((item) => ({
         ...item,
         owner_avatar: null,
-        reactionCount: 0,
-        commentCount: 0,
-        mediaCount: 0,
-        reportCount: 0,
-        shareCount: 0,
+        reactionCount: null, // null indicates loading state
+        commentCount: null,
+        mediaCount: null,
+        reportCount: null,
+        shareCount: null,
         contentTags: [],
         title:
           item.attributes?.displayname?.[$locale] ||
@@ -213,11 +212,11 @@
       const basicSearchResults = results.map((item) => ({
         ...item,
         owner_avatar: null,
-        reactionCount: 0,
-        commentCount: 0,
-        mediaCount: 0,
-        reportCount: 0,
-        shareCount: 0,
+        reactionCount: null,
+        commentCount: null,
+        mediaCount: null,
+        reportCount: null,
+        shareCount: null,
         contentTags: [],
         title:
           item.attributes?.displayname?.[$locale] ||
@@ -1271,10 +1270,14 @@
                           d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
                         />
                       </svg>
-                      <span class="stat-number"
-                        >{formatNumberInText(item.commentCount, $locale) ||
-                          formatNumberInText(0, $locale)}</span
-                      >
+                      <span class="stat-number">
+                        {#if item.isLoading || item.commentCount === null}
+                          <span class="stat-skeleton">-</span>
+                        {:else}
+                          {formatNumberInText(item.commentCount, $locale) ||
+                            formatNumberInText(0, $locale)}
+                        {/if}
+                      </span>
                     </div>
 
                     <!-- Reaction Count -->
@@ -1290,10 +1293,13 @@
                           clip-rule="evenodd"
                         />
                       </svg>
-                      <span class="stat-number"
-                        >{formatNumberInText(item.reactionCount, $locale) ||
-                          0}</span
-                      >
+                      <span class="stat-number">
+                        {#if item.isLoading || item.reactionCount === null}
+                          <span class="stat-skeleton">-</span>
+                        {:else}
+                          {formatNumberInText(item.reactionCount, $locale) || 0}
+                        {/if}
+                      </span>
                     </div>
 
                     <div class="stat-item me-4 stat-media">
@@ -1310,10 +1316,13 @@
                           d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                         />
                       </svg>
-                      <span class="stat-number"
-                        >{formatNumberInText(item.mediaCount, $locale) ||
-                          0}</span
-                      >
+                      <span class="stat-number">
+                        {#if item.isLoading || item.mediaCount === null}
+                          <span class="stat-skeleton">-</span>
+                        {:else}
+                          {formatNumberInText(item.mediaCount, $locale) || 0}
+                        {/if}
+                      </span>
                     </div>
                   </div>
 
@@ -2295,6 +2304,23 @@
     font-weight: 600;
     min-width: 1.5rem;
     text-align: center;
+  }
+
+  .stat-skeleton {
+    display: inline-block;
+    color: #9ca3af;
+    font-weight: 500;
+    animation: stat-pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes stat-pulse {
+    0%,
+    100% {
+      opacity: 0.5;
+    }
+    50% {
+      opacity: 0.8;
+    }
   }
 
   .action-button {
