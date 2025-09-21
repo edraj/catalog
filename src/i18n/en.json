@@ -955,6 +955,7 @@
     "loading": "Loading your entry...",
     "back_to_entries": "Back to My Entries",
     "edit_entry": "Edit Entry",
+    "delete_entry": "Delete Entry",
     "created": "Created",
     "updated": "Updated",
     "untitled": "Untitled Entry",

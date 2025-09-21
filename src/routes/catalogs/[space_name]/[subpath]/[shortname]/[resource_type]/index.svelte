@@ -1190,6 +1190,7 @@
     padding: 0 2rem 2rem;
     border-top: 1px solid rgba(148, 163, 184, 0.2);
     margin-top: 1rem;
+    padding-top: 1rem;
   }
 
   .loading-related {

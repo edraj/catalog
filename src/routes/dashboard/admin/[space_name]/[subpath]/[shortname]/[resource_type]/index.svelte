@@ -72,7 +72,7 @@
     const contentType = item.payload.content_type;
 
     if (contentType === "html") {
-      return marked(item.payload.body || "");
+      return item.payload.body || "";
     } else if (contentType === "json") {
       if (item.payload.body && typeof item.payload.body === "object") {
         return item.payload.body;

@@ -48,6 +48,8 @@
     onContentChange($previewContentStore);
     dispatch("contentChange", $previewContentStore);
   }
+  console.log(content);
+  console.log(space_name);
 
   onMount(async () => {
     const response = await getTemplates(space_name);

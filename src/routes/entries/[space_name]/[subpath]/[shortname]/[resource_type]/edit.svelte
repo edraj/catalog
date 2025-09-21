@@ -2,6 +2,8 @@
   import { goto, params } from "@roxi/routify";
   import { onMount } from "svelte";
   import HtmlEditor from "@/components/editors/HtmlEditor.svelte";
+  import TemplateEditor from "@/components/editors/TemplateEditor.svelte";
+  import JsonEditor from "@/components/editors/JsonEditor.svelte";
   import Attachments from "@/components/Attachments.svelte";
   import {
     attachAttachmentsToEntity,
@@ -34,6 +36,8 @@
   import { derived } from "svelte/store";
   import { formatNumberInText } from "@/lib/helpers";
 
+  $goto;
+
   let entity = $state(null);
   let isLoading = $state(false);
   let isLoadingPage = $state(true);
@@ -45,11 +49,49 @@
   let attachments = $state([]);
   let htmlEditor = $state("");
   let editorReady = $state(false);
+  let isTemplateBasedItem = $state(false);
+  let templateEditorContent = $state("");
+  let jsonEditorContent = $state({});
 
   const isRTL = derived(
     locale,
     ($locale) => $locale === "ar" || $locale === "ku"
   );
+
+  function getItemContent(item) {
+    if (!item?.payload) return "";
+
+    const contentType = item.payload.content_type;
+
+    if (contentType === "html") {
+      return item.payload.body || "";
+    } else if (contentType === "json") {
+      if (item.payload.body && typeof item.payload.body === "object") {
+        return item.payload.body;
+      }
+      return {};
+    }
+
+    return item.payload.body || "";
+  }
+
+  function prepareContentForSave(content, originalContentType) {
+    if (originalContentType === "json") {
+      return jsonEditorContent;
+    }
+
+    return content || "";
+  }
+
+  function handleTemplateContentChange(newContent) {
+    templateEditorContent = newContent;
+    htmlEditor = newContent;
+    content = newContent;
+  }
+
+  function handleJsonContentChange(event) {
+    jsonEditorContent = event.detail;
+  }
 
   function handleLabelClick() {
     isEditing = true;
@@ -94,7 +136,23 @@
 
   async function handleUpdate(isPublish) {
     isLoading = true;
-    const htmlContent = htmlEditor || content;
+
+    let htmlContent;
+    let contentToSave;
+
+    // Handle different content types like admin page
+    if (entity?.payload?.content_type === "json") {
+      htmlContent = JSON.stringify(jsonEditorContent);
+      contentToSave = prepareContentForSave(htmlContent, "json");
+    } else {
+      htmlContent = htmlEditor || templateEditorContent || content;
+      contentToSave = prepareContentForSave(
+        htmlContent,
+        entity?.payload?.content_type
+      );
+    }
+
+    console.log(htmlContent);
 
     const entityData = {
       displayname: {
@@ -103,10 +161,8 @@
         ar: $locale === "ar" ? title : entity.displayname?.ar || "",
         ku: $locale === "ku" ? title : entity.displayname?.ku || "",
       },
-      payload: {
-        content_type: "html",
-        body: htmlContent,
-      },
+      content_type: entity?.payload?.content_type || "html",
+      content: contentToSave,
       tags: tags,
       is_active: isPublish,
     };
@@ -140,7 +196,12 @@
         }
       }
       setTimeout(() => {
-        $goto("/entries/");
+        $goto("/entries/[space_name]/[subpath]/[shortname]/[resource_type]", {
+          space_name: $params.space_name,
+          subpath: $params.subpath,
+          shortname: $params.shortname,
+          resource_type: $params.resource_type,
+        });
       }, 500);
     } else {
       errorToastMessage($_("entry_edit.error"));
@@ -163,9 +224,24 @@
     );
     if (entity) {
       title = getLocalizedDisplayName(entity);
-      content = entity.payload?.body || "";
 
-      htmlEditor = content;
+      const itemContent = getItemContent(entity);
+      content = itemContent;
+
+      // Detect content type and set up appropriate editor
+      if (entity.payload?.content_type === "json") {
+        jsonEditorContent = itemContent;
+        htmlEditor = "";
+      } else {
+        htmlEditor = itemContent;
+      }
+
+      // Check if it's template-based
+      isTemplateBasedItem = entity.payload?.schema_shortname === "templates";
+
+      if (isTemplateBasedItem) {
+        templateEditorContent = itemContent || "";
+      }
 
       tags = entity.tags || [];
       setTimeout(() => {
@@ -441,17 +517,32 @@
         <div class="section-content">
           <div class="editor-container">
             {#if editorReady}
-              <HtmlEditor
-                bind:content={htmlEditor}
-                resource_type={$params.resource_type}
-                space_name={$params.space_name}
-                subpath={$params.subpath}
-                parent_shortname={entity.shortname}
-                uid="main-editor"
-                isEditMode={true}
-                attachments={entity?.attachments || []}
-                changed={() => {}}
-              />
+              {#if isTemplateBasedItem}
+                <TemplateEditor
+                  content={templateEditorContent}
+                  space_name={$params.space_name}
+                  on:contentChange={(e) =>
+                    handleTemplateContentChange(e.detail)}
+                />
+              {:else if entity?.payload?.content_type === "json"}
+                <JsonEditor
+                  content={jsonEditorContent}
+                  isEditMode={true}
+                  on:contentChange={handleJsonContentChange}
+                />
+              {:else}
+                <HtmlEditor
+                  bind:content={htmlEditor}
+                  resource_type={$params.resource_type}
+                  space_name={$params.space_name}
+                  subpath={$params.subpath}
+                  parent_shortname={entity.shortname}
+                  uid="main-editor"
+                  isEditMode={true}
+                  attachments={entity?.attachments || []}
+                  changed={() => {}}
+                />
+              {/if}
             {:else}
               <div class="editor-loading">
                 <Diamonds size="40" color="#2563eb" unit="px" duration="1s" />

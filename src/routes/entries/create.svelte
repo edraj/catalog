@@ -36,7 +36,16 @@
   import { roles } from "@/stores/user";
   import MarkdownEditor from "@/components/editors/MarkdownEditor.svelte";
   import DynamicSchemaBasedForms from "@/components/forms/DynamicSchemaBasedForms.svelte";
-  import { log } from "@/lib/logger";
+  import { marked } from "marked";
+  import { mangle } from "marked-mangle";
+  import { gfmHeadingId } from "marked-gfm-heading-id";
+
+  marked.use(mangle());
+  marked.use(
+    gfmHeadingId({
+      prefix: "my-prefix-",
+    })
+  );
   $goto;
 
   let isLoading = $state(false);
@@ -184,7 +193,7 @@
   async function loadSpaces() {
     loadingSpaces = true;
     try {
-      const response = await getSpaces(false, "managed");
+      const response = await getSpaces(false, "managed", ["management"]);
 
       spaces = response?.records.map((space) => ({
         value: space?.shortname,
@@ -1258,8 +1267,9 @@
             </div>
             <div class="section-content">
               <div class="content-preview">
-                <pre
-                  class="generated-content">{generateContentFromTemplate()}</pre>
+                <div class="generated-content">
+                  {@html marked(generateContentFromTemplate())}
+                </div>
               </div>
             </div>
           </div>
@@ -2302,12 +2312,115 @@
   }
 
   .generated-content {
-    margin: 0;
-    font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+    background: white;
+    font-family:
+      "uthmantn",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
+      "Helvetica Neue",
+      Arial,
+      sans-serif;
+    line-height: 1.6;
+    color: #374151;
+  }
+
+  .generated-content :global(h1) {
+    font-size: 1.875rem;
+    font-weight: 700;
+    margin: 1.5rem 0 1rem 0;
+    color: #1f2937;
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 0.5rem;
+  }
+
+  .generated-content :global(h2) {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 1.25rem 0 0.75rem 0;
+    color: #1f2937;
+  }
+
+  .generated-content :global(h3) {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 1rem 0 0.5rem 0;
+    color: #1f2937;
+  }
+
+  .generated-content :global(p) {
+    margin: 0.75rem 0;
+  }
+
+  .generated-content :global(ul),
+  .generated-content :global(ol) {
+    margin: 0.75rem 0;
+    padding-left: 1.5rem;
+  }
+
+  .generated-content :global(li) {
+    margin: 0.25rem 0;
+  }
+
+  .generated-content :global(blockquote) {
+    margin: 1rem 0;
+    padding: 0.75rem 1rem;
+    background: #f9fafb;
+    border-left: 4px solid #d1d5db;
+    color: #6b7280;
+  }
+
+  .generated-content :global(code) {
+    background: #f3f4f6;
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+    font-family: "uthmantn", "Monaco", "Menlo", "Ubuntu Mono", monospace;
     font-size: 0.875rem;
-    line-height: 1.5;
-    color: var(--color-text-primary);
-    white-space: pre-wrap;
-    word-wrap: break-word;
+  }
+
+  .generated-content :global(pre) {
+    background: #1f2937;
+    color: #f9fafb;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    margin: 1rem 0;
+  }
+
+  .generated-content :global(pre code) {
+    background: transparent;
+    padding: 0;
+    color: inherit;
+  }
+
+  .generated-content :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+  }
+
+  .generated-content :global(th),
+  .generated-content :global(td) {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #d1d5db;
+    text-align: left;
+  }
+
+  .generated-content :global(th) {
+    background: #f9fafb;
+    font-weight: 600;
+  }
+
+  .generated-content :global(strong) {
+    font-weight: 600;
+  }
+
+  .generated-content :global(em) {
+    font-style: italic;
+  }
+
+  .generated-content :global(del) {
+    text-decoration: line-through;
   }
 </style>

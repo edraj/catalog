@@ -5,6 +5,7 @@
     checkCurrentUserReactedIdea,
     createComment,
     createReaction,
+    deleteEntity,
     deleteReactionComment,
     getAvatar,
     getEntity,
@@ -31,11 +32,22 @@
     HeartSolid,
     MessagesSolid,
     TagOutline,
+    TrashBinOutline,
     TrashBinSolid,
     UserCircleOutline,
   } from "flowbite-svelte-icons";
   import { _, locale } from "@/i18n";
   import { derived } from "svelte/store";
+  import { marked } from "marked";
+  import { mangle } from "marked-mangle";
+  import { gfmHeadingId } from "marked-gfm-heading-id";
+
+  marked.use(mangle());
+  marked.use(
+    gfmHeadingId({
+      prefix: "my-prefix-",
+    })
+  );
 
   $goto;
 
@@ -139,6 +151,33 @@
     }
   }
 
+  async function handleDeleteItem(entity) {
+    if (
+      !confirm(
+        $_("admin_item_detail.confirm.delete_item", {
+          values: { name: entity.shortname },
+        })
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const success = await deleteEntity(
+        entity.shortname,
+        $params.space_name,
+        $params.subpath,
+        $params.resource_type
+      );
+
+      if (success) {
+        $goto("/entries");
+      }
+    } catch (err) {
+      console.error("Error deleting item:", err);
+    }
+  }
+
   async function refreshIdea() {
     entity = await getEntity(
       $params.shortname,
@@ -148,7 +187,6 @@
       "managed"
     );
     if (entity) {
-      // Calculate counts directly from entity attachments
       counts = {
         reaction: entity.attachments?.reaction?.length || 0,
         reply: entity.attachments?.comment?.length || 0,
@@ -166,8 +204,6 @@
   }
 
   async function refreshCounts() {
-    // Counts are now calculated directly in refreshIdea()
-    // This function is kept for compatibility with existing calls
     if (entity) {
       counts = {
         reaction: entity.attachments?.reaction?.length || 0,
@@ -234,6 +270,30 @@
       $_("entry_detail.untitled")
     );
   }
+
+  function renderContent(entity: any) {
+    if (!entity?.payload?.body) {
+      return $_("entry_detail.no_content");
+    }
+
+    const contentType = entity.payload.content_type;
+    const body = entity.payload.body;
+
+    if (contentType === "html") {
+      if (typeof body === "string" && body.includes("#")) {
+        return marked(body);
+      }
+      return body;
+    } else if (contentType === "json") {
+      if (typeof body === "object") {
+        return Object.entries(body)
+          .map(([key, value]) => `<strong>${key}:</strong> ${value}`)
+          .join("<br>");
+      } else {
+        return body;
+      }
+    }
+  }
 </script>
 
 {#if isLoadingPage}
@@ -258,14 +318,24 @@
         </button>
 
         {#if isOwner}
-          <button
-            aria-label={$_("entry_detail.navigation.edit_entry")}
-            class="edit-button"
-            onclick={() => handleEdit(entity)}
-          >
-            <EditOutline class="w-4 h-4" />
-            {$_("entry_detail.edit_entry")}
-          </button>
+          <div class="flex mx-4">
+            <button
+              aria-label={$_("entry_detail.navigation.edit_entry")}
+              class="edit-button mx-2"
+              onclick={() => handleEdit(entity)}
+            >
+              <EditOutline class="w-4 h-4" />
+              {$_("entry_detail.edit_entry")}
+            </button>
+            <button
+              aria-label={$_("entry_detail.navigation.edit_entry")}
+              class="delete-button mx-2"
+              onclick={() => handleDeleteItem(entity)}
+            >
+              <TrashBinOutline class="w-4 h-4" />
+              {$_("entry_detail.delete_entry")}
+            </button>
+          </div>
         {/if}
       </div>
 
@@ -382,7 +452,7 @@
 
         <!-- Content -->
         <div class="entry-content" class:text-right={$isRTL}>
-          {@html entity.payload?.body || $_("entry_detail.no_content")}
+          {@html renderContent(entity)}
         </div>
 
         <!-- Attachments -->
@@ -654,6 +724,30 @@
     transform: translateY(-1px);
   }
 
+  .delete-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+
+  .delete-button:hover {
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+    transform: translateY(-1px);
+  }
+
+  .delete-button:active {
+    transform: translateY(0);
+  }
+
   .status-banner {
     display: flex;
     align-items: center;
@@ -858,6 +952,75 @@
     margin: 1.5rem 0;
     font-style: italic;
     color: #64748b;
+  }
+
+  /* Enhanced markdown styles */
+  .entry-content :global(ul),
+  .entry-content :global(ol) {
+    margin: 0.75rem 0;
+    padding-left: 1.5rem;
+  }
+
+  .entry-content :global(li) {
+    margin: 0.25rem 0;
+  }
+
+  .entry-content :global(code) {
+    background: #f3f4f6;
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+    font-family: "uthmantn", "Monaco", "Menlo", "Ubuntu Mono", monospace;
+    font-size: 0.875rem;
+  }
+
+  .entry-content :global(pre) {
+    background: #1f2937;
+    color: #f9fafb;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    margin: 1rem 0;
+  }
+
+  .entry-content :global(pre code) {
+    background: transparent;
+    padding: 0;
+    color: inherit;
+  }
+
+  .entry-content :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+  }
+
+  .entry-content :global(th),
+  .entry-content :global(td) {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #d1d5db;
+    text-align: left;
+  }
+
+  .entry-content :global(th) {
+    background: #f9fafb;
+    font-weight: 600;
+  }
+
+  .entry-content :global(strong) {
+    font-weight: 600;
+  }
+
+  .entry-content :global(em) {
+    font-style: italic;
+  }
+
+  .entry-content :global(del) {
+    text-decoration: line-through;
+  }
+
+  /* JSON content styles */
+  .entry-content :global(br) {
+    margin-bottom: 0.5rem;
   }
 
   .attachments-section {
@@ -1171,6 +1334,10 @@
     .back-button,
     .edit-button {
       justify-content: center;
+    }
+
+    .delete-button:active {
+      transform: translateY(0);
     }
 
     .main-card {
