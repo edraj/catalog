@@ -53,16 +53,41 @@ export function getPostTitle(postData: any): string {
 }
 
 export function getPostContent(postData: any): string {
-  if (postData?.payload?.body?.content) {
-    return postData.payload.body.content;
+  if (!postData?.payload?.body) {
+    return "";
   }
-  if (postData?.payload?.body && typeof postData.payload.body === "string") {
-    return postData.payload.body;
-  }
-  if (postData?.payload?.body && typeof postData.payload.body === "object") {
-    const entries = Object.entries(postData.payload.body);
-    if (entries.length > 0) {
-      return entries.map(([key, value]) => `${key}: ${value}`).join("\n");
+
+  const contentType = postData.payload.content_type;
+  const body = postData.payload.body;
+
+  if (contentType === "html") {
+    return typeof body === "string" ? body : body.content || "";
+  } else if (contentType === "json") {
+    if (typeof body === "object") {
+      if (body.content) {
+        return body.content;
+      }
+      const entries = Object.entries(body);
+      if (entries.length > 0) {
+        return entries
+          .map(([key, value]) => `**${key}:** ${value}`)
+          .join("\n\n");
+      }
+    } else {
+      return body;
+    }
+  } else {
+    if (typeof body === "string") {
+      return body;
+    } else if (body.content) {
+      return body.content;
+    } else if (typeof body === "object") {
+      const entries = Object.entries(body);
+      if (entries.length > 0) {
+        return entries
+          .map(([key, value]) => `**${key}:** ${value}`)
+          .join("\n\n");
+      }
     }
   }
 

@@ -106,6 +106,7 @@
           currentOffset
         );
       }
+      totalItemsCount = response?.attributes?.total || 0;
 
       if (!response || !response.records) {
         if (reset) {
@@ -115,7 +116,6 @@
           } else {
             allContents = [];
             availableContentTags = [];
-            totalItemsCount = 0;
             hasMoreItems = false;
           }
         }
@@ -171,10 +171,6 @@
         hasMoreItems = basicItems.length === itemsPerLoad;
       }
 
-      if (reset) {
-        totalItemsCount = basicItems.length;
-      }
-
       applyFiltersAndSort();
     } catch (err) {
       console.error("Error fetching space contents:", err);
@@ -186,7 +182,6 @@
         } else {
           allContents = [];
           availableContentTags = [];
-          totalItemsCount = 0;
           hasMoreItems = false;
         }
       }
@@ -1387,6 +1382,7 @@
                   {$_("catalog_contents.pagination.loaded_items", {
                     values: {
                       loaded: formatNumberInText(allContents.length, $locale),
+                      total: formatNumberInText(totalItemsCount, $locale),
                     },
                   })}
                 </span>
