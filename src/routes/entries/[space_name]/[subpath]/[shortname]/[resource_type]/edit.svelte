@@ -152,8 +152,6 @@
       );
     }
 
-    console.log(htmlContent);
-
     const entityData = {
       displayname: {
         [$locale]: title,

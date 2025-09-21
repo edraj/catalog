@@ -417,7 +417,7 @@
       "loading": "بارکردنی ناوەڕۆکەکان...",
       "end_of_results": "گەیشتوەتە کۆتایی!",
       "total_loaded": "کۆی گشتی بارکراوەکان: {count}",
-      "loaded_items": "بارکراوی {loaded} بەرزە",
+      "loaded_items": "بارکراوی {loaded} بەرزە لە {total}",
       "items_per_load": "بەرزەکان بۆ هەر بارکردنێک",
       "showing_items": "نیشاندانی {displayed} لە {total} بەرزە",
       "page_info": "پەڕەی {current} لە {total}",
