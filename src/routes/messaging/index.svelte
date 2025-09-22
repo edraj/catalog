@@ -9,12 +9,18 @@
     getMessageByShortname,
     getConversationPartners,
     getUsersByShortnames,
+    attachAttachmentsToEntity,
   } from "@/lib/dmart_services";
   import { _ } from "@/i18n";
   import {
     successToastMessage,
     errorToastMessage,
   } from "@/lib/toasts_messages";
+  import { Dmart, ResourceType } from "@edraj/tsdmart";
+  import Attachments from "@/components/Attachments.svelte";
+  import Media from "@/components/Media.svelte";
+  import { getFileExtension } from "@/lib/fileUtils";
+  import MessengerAttachments from "@/components/MessengerAttachments.svelte";
 
   let socket = null;
   let isConnected = $state(false);
@@ -28,11 +34,21 @@
   const authToken = localStorage.getItem("authToken") || "";
 
   let conversationMessages = new Map();
-
+  let attachment;
   let isUsersLoading = $state(true);
   let isMessagesLoading = $state(false);
   let chatContainer = $state(null);
   let showAllUsers = $state(false);
+
+  let selectedAttachments = $state([]);
+  let isAttachmentLoading = $state(false);
+
+  let isRecording = $state(false);
+  let mediaRecorder = null;
+  let audioChunks = [];
+  let recordingDuration = $state(0);
+  let recordingInterval = null;
+  let stream = null;
 
   const WS_URL = website.websocket;
   const TOKEN = authToken;
@@ -50,6 +66,12 @@
   onDestroy(() => {
     if (socket) {
       socket.close();
+    }
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+    }
+    if (recordingInterval) {
+      clearInterval(recordingInterval);
     }
   });
 
@@ -217,8 +239,10 @@
         fetchMessageByShortname(data.message.shortname);
         return;
       }
+    }
 
-      if (selectedUser && data.senderId && data.receiverId && data.content) {
+    if (data.type === "message") {
+      if (selectedUser && data.senderId && data.receiverId) {
         const isRelevantMessage =
           (data.senderId === selectedUser.shortname &&
             data.receiverId === currentUser?.shortname) ||
@@ -226,20 +250,121 @@
             data.receiverId === selectedUser.shortname);
 
         if (isRelevantMessage) {
+          if (data.senderId === currentUser?.shortname) {
+            return;
+          }
+
+          if (data.hasAttachments && data.messageId) {
+            const tempMessage = {
+              id: `temp_attachment_${data.messageId}`,
+              senderId: data.senderId,
+              receiverId: data.receiverId,
+              content: data.content || "📎 Attachment",
+              timestamp: new Date(data.timestamp || Date.now()),
+              isOwn: false,
+              hasAttachments: true,
+              attachments: null,
+              isUploading: true,
+            };
+
+            const messageExists = messages.some(
+              (msg) => msg.id === data.messageId || msg.id === tempMessage.id
+            );
+
+            if (!messageExists) {
+              addMessageToConversation(tempMessage);
+            }
+
+            setTimeout(async () => {
+              try {
+                const response = await getMessagesBetweenUsers(
+                  currentUser?.shortname,
+                  selectedUser.shortname
+                );
+
+                if (
+                  response &&
+                  response.status === "success" &&
+                  response.records
+                ) {
+                  const updatedMessages = response.records
+                    .map((record) => {
+                      const attachments = record?.attachments?.media || null;
+                      const payload = record.attributes.payload;
+                      const body = payload.body;
+
+                      return {
+                        id: record.shortname,
+                        senderId: body.sender,
+                        receiverId: body.receiver,
+                        content: body.content,
+                        attachments: attachments,
+                        timestamp: new Date(
+                          record.attributes.created_at || Date.now()
+                        ),
+                        isOwn: body.sender === currentUser?.shortname,
+                      };
+                    })
+                    .sort(
+                      (a, b) =>
+                        new Date(a.timestamp).getTime() -
+                        new Date(b.timestamp).getTime()
+                    );
+
+                  const hasNewAttachmentData = updatedMessages.some(
+                    (msg) => msg.id === data.messageId && msg.attachments
+                  );
+
+                  if (hasNewAttachmentData) {
+                    messages = updatedMessages;
+
+                    conversationMessages.set(selectedUser.shortname, [
+                      ...messages,
+                    ]);
+
+                    try {
+                      localStorage.setItem(
+                        `chat_${currentUser?.shortname}_${selectedUser.shortname}`,
+                        JSON.stringify(messages)
+                      );
+                    } catch (error) {
+                      console.error("Cache update error:", error);
+                    }
+
+                    scrollToBottom();
+                  }
+                }
+              } catch (error) {
+                console.error("Error fetching attachment message:", error);
+
+                messages = messages.filter((msg) => msg.id !== tempMessage.id);
+
+                errorToastMessage(
+                  $_("messaging.toast_failed_fetch_attachment") ||
+                    "Failed to load attachment"
+                );
+              }
+            }, 1000);
+
+            return;
+          }
+
           const newMessage = {
             id: data.messageId || `ws_${Date.now()}`,
             senderId: data.senderId,
             receiverId: data.receiverId,
-            content: data.content,
+            content: data.content || "",
             timestamp: new Date(data.timestamp || Date.now()),
-            isOwn: data.senderId === currentUser?.shortname,
+            isOwn: false,
+            hasAttachments: false,
+            attachments: null,
           };
 
           const messageExists = messages.some(
             (msg) =>
               msg.id === newMessage.id ||
-              (msg.content === newMessage.content &&
-                msg.senderId === newMessage.senderId &&
+              (msg.senderId === newMessage.senderId &&
+                msg.receiverId === newMessage.receiverId &&
                 Math.abs(
                   new Date(msg.timestamp).getTime() -
                     new Date(newMessage.timestamp).getTime()
@@ -261,6 +386,7 @@
       if (!messageData) {
         return;
       }
+
       if (selectedUser) {
         const isRelevantMessage =
           (messageData.senderId === selectedUser.shortname &&
@@ -269,32 +395,76 @@
             messageData.receiverId === selectedUser.shortname);
 
         if (isRelevantMessage) {
-          const newMessage = {
-            id: messageData.id,
-            senderId: messageData.senderId,
-            receiverId: messageData.receiverId,
-            content: messageData.content,
-            timestamp: messageData.timestamp,
-            isOwn: messageData.senderId === currentUser?.shortname,
-          };
-
-          const messageExists = messages.some(
-            (msg) =>
-              msg.id === newMessage.id ||
-              (msg.content === newMessage.content &&
-                msg.senderId === newMessage.senderId &&
-                Math.abs(
-                  new Date(msg.timestamp).getTime() -
-                    new Date(newMessage.timestamp).getTime()
-                ) < 5000)
-          );
-
-          if (!messageExists) {
-            addMessageToConversation(newMessage);
+          if (messageData.senderId === currentUser?.shortname) {
+            return;
           }
+
+          setTimeout(async () => {
+            try {
+              const response = await getMessagesBetweenUsers(
+                currentUser?.shortname,
+                selectedUser.shortname
+              );
+
+              if (
+                response &&
+                response.status === "success" &&
+                response.records
+              ) {
+                const updatedMessages = response.records
+                  .map((record) => {
+                    const attachments = record?.attachments?.media || null;
+                    const payload = record.attributes.payload;
+                    const body = payload.body;
+
+                    return {
+                      id: record.shortname,
+                      senderId: body.sender,
+                      receiverId: body.receiver,
+                      content: body.content,
+                      attachments: attachments,
+                      timestamp: new Date(
+                        record.attributes.created_at || Date.now()
+                      ),
+                      isOwn: body.sender === currentUser?.shortname,
+                    };
+                  })
+                  .sort(
+                    (a, b) =>
+                      new Date(a.timestamp).getTime() -
+                      new Date(b.timestamp).getTime()
+                  );
+
+                const currentMessageCount = messages.length;
+                const newMessageCount = updatedMessages.length;
+
+                if (
+                  newMessageCount > currentMessageCount ||
+                  updatedMessages.some((msg) => msg.id === messageData.id)
+                ) {
+                  messages = updatedMessages;
+
+                  conversationMessages.set(selectedUser.shortname, [
+                    ...messages,
+                  ]);
+
+                  try {
+                    localStorage.setItem(
+                      `chat_${currentUser?.shortname}_${selectedUser.shortname}`,
+                      JSON.stringify(messages)
+                    );
+                  } catch (error) {
+                    console.error("Cache update error:", error);
+                  }
+
+                  scrollToBottom();
+                }
+              }
+            } catch (error) {
+              console.error("Error refreshing conversation:", error);
+            }
+          }, 1500);
         }
-      } else {
-        errorToastMessage($_("messaging.toast_no_user_selected"));
       }
     } catch (error) {
       errorToastMessage(
@@ -342,6 +512,7 @@
       if (response && response.status === "success" && response.records) {
         messages = response.records
           .map((record) => {
+            const attachments = record?.attachments?.media || null;
             const payload = record.attributes.payload;
             const body = payload.body;
 
@@ -350,6 +521,7 @@
               senderId: body.sender,
               receiverId: body.receiver,
               content: body.content,
+              attachments: attachments,
               timestamp: new Date(record.attributes.created_at || Date.now()),
               isOwn: body.sender === currentUser?.shortname,
             };
@@ -402,32 +574,47 @@
   }
 
   async function sendMessage() {
-    if (!currentMessage.trim() || !selectedUser || !isConnected) {
+    if (
+      (!currentMessage.trim() && selectedAttachments.length === 0) ||
+      !selectedUser ||
+      !isConnected
+    ) {
       return;
     }
 
-    const messageContent = currentMessage.trim();
+    const messageContent = currentMessage.trim() || "";
+    const hasAttachments = selectedAttachments.length > 0;
     const tempId = `temp_${Date.now()}`;
+
+    if (hasAttachments) {
+      isAttachmentLoading = true;
+    }
 
     const newMessage = {
       id: tempId,
       senderId: currentUser?.shortname,
       receiverId: selectedUser.shortname,
-      content: messageContent,
+      content: messageContent || (hasAttachments ? "attachment" : ""),
       timestamp: new Date(),
       isOwn: true,
+      hasAttachments: hasAttachments,
+      attachments: hasAttachments ? selectedAttachments : null,
+      isUploading: hasAttachments,
     };
 
     messages = [...messages, newMessage];
-    currentMessage = "";
     scrollToBottom();
+
+    currentMessage = "";
+    const attachmentsToProcess = [...selectedAttachments];
+    selectedAttachments = [];
 
     try {
       const messageData = {
-        content: messageContent,
+        content: messageContent || (hasAttachments ? "attachment" : ""),
         sender: currentUser?.shortname,
         receiver: selectedUser.shortname,
-        message_type: "text",
+        message_type: hasAttachments ? "attachment" : "text",
         timestamp: new Date().toISOString(),
       };
 
@@ -435,23 +622,112 @@
 
       if (persistedMessageId) {
         messages = messages.map((msg) =>
-          msg.id === tempId ? { ...msg, id: persistedMessageId } : msg
+          msg.id === tempId
+            ? { ...msg, id: persistedMessageId, isUploading: false }
+            : msg
         );
+
+        if (hasAttachments && attachmentsToProcess.length > 0) {
+          try {
+            for (const attachment of attachmentsToProcess) {
+              const attachmentResult = await attachAttachmentsToEntity(
+                persistedMessageId,
+                "messages",
+                "messages",
+                attachment
+              );
+
+              if (!attachmentResult) {
+                errorToastMessage(
+                  $_("messaging.toast_attachment_failed", {
+                    values: { name: attachment.name },
+                  }) || `Failed to attach ${attachment.name}`
+                );
+              }
+            }
+
+            setTimeout(async () => {
+              try {
+                const response = await getMessagesBetweenUsers(
+                  currentUser?.shortname,
+                  selectedUser.shortname
+                );
+
+                if (
+                  response &&
+                  response.status === "success" &&
+                  response.records
+                ) {
+                  const updatedMessages = response.records
+                    .map((record) => {
+                      const attachments = record?.attachments?.media || null;
+                      const payload = record.attributes.payload;
+                      const body = payload.body;
+
+                      return {
+                        id: record.shortname,
+                        senderId: body.sender,
+                        receiverId: body.receiver,
+                        content: body.content,
+                        attachments: attachments,
+                        timestamp: new Date(
+                          record.attributes.created_at || Date.now()
+                        ),
+                        isOwn: body.sender === currentUser?.shortname,
+                      };
+                    })
+                    .sort(
+                      (a, b) =>
+                        new Date(a.timestamp).getTime() -
+                        new Date(b.timestamp).getTime()
+                    );
+
+                  messages = updatedMessages;
+                  conversationMessages.set(selectedUser.shortname, [
+                    ...messages,
+                  ]);
+
+                  try {
+                    localStorage.setItem(
+                      `chat_${currentUser?.shortname}_${selectedUser.shortname}`,
+                      JSON.stringify(messages)
+                    );
+                  } catch (error) {
+                    console.error("Cache update error:", error);
+                  }
+
+                  scrollToBottom();
+                }
+              } catch (error) {
+                console.error("Error refreshing messages:", error);
+              }
+            }, 1500);
+          } catch (attachmentError) {
+            errorToastMessage(
+              $_("messaging.toast_attachment_error") + ": " + attachmentError
+            );
+
+            messages = messages.map((msg) =>
+              msg.id === persistedMessageId
+                ? { ...msg, isUploading: false, uploadFailed: true }
+                : msg
+            );
+          }
+        }
 
         const wsMessage = {
           type: "message",
           senderId: currentUser?.shortname,
           receiverId: selectedUser.shortname,
-          content: messageContent,
+          content: messageContent || (hasAttachments ? "attachment" : ""),
           timestamp: new Date().toISOString(),
           messageId: persistedMessageId,
+          hasAttachments: hasAttachments,
         };
 
-        socket.send(JSON.stringify(wsMessage));
-
-        setTimeout(() => {
-          selectUser(selectedUser);
-        }, 1000);
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify(wsMessage));
+        }
       } else {
         errorToastMessage($_("messaging.toast_failed_persist_message"));
         messages = messages.filter((msg) => msg.id !== tempId);
@@ -461,22 +737,26 @@
         $_("messaging.toast_failed_send_message") + ": " + error
       );
       messages = messages.filter((msg) => msg.id !== tempId);
+    } finally {
+      isAttachmentLoading = false;
     }
 
-    const conversationKey = selectedUser.shortname;
-    const existingMessages = conversationMessages.get(conversationKey) || [];
-    const updatedMessages = messages.filter((msg) => msg.id !== tempId);
+    if (!hasAttachments) {
+      const conversationKey = selectedUser.shortname;
+      const existingMessages = conversationMessages.get(conversationKey) || [];
+      const updatedMessages = messages.filter((msg) => msg.id !== tempId);
 
-    if (updatedMessages.length > 0) {
-      conversationMessages.set(conversationKey, updatedMessages);
+      if (updatedMessages.length > 0) {
+        conversationMessages.set(conversationKey, updatedMessages);
 
-      try {
-        const cacheKey = `chat_${currentUser?.shortname}_${selectedUser.shortname}`;
-        localStorage.setItem(cacheKey, JSON.stringify(updatedMessages));
-      } catch (error) {
-        errorToastMessage(
-          $_("messaging.toast_failed_update_cache") + ": " + error
-        );
+        try {
+          const cacheKey = `chat_${currentUser?.shortname}_${selectedUser.shortname}`;
+          localStorage.setItem(cacheKey, JSON.stringify(updatedMessages));
+        } catch (error) {
+          errorToastMessage(
+            $_("messaging.toast_failed_update_cache") + ": " + error
+          );
+        }
       }
     }
   }
@@ -506,6 +786,202 @@
   function toggleUserView() {
     showAllUsers = !showAllUsers;
     loadUsers();
+  }
+
+  function handleFileSelect(event) {
+    const files = Array.from(event.target.files);
+    selectedAttachments = [...selectedAttachments, ...files];
+    event.target.value = "";
+  }
+
+  function removeAttachment(index) {
+    selectedAttachments = selectedAttachments.filter((_, i) => i !== index);
+  }
+
+  function getPreviewUrl(file) {
+    if (file.type.startsWith("image/") || file.type.startsWith("video/")) {
+      return URL.createObjectURL(file);
+    }
+    return null;
+  }
+
+  function getFileIcon(file) {
+    if (file.type.startsWith("image/")) return "🖼️";
+    if (file.type.startsWith("video/")) return "🎥";
+    if (file.type.startsWith("audio/")) {
+      if (file.name.includes("voice_message_")) return "🎤";
+      return "🎵";
+    }
+    if (file.type.includes("pdf")) return "📄";
+    if (file.type.includes("document") || file.type.includes("word"))
+      return "📝";
+    if (file.type.includes("spreadsheet") || file.type.includes("excel"))
+      return "📊";
+    return "📎";
+  }
+
+  function formatFileSize(bytes) {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  }
+
+  async function startVoiceRecording() {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+
+      const mimeTypes = [
+        "audio/mp4;codecs=mp4a.40.2",
+        "audio/mpeg",
+        "audio/wav",
+        "audio/mp4",
+        "audio/webm;codecs=opus",
+        "audio/webm",
+      ];
+
+      let selectedMimeType = "";
+      for (const mimeType of mimeTypes) {
+        if (MediaRecorder.isTypeSupported(mimeType)) {
+          selectedMimeType = mimeType;
+          break;
+        }
+      }
+
+      if (!selectedMimeType) {
+        throw new Error("No supported audio format found");
+      }
+
+      mediaRecorder = new MediaRecorder(stream, {
+        mimeType: selectedMimeType,
+        audioBitsPerSecond: 128000,
+      });
+
+      audioChunks = [];
+      recordingDuration = 0;
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunks.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunks, { type: selectedMimeType });
+
+        let fileExtension = "mp3";
+        let finalMimeType = selectedMimeType;
+
+        if (selectedMimeType.includes("webm")) {
+          fileExtension = "mp3";
+          finalMimeType = "audio/mpeg";
+        } else if (selectedMimeType.includes("mp4")) {
+          fileExtension = "mp3";
+          finalMimeType = "audio/mpeg";
+        } else if (selectedMimeType.includes("wav")) {
+          fileExtension = "wav";
+          finalMimeType = "audio/wav";
+        }
+
+        const fileName = `voice_message_${Date.now()}.${fileExtension}`;
+
+        const audioFile = new File([audioBlob], fileName, {
+          type: finalMimeType,
+          lastModified: Date.now(),
+        });
+
+        selectedAttachments = [...selectedAttachments, audioFile];
+
+        if (stream) {
+          stream.getTracks().forEach((track) => track.stop());
+          stream = null;
+        }
+
+        successToastMessage(
+          $_("messaging.toast_voice_recorded") ||
+            "Voice message recorded successfully"
+        );
+      };
+
+      mediaRecorder.start();
+      isRecording = true;
+
+      recordingInterval = setInterval(() => {
+        recordingDuration++;
+      }, 1000);
+
+      successToastMessage(
+        $_("messaging.toast_recording_started") || "Recording started..."
+      );
+    } catch (error) {
+      errorToastMessage(
+        $_("messaging.toast_recording_failed") + ": " + error.message ||
+          "Failed to start recording"
+      );
+      isRecording = false;
+
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+        stream = null;
+      }
+    }
+  }
+
+  function stopVoiceRecording() {
+    if (mediaRecorder && mediaRecorder.state === "recording") {
+      mediaRecorder.stop();
+    }
+
+    isRecording = false;
+
+    if (recordingInterval) {
+      clearInterval(recordingInterval);
+      recordingInterval = null;
+    }
+  }
+
+  function cancelVoiceRecording() {
+    if (mediaRecorder && mediaRecorder.state === "recording") {
+      mediaRecorder.stop();
+    }
+
+    isRecording = false;
+    recordingDuration = 0;
+    audioChunks = [];
+
+    if (recordingInterval) {
+      clearInterval(recordingInterval);
+      recordingInterval = null;
+    }
+
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+      stream = null;
+    }
+
+    successToastMessage(
+      $_("messaging.toast_recording_cancelled") || "Recording cancelled"
+    );
+  }
+
+  function getFileExtensionFromMime(mimeType) {
+    if (mimeType.includes("mp4") || mimeType.includes("mpeg")) return "mp3";
+    if (mimeType.includes("wav")) return "wav";
+    if (mimeType.includes("webm")) return "mp3";
+    return "mp3";
+  }
+
+  function formatRecordingDuration(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   }
 </script>
 
@@ -666,7 +1142,82 @@
             {#each messages as message (message.id)}
               <div class="message" class:own={message.isOwn}>
                 <div class="message-content">
-                  <div class="message-text">{message.content}</div>
+                  {#if message.content && message.content !== "attachment"}
+                    <div class="message-text">{message.content}</div>
+                  {/if}
+
+                  {#if message.isUploading}
+                    <div class="upload-status">
+                      <div class="upload-spinner"></div>
+                      <span>Uploading...</span>
+                    </div>
+                  {:else if message.uploadFailed}
+                    <div class="upload-failed">
+                      <span class="error-icon">⚠️</span>
+                      <span>Upload failed</span>
+                    </div>
+                  {/if}
+
+                  {#if message?.attachments && message?.attachments?.length > 0}
+                    <MessengerAttachments
+                      attachments={message.attachments}
+                      resource_type="messages"
+                      space_name="messages"
+                      subpath="/messages"
+                      parent_shortname={message.id}
+                      isOwner={message.isOwn}
+                    />
+                  {/if}
+
+                  <!-- Show temp attachments for pending messages -->
+                  {#if message.hasAttachments && message.attachments && !message.attachments?.media && !message.isUploading}
+                    <div class="message-attachments">
+                      {#each message.attachments as file}
+                        <div class="attachment-item temp-attachment">
+                          {#if file.type.startsWith("audio/") && file.name.includes("voice_message_")}
+                            <!-- Voice Message Preview -->
+                            <div class="voice-message-preview">
+                              <div class="voice-message-icon">🎤</div>
+                              <div class="voice-message-info">
+                                <div class="voice-message-label">
+                                  Voice Message
+                                </div>
+                                <div class="file-size">
+                                  {formatFileSize(file.size)}
+                                </div>
+                              </div>
+                              <audio controls class="voice-audio-control">
+                                <source
+                                  src={getPreviewUrl(file)}
+                                  type={file.type}
+                                />
+                                Your browser does not support the audio element.
+                              </audio>
+                            </div>
+                          {:else if getPreviewUrl(file)}
+                            <img
+                              src={getPreviewUrl(file)}
+                              alt={file.name}
+                              class="attachment-image"
+                            />
+                          {:else}
+                            <div class="attachment-file">
+                              <div class="file-icon-display">
+                                {getFileIcon(file)}
+                              </div>
+                              <div class="file-details">
+                                <div class="file-name">{file.name}</div>
+                                <div class="file-size">
+                                  {formatFileSize(file.size)}
+                                </div>
+                              </div>
+                            </div>
+                          {/if}
+                        </div>
+                      {/each}
+                    </div>
+                  {/if}
+
                   <div class="message-time">
                     {formatTime(message.timestamp)}
                   </div>
@@ -678,30 +1229,135 @@
 
         <!-- Message Input -->
         <div class="message-input-container">
+          <!-- Attachment Preview -->
+          {#if selectedAttachments.length > 0}
+            <div class="attachment-preview-container">
+              {#each selectedAttachments as file, index}
+                <div class="attachment-preview-item">
+                  {#if file.type.startsWith("audio/") && file.name.includes("voice_message_")}
+                    <!-- Voice Message Preview -->
+                    <div class="voice-message-icon">🎤</div>
+                    <div class="file-info">
+                      <div class="file-name">Voice Message</div>
+                      <div class="file-size">{formatFileSize(file.size)}</div>
+                    </div>
+                  {:else if getPreviewUrl(file)}
+                    <img
+                      src={getPreviewUrl(file)}
+                      alt={file.name}
+                      class="preview-image"
+                    />
+                    <div class="file-info">
+                      <div class="file-name">{file.name}</div>
+                      <div class="file-size">{formatFileSize(file.size)}</div>
+                    </div>
+                  {:else}
+                    <div class="file-icon">{getFileIcon(file)}</div>
+                    <div class="file-info">
+                      <div class="file-name">{file.name}</div>
+                      <div class="file-size">{formatFileSize(file.size)}</div>
+                    </div>
+                  {/if}
+                  <button
+                    class="remove-attachment-btn"
+                    onclick={() => removeAttachment(index)}
+                    aria-label="Remove attachment"
+                  >
+                    ✕
+                  </button>
+                </div>
+              {/each}
+            </div>
+          {/if}
+
           <div class="message-input">
+            <input
+              type="file"
+              id="attachment-input"
+              multiple
+              accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
+              onchange={handleFileSelect}
+              style="display: none;"
+            />
+            <button
+              class="attachment-btn"
+              onclick={() =>
+                document.getElementById("attachment-input").click()}
+              disabled={!isConnected || isRecording}
+              aria-label="Add attachment"
+            >
+              📎
+            </button>
+
+            <!-- Voice Recording Button -->
+            {#if !isRecording}
+              <button
+                class="voice-btn"
+                onclick={startVoiceRecording}
+                disabled={!isConnected}
+                aria-label="Record voice message"
+                title="Record voice message"
+              >
+                🎤
+              </button>
+            {:else}
+              <div class="voice-recording-controls">
+                <div class="recording-indicator">
+                  <div class="recording-dot"></div>
+                  <span class="recording-duration"
+                    >{formatRecordingDuration(recordingDuration)}</span
+                  >
+                </div>
+                <button
+                  class="voice-control-btn cancel"
+                  onclick={cancelVoiceRecording}
+                  aria-label="Cancel recording"
+                  title="Cancel recording"
+                >
+                  ✕
+                </button>
+                <button
+                  class="voice-control-btn stop"
+                  onclick={stopVoiceRecording}
+                  aria-label="Stop recording"
+                  title="Stop recording"
+                >
+                  ⏹️
+                </button>
+              </div>
+            {/if}
+
             <textarea
               bind:value={currentMessage}
               placeholder={$_("messaging.type_a_message")}
-              disabled={!isConnected}
+              disabled={!isConnected || isRecording}
               rows="1"
               onkeydown={handleKeydown}
             ></textarea>
             <button
               class="send-btn"
               onclick={sendMessage}
-              disabled={!currentMessage.trim() || !isConnected}
+              disabled={(!currentMessage.trim() &&
+                selectedAttachments.length === 0) ||
+                !isConnected ||
+                isAttachmentLoading ||
+                isRecording}
               aria-label="Send message"
             >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <path d="m22 2-7 20-4-9-9-4 20-7z" />
-              </svg>
+              {#if isAttachmentLoading}
+                <div class="loading-spinner"></div>
+              {:else}
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="m22 2-7 20-4-9-9-4 20-7z" />
+                </svg>
+              {/if}
             </button>
           </div>
         </div>
@@ -972,10 +1628,6 @@
     color: #22c55e;
   }
 
-  .offline-text {
-    color: #64748b;
-  }
-
   .chat-area {
     flex: 1;
     display: flex;
@@ -990,22 +1642,6 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-  }
-
-  .refresh-messages-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 1.2rem;
-    padding: 0.5rem;
-    border-radius: 4px;
-    color: #64748b;
-    transition: all 0.2s;
-  }
-
-  .refresh-messages-btn:hover {
-    background: #f1f5f9;
-    color: #1e293b;
   }
 
   .chat-user-info {
@@ -1118,6 +1754,401 @@
     cursor: not-allowed;
   }
 
+  .attachment-btn {
+    background: none;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 4px;
+    transition: all 0.2s;
+    font-size: 1.2rem;
+  }
+
+  .attachment-btn:hover:not(:disabled) {
+    background: #f1f5f9;
+    color: #1e293b;
+  }
+
+  .attachment-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Voice Recording Styles */
+  .voice-btn {
+    background: none;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 4px;
+    transition: all 0.2s;
+    font-size: 1.2rem;
+  }
+
+  .voice-btn:hover:not(:disabled) {
+    background: #f1f5f9;
+    color: #ef4444;
+  }
+
+  .voice-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .voice-recording-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 1rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .recording-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .recording-dot {
+    width: 8px;
+    height: 8px;
+    background: #ef4444;
+    border-radius: 50%;
+    animation: pulse-recording 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse-recording {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.5;
+      transform: scale(1.2);
+    }
+  }
+
+  .recording-duration {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #ef4444;
+    min-width: 40px;
+    font-family: monospace;
+  }
+
+  .voice-control-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
+    transition: all 0.2s;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .voice-control-btn.cancel {
+    color: #64748b;
+  }
+
+  .voice-control-btn.cancel:hover {
+    background: #f1f5f9;
+    color: #ef4444;
+  }
+
+  .voice-control-btn.stop {
+    color: #ef4444;
+  }
+
+  .voice-control-btn.stop:hover {
+    background: #fef2f2;
+    color: #dc2626;
+  }
+
+  /* Voice Message Styles */
+  .voice-message-preview {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-radius: 0.5rem;
+    max-width: 280px;
+  }
+
+  .voice-message-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    background: #e0f2fe;
+    border-radius: 0.25rem;
+    color: #0284c7;
+  }
+
+  .voice-message-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .voice-message-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #0284c7;
+    margin-bottom: 0.125rem;
+  }
+
+  .voice-audio-control {
+    width: 200px;
+    height: 30px;
+  }
+
+  .voice-audio-control::-webkit-media-controls-panel {
+    background-color: transparent;
+  }
+
+  .attachment-preview-container {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  .attachment-preview-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    background: white;
+    border-radius: 0.375rem;
+    margin-bottom: 0.5rem;
+    border: 1px solid #e2e8f0;
+  }
+
+  .attachment-preview-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .preview-image {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 0.25rem;
+  }
+
+  .file-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    background: #f1f5f9;
+    border-radius: 0.25rem;
+  }
+
+  .file-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .file-name {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #1e293b;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .file-size {
+    font-size: 0.75rem;
+    color: #64748b;
+  }
+
+  .remove-attachment-btn {
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.2s;
+  }
+
+  .remove-attachment-btn:hover {
+    background: #dc2626;
+  }
+
+  .message-attachments {
+    margin-top: 0.5rem;
+  }
+
+  /* Compact styling for Attachments component within messages */
+  .message-attachments :global(.attachments-container) {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* .message-attachments :global(.attachments-grid) {
+    display: block;
+    gap: 0.5rem;
+    margin-top: 0;
+  } */
+
+  .message-attachments :global(.attachment-card) {
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    box-shadow: none;
+    margin-bottom: 0.5rem;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .message-attachments :global(.attachment-card:hover) {
+    transform: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .message-attachments :global(.attachment-header) {
+    display: none;
+  }
+
+  .message-attachments :global(.attachment-preview) {
+    height: auto;
+    min-height: auto;
+    background: transparent;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .message-attachments :global(.media-wrapper) {
+    height: auto;
+    max-height: 200px;
+  }
+
+  .message-attachments :global(.attachment-preview img) {
+    width: 100%;
+    height: auto;
+    max-height: 200px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+  }
+
+  .message-attachments :global(.attachment-preview video) {
+    width: 100%;
+    height: auto;
+    max-height: 200px;
+    max-width: 280px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+  }
+
+  .message-attachments :global(.media-overlay) {
+    border-radius: 8px;
+  }
+
+  .message-attachments :global(.attachment-info) {
+    padding: 0.5rem 0 0 0;
+    background: transparent;
+  }
+
+  .message-attachments :global(.attachment-name) {
+    font-size: 0.75rem;
+    color: currentColor;
+    opacity: 0.8;
+    margin-bottom: 0;
+  }
+
+  .message-attachments :global(.unsupported-file) {
+    height: 80px;
+    background: rgba(248, 250, 252, 0.5);
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+  }
+
+  .attachment-item {
+    margin-bottom: 0.5rem;
+  }
+
+  .attachment-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .attachment-image {
+    max-width: 200px;
+    max-height: 200px;
+    object-fit: cover;
+    border-radius: 0.5rem;
+    border: 1px solid #e2e8f0;
+  }
+
+  .attachment-file {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    max-width: 250px;
+  }
+
+  .file-icon-display {
+    font-size: 1.5rem;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border-radius: 0.25rem;
+  }
+
+  .file-details {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .temp-attachment {
+    opacity: 0.7;
+  }
+
+  .loading-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #ffffff40;
+    border-radius: 50%;
+    border-top-color: #ffffff;
+    animation: spin 1s ease-in-out infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
   .no-chat-selected {
     flex: 1;
     display: flex;
@@ -1182,5 +2213,57 @@
     .message-content {
       max-width: 85%;
     }
+  }
+
+  .upload-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: rgba(59, 130, 246, 0.1);
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    color: #3b82f6;
+    margin-bottom: 0.5rem;
+  }
+
+  .upload-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #3b82f640;
+    border-radius: 50%;
+    border-top-color: #3b82f6;
+    animation: spin 1s ease-in-out infinite;
+  }
+
+  .upload-failed {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: rgba(239, 68, 68, 0.1);
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    color: #ef4444;
+    margin-bottom: 0.5rem;
+  }
+
+  .error-icon {
+    font-size: 1rem;
+  }
+
+  .message.own .upload-status {
+    background: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .message.own .upload-spinner {
+    border-color: rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+  }
+
+  .message.own .upload-failed {
+    background: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.9);
   }
 </style>

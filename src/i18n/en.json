@@ -1883,5 +1883,11 @@
   "messaging.toast_failed_load_cache": "Failed to load from localStorage cache",
   "messaging.toast_failed_persist_message": "Failed to persist message - no ID returned",
   "messaging.toast_failed_send_message": "Failed to send message",
-  "messaging.toast_failed_update_cache": "Failed to update localStorage cache"
+  "messaging.toast_failed_update_cache": "Failed to update localStorage cache",
+  "messaging.toast_voice_recorded": "Voice message recorded successfully",
+  "messaging.toast_recording_started": "Recording started...",
+  "messaging.toast_recording_failed": "Failed to start recording",
+  "messaging.toast_recording_cancelled": "Recording cancelled",
+  "messaging.toast_attachment_failed": "Failed to attach file",
+  "messaging.toast_attachment_error": "Error processing attachment"
 }
