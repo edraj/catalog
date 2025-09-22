@@ -16,11 +16,23 @@
     successToastMessage,
     errorToastMessage,
   } from "@/lib/toasts_messages";
-  import { Dmart, ResourceType } from "@edraj/tsdmart";
-  import Attachments from "@/components/Attachments.svelte";
-  import Media from "@/components/Media.svelte";
-  import { getFileExtension } from "@/lib/fileUtils";
   import MessengerAttachments from "@/components/MessengerAttachments.svelte";
+  import {
+    getDisplayName,
+    formatTime,
+    getPreviewUrl,
+    getFileIcon,
+    formatFileSize,
+    formatRecordingDuration,
+    scrollToBottom,
+    transformUserRecord,
+    transformMessageRecord,
+    getCacheKey,
+    cacheMessages,
+    getCachedMessages,
+    isRelevantMessage,
+    sortMessagesByTimestamp,
+  } from "@/lib/utils/messagingUtils";
 
   let socket = null;
   let isConnected = $state(false);
@@ -107,23 +119,7 @@
         const response = await getAllUsers();
         if (response.status === "success" && response.records) {
           users = response.records
-            .map((record) => {
-              const attrs = record.attributes;
-              return {
-                id: record.shortname,
-                shortname: record.shortname,
-                name:
-                  getDisplayName(attrs.displayname) ||
-                  attrs.email ||
-                  record.shortname,
-                email: attrs.email,
-                avatar: attrs.social_avatar_url || null,
-                online: false,
-                lastSeen: new Date(attrs.updated_at || attrs.created_at),
-                roles: attrs.roles || [],
-                isActive: attrs.is_active,
-              };
-            })
+            .map(transformUserRecord)
             .filter(
               (user) => user.isActive && user.id !== currentUser?.shortname
             );
@@ -142,23 +138,7 @@
 
         if (response.status === "success" && response.records) {
           users = response.records
-            .map((record) => {
-              const attrs = record.attributes;
-              return {
-                id: record.shortname,
-                shortname: record.shortname,
-                name:
-                  getDisplayName(attrs.displayname) ||
-                  attrs.email ||
-                  record.shortname,
-                email: attrs.email,
-                avatar: attrs.social_avatar_url || null,
-                online: false,
-                lastSeen: new Date(attrs.updated_at || attrs.created_at),
-                roles: attrs.roles || [],
-                isActive: attrs.is_active,
-              };
-            })
+            .map(transformUserRecord)
             .filter((user) => user.isActive);
         } else {
           users = [];
@@ -170,11 +150,6 @@
     } finally {
       isUsersLoading = false;
     }
-  }
-
-  function getDisplayName(displayname) {
-    if (!displayname) return null;
-    return displayname.en || displayname.ar || displayname.ku || null;
   }
 
   function connectWebSocket() {
@@ -243,13 +218,13 @@
 
     if (data.type === "message") {
       if (selectedUser && data.senderId && data.receiverId) {
-        const isRelevantMessage =
-          (data.senderId === selectedUser.shortname &&
-            data.receiverId === currentUser?.shortname) ||
-          (data.senderId === currentUser?.shortname &&
-            data.receiverId === selectedUser.shortname);
+        const isRelevant = isRelevantMessage(
+          data,
+          selectedUser.shortname,
+          currentUser?.shortname
+        );
 
-        if (isRelevantMessage) {
+        if (isRelevant) {
           if (data.senderId === currentUser?.shortname) {
             return;
           }
@@ -287,29 +262,11 @@
                   response.status === "success" &&
                   response.records
                 ) {
-                  const updatedMessages = response.records
-                    .map((record) => {
-                      const attachments = record?.attachments?.media || null;
-                      const payload = record.attributes.payload;
-                      const body = payload.body;
-
-                      return {
-                        id: record.shortname,
-                        senderId: body.sender,
-                        receiverId: body.receiver,
-                        content: body.content,
-                        attachments: attachments,
-                        timestamp: new Date(
-                          record.attributes.created_at || Date.now()
-                        ),
-                        isOwn: body.sender === currentUser?.shortname,
-                      };
-                    })
-                    .sort(
-                      (a, b) =>
-                        new Date(a.timestamp).getTime() -
-                        new Date(b.timestamp).getTime()
-                    );
+                  const updatedMessages = sortMessagesByTimestamp(
+                    response.records.map((record) =>
+                      transformMessageRecord(record, currentUser?.shortname)
+                    )
+                  );
 
                   const hasNewAttachmentData = updatedMessages.some(
                     (msg) => msg.id === data.messageId && msg.attachments
@@ -322,16 +279,13 @@
                       ...messages,
                     ]);
 
-                    try {
-                      localStorage.setItem(
-                        `chat_${currentUser?.shortname}_${selectedUser.shortname}`,
-                        JSON.stringify(messages)
-                      );
-                    } catch (error) {
-                      console.error("Cache update error:", error);
-                    }
+                    const cacheKey = getCacheKey(
+                      currentUser?.shortname,
+                      selectedUser.shortname
+                    );
+                    cacheMessages(cacheKey, messages);
 
-                    scrollToBottom();
+                    scrollToBottom(chatContainer);
                   }
                 }
               } catch (error) {
@@ -388,13 +342,13 @@
       }
 
       if (selectedUser) {
-        const isRelevantMessage =
-          (messageData.senderId === selectedUser.shortname &&
-            messageData.receiverId === currentUser?.shortname) ||
-          (messageData.senderId === currentUser?.shortname &&
-            messageData.receiverId === selectedUser.shortname);
+        const isRelevant = isRelevantMessage(
+          messageData,
+          selectedUser.shortname,
+          currentUser?.shortname
+        );
 
-        if (isRelevantMessage) {
+        if (isRelevant) {
           if (messageData.senderId === currentUser?.shortname) {
             return;
           }
@@ -411,29 +365,11 @@
                 response.status === "success" &&
                 response.records
               ) {
-                const updatedMessages = response.records
-                  .map((record) => {
-                    const attachments = record?.attachments?.media || null;
-                    const payload = record.attributes.payload;
-                    const body = payload.body;
-
-                    return {
-                      id: record.shortname,
-                      senderId: body.sender,
-                      receiverId: body.receiver,
-                      content: body.content,
-                      attachments: attachments,
-                      timestamp: new Date(
-                        record.attributes.created_at || Date.now()
-                      ),
-                      isOwn: body.sender === currentUser?.shortname,
-                    };
-                  })
-                  .sort(
-                    (a, b) =>
-                      new Date(a.timestamp).getTime() -
-                      new Date(b.timestamp).getTime()
-                  );
+                const updatedMessages = sortMessagesByTimestamp(
+                  response.records.map((record) =>
+                    transformMessageRecord(record, currentUser?.shortname)
+                  )
+                );
 
                 const currentMessageCount = messages.length;
                 const newMessageCount = updatedMessages.length;
@@ -448,16 +384,13 @@
                     ...messages,
                   ]);
 
-                  try {
-                    localStorage.setItem(
-                      `chat_${currentUser?.shortname}_${selectedUser.shortname}`,
-                      JSON.stringify(messages)
-                    );
-                  } catch (error) {
-                    console.error("Cache update error:", error);
-                  }
+                  const cacheKey = getCacheKey(
+                    currentUser?.shortname,
+                    selectedUser.shortname
+                  );
+                  cacheMessages(cacheKey, messages);
 
-                  scrollToBottom();
+                  scrollToBottom(chatContainer);
                 }
               }
             } catch (error) {
@@ -484,17 +417,14 @@
         newMessage,
       ]);
 
-      try {
-        const cacheKey = `chat_${currentUser?.shortname}_${selectedUser.shortname}`;
-        localStorage.setItem(cacheKey, JSON.stringify(messages));
-      } catch (error) {
-        errorToastMessage(
-          $_("messaging.toast_failed_update_cache") + ": " + error
-        );
-      }
+      const cacheKey = getCacheKey(
+        currentUser?.shortname,
+        selectedUser.shortname
+      );
+      cacheMessages(cacheKey, messages);
     }
 
-    scrollToBottom();
+    scrollToBottom(chatContainer);
   }
 
   async function selectUser(user) {
@@ -510,42 +440,19 @@
       );
 
       if (response && response.status === "success" && response.records) {
-        messages = response.records
-          .map((record) => {
-            const attachments = record?.attachments?.media || null;
-            const payload = record.attributes.payload;
-            const body = payload.body;
-
-            return {
-              id: record.shortname,
-              senderId: body.sender,
-              receiverId: body.receiver,
-              content: body.content,
-              attachments: attachments,
-              timestamp: new Date(record.attributes.created_at || Date.now()),
-              isOwn: body.sender === currentUser?.shortname,
-            };
-          })
-          .sort(
-            (a, b) =>
-              new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-          );
+        messages = sortMessagesByTimestamp(
+          response.records.map((record) =>
+            transformMessageRecord(record, currentUser?.shortname)
+          )
+        );
       } else {
         messages = [];
       }
 
       conversationMessages.set(user.shortname, [...messages]);
 
-      try {
-        localStorage.setItem(
-          `chat_${currentUser?.shortname}_${user.shortname}`,
-          JSON.stringify(messages)
-        );
-      } catch (error) {
-        errorToastMessage(
-          $_("messaging.toast_failed_load_cache") + ": " + error
-        );
-      }
+      const cacheKey = getCacheKey(currentUser?.shortname, user.shortname);
+      cacheMessages(cacheKey, messages);
     } catch (error) {
       errorToastMessage(
         $_("messaging.toast_failed_load_history") + ": " + error
@@ -553,23 +460,12 @@
       messages = conversationMessages.get(user.shortname) || [];
 
       if (messages.length === 0) {
-        try {
-          const cachedMessages = localStorage.getItem(
-            `chat_${currentUser?.shortname}_${user.shortname}`
-          );
-          if (cachedMessages) {
-            messages = JSON.parse(cachedMessages);
-          }
-        } catch (error) {
-          errorToastMessage(
-            $_("messaging.toast_failed_load_cache") + ": " + error
-          );
-          messages = [];
-        }
+        const cacheKey = getCacheKey(currentUser?.shortname, user.shortname);
+        messages = getCachedMessages(cacheKey);
       }
     } finally {
       isMessagesLoading = false;
-      scrollToBottom();
+      scrollToBottom(chatContainer);
     }
   }
 
@@ -603,7 +499,7 @@
     };
 
     messages = [...messages, newMessage];
-    scrollToBottom();
+    scrollToBottom(chatContainer);
 
     currentMessage = "";
     const attachmentsToProcess = [...selectedAttachments];
@@ -658,45 +554,24 @@
                   response.status === "success" &&
                   response.records
                 ) {
-                  const updatedMessages = response.records
-                    .map((record) => {
-                      const attachments = record?.attachments?.media || null;
-                      const payload = record.attributes.payload;
-                      const body = payload.body;
-
-                      return {
-                        id: record.shortname,
-                        senderId: body.sender,
-                        receiverId: body.receiver,
-                        content: body.content,
-                        attachments: attachments,
-                        timestamp: new Date(
-                          record.attributes.created_at || Date.now()
-                        ),
-                        isOwn: body.sender === currentUser?.shortname,
-                      };
-                    })
-                    .sort(
-                      (a, b) =>
-                        new Date(a.timestamp).getTime() -
-                        new Date(b.timestamp).getTime()
-                    );
+                  const updatedMessages = sortMessagesByTimestamp(
+                    response.records.map((record) =>
+                      transformMessageRecord(record, currentUser?.shortname)
+                    )
+                  );
 
                   messages = updatedMessages;
                   conversationMessages.set(selectedUser.shortname, [
                     ...messages,
                   ]);
 
-                  try {
-                    localStorage.setItem(
-                      `chat_${currentUser?.shortname}_${selectedUser.shortname}`,
-                      JSON.stringify(messages)
-                    );
-                  } catch (error) {
-                    console.error("Cache update error:", error);
-                  }
+                  const cacheKey = getCacheKey(
+                    currentUser?.shortname,
+                    selectedUser.shortname
+                  );
+                  cacheMessages(cacheKey, messages);
 
-                  scrollToBottom();
+                  scrollToBottom(chatContainer);
                 }
               } catch (error) {
                 console.error("Error refreshing messages:", error);
@@ -749,31 +624,13 @@
       if (updatedMessages.length > 0) {
         conversationMessages.set(conversationKey, updatedMessages);
 
-        try {
-          const cacheKey = `chat_${currentUser?.shortname}_${selectedUser.shortname}`;
-          localStorage.setItem(cacheKey, JSON.stringify(updatedMessages));
-        } catch (error) {
-          errorToastMessage(
-            $_("messaging.toast_failed_update_cache") + ": " + error
-          );
-        }
+        const cacheKey = getCacheKey(
+          currentUser?.shortname,
+          selectedUser.shortname
+        );
+        cacheMessages(cacheKey, updatedMessages);
       }
     }
-  }
-
-  function scrollToBottom() {
-    setTimeout(() => {
-      if (chatContainer) {
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-      }
-    }, 100);
-  }
-
-  function formatTime(date) {
-    return new Date(date).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
   }
 
   function handleKeydown(event) {
@@ -796,36 +653,6 @@
 
   function removeAttachment(index) {
     selectedAttachments = selectedAttachments.filter((_, i) => i !== index);
-  }
-
-  function getPreviewUrl(file) {
-    if (file.type.startsWith("image/") || file.type.startsWith("video/")) {
-      return URL.createObjectURL(file);
-    }
-    return null;
-  }
-
-  function getFileIcon(file) {
-    if (file.type.startsWith("image/")) return "🖼️";
-    if (file.type.startsWith("video/")) return "🎥";
-    if (file.type.startsWith("audio/")) {
-      if (file.name.includes("voice_message_")) return "🎤";
-      return "🎵";
-    }
-    if (file.type.includes("pdf")) return "📄";
-    if (file.type.includes("document") || file.type.includes("word"))
-      return "📝";
-    if (file.type.includes("spreadsheet") || file.type.includes("excel"))
-      return "📊";
-    return "📎";
-  }
-
-  function formatFileSize(bytes) {
-    if (bytes === 0) return "0 Bytes";
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   }
 
   async function startVoiceRecording() {
@@ -969,19 +796,6 @@
     successToastMessage(
       $_("messaging.toast_recording_cancelled") || "Recording cancelled"
     );
-  }
-
-  function getFileExtensionFromMime(mimeType) {
-    if (mimeType.includes("mp4") || mimeType.includes("mpeg")) return "mp3";
-    if (mimeType.includes("wav")) return "wav";
-    if (mimeType.includes("webm")) return "mp3";
-    return "mp3";
-  }
-
-  function formatRecordingDuration(seconds) {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
   }
 </script>
 
