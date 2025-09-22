@@ -1000,98 +1000,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Attachments Section -->
-      <div class="section">
-        <div class="section-header">
-          <PaperClipOutline class="section-icon" />
-          <h2>
-            {$_("create_entry.attachments.section_title", {
-              values: { count: attachments.length },
-            })}
-          </h2>
-          <input
-            type="file"
-            id="fileInput"
-            multiple
-            onchange={handleFileChange}
-            style="display: none;"
-          />
-          <button
-            aria-label={$_("create_entry.attachments.add_files")}
-            class="add-files-button"
-            onclick={() => document.getElementById("fileInput").click()}
-          >
-            <UploadOutline class="icon button-icon" />
-            <span>{$_("create_entry.attachments.add_files")}</span>
-          </button>
-        </div>
-        <div class="section-content">
-          {#if attachments.length > 0}
-            <div class="attachments-grid">
-              {#each attachments as attachment, index}
-                <div class="attachment-card">
-                  <div class="attachment-preview">
-                    {#if getPreviewUrl(attachment)}
-                      {#if attachment.type.startsWith("image/")}
-                        <img
-                          src={getPreviewUrl(attachment) || "/placeholder.svg"}
-                          alt={attachment.name || "no-image"}
-                          class="attachment-image"
-                        />
-                      {:else if attachment.type.startsWith("video/")}
-                        <video
-                          src={getPreviewUrl(attachment)}
-                          class="attachment-video"
-                        >
-                          <track
-                            kind="captions"
-                            src=""
-                            srclang="en"
-                            label="English"
-                          />
-                        </video>
-                        <div class="video-overlay">
-                          <PlayOutline class="play-icon" />
-                        </div>
-                      {:else if attachment.type === "application/pdf"}
-                        <div class="file-preview">
-                          <FilePdfOutline class="file-icon pdf" />
-                        </div>
-                      {/if}
-                    {:else}
-                      <div class="file-preview">
-                        <FileImportSolid class="file-icon" />
-                      </div>
-                    {/if}
-                  </div>
-                  <div class="attachment-info">
-                    <p class="attachment-name">{attachment.name}</p>
-                    <p class="attachment-size">
-                      {(attachment.size / 1024).toFixed(1)} KB
-                    </p>
-                  </div>
-                  <button
-                    aria-label={$_("create_entry.attachments.remove_file", {
-                      values: { name: attachment.name },
-                    })}
-                    class="remove-attachment"
-                    onclick={() => removeAttachment(index)}
-                  >
-                    <TrashBinSolid class="icon" />
-                  </button>
-                </div>
-              {/each}
-            </div>
-          {:else}
-            <div class="empty-attachments">
-              <CloudArrowUpOutline class="empty-icon" />
-              <h3>{$_("create_entry.attachments.empty_title")}</h3>
-              <p>{$_("create_entry.attachments.empty_description")}</p>
-            </div>
-          {/if}
-        </div>
-      </div>
     {:else if entryType === "json"}
       <!-- Schema Selection Section -->
       <div class="section">
@@ -1156,8 +1064,6 @@
         </div>
       {/if}
     {:else if entryType === "template"}
-      <!-- Added template section -->
-      <!-- Template Selection Section -->
       <div class="section">
         <div class="section-header">
           <FileCheckSolid class="section-icon" />
@@ -1276,6 +1182,98 @@
         {/if}
       {/if}
     {/if}
+
+    <!-- Attachments Section -->
+    <div class="section">
+      <div class="section-header">
+        <PaperClipOutline class="section-icon" />
+        <h2>
+          {$_("create_entry.attachments.section_title", {
+            values: { count: attachments.length },
+          })}
+        </h2>
+        <input
+          type="file"
+          id="fileInput"
+          multiple
+          onchange={handleFileChange}
+          style="display: none;"
+        />
+        <button
+          aria-label={$_("create_entry.attachments.add_files")}
+          class="add-files-button"
+          onclick={() => document.getElementById("fileInput").click()}
+        >
+          <UploadOutline class="icon button-icon" />
+          <span>{$_("create_entry.attachments.add_files")}</span>
+        </button>
+      </div>
+      <div class="section-content">
+        {#if attachments.length > 0}
+          <div class="attachments-grid">
+            {#each attachments as attachment, index}
+              <div class="attachment-card">
+                <div class="attachment-preview">
+                  {#if getPreviewUrl(attachment)}
+                    {#if attachment.type.startsWith("image/")}
+                      <img
+                        src={getPreviewUrl(attachment) || "/placeholder.svg"}
+                        alt={attachment.name || "no-image"}
+                        class="attachment-image"
+                      />
+                    {:else if attachment.type.startsWith("video/")}
+                      <video
+                        src={getPreviewUrl(attachment)}
+                        class="attachment-video"
+                      >
+                        <track
+                          kind="captions"
+                          src=""
+                          srclang="en"
+                          label="English"
+                        />
+                      </video>
+                      <div class="video-overlay">
+                        <PlayOutline class="play-icon" />
+                      </div>
+                    {:else if attachment.type === "application/pdf"}
+                      <div class="file-preview">
+                        <FilePdfOutline class="file-icon pdf" />
+                      </div>
+                    {/if}
+                  {:else}
+                    <div class="file-preview">
+                      <FileImportSolid class="file-icon" />
+                    </div>
+                  {/if}
+                </div>
+                <div class="attachment-info">
+                  <p class="attachment-name">{attachment.name}</p>
+                  <p class="attachment-size">
+                    {(attachment.size / 1024).toFixed(1)} KB
+                  </p>
+                </div>
+                <button
+                  aria-label={$_("create_entry.attachments.remove_file", {
+                    values: { name: attachment.name },
+                  })}
+                  class="remove-attachment"
+                  onclick={() => removeAttachment(index)}
+                >
+                  <TrashBinSolid class="icon" />
+                </button>
+              </div>
+            {/each}
+          </div>
+        {:else}
+          <div class="empty-attachments">
+            <CloudArrowUpOutline class="empty-icon" />
+            <h3>{$_("create_entry.attachments.empty_title")}</h3>
+            <p>{$_("create_entry.attachments.empty_description")}</p>
+          </div>
+        {/if}
+      </div>
+    </div>
   </div>
 </div>
 

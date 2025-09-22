@@ -41,7 +41,6 @@
 
   function openPreview(attachment: Attachment) {
     const filename = attachment?.attributes?.payload?.body;
-    log.debug("Opening preview for file:", filename);
 
     if (
       isImageFile(filename) ||
@@ -69,7 +68,6 @@
         type,
         filename,
       };
-
       previewModal = true;
     }
   }
@@ -441,7 +439,8 @@
 
   @media (min-width: 1200px) {
     .attachments-grid {
-      grid-template-columns: repeat(3, 1fr);
+      /* grid-template-columns: repeat(3, 1fr); */
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     }
   }
 
