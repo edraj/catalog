@@ -16,6 +16,7 @@
   import { marked } from "marked";
   import TemplateEditor from "@/components/editors/TemplateEditor.svelte";
   import JsonEditor from "@/components/editors/JsonEditor.svelte";
+  import SchemaForm from "@/components/forms/SchemaForm.svelte";
 
   $goto;
 
@@ -46,6 +47,8 @@
   let isTemplateBasedItem = $state(false);
   let templateEditorContent = $state("");
   let jsonEditorContent = $state({});
+  let isSchemaBasedItem = $state(false);
+  let schemaEditorContent = $state("");
   const editForm = writable({
     title: "",
     content: "",
@@ -85,6 +88,9 @@
 
   function prepareContentForSave(content, originalContentType) {
     if (originalContentType === "json") {
+      if (isSchemaBasedItem) {
+        return schemaEditorContent;
+      }
       return jsonEditFormValue;
     }
 
@@ -99,6 +105,12 @@
       content: jsonEditFormValue,
     }));
   }
+
+  // function handleSchemaContentChange(newContent) {
+  //   schemaEditorContent = newContent;
+  //   editFormValue.content = JSON.stringify(newContent);
+  //   editForm.update((form) => ({ ...form, content: editFormValue.content }));
+  // }
 
   onMount(async () => {
     await initializeContent();
@@ -196,8 +208,16 @@
 
         const content = getItemContent(response);
 
+        // Check if this is a schema-based item
+        isSchemaBasedItem =
+          response.payload?.schema_shortname === "meta_schema";
+
         if (response.payload?.content_type === "json") {
-          jsonEditorContent = content;
+          if (isSchemaBasedItem) {
+            schemaEditorContent = content;
+          } else {
+            jsonEditorContent = content;
+          }
         }
 
         const tags = response.tags || [];
@@ -250,7 +270,11 @@
       let htmlContent;
 
       if (itemDataValue?.payload?.content_type === "json") {
-        htmlContent = JSON.stringify(jsonEditorContent);
+        if (isSchemaBasedItem) {
+          htmlContent = JSON.stringify(schemaEditorContent);
+        } else {
+          htmlContent = JSON.stringify(jsonEditorContent);
+        }
       } else {
         htmlContent =
           htmlEditor || editFormValue.content || templateEditorContent;
@@ -2177,6 +2201,8 @@
                       on:contentChange={(e) =>
                         handleTemplateContentChange(e.detail)}
                     />
+                  {:else if isSchemaBasedItem}
+                    <SchemaForm bind:content={schemaEditorContent} />
                   {:else if itemDataValue?.payload?.content_type === "json"}
                     <JsonEditor
                       content={jsonEditorContent}
