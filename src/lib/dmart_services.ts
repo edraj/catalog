@@ -691,14 +691,15 @@ export async function deleteEntity(
 
 export async function getSpaces(
   ignoreFilter = false,
-  scope: string = "managed"
+  scope: string = "managed",
+  hiddenspaces: string[] = []
 ): Promise<ApiQueryResponse> {
   const _spaces: any = await Dmart.query(
     {
       type: QueryType.spaces,
       space_name: "management",
       subpath: "/",
-      search: "",
+      search: "-shortname:management",
       limit: 100,
     },
     scope
@@ -706,6 +707,11 @@ export async function getSpaces(
 
   if (ignoreFilter === false) {
     _spaces.records = _spaces.records.filter((e) => !e.attributes.hide_space);
+    hiddenspaces.forEach((space) => {
+      _spaces.records = _spaces.records.filter(
+        (e) => !e.shortname.includes(space)
+      );
+    });
     _spaces.records = _spaces.records.filter(
       (e) => !e.shortname.includes("applications")
     );
@@ -1562,7 +1568,7 @@ export async function getUserConversations(userShortname: string) {
       retrieve_json_payload: true,
       exact_subpath: true,
       filter_shortnames: [],
-      retrieve_attachments: false,
+      retrieve_attachments: true,
       limit: 1000,
     };
 
@@ -1621,7 +1627,7 @@ export async function getMessagesBetweenUsers(
       retrieve_json_payload: true,
       exact_subpath: true,
       filter_shortnames: [],
-      retrieve_attachments: false,
+      retrieve_attachments: true,
     };
 
     const response = await Dmart.query(query);
@@ -1666,7 +1672,7 @@ export async function getMessageByShortname(shortname: string) {
       offset: 0,
       search: "",
       retrieve_json_payload: true,
-      retrieve_attachments: false,
+      retrieve_attachments: true,
       exact_subpath: true,
     };
 
@@ -1716,8 +1722,8 @@ export async function getConversationPartners(currentUserShortname: string) {
       retrieve_json_payload: true,
       exact_subpath: true,
       filter_shortnames: [],
-      retrieve_attachments: false,
-      limit: 1000, // Get more messages to find all conversation partners
+      retrieve_attachments: true,
+      limit: 1000,
     };
 
     const response = await Dmart.query(query);
@@ -1729,12 +1735,12 @@ export async function getConversationPartners(currentUserShortname: string) {
         const payload = record.attributes.payload?.body;
         if (!payload) return;
 
-        // If current user is sender, add receiver as conversation partner
         if (payload.sender === currentUserShortname && payload.receiver) {
           partnerShortnames.add(payload.receiver);
-        }
-        // If current user is receiver, add sender as conversation partner
-        else if (payload.receiver === currentUserShortname && payload.sender) {
+        } else if (
+          payload.receiver === currentUserShortname &&
+          payload.sender
+        ) {
           partnerShortnames.add(payload.sender);
         }
       });
