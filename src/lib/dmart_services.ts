@@ -1659,7 +1659,9 @@ export async function getUserConversations(userShortname: string) {
 
 export async function getMessagesBetweenUsers(
   currentUserShortname: string,
-  otherUserShortname: string
+  otherUserShortname: string,
+  limit: number = 10,
+  offset: number = 0
 ) {
   try {
     const query = {
@@ -1673,6 +1675,8 @@ export async function getMessagesBetweenUsers(
       exact_subpath: true,
       filter_shortnames: [],
       retrieve_attachments: true,
+      limit: limit,
+      offset: offset,
     };
 
     const response = await Dmart.query(query);
