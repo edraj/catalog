@@ -5,7 +5,7 @@
     deleteEntity,
     getEntity,
     getMyEntities,
-    updateEntity,
+    replaceEntity,
   } from "@/lib/dmart_services";
   import { Diamonds } from "svelte-loading-spinners";
   import { _, locale } from "@/i18n";
@@ -301,7 +301,7 @@
         content_type: contentType,
       };
 
-      const response = await updateEntity(
+      const response = await replaceEntity(
         itemShortnameValue,
         spaceNameValue,
         actualSubpathValue,
