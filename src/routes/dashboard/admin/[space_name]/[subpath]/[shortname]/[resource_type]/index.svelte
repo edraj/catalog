@@ -300,7 +300,6 @@
         is_active: editFormValue.is_active,
         content_type: contentType,
       };
-      console.log("Prepared entity data for update:", entityData);
 
       const response = await replaceEntity(
         itemShortnameValue,

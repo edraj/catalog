@@ -349,7 +349,6 @@ export async function replaceEntity(
     attributes.workflow_shortname = workflow_shortname;
     attributes.payload.schema_shortname = schema_shortname;
   }
-  console.log("Attributes for update:", attributes);
 
   const actionRequest = {
     space_name,
