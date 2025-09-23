@@ -49,6 +49,10 @@
   let attachment;
   let isUsersLoading = $state(true);
   let isMessagesLoading = $state(false);
+  let isLoadingOlderMessages = $state(false);
+  let hasMoreMessages = $state(true);
+  let messagesOffset = $state(0);
+  const MESSAGES_LIMIT = 10;
   let chatContainer = $state(null);
   let showAllUsers = $state(false);
 
@@ -65,7 +69,14 @@
   const WS_URL = website.websocket;
   const TOKEN = authToken;
 
+  // Add a reactive variable to detect the document direction
+  let isRTL = $state(false);
+
   onMount(async () => {
+    // Detect if the document is RTL
+    isRTL =
+      document.documentElement.dir === "rtl" ||
+      document.documentElement.getAttribute("dir") === "rtl";
     await initializeChat();
   });
 
@@ -86,6 +97,70 @@
       clearInterval(recordingInterval);
     }
   });
+
+  // Handle scroll event for loading older messages
+  function handleScroll(event) {
+    const container = event.target;
+    if (
+      container.scrollTop === 0 &&
+      hasMoreMessages &&
+      !isLoadingOlderMessages
+    ) {
+      loadOlderMessages();
+    }
+  }
+
+  async function loadOlderMessages() {
+    if (!selectedUser || isLoadingOlderMessages || !hasMoreMessages) return;
+
+    isLoadingOlderMessages = true;
+    const previousScrollHeight = chatContainer.scrollHeight;
+
+    try {
+      const response = await getMessagesBetweenUsers(
+        currentUser?.shortname,
+        selectedUser.shortname,
+        MESSAGES_LIMIT,
+        messagesOffset + MESSAGES_LIMIT
+      );
+
+      if (response && response.status === "success" && response.records) {
+        const olderMessages = sortMessagesByTimestamp(
+          response.records.map((record) =>
+            transformMessageRecord(record, currentUser?.shortname)
+          )
+        );
+
+        if (olderMessages.length < MESSAGES_LIMIT) {
+          hasMoreMessages = false;
+        }
+
+        if (olderMessages.length > 0) {
+          // Remove duplicates and add older messages to the beginning
+          const existingIds = new Set(messages.map((msg) => msg.id));
+          const newMessages = olderMessages.filter(
+            (msg) => !existingIds.has(msg.id)
+          );
+
+          messages = [...newMessages, ...messages];
+          messagesOffset += MESSAGES_LIMIT;
+
+          // Maintain scroll position
+          setTimeout(() => {
+            const newScrollHeight = chatContainer.scrollHeight;
+            chatContainer.scrollTop = newScrollHeight - previousScrollHeight;
+          }, 0);
+        }
+      }
+    } catch (error) {
+      errorToastMessage(
+        $_("messaging.toast_failed_load_older_messages") ||
+          "Failed to load older messages"
+      );
+    } finally {
+      isLoadingOlderMessages = false;
+    }
+  }
 
   async function initializeChat() {
     try {
@@ -432,11 +507,15 @@
 
     selectedUser = user;
     isMessagesLoading = true;
+    messagesOffset = 0;
+    hasMoreMessages = true;
 
     try {
       const response = await getMessagesBetweenUsers(
         currentUser?.shortname,
-        user.shortname
+        user.shortname,
+        MESSAGES_LIMIT,
+        0
       );
 
       if (response && response.status === "success" && response.records) {
@@ -445,8 +524,13 @@
             transformMessageRecord(record, currentUser?.shortname)
           )
         );
+
+        if (messages.length < MESSAGES_LIMIT) {
+          hasMoreMessages = false;
+        }
       } else {
         messages = [];
+        hasMoreMessages = false;
       }
 
       conversationMessages.set(user.shortname, [...messages]);
@@ -799,7 +883,7 @@
   }
 </script>
 
-<div class="chat-container">
+<div class="chat-container" class:rtl={isRTL}>
   <!-- Header -->
   <div class="chat-header">
     <h1>{$_("messaging.title")}</h1>
@@ -875,7 +959,7 @@
               onkeydown={(e) => e.key === "Enter" && selectUser(user)}
               aria-label={`Chat with ${user.name}`}
             >
-              <div class="user-avatar">
+              <div class="user-avatar mx-3">
                 {#if user.avatar}
                   <img
                     src={user.avatar || "/placeholder.svg"}
@@ -917,7 +1001,7 @@
         <!-- Chat Header -->
         <div class="chat-user-header">
           <div class="chat-user-info">
-            <div class="user-avatar small">
+            <div class="user-avatar small mx-3">
               {#if selectedUser.avatar}
                 <img
                   src={selectedUser.avatar || "/placeholder.svg"}
@@ -944,8 +1028,18 @@
           </div>
         </div>
 
-        <!-- Messages Container -->
-        <div class="messages-container" bind:this={chatContainer}>
+        <div
+          class="messages-container"
+          bind:this={chatContainer}
+          onscroll={handleScroll}
+        >
+          {#if isLoadingOlderMessages}
+            <div class="loading-older-messages">
+              <div class="loading-spinner"></div>
+              <span>Loading older messages...</span>
+            </div>
+          {/if}
+
           {#if isMessagesLoading}
             <div class="loading">Loading messages...</div>
           {:else if messages.length === 0}
@@ -1085,14 +1179,6 @@
           {/if}
 
           <div class="message-input">
-            <input
-              type="file"
-              id="attachment-input"
-              multiple
-              accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
-              onchange={handleFileSelect}
-              style="display: none;"
-            />
             <button
               class="attachment-btn"
               onclick={() =>
@@ -1140,6 +1226,14 @@
                 </button>
               </div>
             {/if}
+            <input
+              type="file"
+              id="attachment-input"
+              multiple
+              accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
+              onchange={handleFileSelect}
+              style="display: none;"
+            />
 
             <textarea
               bind:value={currentMessage}
@@ -1148,31 +1242,34 @@
               rows="1"
               onkeydown={handleKeydown}
             ></textarea>
-            <button
-              class="send-btn"
-              onclick={sendMessage}
-              disabled={(!currentMessage.trim() &&
-                selectedAttachments.length === 0) ||
-                !isConnected ||
-                isAttachmentLoading ||
-                isRecording}
-              aria-label="Send message"
-            >
-              {#if isAttachmentLoading}
-                <div class="loading-spinner"></div>
-              {:else}
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path d="m22 2-7 20-4-9-9-4 20-7z" />
-                </svg>
-              {/if}
-            </button>
+
+            <div class="input-actions">
+              <button
+                class="send-btn"
+                onclick={sendMessage}
+                disabled={(!currentMessage.trim() &&
+                  selectedAttachments.length === 0) ||
+                  !isConnected ||
+                  isAttachmentLoading ||
+                  isRecording}
+                aria-label="Send message"
+              >
+                {#if isAttachmentLoading}
+                  <div class="loading-spinner"></div>
+                {:else}
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="m22 2-7 20-4-9-9-4 20-7z" />
+                  </svg>
+                {/if}
+              </button>
+            </div>
           </div>
         </div>
       {:else}
@@ -1261,12 +1358,33 @@
     min-height: 0;
   }
 
+  /* Default LTR Layout */
   .users-sidebar {
     width: 320px;
     background: white;
     border-right: 1px solid #e2e8f0;
     display: flex;
     flex-direction: column;
+    order: 1;
+  }
+
+  .chat-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: white;
+    order: 2;
+  }
+
+  /* RTL Layout */
+  .chat-container.rtl .users-sidebar {
+    border-right: none;
+    border-left: 1px solid #e2e8f0;
+    order: 2;
+  }
+
+  .chat-container.rtl .chat-area {
+    order: 1;
   }
 
   .users-header {
@@ -1288,22 +1406,7 @@
     align-items: center;
   }
 
-  .toggle-view-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 1.2rem;
-    padding: 0.25rem;
-    border-radius: 4px;
-    color: #64748b;
-    transition: all 0.2s;
-  }
-
-  .toggle-view-btn:hover {
-    background: #f1f5f9;
-    color: #1e293b;
-  }
-
+  .toggle-view-btn,
   .refresh-btn {
     background: none;
     border: none;
@@ -1315,6 +1418,7 @@
     transition: all 0.2s;
   }
 
+  .toggle-view-btn:hover,
   .refresh-btn:hover {
     background: #f1f5f9;
     color: #1e293b;
@@ -1354,12 +1458,25 @@
 
   .user-item.selected {
     background: #e0f2fe;
+  }
+
+  /* Border styling for selected user */
+  .user-item.selected {
     border-right: 3px solid #0ea5e9;
+  }
+
+  .chat-container.rtl .user-item.selected {
+    border-right: none;
+    border-left: 3px solid #0ea5e9;
   }
 
   .user-avatar {
     position: relative;
     margin-right: 0.75rem;
+  }
+
+  .chat-container.rtl .user-avatar {
+    margin-right: 0;
     margin-left: 0.75rem;
   }
 
@@ -1399,6 +1516,11 @@
     border-radius: 50%;
     border: 2px solid white;
     background: #94a3b8;
+  }
+
+  .chat-container.rtl .online-indicator {
+    right: auto;
+    left: 2px;
   }
 
   .online-indicator.small {
@@ -1442,13 +1564,6 @@
     color: #22c55e;
   }
 
-  .chat-area {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    background: white;
-  }
-
   .chat-user-header {
     padding: 1rem 1.5rem;
     border-bottom: 1px solid #e2e8f0;
@@ -1465,6 +1580,11 @@
 
   .chat-user-info > div:last-child {
     margin-left: 0.75rem;
+  }
+
+  .chat-container.rtl .chat-user-info > div:last-child {
+    margin-left: 0;
+    margin-right: 0.75rem;
   }
 
   .chat-user-name {
@@ -1484,12 +1604,45 @@
     background: #f8fafc;
   }
 
+  .loading-older-messages {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    color: #64748b;
+    font-size: 0.875rem;
+  }
+
+  .loading-older-messages .loading-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 50%;
+    border-top-color: #64748b;
+    animation: spin 1s ease-in-out infinite;
+  }
+
   .message {
     display: flex;
     margin-bottom: 1rem;
   }
 
+  /* Default LTR message alignment */
   .message.own {
+    justify-content: flex-end;
+  }
+
+  .message:not(.own) {
+    justify-content: flex-start;
+  }
+
+  /* RTL message alignment */
+  .chat-container.rtl .message.own {
+    justify-content: flex-start;
+  }
+
+  .chat-container.rtl .message:not(.own) {
     justify-content: flex-end;
   }
 
@@ -1544,6 +1697,18 @@
     min-height: 20px;
   }
 
+  /* RTL text direction for textarea in RTL mode */
+  .chat-container.rtl .message-input textarea {
+    direction: rtl;
+    text-align: right;
+  }
+
+  .input-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
   .send-btn {
     background: #0ea5e9;
     color: white;
@@ -1568,28 +1733,7 @@
     cursor: not-allowed;
   }
 
-  .attachment-btn {
-    background: none;
-    border: none;
-    color: #64748b;
-    cursor: pointer;
-    padding: 0.5rem;
-    border-radius: 4px;
-    transition: all 0.2s;
-    font-size: 1.2rem;
-  }
-
-  .attachment-btn:hover:not(:disabled) {
-    background: #f1f5f9;
-    color: #1e293b;
-  }
-
-  .attachment-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  /* Voice Recording Styles */
+  .attachment-btn,
   .voice-btn {
     background: none;
     border: none;
@@ -1601,16 +1745,23 @@
     font-size: 1.2rem;
   }
 
+  .attachment-btn:hover:not(:disabled),
   .voice-btn:hover:not(:disabled) {
     background: #f1f5f9;
-    color: #ef4444;
+    color: #1e293b;
   }
 
+  .attachment-btn:disabled,
   .voice-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
 
+  .voice-btn:hover:not(:disabled) {
+    color: #ef4444;
+  }
+
+  /* Voice Recording Styles */
   .voice-recording-controls {
     display: flex;
     align-items: center;
@@ -1686,51 +1837,7 @@
     color: #dc2626;
   }
 
-  /* Voice Message Styles */
-  .voice-message-preview {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem;
-    background: #f0f9ff;
-    border: 1px solid #bae6fd;
-    border-radius: 0.5rem;
-    max-width: 280px;
-  }
-
-  .voice-message-icon {
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    background: #e0f2fe;
-    border-radius: 0.25rem;
-    color: #0284c7;
-  }
-
-  .voice-message-info {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .voice-message-label {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #0284c7;
-    margin-bottom: 0.125rem;
-  }
-
-  .voice-audio-control {
-    width: 200px;
-    height: 30px;
-  }
-
-  .voice-audio-control::-webkit-media-controls-panel {
-    background-color: transparent;
-  }
-
+  /* Attachment Preview Styles */
   .attachment-preview-container {
     background: #f8fafc;
     border: 1px solid #e2e8f0;
@@ -1779,6 +1886,10 @@
     min-width: 0;
   }
 
+  .chat-container.rtl .file-info {
+    text-align: right;
+  }
+
   .file-name {
     font-size: 0.875rem;
     font-weight: 500;
@@ -1812,21 +1923,60 @@
     background: #dc2626;
   }
 
+  /* Voice Message Styles */
+  .voice-message-preview {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-radius: 0.5rem;
+    max-width: 280px;
+  }
+
+  .voice-message-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    background: #e0f2fe;
+    border-radius: 0.25rem;
+    color: #0284c7;
+  }
+
+  .voice-message-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .voice-message-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #0284c7;
+    margin-bottom: 0.125rem;
+  }
+
+  .voice-audio-control {
+    width: 200px;
+    height: 30px;
+  }
+
+  .voice-audio-control::-webkit-media-controls-panel {
+    background-color: transparent;
+  }
+
+  /* Message Attachments */
   .message-attachments {
     margin-top: 0.5rem;
   }
 
-  /* Compact styling for Attachments component within messages */
   .message-attachments :global(.attachments-container) {
     width: 100%;
     max-width: 100%;
   }
-
-  /* .message-attachments :global(.attachments-grid) {
-    display: block;
-    gap: 0.5rem;
-    margin-top: 0;
-  } */
 
   .message-attachments :global(.attachment-card) {
     background: transparent;
@@ -1928,6 +2078,10 @@
     max-width: 250px;
   }
 
+  .chat-container.rtl .attachment-file {
+    direction: rtl;
+  }
+
   .file-icon-display {
     font-size: 1.5rem;
     width: 40px;
@@ -1944,6 +2098,10 @@
     min-width: 0;
   }
 
+  .chat-container.rtl .file-details {
+    text-align: right;
+  }
+
   .temp-attachment {
     opacity: 0.7;
   }
@@ -1955,12 +2113,6 @@
     border-radius: 50%;
     border-top-color: #ffffff;
     animation: spin 1s ease-in-out infinite;
-  }
-
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
   }
 
   .no-chat-selected {
@@ -2018,17 +2170,7 @@
     background: #0284c7;
   }
 
-  /* Responsive */
-  @media (max-width: 768px) {
-    .users-sidebar {
-      width: 280px;
-    }
-
-    .message-content {
-      max-width: 85%;
-    }
-  }
-
+  /* Upload Status Styles */
   .upload-status {
     display: flex;
     align-items: center;
@@ -2079,5 +2221,36 @@
   .message.own .upload-failed {
     background: rgba(255, 255, 255, 0.2);
     color: rgba(255, 255, 255, 0.9);
+  }
+
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .users-sidebar {
+      width: 280px;
+    }
+
+    .message-content {
+      max-width: 85%;
+    }
+
+    .chat-content {
+      flex-direction: column;
+    }
+
+    .users-sidebar {
+      width: 100%;
+      height: 40vh;
+      order: 1;
+    }
+
+    .chat-area {
+      order: 2;
+      height: 60vh;
+    }
+
+    .chat-container.rtl .users-sidebar,
+    .chat-container.rtl .chat-area {
+      order: unset;
+    }
   }
 </style>
