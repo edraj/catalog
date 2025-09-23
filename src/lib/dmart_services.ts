@@ -323,6 +323,52 @@ export async function updateEntity(
     ? response.records[0].shortname
     : null;
 }
+export async function replaceEntity(
+  shortname,
+  space_name,
+  subpath,
+  resourceType: ResourceType,
+  data: any,
+  workflow_shortname: string,
+  schema_shortname: string
+) {
+  const contentType = data.content_type || "html";
+
+  const attributes: any = {
+    is_active: data.is_active,
+    displayname: data.displayname,
+    relationships: [],
+    tags: data.tags,
+    payload: {
+      content_type: contentType,
+      body: data.content,
+    },
+  };
+
+  if (workflow_shortname && schema_shortname) {
+    attributes.workflow_shortname = workflow_shortname;
+    attributes.payload.schema_shortname = schema_shortname;
+  }
+  console.log("Attributes for update:", attributes);
+
+  const actionRequest = {
+    space_name,
+    request_type: RequestType.replace,
+    records: [
+      {
+        resource_type: resourceType,
+        shortname,
+        subpath,
+        attributes,
+      },
+    ],
+  };
+
+  const response = await Dmart.request(actionRequest);
+  return response.status === "success" && response.records.length > 0
+    ? response.records[0].shortname
+    : null;
+}
 
 export async function updatePermission(
   shortname: string,

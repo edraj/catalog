@@ -5,7 +5,7 @@
     deleteEntity,
     getEntity,
     getMyEntities,
-    updateEntity,
+    replaceEntity,
   } from "@/lib/dmart_services";
   import { Diamonds } from "svelte-loading-spinners";
   import { _, locale } from "@/i18n";
@@ -300,8 +300,9 @@
         is_active: editFormValue.is_active,
         content_type: contentType,
       };
+      console.log("Prepared entity data for update:", entityData);
 
-      const response = await updateEntity(
+      const response = await replaceEntity(
         itemShortnameValue,
         spaceNameValue,
         actualSubpathValue,
