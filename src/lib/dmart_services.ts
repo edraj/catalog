@@ -278,6 +278,42 @@ export async function createEntity(
   return null;
 }
 
+export async function createFolder(
+  spaceName: string,
+  subpath: string,
+  data: any,
+  isEditMode: boolean = false
+) {
+  let actionRequest: ActionRequest;
+
+  actionRequest = {
+    space_name: spaceName,
+    request_type: isEditMode ? RequestType.update : RequestType.create,
+    records: [
+      {
+        resource_type: ResourceType.folder,
+        shortname: data.shortname || "auto",
+        subpath: subpath,
+        attributes: {
+          displayname: data.displayname,
+          description: data.description,
+          payload: {
+            body: data.folderContent,
+            content_type: "json",
+          },
+          is_active: true,
+        },
+      },
+    ],
+  };
+
+  const response: ActionResponse = await Dmart.request(actionRequest);
+  if (response.status == "success" && response.records.length > 0) {
+    return response.records[0].shortname;
+  }
+  return null;
+}
+
 export async function updateEntity(
   shortname,
   space_name,
@@ -731,6 +767,7 @@ export async function deleteEntity(
   };
 
   const response: ActionResponse = await Dmart.request(actionRequest);
+
   return response.status === "success" && response.records.length > 0;
 }
 

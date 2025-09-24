@@ -1400,7 +1400,7 @@
       "create_folder_error": "Error creating folder"
     },
     "confirm": {
-      "delete_item": "Are you sure you want to delete '{name}'?"
+      "delete_item": "Are you sure you want to delete {name}?"
     },
     "empty": {
       "title": "No contents found",

@@ -385,8 +385,51 @@
   }
 
   function navigateToBreadcrumb(path) {
-    if (path) {
-      $goto(path);
+    const pathSegments = path.split("/").filter((segment) => segment !== "");
+
+    if (
+      pathSegments.length === 2 &&
+      pathSegments[0] === "dashboard" &&
+      pathSegments[1] === "admin"
+    ) {
+      $goto("/dashboard/admin");
+    } else if (
+      pathSegments.length === 3 &&
+      pathSegments[0] === "dashboard" &&
+      pathSegments[1] === "admin"
+    ) {
+      const spaceName = pathSegments[2];
+      $goto(`/dashboard/admin/[space_name]`, {
+        space_name: spaceName,
+      });
+    } else if (
+      pathSegments.length === 4 &&
+      pathSegments[0] === "dashboard" &&
+      pathSegments[1] === "admin"
+    ) {
+      const spaceName = pathSegments[2];
+      const subpath = pathSegments[3];
+      $goto(`/dashboard/admin/[space_name]/[subpath]`, {
+        space_name: spaceName,
+        subpath: subpath,
+      });
+    } else if (
+      pathSegments.length === 5 &&
+      pathSegments[0] === "dashboard" &&
+      pathSegments[1] === "admin"
+    ) {
+      const spaceName = pathSegments[2];
+      const subpath = pathSegments[3];
+      const shortname = pathSegments[4];
+      $goto(
+        `/dashboard/admin/[space_name]/[subpath]/[shortname]/[resource_type]`,
+        {
+          space_name: spaceName,
+          subpath: subpath,
+          shortname: shortname,
+          resource_type: $params.resource_type,
+        }
+      );
     }
   }
 
