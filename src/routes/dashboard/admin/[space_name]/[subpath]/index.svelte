@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { goto, params } from "@roxi/routify";
   import {
+    createFolder,
     deleteEntity,
     getAvatar,
     getSpaceContents,
@@ -457,7 +458,9 @@
 
   function navigateToBreadcrumb(path) {
     if (path) {
-      $goto(path);
+      $goto(`/dashboard/admin/[space_name]`, {
+        space_name: spaceName,
+      });
     }
   }
 
@@ -478,7 +481,6 @@
 
   function handleCardTagClick(event, tag) {
     event.stopPropagation();
-    // Admin pages don't have tag filtering like catalog pages
   }
 
   const filteredContentsDerived = $derived.by(() => {
@@ -620,25 +622,14 @@
     isCreatingFolder = true;
 
     try {
-      const response = await Dmart.request({
-        space_name: spaceName,
-        request_type: RequestType.create,
-        records: [
-          {
-            resource_type: ResourceType.folder,
-            shortname: metaContent.shortname || "auto",
-            subpath: `/${$actualSubpath}`,
-            attributes: {
-              displayname: metaContent.displayname,
-              description: metaContent.description,
-              payload: {
-                body: folderContent,
-                content_type: "json",
-              },
-            },
-          },
-        ],
-      });
+      const data = {
+        shortname: metaContent.shortname || "auto",
+        displayname: metaContent.displayname,
+        description: metaContent.description,
+        folderContent: folderContent,
+        is_active: true,
+      };
+      const response = createFolder(spaceName, $actualSubpath, data);
 
       if (response) {
         showCreateFolderModal = false;
