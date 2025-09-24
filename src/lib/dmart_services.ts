@@ -767,7 +767,6 @@ export async function deleteEntity(
   };
 
   const response: ActionResponse = await Dmart.request(actionRequest);
-  console.log("delete response", response);
 
   return response.status === "success" && response.records.length > 0;
 }
