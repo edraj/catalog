@@ -35,6 +35,16 @@
   let resendCountdown = 60;
   let resendTimer: any;
 
+  // Auto-trim email when it changes
+  $: if (email) {
+    email = email.trim();
+  }
+
+  // Auto-trim phone number when it changes
+  $: if (phoneNumber) {
+    phoneNumber = phoneNumber.trim();
+  }
+
   type Errors = {
     email?: string;
     phoneNumber?: string;
@@ -303,6 +313,7 @@
               class:error={errors.email}
               class:rtl={isRTL}
               disabled={isSubmitting}
+              onblur={() => (email = email.trim())}
             />
             {#if errors.email}
               <p class="error-text-small" class:rtl={isRTL}>{errors.email}</p>
@@ -323,6 +334,7 @@
               class:error={errors.phoneNumber}
               class:rtl={isRTL}
               disabled={isSubmitting}
+              onblur={() => (phoneNumber = phoneNumber.trim())}
             />
             {#if errors.phoneNumber}
               <p class="error-text-small" class:rtl={isRTL}>
