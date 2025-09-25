@@ -1115,6 +1115,7 @@
       "saved": "Entry saved successfully."
     },
     "error": {
+      "content_required": "Content cannot be empty!",
       "load_spaces_failed": "Failed to load spaces!",
       "load_subpaths_failed": "Failed to load subpaths!",
       "select_space": "Please select a space!",

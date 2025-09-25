@@ -576,6 +576,7 @@
       "saved": "تم حفظ المقال بنجاح."
     },
     "error": {
+      "content_required": "المحتوى مطلوب لإنشاء مقال.",
       "load_spaces_failed": "فشل في تحميل المساحات!",
       "load_subpaths_failed": "فشل في تحميل المسارات الفرعية!",
       "select_space": "يرجى اختيار مساحة!",

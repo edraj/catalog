@@ -66,10 +66,13 @@
 
     let isValid = true;
 
-    if (!email.trim()) {
+    const trimmedEmail = email.trim();
+    const trimmedPhoneNumber = phoneNumber.trim();
+
+    if (!trimmedEmail) {
       errors.email = $_("EmailRequired");
       isValid = false;
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
       errors.email = $_("InvalidEmail");
       isValid = false;
     }
@@ -102,12 +105,14 @@
     isSubmitting = true;
 
     try {
-      const existingUserCheck = await checkExisting("email", email);
+      const existingUserCheck = await checkExisting("email", trimmedEmail);
       if (!existingUserCheck) {
         errors.email = $_("EmailAlreadyExists");
         isSubmitting = false;
         return;
       }
+      email = trimmedEmail;
+      phoneNumber = trimmedPhoneNumber;
       await otpRequest();
     } catch (error: any) {
       if (error.message.includes("email")) {
