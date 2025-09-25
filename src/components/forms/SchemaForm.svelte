@@ -979,7 +979,6 @@
 
   .checkbox-group input[type="checkbox"] {
     margin: 0;
-    width: auto;
   }
 
   .checkbox-group label {

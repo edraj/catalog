@@ -366,6 +366,93 @@
     return null;
   }
 
+  function isContentEmpty(content, type = "html") {
+    if (content === null || content === undefined) {
+      return true;
+    }
+
+    if (typeof content === "string") {
+      if (type === "html") {
+        const textContent = content
+          .replace(/<[^>]*>/g, "")
+          .replace(/&nbsp;/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+        return textContent === "";
+      } else {
+        return content.trim() === "";
+      }
+    }
+
+    if (typeof content === "object") {
+      if (Array.isArray(content)) {
+        return content.length === 0;
+      }
+      const keys = Object.keys(content);
+      if (keys.length === 0) return true;
+
+      return keys.every((key) => {
+        const value = content[key];
+        if (value === null || value === undefined || value === "") return true;
+        if (typeof value === "string") return value.trim() === "";
+        if (Array.isArray(value)) return value.length === 0;
+        if (typeof value === "object") return Object.keys(value).length === 0;
+        return false;
+      });
+    }
+
+    return false;
+  }
+
+  function isJsonFormDataEmpty(formData) {
+    if (!formData || Object.keys(formData).length === 0) {
+      return true;
+    }
+
+    return Object.values(formData).every((value) => {
+      if (value === null || value === undefined || value === "") return true;
+      if (typeof value === "string") return value.trim() === "";
+      if (Array.isArray(value)) return value.length === 0;
+      if (typeof value === "object") return Object.keys(value).length === 0;
+      return false;
+    });
+  }
+
+  function validateRequiredFields(formData, schema) {
+    if (!schema || !schema.required || !Array.isArray(schema.required)) {
+      return { isValid: true, missingFields: [] };
+    }
+
+    const requiredFields = schema.required.filter(
+      (field) => field && field.trim() !== ""
+    );
+
+    if (requiredFields.length === 0) {
+      return { isValid: true, missingFields: [] };
+    }
+
+    const missingFields = [];
+
+    for (const fieldName of requiredFields) {
+      const value = formData[fieldName];
+
+      if (value === null || value === undefined || value === "") {
+        missingFields.push(fieldName);
+      } else if (typeof value === "string" && value.trim() === "") {
+        missingFields.push(fieldName);
+      } else if (Array.isArray(value) && value.length === 0) {
+        missingFields.push(fieldName);
+      } else if (typeof value === "object" && Object.keys(value).length === 0) {
+        missingFields.push(fieldName);
+      }
+    }
+
+    return {
+      isValid: missingFields.length === 0,
+      missingFields,
+    };
+  }
+
   async function handlePublish(isPublish) {
     if (!selectedSpace) {
       errorToastMessage($_("create_entry.error.select_space"));
@@ -377,32 +464,76 @@
       return;
     }
 
-    isLoading = true;
+    let bodyContent;
+    let isEmpty = false;
+    let validationResult = { isValid: true, missingFields: [] };
+
     if (entryType === "json") {
-      entity = {
-        body: jsonFormData,
-        tags: tags,
-        is_active: isPublish,
-        ...(isAdmin && shortname ? { shortname } : {}),
-      };
+      if (selectedSchema && selectedSchema.schema) {
+        validationResult = validateRequiredFields(
+          jsonFormData,
+          selectedSchema.schema
+        );
+
+        if (!validationResult.isValid) {
+          const fieldNames = validationResult.missingFields
+            .map(
+              (field) => selectedSchema.schema.properties[field]?.title || field
+            )
+            .join(", ");
+
+          errorToastMessage(
+            $_("create_entry.error.required_fields_missing", {
+              values: { fields: fieldNames },
+            })
+          );
+          return;
+        }
+      }
+
+      if (isJsonFormDataEmpty(jsonFormData)) {
+        const hasRequiredFields = selectedSchema?.schema?.required?.some(
+          (field) => field && field.trim() !== ""
+        );
+        if (!hasRequiredFields) {
+          bodyContent = {};
+        } else {
+          isEmpty = true;
+        }
+      } else {
+        bodyContent = jsonFormData;
+      }
     } else if (entryType === "template") {
-      entity = {
-        body: generateContentFromTemplate(),
-        tags: tags,
-        is_active: isPublish,
-        ...(isAdmin && shortname ? { shortname } : {}),
-      };
+      const generatedContent = generateContentFromTemplate();
+      if (isContentEmpty(generatedContent, "html")) {
+        isEmpty = true;
+      }
+      bodyContent = isEmpty ? undefined : generatedContent;
       contentType = "html";
       schema_shortname = "templates";
     } else {
-      entity = {
-        body: getContent(),
-        tags: tags,
-        is_active: isPublish,
-        ...(isAdmin && shortname ? { shortname } : {}),
-      };
+      const content = getContent();
+      if (isContentEmpty(content, selectedEditorType)) {
+        isEmpty = true;
+      }
+      bodyContent = isEmpty ? undefined : content;
       contentType = "html";
     }
+
+    if (isEmpty && entryType !== "json") {
+      errorToastMessage($_("create_entry.error.content_required"));
+      return;
+    }
+
+    isLoading = true;
+
+    entity = {
+      body: bodyContent,
+      tags: tags,
+      is_active: isPublish,
+      ...(isAdmin && shortname ? { shortname } : {}),
+    };
+
     const response = await createEntity(
       entity,
       selectedSpace,
@@ -412,6 +543,7 @@
       schema_shortname,
       contentType
     );
+
     const msg = isPublish
       ? $_("create_entry.success.published")
       : $_("create_entry.success.saved");
