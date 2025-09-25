@@ -19,14 +19,10 @@
   let isError: boolean;
   const isRTL = $locale === "ar" || $locale === "ku";
 
-  // Auto-trim identifier when it changes
-  $: if (identifier) {
-    identifier = identifier.trim();
-  }
-
   function isEmail(input: string): boolean {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input);
   }
+
   async function handleSubmit(event: Event) {
     event.preventDefault();
     isError = false;
@@ -34,18 +30,20 @@
     errors = {};
     isSubmitting = true;
 
-    if (!identifier || !password) {
-      if (!identifier) errors.identifier = $_("ThisFieldIsRequired");
+    const trimmedIdentifier = identifier.trim();
+
+    if (!trimmedIdentifier || !password) {
+      if (!trimmedIdentifier) errors.identifier = $_("ThisFieldIsRequired");
       if (!password) errors.password = $_("ThisFieldIsRequired");
       isSubmitting = false;
       return;
     }
 
     try {
-      if (isEmail(identifier)) {
-        await loginBy(identifier, password);
+      if (isEmail(trimmedIdentifier)) {
+        await loginBy(trimmedIdentifier, password);
       } else {
-        await signin(identifier, password);
+        await signin(trimmedIdentifier, password);
       }
       $goto("/entries");
     } catch (error) {
@@ -116,7 +114,6 @@
             class:error={errors.identifier}
             class:rtl={isRTL}
             disabled={isSubmitting}
-            onblur={() => (identifier = identifier.trim())}
           />
           {#if errors.identifier}
             <p class="error-text-small" class:rtl={isRTL}>

@@ -35,16 +35,6 @@
   let resendCountdown = 60;
   let resendTimer: any;
 
-  // Auto-trim email when it changes
-  $: if (email) {
-    email = email.trim();
-  }
-
-  // Auto-trim phone number when it changes
-  $: if (phoneNumber) {
-    phoneNumber = phoneNumber.trim();
-  }
-
   type Errors = {
     email?: string;
     phoneNumber?: string;
@@ -76,10 +66,13 @@
 
     let isValid = true;
 
-    if (!email.trim()) {
+    const trimmedEmail = email.trim();
+    const trimmedPhoneNumber = phoneNumber.trim();
+
+    if (!trimmedEmail) {
       errors.email = $_("EmailRequired");
       isValid = false;
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
       errors.email = $_("InvalidEmail");
       isValid = false;
     }
@@ -112,12 +105,14 @@
     isSubmitting = true;
 
     try {
-      const existingUserCheck = await checkExisting("email", email);
+      const existingUserCheck = await checkExisting("email", trimmedEmail);
       if (!existingUserCheck) {
         errors.email = $_("EmailAlreadyExists");
         isSubmitting = false;
         return;
       }
+      email = trimmedEmail;
+      phoneNumber = trimmedPhoneNumber;
       await otpRequest();
     } catch (error: any) {
       if (error.message.includes("email")) {
@@ -313,7 +308,6 @@
               class:error={errors.email}
               class:rtl={isRTL}
               disabled={isSubmitting}
-              onblur={() => (email = email.trim())}
             />
             {#if errors.email}
               <p class="error-text-small" class:rtl={isRTL}>{errors.email}</p>
@@ -334,7 +328,6 @@
               class:error={errors.phoneNumber}
               class:rtl={isRTL}
               disabled={isSubmitting}
-              onblur={() => (phoneNumber = phoneNumber.trim())}
             />
             {#if errors.phoneNumber}
               <p class="error-text-small" class:rtl={isRTL}>
