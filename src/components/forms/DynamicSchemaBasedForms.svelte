@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { _ } from "svelte-i18n";
   import {
     createArrayItemFromSchema,
     getNestedProperty,
@@ -64,7 +65,7 @@
 <div class="form-container">
   {#if schema && schema.properties}
     <div class="form-header">
-      <h2 class="form-title">{schema.title || "Form"}</h2>
+      <h2 class="form-title">{schema.title || $_("Form")}</h2>
       {#if schema.description}
         <p class="form-description">{schema.description}</p>
       {/if}
@@ -125,7 +126,7 @@
                 required={isRequired(propName)}
                 class="form-select"
               >
-                <option value="">Select an option</option>
+                <option value="">{$_("SelectAnOption")}</option>
                 {#each property.enum as option}
                   <option value={option}>{option}</option>
                 {/each}
@@ -137,7 +138,7 @@
                 bind:value={content[propName]}
                 required={isRequired(propName)}
                 class="form-textarea"
-                placeholder="Enter your text here..."
+                placeholder={$_("EnterYourTextHere")}
               ></textarea>
             {:else}
               <input
@@ -173,7 +174,7 @@
                 class="form-checkbox"
               />
               <span class="checkbox-label">
-                {content[propName] ? "Yes" : "No"}
+                {content[propName] ? $_("Yes") : $_("No")}
               </span>
             </div>
           {:else if property.type === "array"}
@@ -198,7 +199,7 @@
                       d="M12 4v16m8-8H4"
                     />
                   </svg>
-                  Add Item
+                  {$_("AddItem")}
                 </button>
               </div>
 
@@ -287,7 +288,7 @@
                               d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                             />
                           </svg>
-                          Remove
+                          {$_("Remove")}
                         </button>
                       </div>
                     </div>
@@ -295,7 +296,7 @@
                 </div>
               {:else}
                 <div class="empty-state">
-                  <p class="empty-message">No items added yet.</p>
+                  <p class="empty-message">{$_("NoItemsAddedYet")}</p>
                 </div>
               {/if}
             </div>
@@ -349,7 +350,7 @@
   {:else}
     <div class="empty-state">
       <p class="empty-message">
-        No schema provided or schema has no properties.
+        {$_("NoSchemaProvided")}
       </p>
     </div>
   {/if}
