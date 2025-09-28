@@ -18,7 +18,7 @@
 
   $goto;
 
-  let formData = {
+  let formData = $state({
     email: "",
     phoneNumber: "",
     password: "",
@@ -30,23 +30,23 @@
     confessors: [] as string[],
     profession: "",
     description: "",
-  };
+  });
 
-  let agreeToTerms = false;
-  let showPassword = false;
-  let showConfirmPassword = false;
-  let isSubmitting = false;
-  let showSuccess = false;
-  let showError = false;
-  let otpCode = "";
-  let isOtpStep = false;
-  let isVerifyingOtp = false;
+  let agreeToTerms = $state(false);
+  let showPassword = $state(false);
+  let showConfirmPassword = $state(false);
+  let isSubmitting = $state(false);
+  let showSuccess = $state(false);
+  let showError = $state(false);
+  let otpCode = $state("");
+  let isOtpStep = $state(false);
+  let isVerifyingOtp = $state(false);
   let otpRequestId = "";
-  let canResendOtp = false;
-  let resendCountdown = 60;
+  let canResendOtp = $state(false);
+  let resendCountdown = $state(60);
   let resendTimer: any;
 
-  let showAdditionalFields = false;
+  let showAdditionalFields = $state(false);
 
   type Errors = {
     email?: string;
@@ -75,7 +75,9 @@
       .filter((item) => item.length > 0);
   }
 
-  $: formData.confessors = parseConfessors(formData.confessorsText);
+  $effect(() => {
+    formData.confessors = parseConfessors(formData.confessorsText);
+  });
 
   async function handleSubmit(event: Event) {
     event.preventDefault();
