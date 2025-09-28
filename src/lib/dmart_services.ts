@@ -101,6 +101,7 @@ export async function updateProfile(data: any) {
       displayname: data.displayname,
       description: data.description,
       email: data.email,
+      payload: data.payload,
     },
   };
   const response = await Dmart.update_user(request);

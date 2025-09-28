@@ -1,7 +1,12 @@
-import {type Writable, writable} from "svelte/store";
-import {type ActionRequestRecord, Dmart, ResourceType, type SendOTPRequest,} from "@edraj/tsdmart";
-import {authToken} from "@/stores/auth";
-import {getLocaleFromNavigator} from "svelte-i18n";
+import { type Writable, writable } from "svelte/store";
+import {
+  type ActionRequestRecord,
+  Dmart,
+  ResourceType,
+  type SendOTPRequest,
+} from "@edraj/tsdmart";
+import { authToken } from "@/stores/auth";
+import { getLocaleFromNavigator } from "svelte-i18n";
 
 enum Locale {
   ar = "ar",
@@ -155,7 +160,8 @@ export async function register(
   otp: string,
   password: string,
   confirmPassword: string,
-  role: string
+  role: string,
+  data: any
 ) {
   if (password !== confirmPassword) {
     throw new Error("Passwords do not match");
@@ -170,6 +176,11 @@ export async function register(
       email_otp: otp,
       password: password,
       roles: [role],
+      description: { en: data.description },
+      payload: {
+        content_type: "json",
+        body: data,
+      },
     },
   };
 
