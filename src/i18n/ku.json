@@ -1875,5 +1875,7 @@
   "polls.total_votes": "کۆی دەنگەکان: {count}",
   "polls.created_by": "دروستکراوە لەلایەن {author}",
   "polls.multiple_choice": "هەڵبژاردنی فرە ڕێگەپێدراوە",
-  "polls.single_choice": "تەنها یەک هەڵبژاردن"
+  "polls.single_choice": "تەنها یەک هەڵبژاردن",
+  "polls.more_candidates": "و هەڵبژاردنە زیاتر",
+  "polls": "ڕاپرسییەکان"
 }

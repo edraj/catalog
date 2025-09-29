@@ -406,7 +406,7 @@
               {/each}
               {#if poll.candidates.length > 3}
                 <div class="more-candidates">
-                  +{poll.candidates.length - 3} more candidates
+                  +{poll.candidates.length - 3}{$_("polls.more_candidates")}
                 </div>
               {/if}
             </div>
@@ -535,8 +535,22 @@
 
 <!-- Vote/Results Modal -->
 {#if showVoteModal && selectedPoll}
-  <div class="modal-overlay" onclick={closeModal}>
-    <div class="modal-content" onclick={(e) => e.stopPropagation()}>
+  <div
+    class="modal-overlay"
+    onclick={closeModal}
+    onkeydown={(e) => e.key === "Escape" && closeModal()}
+    class:rtl={$isRTL}
+    role="dialog"
+    aria-modal="true"
+    tabindex="0"
+  >
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+    <div
+      class="modal-content"
+      onclick={(e) => e.stopPropagation()}
+      onkeydown={(e) => e.stopPropagation()}
+      role="document"
+    >
       <div class="modal-header">
         <h2>{selectedPoll.title}</h2>
         <button class="close-button" onclick={closeModal}>×</button>
@@ -724,9 +738,7 @@
   </div>
 {/if}
 
-<!-- Keep the same styles from before -->
 <style>
-  /* Same styles as previous version */
   .rtl {
     direction: rtl;
   }
@@ -855,23 +867,6 @@
 
   .polls-content {
     min-height: 400px;
-  }
-
-  .loading-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 4rem;
-    color: #6b7280;
-  }
-
-  .loading-icon {
-    margin-bottom: 1rem;
-  }
-
-  .spin {
-    animation: spin 1s linear infinite;
   }
 
   @keyframes spin {
@@ -1106,12 +1101,6 @@
     font-size: 0.75rem;
   }
 
-  .user-choice {
-    font-size: 0.75rem;
-    color: #6b7280;
-    font-weight: 500;
-  }
-
   .ended-badge {
     display: flex;
     align-items: center;
@@ -1228,6 +1217,11 @@
     transition: all 0.2s ease;
     text-align: left;
     width: 100%;
+  }
+
+  .rtl .vote-candidate {
+    text-align: right;
+    /* flex-direction: row-reverse; */
   }
 
   .vote-candidate:hover {
@@ -1428,11 +1422,5 @@
 
   .loading-content {
     text-align: center;
-  }
-
-  .loading-text {
-    margin-top: 1rem;
-    color: #64748b;
-    font-weight: 500;
   }
 </style>

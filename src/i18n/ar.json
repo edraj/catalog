@@ -1975,5 +1975,7 @@
   "polls.total_votes": "إجمالي الأصوات: {count}",
   "polls.created_by": "أنشأه {author}",
   "polls.multiple_choice": "اختيار متعدد مسموح",
-  "polls.single_choice": "اختيار واحد فقط"
+  "polls.single_choice": "اختيار واحد فقط",
+  "polls": "استطلاعات الرأي",
+  "polls.more_candidates": " مرشح إضافي"
 }
