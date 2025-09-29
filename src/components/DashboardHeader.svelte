@@ -396,6 +396,74 @@
                       <span>{$_("chat")}</span>
                     </button>
                     <button
+                      aria-label={`Polls`}
+                      onclick={() => handleMenuItemClick("/polls")}
+                      class="menu-item"
+                    >
+                      <!-- Vote / Ballot box with check -->
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        width="24"
+                        height="24"
+                        role="img"
+                        aria-labelledby="voteTitle voteDesc"
+                        class="menu-icon"
+                      >
+                        <title id="voteTitle">Vote</title>
+                        <desc id="voteDesc"
+                          >Ballot box with a checked ballot</desc
+                        >
+
+                        <!-- box -->
+                        <rect
+                          x="3"
+                          y="7"
+                          width="18"
+                          height="14"
+                          rx="2"
+                          ry="2"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="1.6"
+                        />
+                        <!-- slot -->
+                        <rect
+                          x="7"
+                          y="3"
+                          width="10"
+                          height="3"
+                          rx="0.8"
+                          ry="0.8"
+                          fill="currentColor"
+                        />
+                        <!-- ballot -->
+                        <rect
+                          x="6.2"
+                          y="1.8"
+                          width="11.6"
+                          height="6.8"
+                          rx="0.8"
+                          ry="0.8"
+                          transform="rotate(12 12 5.2)"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="1.4"
+                        />
+                        <!-- check -->
+                        <path
+                          d="M9.5 11.5l2 2.2 4-4.5"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.6"
+                        />
+                      </svg>
+
+                      <span>{$_("polls")}</span>
+                    </button>
+                    <button
                       aria-label={`Notifications`}
                       onclick={() => handleMenuItemClick("/notifications")}
                       class="menu-item"

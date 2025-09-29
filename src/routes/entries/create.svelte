@@ -64,17 +64,12 @@
   let loadingSchemas = $state(false);
   let jsonFormData = $state({});
   let templateFormData = $state({});
-  let entity;
-  const isRTL = derived(
-    locale,
-    ($locale) => $locale === "ar" || $locale === "ku"
-  );
-
-  let rolesValue;
-  roles.subscribe((value) => {
-    rolesValue = value;
-    isAdmin = value.includes("super_admin");
-  });
+  let pollFormData = $state({});
+  let pollSchema = $state(null);
+  let loadingPollSchema = $state(false);
+  let bodyContent;
+  let isEmpty = false;
+  let validationResult = { isValid: true, missingFields: [] };
 
   let title = $state("");
   let shortname = $state("");
@@ -92,6 +87,18 @@
   let schema_shortname = "";
   let markdownEditor = $state(null);
   let schemas;
+  let entity;
+
+  const isRTL = derived(
+    locale,
+    ($locale) => $locale === "ar" || $locale === "ku"
+  );
+
+  let rolesValue;
+  roles.subscribe((value) => {
+    rolesValue = value;
+    isAdmin = value.includes("super_admin");
+  });
 
   async function handleEntryTypeChange() {
     if (entryType === "json" && selectedSpace) {
@@ -99,6 +106,49 @@
     }
     if (entryType === "template" && selectedSpace) {
       await loadTemplatesForSpace();
+    }
+    if (entryType === "poll") {
+      selectedSpace = "poll";
+      selectedSubpath = "polls";
+      currentPath = "polls";
+      canCreateEntry = true;
+      resource_type = ResourceType.content;
+      workflow_shortname = "";
+      schema_shortname = "poll";
+      await loadPollSchema();
+    }
+  }
+
+  async function loadPollSchema() {
+    if (pollSchema) return;
+
+    loadingPollSchema = true;
+    try {
+      const response = await getSpaceSchema("management", "schema", "managed");
+      if (response?.status === "success" && response?.records) {
+        const pollSchemaRecord = response.records.find(
+          (record) => record.shortname === "poll"
+        );
+
+        if (pollSchemaRecord) {
+          pollSchema = {
+            shortname: "poll",
+            title: pollSchemaRecord.attributes?.displayname?.en || "Poll",
+            schema: pollSchemaRecord.attributes?.payload?.body,
+            description: pollSchemaRecord.attributes?.description?.en || "",
+          };
+          pollFormData = {};
+        } else {
+          errorToastMessage("Poll schema not found in management space");
+        }
+      } else {
+        errorToastMessage("Failed to load poll schema");
+      }
+    } catch (error) {
+      errorToastMessage("Failed to load poll schema");
+      console.error("Error loading poll schema:", error);
+    } finally {
+      loadingPollSchema = false;
     }
   }
 
@@ -454,6 +504,82 @@
   }
 
   async function handlePublish(isPublish) {
+    if (entryType === "poll") {
+      if (!pollSchema || !pollSchema.schema) {
+        errorToastMessage("Poll schema not loaded");
+        return;
+      }
+
+      const validationResult = validateRequiredFields(
+        pollFormData,
+        pollSchema.schema
+      );
+
+      if (!validationResult.isValid) {
+        const fieldNames = validationResult.missingFields
+          .map((field) => pollSchema.schema.properties[field]?.title || field)
+          .join(", ");
+
+        errorToastMessage(
+          $_("create_entry.error.required_fields_missing", {
+            values: { fields: fieldNames },
+          })
+        );
+        return;
+      }
+
+      if (isJsonFormDataEmpty(pollFormData)) {
+        const hasRequiredFields = pollSchema?.schema?.required?.some(
+          (field) => field && field.trim() !== ""
+        );
+        if (hasRequiredFields) {
+          errorToastMessage($_("create_entry.error.content_required"));
+          return;
+        }
+        bodyContent = {};
+      } else {
+        bodyContent = pollFormData;
+      }
+
+      isLoading = true;
+      entity = {
+        displayname: title,
+        body: bodyContent,
+        tags: tags,
+        is_active: isPublish,
+        ...(isAdmin && shortname ? { shortname } : {}),
+      };
+
+      const response = await createEntity(
+        entity,
+        "poll",
+        "polls",
+        ResourceType.content,
+        "",
+        "",
+        "json"
+      );
+
+      const msg = isPublish
+        ? $_("create_entry.success.published")
+        : $_("create_entry.success.saved");
+
+      if (response) {
+        successToastMessage(msg);
+        setTimeout(() => {
+          window.history.back();
+        }, 500);
+      } else {
+        errorToastMessage(
+          isPublish
+            ? $_("create_entry.error.publish_failed")
+            : $_("create_entry.error.save_failed")
+        );
+        isLoading = false;
+      }
+      return;
+    }
+
     if (!selectedSpace) {
       errorToastMessage($_("create_entry.error.select_space"));
       return;
@@ -463,10 +589,6 @@
       errorToastMessage($_("create_entry.error.cannot_create"));
       return;
     }
-
-    let bodyContent;
-    let isEmpty = false;
-    let validationResult = { isValid: true, missingFields: [] };
 
     if (entryType === "json") {
       if (selectedSchema && selectedSchema.schema) {
@@ -528,6 +650,7 @@
     isLoading = true;
 
     entity = {
+      displayname: title,
       body: bodyContent,
       tags: tags,
       is_active: isPublish,
@@ -822,129 +945,146 @@
               >
             </span>
           </label>
+          <!-- Add poll option -->
+          <label class="entry-type-option">
+            <input
+              type="radio"
+              bind:group={entryType}
+              value="poll"
+              onchange={handleEntryTypeChange}
+            />
+            <span class="entry-type-label">
+              <strong>{$_("create_entry.entry_type.poll_title")}</strong>
+              <small>{$_("create_entry.entry_type.poll_description")}</small>
+            </span>
+          </label>
         </div>
       </div>
     </div>
 
-    <div class="section">
-      <div class="section-header">
-        <TagOutline class="section-icon" />
-        <h2>{$_("create_entry.destination.title")}</h2>
-      </div>
-      <div class="section-content">
-        <div class="destination-selectors">
-          <div class="selector-group">
-            <label for="space-select" class="selector-label"
-              >{$_("create_entry.destination.space")}</label
-            >
-            <select
-              id="space-select"
-              bind:value={selectedSpace}
-              onchange={handleSpaceChange}
-              class="destination-select"
-              disabled={loadingSpaces}
-            >
-              {#if loadingSpaces}
-                <option value=""
-                  >{$_("create_entry.destination.loading_spaces")}</option
-                >
-              {:else}
-                {#each spaces as space}
-                  <option value={space.value}>{space.name}</option>
-                {/each}
-              {/if}
-            </select>
-          </div>
+    {#if entryType !== "poll"}
+      <div class="section">
+        <div class="section-header">
+          <TagOutline class="section-icon" />
+          <h2>{$_("create_entry.destination.title")}</h2>
         </div>
-
-        <!-- Hierarchical Subpath Navigation -->
-        {#if subpathHierarchy.length > 0}
-          <div class="subpath-hierarchy">
-            <div class="selector-label">
-              {$_("create_entry.destination.path_navigation")}
-            </div>
-            <div class="hierarchy-levels">
-              {#each subpathHierarchy as levelData, index}
-                <div class="hierarchy-level">
-                  <div class="level-info">
-                    <span class="level-label">
-                      {index === 0
-                        ? $_("create_entry.destination.root")
-                        : $_("create_entry.destination.level", {
-                            values: { level: index },
-                          })}
-                      {#if levelData.path}
-                        <span class="level-path">({levelData.path})</span>
-                      {/if}
-                    </span>
-                  </div>
-
-                  {#if levelData.folders.length > 0}
-                    <select
-                      bind:value={levelData.selectedFolder}
-                      onchange={(e) =>
-                        handleSubpathChange(
-                          index,
-                          (e.target as HTMLSelectElement).value
-                        )}
-                      class="destination-select level-select"
-                      disabled={loadingSubpaths}
-                    >
-                      <option value=""
-                        >{$_("create_entry.destination.select_folder")}</option
-                      >
-                      {#each levelData.folders as folder}
-                        <option value={folder.value}>{folder.name}</option>
-                      {/each}
-                    </select>
-                  {:else}
-                    <div class="no-folders">
-                      <span class="no-folders-text"
-                        >{$_("create_entry.destination.no_subfolders")}</span
-                      >
-                    </div>
-                  {/if}
-
-                  <div class="level-status">
-                    {#if levelData.canCreateEntry}
-                      <span class="can-create"
-                        >{$_("create_entry.destination.can_create")}</span
-                      >
-                    {:else}
-                      <span class="cannot-create"
-                        >{$_("create_entry.destination.cannot_create")}</span
-                      >
-                    {/if}
-                  </div>
-                </div>
-              {/each}
+        <div class="section-content">
+          <div class="destination-selectors">
+            <div class="selector-group">
+              <label for="space-select" class="selector-label"
+                >{$_("create_entry.destination.space")}</label
+              >
+              <select
+                id="space-select"
+                bind:value={selectedSpace}
+                onchange={handleSpaceChange}
+                class="destination-select"
+                disabled={loadingSpaces}
+              >
+                {#if loadingSpaces}
+                  <option value=""
+                    >{$_("create_entry.destination.loading_spaces")}</option
+                  >
+                {:else}
+                  {#each spaces as space}
+                    <option value={space.value}>{space.name}</option>
+                  {/each}
+                {/if}
+              </select>
             </div>
           </div>
-        {/if}
 
-        <!-- Destination Preview -->
-        {#if selectedSpace}
-          <div class="destination-preview">
-            <div class="preview-header">
-              <strong>{$_("create_entry.destination.publishing_to")}:</strong>
-              {#if !canCreateEntry}
-                <span class="warning-badge"
-                  >{$_("create_entry.destination.cannot_create_here")}</span
-                >
-              {/if}
-            </div>
-            <div class="preview-path">
-              {selectedSpace}{currentPath ? `/${currentPath}` : "/"}
-            </div>
-            {#if !canCreateEntry}
-              <div class="preview-warning">
-                {$_("create_entry.destination.warning_message")}
+          <!-- Hierarchical Subpath Navigation -->
+          {#if subpathHierarchy.length > 0}
+            <div class="subpath-hierarchy">
+              <div class="selector-label">
+                {$_("create_entry.destination.path_navigation")}
               </div>
-            {/if}
-          </div>
-        {/if}
+              <div class="hierarchy-levels">
+                {#each subpathHierarchy as levelData, index}
+                  <div class="hierarchy-level">
+                    <div class="level-info">
+                      <span class="level-label">
+                        {index === 0
+                          ? $_("create_entry.destination.root")
+                          : $_("create_entry.destination.level", {
+                              values: { level: index },
+                            })}
+                        {#if levelData.path}
+                          <span class="level-path">({levelData.path})</span>
+                        {/if}
+                      </span>
+                    </div>
+
+                    {#if levelData.folders.length > 0}
+                      <select
+                        bind:value={levelData.selectedFolder}
+                        onchange={(e) =>
+                          handleSubpathChange(
+                            index,
+                            (e.target as HTMLSelectElement).value
+                          )}
+                        class="destination-select level-select"
+                        disabled={loadingSubpaths}
+                      >
+                        <option value=""
+                          >{$_(
+                            "create_entry.destination.select_folder"
+                          )}</option
+                        >
+                        {#each levelData.folders as folder}
+                          <option value={folder.value}>{folder.name}</option>
+                        {/each}
+                      </select>
+                    {:else}
+                      <div class="no-folders">
+                        <span class="no-folders-text"
+                          >{$_("create_entry.destination.no_subfolders")}</span
+                        >
+                      </div>
+                    {/if}
+
+                    <div class="level-status">
+                      {#if levelData.canCreateEntry}
+                        <span class="can-create"
+                          >{$_("create_entry.destination.can_create")}</span
+                        >
+                      {:else}
+                        <span class="cannot-create"
+                          >{$_("create_entry.destination.cannot_create")}</span
+                        >
+                      {/if}
+                    </div>
+                  </div>
+                {/each}
+              </div>
+            </div>
+          {/if}
+
+          <!-- Destination Preview -->
+          {#if selectedSpace}
+            <div class="destination-preview">
+              <div class="preview-header">
+                <strong>{$_("create_entry.destination.publishing_to")}:</strong>
+                {#if !canCreateEntry}
+                  <span class="warning-badge"
+                    >{$_("create_entry.destination.cannot_create_here")}</span
+                  >
+                {/if}
+              </div>
+              <div class="preview-path">
+                {selectedSpace}{currentPath ? `/${currentPath}` : "/"}
+              </div>
+              {#if !canCreateEntry}
+                <div class="preview-warning">
+                  {$_("create_entry.destination.warning_message")}
+                </div>
+              {/if}
+            </div>
+          {/if}
+        </div>
       </div>
-    </div>
+    {/if}
 
     <div class="section">
       <div class="section-header">
@@ -1313,99 +1453,127 @@
           </div>
         {/if}
       {/if}
+    {:else if entryType === "poll"}
+      <!-- Poll Entry Data Section -->
+      <div class="section">
+        <div class="section-header">
+          <FileCheckSolid class="section-icon" />
+          <h2>{$_("create_entry.poll.entry_data_title")}</h2>
+        </div>
+        <div class="section-content">
+          {#if loadingPollSchema}
+            <div class="loading-state">
+              <p>{$_("create_entry.schema.loading")}</p>
+            </div>
+          {:else if pollSchema && pollSchema.schema}
+            <DynamicSchemaBasedForms
+              bind:content={pollFormData}
+              schema={pollSchema.schema}
+            />
+          {:else}
+            <div class="empty-state">
+              <FileCheckSolid class="empty-icon" />
+              <p>Failed to load poll schema</p>
+            </div>
+          {/if}
+        </div>
+      </div>
     {/if}
 
-    <!-- Attachments Section -->
-    <div class="section">
-      <div class="section-header">
-        <PaperClipOutline class="section-icon" />
-        <h2>
-          {$_("create_entry.attachments.section_title", {
-            values: { count: attachments.length },
-          })}
-        </h2>
-        <input
-          type="file"
-          id="fileInput"
-          multiple
-          onchange={handleFileChange}
-          style="display: none;"
-        />
-        <button
-          aria-label={$_("create_entry.attachments.add_files")}
-          class="add-files-button"
-          onclick={() => document.getElementById("fileInput").click()}
-        >
-          <UploadOutline class="icon button-icon" />
-          <span>{$_("create_entry.attachments.add_files")}</span>
-        </button>
-      </div>
-      <div class="section-content">
-        {#if attachments.length > 0}
-          <div class="attachments-grid">
-            {#each attachments as attachment, index}
-              <div class="attachment-card">
-                <div class="attachment-preview">
-                  {#if getPreviewUrl(attachment)}
-                    {#if attachment.type.startsWith("image/")}
-                      <img
-                        src={getPreviewUrl(attachment) || "/placeholder.svg"}
-                        alt={attachment.name || "no-image"}
-                        class="attachment-image"
-                      />
-                    {:else if attachment.type.startsWith("video/")}
-                      <video
-                        src={getPreviewUrl(attachment)}
-                        class="attachment-video"
-                      >
-                        <track
-                          kind="captions"
-                          src=""
-                          srclang="en"
-                          label="English"
+    <!-- Only show attachments section for non-poll entries -->
+    {#if entryType !== "poll"}
+      <!-- Attachments Section -->
+      <div class="section">
+        <div class="section-header">
+          <PaperClipOutline class="section-icon" />
+          <h2>
+            {$_("create_entry.attachments.section_title", {
+              values: { count: attachments.length },
+            })}
+          </h2>
+          <input
+            type="file"
+            id="fileInput"
+            multiple
+            onchange={handleFileChange}
+            style="display: none;"
+          />
+          <button
+            aria-label={$_("create_entry.attachments.add_files")}
+            class="add-files-button"
+            onclick={() => document.getElementById("fileInput").click()}
+          >
+            <UploadOutline class="icon button-icon" />
+            <span>{$_("create_entry.attachments.add_files")}</span>
+          </button>
+        </div>
+        <div class="section-content">
+          {#if attachments.length > 0}
+            <div class="attachments-grid">
+              {#each attachments as attachment, index}
+                <div class="attachment-card">
+                  <div class="attachment-preview">
+                    {#if getPreviewUrl(attachment)}
+                      {#if attachment.type.startsWith("image/")}
+                        <img
+                          src={getPreviewUrl(attachment) || "/placeholder.svg"}
+                          alt={attachment.name || "no-image"}
+                          class="attachment-image"
                         />
-                      </video>
-                      <div class="video-overlay">
-                        <PlayOutline class="play-icon" />
-                      </div>
-                    {:else if attachment.type === "application/pdf"}
+                      {:else if attachment.type.startsWith("video/")}
+                        <video
+                          src={getPreviewUrl(attachment)}
+                          class="attachment-video"
+                        >
+                          <track
+                            kind="captions"
+                            src=""
+                            srclang="en"
+                            label="English"
+                          />
+                        </video>
+                        <div class="video-overlay">
+                          <PlayOutline class="play-icon" />
+                        </div>
+                      {:else if attachment.type === "application/pdf"}
+                        <div class="file-preview">
+                          <FilePdfOutline class="file-icon pdf" />
+                        </div>
+                      {/if}
+                    {:else}
                       <div class="file-preview">
-                        <FilePdfOutline class="file-icon pdf" />
+                        <FileImportSolid class="file-icon" />
                       </div>
                     {/if}
-                  {:else}
-                    <div class="file-preview">
-                      <FileImportSolid class="file-icon" />
-                    </div>
-                  {/if}
+                  </div>
+                  <div class="attachment-info">
+                    <p class="attachment-name">{attachment.name}</p>
+                    <p class="attachment-size">
+                      {(attachment.size / 1024).toFixed(1)} KB
+                    </p>
+                  </div>
+                  <button
+                    aria-label={$_("create_entry.attachments.remove_file", {
+                      values: { name: attachment.name },
+                    })}
+                    class="remove-attachment"
+                    onclick={() => removeAttachment(index)}
+                  >
+                    <TrashBinSolid class="icon" />
+                  </button>
                 </div>
-                <div class="attachment-info">
-                  <p class="attachment-name">{attachment.name}</p>
-                  <p class="attachment-size">
-                    {(attachment.size / 1024).toFixed(1)} KB
-                  </p>
-                </div>
-                <button
-                  aria-label={$_("create_entry.attachments.remove_file", {
-                    values: { name: attachment.name },
-                  })}
-                  class="remove-attachment"
-                  onclick={() => removeAttachment(index)}
-                >
-                  <TrashBinSolid class="icon" />
-                </button>
-              </div>
-            {/each}
-          </div>
-        {:else}
-          <div class="empty-attachments">
-            <CloudArrowUpOutline class="empty-icon" />
-            <h3>{$_("create_entry.attachments.empty_title")}</h3>
-            <p>{$_("create_entry.attachments.empty_description")}</p>
-          </div>
-        {/if}
+              {/each}
+            </div>
+          {:else}
+            <div class="empty-attachments">
+              <CloudArrowUpOutline class="empty-icon" />
+              <h3>{$_("create_entry.attachments.empty_title")}</h3>
+              <p>{$_("create_entry.attachments.empty_description")}</p>
+            </div>
+          {/if}
+        </div>
       </div>
-    </div>
+    {/if}
   </div>
 </div>
 

@@ -237,6 +237,9 @@ export async function createEntity(
           shortname: data.shortname || "auto",
           subpath: subpath,
           attributes: {
+            displayname: {
+              en: data.displayname || "",
+            },
             is_active: data.is_active || true,
             workflow_shortname: workflow_shortname,
             relationships: [],
@@ -260,6 +263,9 @@ export async function createEntity(
           shortname: data?.shortname || "auto",
           subpath: subpath,
           attributes: {
+            displayname: {
+              en: data.displayname || "",
+            },
             is_active: data.is_active,
             relationships: [],
             tags: data.tags,
@@ -523,6 +529,32 @@ export async function getTemplates(
   return response;
 }
 
+export async function getPolls(
+  space_name: string = "poll",
+  scope: string = "managed",
+  limit = 100,
+  offset = 0,
+  exact_subpath = false
+): Promise<ApiQueryResponse> {
+  const response = await Dmart.query(
+    {
+      type: QueryType.search,
+      space_name: space_name,
+      subpath: "/polls",
+      search: "-@shortname:schema",
+      limit: limit,
+      sort_by: "shortname",
+      sort_type: SortyType.ascending,
+      offset: offset,
+      retrieve_json_payload: true,
+      retrieve_attachments: true,
+      exact_subpath: exact_subpath,
+    },
+    scope
+  );
+  return response;
+}
+
 export async function createTemplate(
   spaceName: string,
   subpath: string,
@@ -722,6 +754,34 @@ export async function attachAttachmentsToEntity(
     attachment,
     contentType
   );
+  return response.status == "success" && response.records.length > 0;
+}
+
+export async function userVote(
+  poll_shortname: string,
+  candidate_shortname: string,
+  voters: any,
+  isReplace: boolean = false
+) {
+  const data: ActionRequest = {
+    space_name: "poll",
+    request_type: isReplace ? RequestType.replace : RequestType.create,
+    records: [
+      {
+        resource_type: ResourceType.json,
+        shortname: candidate_shortname,
+        subpath: `polls/${poll_shortname}`,
+        attributes: {
+          is_active: true,
+          payload: {
+            content_type: ContentType.json,
+            body: { voters },
+          },
+        },
+      },
+    ],
+  };
+  const response: ActionResponse = await Dmart.request(data);
   return response.status == "success" && response.records.length > 0;
 }
 
