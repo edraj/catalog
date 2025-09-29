@@ -1987,5 +1987,6 @@
   "polls.created_by": "Created by {author}",
   "polls.multiple_choice": "Multiple choice allowed",
   "polls.single_choice": "Single choice only",
+  "polls.more_candidates": "More candidates",
   "polls": "Polls"
 }
