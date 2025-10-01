@@ -240,6 +240,11 @@ export async function createEntity(
             displayname: {
               en: data.displayname || "",
             },
+            description: {
+              en: data.description || "",
+              ar: "",
+              ku: "",
+            },
             is_active: data.is_active || true,
             workflow_shortname: workflow_shortname,
             relationships: [],
@@ -265,6 +270,13 @@ export async function createEntity(
           attributes: {
             displayname: {
               en: data.displayname || "",
+              ar: "",
+              ku: "",
+            },
+            description: {
+              en: data.description || "",
+              ar: "",
+              ku: "",
             },
             is_active: data.is_active,
             relationships: [],
@@ -783,6 +795,222 @@ export async function userVote(
   };
   const response: ActionResponse = await Dmart.request(data);
   return response.status == "success" && response.records.length > 0;
+}
+
+export async function submitSurveyResponse(
+  survey_shortname: string,
+  responses: any
+) {
+  const currentUser = get(user);
+  if (!currentUser?.shortname) {
+    throw new Error("User not authenticated");
+  }
+
+  const existingResponse = await getUserSurveyResponseRecord(survey_shortname);
+
+  if (existingResponse) {
+    const data: ActionRequest = {
+      space_name: "surveys",
+      request_type: RequestType.update,
+      records: [
+        {
+          resource_type: ResourceType.json,
+          shortname: existingResponse.shortname,
+          subpath: `surveys/${survey_shortname}`,
+          attributes: {
+            is_active: true,
+            owner_shortname: currentUser.shortname,
+            payload: {
+              content_type: ContentType.json,
+              body: responses,
+            },
+          },
+        },
+      ],
+    };
+
+    const response: ActionResponse = await Dmart.request(data);
+    return response.status == "success" && response.records.length > 0;
+  } else {
+    const data: ActionRequest = {
+      space_name: "surveys",
+      request_type: RequestType.create,
+      records: [
+        {
+          resource_type: ResourceType.json,
+          shortname: "auto",
+          subpath: `surveys/${survey_shortname}`,
+          attributes: {
+            is_active: true,
+            owner_shortname: currentUser.shortname,
+            payload: {
+              content_type: ContentType.json,
+              body: responses,
+            },
+          },
+        },
+      ],
+    };
+
+    const response: ActionResponse = await Dmart.request(data);
+    return response.status == "success" && response.records.length > 0;
+  }
+}
+
+
+export async function getUserSurveyResponseRecord(
+  survey_shortname: string
+): Promise<any | null> {
+  const currentUser = get(user);
+  if (!currentUser?.shortname) {
+    return null;
+  }
+
+  try {
+    const survey = await getEntity(
+      survey_shortname,
+      "surveys",
+      "surveys",
+      ResourceType.content,
+      "managed",
+      true,
+      true
+    );
+
+    if (!survey || !survey.attachments || !survey.attachments.json) {
+      return null;
+    }
+
+    const userResponse = survey.attachments.json.find(
+      (attachment: any) =>
+        attachment.attributes?.owner_shortname === currentUser.shortname
+    );
+
+    return userResponse || null;
+  } catch (error) {
+    console.error("Error getting user survey response record:", error);
+    return null;
+  }
+}
+
+export async function hasUserRespondedToSurvey(
+  survey_shortname: string
+): Promise<boolean> {
+  const currentUser = get(user);
+  if (!currentUser?.shortname) {
+    return false;
+  }
+
+  try {
+    const survey = await getEntity(
+      survey_shortname,
+      "surveys",
+      "surveys",
+      ResourceType.content,
+      "managed",
+      true,
+      true
+    );
+
+    if (!survey || !survey.attachments || !survey.attachments.json) {
+      return false;
+    }
+
+    const userResponse = survey.attachments.json.find(
+      (attachment: any) =>
+        attachment.attributes?.owner_shortname === currentUser.shortname
+    );
+
+    return !!userResponse;
+  } catch (error) {
+    console.error("Error checking user survey response:", error);
+    return false;
+  }
+}
+
+export async function getUserSurveyResponses(
+  survey_shortname: string
+): Promise<any | null> {
+  const currentUser = get(user);
+  if (!currentUser?.shortname) {
+    return null;
+  }
+
+  try {
+    const survey = await getEntity(
+      survey_shortname,
+      "surveys",
+      "surveys",
+      ResourceType.content,
+      "managed",
+      true,
+      true
+    );
+
+    if (!survey || !survey.attachments || !survey.attachments.json) {
+      return null;
+    }
+
+    const userResponse = survey.attachments.json.find(
+      (attachment: any) =>
+        attachment.attributes?.owner_shortname === currentUser.shortname
+    );
+
+    if (!userResponse) {
+      return null;
+    }
+
+    return userResponse.attributes?.payload?.body || null;
+  } catch (error) {
+    console.error("Error getting user survey responses:", error);
+    return null;
+  }
+}
+
+export async function getAllSurveyResponses() {
+  const query: QueryRequest = {
+    filter_shortnames: [],
+    type: QueryType.search,
+    space_name: "surveys",
+    subpath: "/surveys",
+    limit: 1000,
+    sort_by: "created_at",
+    sort_type: SortyType.descending,
+    offset: 0,
+    search: "@resource_type:json",
+    retrieve_json_payload: true,
+    retrieve_attachments: true,
+    exact_subpath: false,
+  };
+
+  const response = await Dmart.query(query);
+  return response.records || [];
+}
+
+
+export async function getUserSurveys() {
+  const currentUser = get(user);
+  if (!currentUser?.shortname) {
+    return [];
+  }
+
+  const query: QueryRequest = {
+    filter_shortnames: [],
+    type: QueryType.search,
+    space_name: "surveys",
+    subpath: "/surveys",
+    limit: 100,
+    sort_by: "created_at",
+    sort_type: SortyType.descending,
+    offset: 0,
+    search: `@owner_shortname:${currentUser.shortname}`,
+    retrieve_json_payload: true,
+    retrieve_attachments: true,
+    exact_subpath: false,
+  };
+
+  const response = await Dmart.query(query);
+  return response.records || [];
 }
 
 export async function getEntityAttachmentsCount(
@@ -1964,4 +2192,30 @@ export async function getUsersByShortnames(
       "managed"
     );
   }
+}
+
+export async function getSurveys(
+  space_name: string = "surveys",
+  scope: string = "managed",
+  limit = 100,
+  offset = 0,
+  exact_subpath = false
+): Promise<ApiQueryResponse> {
+  const response = await Dmart.query(
+    {
+      type: QueryType.search,
+      space_name: space_name,
+      subpath: "/surveys",
+      search: "@resource_type:content",
+      limit: limit,
+      sort_by: "created_at",
+      sort_type: SortyType.descending,
+      offset: offset,
+      retrieve_json_payload: true,
+      retrieve_attachments: true,
+      exact_subpath: exact_subpath,
+    },
+    scope
+  );
+  return response;
 }
