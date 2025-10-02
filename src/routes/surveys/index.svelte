@@ -52,7 +52,7 @@
       }
     } catch (err) {
       console.error("Error loading surveys:", err);
-      error = "Failed to load surveys. Please try again.";
+      error = $_("surveys.failed_to_load");
     } finally {
       isLoading = false;
     }
@@ -160,7 +160,7 @@
         if (wasFirstTime) {
           successToastMessage($_("surveys.response_success"));
         } else {
-          successToastMessage("Response updated successfully!");
+          successToastMessage($_("surveys.response_updated"));
         }
 
         userResponses[survey.shortname] = true;
@@ -249,7 +249,7 @@
         </svg>
         <span>{error}</span>
         <button class="btn btn-sm btn-secondary" onclick={loadSurveys}>
-          Retry
+          {$_("surveys.retry")}
         </button>
       </div>
     {/if}
@@ -274,13 +274,13 @@
             d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
           />
         </svg>
-        <h3>No surveys available</h3>
-        <p>There are no surveys to participate in at the moment.</p>
+        <h3>{$_("surveys.no_surveys_available")}</h3>
+        <p>{$_("surveys.no_surveys_moment")}</p>
         <button
           class="btn btn-primary"
           onclick={() => $goto("/surveys/create")}
         >
-          Create the first survey
+          {$_("surveys.create_first")}
         </button>
       </div>
     {:else}
@@ -352,13 +352,13 @@
         <div class="modal-title-section">
           <h2 class="modal-title">{selectedSurvey.title}</h2>
           {#if userResponses[selectedSurvey.shortname]}
-            <span class="response-status-badge">✓ Responded</span>
+            <span class="response-status-badge">{$_("surveys.responded")}</span>
           {/if}
         </div>
         <button
           class="modal-close"
           onclick={closeSurveyModal}
-          aria-label="Close modal"
+          aria-label={$_("surveys.close_modal")}
         >
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
