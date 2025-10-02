@@ -1,7 +1,8 @@
-<script>
+<script lang="ts">
   import { website } from "@/config";
   import { onMount, onDestroy } from "svelte";
   import { user } from "@/stores/user";
+  import { ResourceType } from "@edraj/tsdmart";
   import {
     createMessages,
     getAllUsers,
@@ -10,6 +11,14 @@
     getConversationPartners,
     getUsersByShortnames,
     attachAttachmentsToEntity,
+    createGroup,
+    getUserGroups,
+    getGroupDetails,
+    createGroupMessage,
+    getGroupMessages,
+    addUserToGroup,
+    removeUserFromGroup,
+    makeUserGroupAdmin,
   } from "@/lib/dmart_services";
   import { _ } from "@/i18n";
   import {
@@ -32,6 +41,17 @@
     getCachedMessages,
     isRelevantMessage,
     sortMessagesByTimestamp,
+    transformGroupRecord,
+    transformGroupMessageRecord,
+    isRelevantGroupMessage,
+    getGroupCacheKey,
+    isUserGroupAdmin,
+    canUserAccessGroup,
+    getGroupDisplayName,
+    type MessageData,
+    type UserData,
+    type GroupData,
+    type GroupMessageData,
   } from "@/lib/utils/messagingUtils";
 
   let socket = null;
@@ -42,10 +62,21 @@
   let selectedUser = $state(null);
   let messages = $state([]);
   let currentMessage = $state("");
-  let currentUser = null;
+  let currentUser = $state(null);
   const authToken = localStorage.getItem("authToken") || "";
 
+  let groups = $state([]);
+  let selectedGroup = $state(null);
+  let groupMessages = $state([]);
+  let isGroupsLoading = $state(true);
+  let showGroupForm = $state(false);
+  let newGroupName = $state("");
+  let newGroupDescription = $state("");
+  let selectedGroupParticipants = $state([]);
+  let chatMode = $state("direct");
+
   let conversationMessages = new Map();
+  let groupConversationMessages = new Map();
   let attachment;
   let isUsersLoading = $state(true);
   let isMessagesLoading = $state(false);
@@ -69,11 +100,9 @@
   const WS_URL = website.websocket;
   const TOKEN = authToken;
 
-  // Add a reactive variable to detect the document direction
   let isRTL = $state(false);
 
   onMount(async () => {
-    // Detect if the document is RTL
     isRTL =
       document.documentElement.dir === "rtl" ||
       document.documentElement.getAttribute("dir") === "rtl";
@@ -98,7 +127,6 @@
     }
   });
 
-  // Handle scroll event for loading older messages
   function handleScroll(event) {
     const container = event.target;
     if (
@@ -136,7 +164,6 @@
         }
 
         if (olderMessages.length > 0) {
-          // Remove duplicates and add older messages to the beginning
           const existingIds = new Set(messages.map((msg) => msg.id));
           const newMessages = olderMessages.filter(
             (msg) => !existingIds.has(msg.id)
@@ -145,7 +172,6 @@
           messages = [...newMessages, ...messages];
           messagesOffset += MESSAGES_LIMIT;
 
-          // Maintain scroll position
           setTimeout(() => {
             const newScrollHeight = chatContainer.scrollHeight;
             chatContainer.scrollTop = newScrollHeight - previousScrollHeight;
@@ -171,8 +197,8 @@
         connectionStatus = $_("messaging.toast_user_not_logged_in");
         return;
       }
+      await Promise.all([loadUsers(), loadGroups()]);
 
-      await loadUsers();
       connectWebSocket();
     } catch (error) {
       errorToastMessage($_("messaging.toast_failed_initialize") + ": " + error);
@@ -227,6 +253,208 @@
     }
   }
 
+  async function loadGroups() {
+    try {
+      isGroupsLoading = true;
+
+      if (!currentUser?.shortname) {
+        errorToastMessage($_("messaging.toast_no_user_shortname"));
+        groups = [];
+        return;
+      }
+
+      const response = await getUserGroups(currentUser.shortname);
+      if (response.status === "success" && response.records) {
+        groups = response.records
+          .map(transformGroupRecord)
+          .filter(
+            (group) =>
+              group.isActive && canUserAccessGroup(group, currentUser.shortname)
+          );
+      } else {
+        groups = [];
+      }
+    } catch (error) {
+      errorToastMessage(
+        $_("messaging.toast_failed_load_groups") + ": " + error
+      );
+      groups = [];
+    } finally {
+      isGroupsLoading = false;
+    }
+  }
+
+  function selectGroup(group) {
+    selectedGroup = group;
+    selectedUser = null;
+    chatMode = "group";
+
+    loadGroupMessages(group.id);
+  }
+
+  function selectUser(user) {
+    selectedUser = user;
+    selectedGroup = null;
+    chatMode = "direct";
+    loadConversation(user.shortname);
+  }
+
+  async function loadGroupMessages(groupId) {
+    try {
+      isMessagesLoading = true;
+      messagesOffset = 0;
+      hasMoreMessages = true;
+
+      const cacheKey = getGroupCacheKey(currentUser?.shortname, groupId);
+      const cachedMessages = getCachedMessages(cacheKey);
+
+      if (cachedMessages.length > 0) {
+        groupMessages = cachedMessages;
+        setTimeout(() => scrollToBottom(chatContainer), 100);
+      }
+
+      const response = await getGroupMessages(groupId, MESSAGES_LIMIT, 0);
+
+      if (response && response.status === "success" && response.records) {
+        const newMessages = sortMessagesByTimestamp(
+          response.records.map((record: any) =>
+            transformGroupMessageRecord(record, currentUser?.shortname)
+          ) as MessageData[]
+        );
+
+        groupMessages = newMessages;
+        groupConversationMessages.set(groupId, [...newMessages]);
+        cacheMessages(cacheKey, newMessages);
+
+        setTimeout(() => scrollToBottom(chatContainer), 100);
+      }
+    } catch (error) {
+      errorToastMessage(
+        $_("messaging.toast_failed_load_group_messages") + ": " + error
+      );
+    } finally {
+      isMessagesLoading = false;
+    }
+  }
+
+  async function sendGroupMessage() {
+    if (!currentMessage.trim() && selectedAttachments.length === 0) {
+      return;
+    }
+    if (!selectedGroup || !currentUser?.shortname) {
+      return;
+    }
+
+    const messageContent = currentMessage.trim();
+
+    try {
+      if (selectedAttachments.length > 0) {
+        isAttachmentLoading = true;
+      } else {
+        const response = await createGroupMessage({
+          groupId: selectedGroup.id,
+          sender: currentUser.shortname,
+          content: messageContent,
+        });
+
+        if (response) {
+          const newMessage = {
+            id: response,
+            senderId: currentUser.shortname,
+            groupId: selectedGroup.id,
+            content: messageContent,
+            timestamp: new Date(),
+            isOwn: true,
+          };
+
+          groupMessages = [...groupMessages, newMessage];
+          groupConversationMessages.set(selectedGroup.id, [...groupMessages]);
+
+          const cacheKey = getGroupCacheKey(
+            currentUser?.shortname,
+            selectedGroup.id
+          );
+          cacheMessages(cacheKey, groupMessages);
+
+          const wsMessage = {
+            type: "message",
+            messageId: response,
+            senderId: currentUser.shortname,
+            groupId: selectedGroup.id,
+            content: messageContent,
+            timestamp: newMessage.timestamp.toISOString(),
+            hasAttachments: false,
+            participants: selectedGroup.participants,
+          };
+
+          if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify(wsMessage));
+          } else {
+            console.warn(
+              "⚠️ [Group Message] WebSocket not available for broadcasting:",
+              {
+                socketExists: !!socket,
+                readyState: socket?.readyState,
+                expectedState: WebSocket.OPEN,
+              }
+            );
+          }
+
+          currentMessage = "";
+          setTimeout(() => scrollToBottom(chatContainer), 100);
+        } else {
+          console.error("❌ [Group Message] API returned no response");
+        }
+      }
+    } catch (error) {
+      console.error("❌ [Group Message] Error sending message:", error);
+      errorToastMessage(
+        $_("messaging.toast_failed_send_group_message") + ": " + error
+      );
+    } finally {
+      isAttachmentLoading = false;
+    }
+  }
+
+  async function createNewGroup() {
+    if (!newGroupName.trim() || selectedGroupParticipants.length === 0) {
+      errorToastMessage(
+        $_("messaging.toast_group_creation_error") ||
+          "Please provide group name and select participants"
+      );
+      return;
+    }
+
+    try {
+      const participants = [
+        currentUser.shortname,
+        ...selectedGroupParticipants.map((p) => p.shortname),
+      ];
+
+      const response = await createGroup({
+        name: newGroupName.trim(),
+        description: newGroupDescription.trim(),
+        participants: participants,
+        createdBy: currentUser.shortname,
+      });
+
+      if (response) {
+        successToastMessage(
+          $_("messaging.toast_group_created") || "Group created successfully"
+        );
+        showGroupForm = false;
+        newGroupName = "";
+        newGroupDescription = "";
+        selectedGroupParticipants = [];
+        await loadGroups();
+      }
+    } catch (error) {
+      errorToastMessage(
+        $_("messaging.toast_failed_create_group") + ": " + error
+      );
+    }
+  }
+
   function connectWebSocket() {
     try {
       connectionStatus = "Connecting...";
@@ -235,13 +463,13 @@
       socket.onopen = () => {
         isConnected = true;
         connectionStatus = "Connected";
-        socket.send(
-          JSON.stringify({
-            type: "notification_subscription",
-            space_name: "messages",
-            subpath: "/messages",
-          })
-        );
+
+        const subscriptionMessage = {
+          type: "notification_subscription",
+          space_name: "messages",
+          subpath: "/messages",
+        };
+        socket.send(JSON.stringify(subscriptionMessage));
       };
 
       socket.onmessage = (event) => {
@@ -249,13 +477,23 @@
           const data = JSON.parse(event.data);
           handleWebSocketMessage(data);
         } catch (error) {
+          console.error(
+            "❌ [WebSocket] Failed to parse message:",
+            error,
+            event.data
+          );
           errorToastMessage(
             $_("messaging.toast_failed_parse_ws") + ": " + error
           );
         }
       };
 
-      socket.onclose = () => {
+      socket.onclose = (event) => {
+        console.warn("🔌 [WebSocket] Connection closed:", {
+          code: event.code,
+          reason: event.reason,
+          wasClean: event.wasClean,
+        });
         isConnected = false;
         connectionStatus = "Disconnected";
 
@@ -267,10 +505,12 @@
       };
 
       socket.onerror = (error) => {
+        console.error("❌ [WebSocket] Connection error:", error);
         errorToastMessage($_("messaging.toast_ws_error") + ": " + error);
         connectionStatus = $_("messaging.toast_ws_error");
       };
     } catch (error) {
+      console.error("❌ [WebSocket] Failed to create connection:", error);
       errorToastMessage($_("messaging.toast_failed_connect_ws") + ": " + error);
       connectionStatus = $_("messaging.toast_failed_connect_ws");
     }
@@ -292,7 +532,75 @@
     }
 
     if (data.type === "message") {
-      if (selectedUser && data.senderId && data.receiverId) {
+      if (data.groupId) {
+        if (
+          selectedGroup &&
+          data.groupId === selectedGroup.id &&
+          chatMode === "group"
+        ) {
+          const isRelevant = isRelevantGroupMessage(
+            data,
+            selectedGroup.id,
+            currentUser?.shortname
+          );
+
+          if (isRelevant) {
+            if (data.senderId === currentUser?.shortname) {
+              return;
+            }
+            const newGroupMessage = {
+              id: data.messageId || `ws_group_${Date.now()}`,
+              senderId: data.senderId,
+              groupId: data.groupId,
+              content: data.content || "",
+              timestamp: new Date(data.timestamp || Date.now()),
+              isOwn: false,
+              hasAttachments: data.hasAttachments || false,
+              attachments: data.attachments || null,
+            };
+
+            const messageExists = groupMessages.some(
+              (msg) =>
+                msg.id === newGroupMessage.id ||
+                (msg.senderId === newGroupMessage.senderId &&
+                  msg.groupId === newGroupMessage.groupId &&
+                  Math.abs(
+                    new Date(msg.timestamp).getTime() -
+                      new Date(newGroupMessage.timestamp).getTime()
+                  ) < 5000)
+            );
+
+            if (!messageExists) {
+              addGroupMessageToConversation(newGroupMessage);
+
+              if (document.hidden || !selectedGroup) {
+                const senderName = getUserDisplayName(data.senderId);
+                successToastMessage(
+                  `${senderName}: ${data.content.substring(0, 50)}${data.content.length > 50 ? "..." : ""}`
+                );
+              }
+            } else {
+            }
+          } else {
+          }
+        } else if (data.groupId && !selectedGroup) {
+          const groupName =
+            getGroupDisplayName(data.groupId) || `Group ${data.groupId}`;
+          const senderName = getUserDisplayName(data.senderId);
+          successToastMessage(
+            `${senderName} in ${groupName}: ${data.content.substring(0, 50)}${data.content.length > 50 ? "..." : ""}`
+          );
+        } else {
+        }
+        return;
+      }
+
+      if (
+        selectedUser &&
+        data.senderId &&
+        data.receiverId &&
+        chatMode === "direct"
+      ) {
         const isRelevant = isRelevantMessage(
           data,
           selectedUser.shortname,
@@ -405,6 +713,191 @@
           }
         }
       }
+
+      if (
+        data.type === "group_message" ||
+        (data.groupId && chatMode === "group")
+      ) {
+        if (selectedGroup && data.groupId === selectedGroup.id) {
+          const isRelevant = isRelevantGroupMessage(
+            data,
+            selectedGroup.id,
+            currentUser?.shortname
+          );
+
+          if (isRelevant) {
+            if (data.senderId === currentUser?.shortname) {
+              return;
+            }
+
+            const newGroupMessage = {
+              id: data.messageId || `ws_group_${Date.now()}`,
+              senderId: data.senderId,
+              groupId: data.groupId,
+              content: data.content || "",
+              timestamp: new Date(data.timestamp || Date.now()),
+              isOwn: false,
+              hasAttachments: data.hasAttachments || false,
+              attachments: data.attachments || null,
+            };
+
+            const messageExists = groupMessages.some(
+              (msg) =>
+                msg.id === newGroupMessage.id ||
+                (msg.senderId === newGroupMessage.senderId &&
+                  msg.groupId === newGroupMessage.groupId &&
+                  Math.abs(
+                    new Date(msg.timestamp).getTime() -
+                      new Date(newGroupMessage.timestamp).getTime()
+                  ) < 5000)
+            );
+
+            if (!messageExists) {
+              addGroupMessageToConversation(newGroupMessage);
+
+              if (document.hidden || !selectedGroup) {
+                const senderName = getUserDisplayName(data.senderId);
+                successToastMessage(
+                  `${senderName}: ${data.content.substring(0, 50)}${data.content.length > 50 ? "..." : ""}`
+                );
+              }
+            }
+          }
+        } else if (data.groupId && !selectedGroup) {
+          const groupName =
+            getGroupDisplayName(data.groupId) || `Group ${data.groupId}`;
+          const senderName = getUserDisplayName(data.senderId);
+          successToastMessage(
+            `${senderName} in ${groupName}: ${data.content.substring(0, 50)}${data.content.length > 50 ? "..." : ""}`
+          );
+        }
+      }
+
+      if (data.type === "message" && !data.groupId) {
+      }
+
+      if (data.type === "message" && !data.groupId) {
+        if (
+          selectedUser &&
+          data.senderId &&
+          data.receiverId &&
+          chatMode === "direct"
+        ) {
+          const isRelevant = isRelevantMessage(
+            data,
+            selectedUser.shortname,
+            currentUser?.shortname
+          );
+
+          if (isRelevant) {
+            if (data.senderId === currentUser?.shortname) {
+              return;
+            }
+
+            if (data.hasAttachments && data.messageId) {
+              const tempMessage = {
+                id: `temp_attachment_${data.messageId}`,
+                senderId: data.senderId,
+                receiverId: data.receiverId,
+                content: data.content || "📎 Attachment",
+                timestamp: new Date(data.timestamp || Date.now()),
+                isOwn: false,
+                hasAttachments: true,
+                attachments: null,
+                isUploading: true,
+              };
+
+              const messageExists = messages.some(
+                (msg) => msg.id === data.messageId || msg.id === tempMessage.id
+              );
+
+              if (!messageExists) {
+                addMessageToConversation(tempMessage);
+              }
+
+              setTimeout(async () => {
+                try {
+                  const response = await getMessagesBetweenUsers(
+                    currentUser?.shortname,
+                    selectedUser.shortname
+                  );
+
+                  if (
+                    response &&
+                    response.status === "success" &&
+                    response.records
+                  ) {
+                    const updatedMessages = sortMessagesByTimestamp(
+                      response.records.map((record) =>
+                        transformMessageRecord(record, currentUser?.shortname)
+                      )
+                    );
+
+                    const hasNewAttachmentData = updatedMessages.some(
+                      (msg) => msg.id === data.messageId && msg.attachments
+                    );
+
+                    if (hasNewAttachmentData) {
+                      messages = updatedMessages;
+
+                      conversationMessages.set(selectedUser.shortname, [
+                        ...messages,
+                      ]);
+
+                      const cacheKey = getCacheKey(
+                        currentUser?.shortname,
+                        selectedUser.shortname
+                      );
+                      cacheMessages(cacheKey, messages);
+
+                      scrollToBottom(chatContainer);
+                    }
+                  }
+                } catch (error) {
+                  console.error("Error fetching attachment message:", error);
+
+                  messages = messages.filter(
+                    (msg) => msg.id !== tempMessage.id
+                  );
+
+                  errorToastMessage(
+                    $_("messaging.toast_failed_fetch_attachment") ||
+                      "Failed to load attachment"
+                  );
+                }
+              }, 1000);
+
+              return;
+            }
+
+            const newMessage = {
+              id: data.messageId || `ws_${Date.now()}`,
+              senderId: data.senderId,
+              receiverId: data.receiverId,
+              content: data.content || "",
+              timestamp: new Date(data.timestamp || Date.now()),
+              isOwn: false,
+              hasAttachments: false,
+              attachments: null,
+            };
+
+            const messageExists = messages.some(
+              (msg) =>
+                msg.id === newMessage.id ||
+                (msg.senderId === newMessage.senderId &&
+                  msg.receiverId === newMessage.receiverId &&
+                  Math.abs(
+                    new Date(msg.timestamp).getTime() -
+                      new Date(newMessage.timestamp).getTime()
+                  ) < 5000)
+            );
+
+            if (!messageExists) {
+              addMessageToConversation(newMessage);
+            }
+          }
+        }
+      }
     }
   }
 
@@ -416,7 +909,67 @@
         return;
       }
 
-      if (selectedUser) {
+      if (selectedGroup && chatMode === "group") {
+        if (messageData.groupId === selectedGroup.id) {
+          if (messageData.senderId === currentUser?.shortname) {
+            return;
+          }
+
+          setTimeout(async () => {
+            try {
+              const response = await getGroupMessages(
+                selectedGroup.id,
+                MESSAGES_LIMIT,
+                0
+              );
+
+              if (
+                response &&
+                response.status === "success" &&
+                response.records
+              ) {
+                const updatedMessages = sortMessagesByTimestamp(
+                  response.records.map((record: any) =>
+                    transformGroupMessageRecord(record, currentUser?.shortname)
+                  ) as MessageData[]
+                );
+
+                const currentMessageCount = groupMessages.length;
+                const newMessageCount = updatedMessages.length;
+
+                if (
+                  newMessageCount > currentMessageCount ||
+                  updatedMessages.some((msg) => msg.id === messageData.id)
+                ) {
+                  groupMessages = updatedMessages;
+
+                  groupConversationMessages.set(selectedGroup.id, [
+                    ...updatedMessages,
+                  ]);
+
+                  const cacheKey = getGroupCacheKey(
+                    currentUser?.shortname,
+                    selectedGroup.id
+                  );
+                  cacheMessages(cacheKey, updatedMessages);
+
+                  scrollToBottom(chatContainer);
+                } else {
+                }
+              }
+            } catch (error) {
+              console.error(
+                "❌ [Fetch Message] Error refreshing group conversation:",
+                error
+              );
+            }
+          }, 1500);
+        } else {
+        }
+        return;
+      }
+
+      if (selectedUser && chatMode === "direct") {
         const isRelevant = isRelevantMessage(
           messageData,
           selectedUser.shortname,
@@ -469,12 +1022,16 @@
                 }
               }
             } catch (error) {
-              console.error("Error refreshing conversation:", error);
+              console.error(
+                "❌ [Fetch Message] Error refreshing direct conversation:",
+                error
+              );
             }
           }, 1500);
         }
       }
     } catch (error) {
+      console.error("❌ [Fetch Message] Error fetching message:", error);
       errorToastMessage(
         $_("messaging.toast_failed_fetch_by_shortname") + ": " + error
       );
@@ -502,10 +1059,39 @@
     scrollToBottom(chatContainer);
   }
 
-  async function selectUser(user) {
-    if (selectedUser?.id === user.id) return;
+  function addGroupMessageToConversation(newMessage) {
+    groupMessages = [...groupMessages, newMessage];
 
-    selectedUser = user;
+    if (selectedGroup) {
+      const conversationKey = selectedGroup.id;
+      const existingMessages =
+        groupConversationMessages.get(conversationKey) || [];
+
+      groupConversationMessages.set(conversationKey, [
+        ...existingMessages,
+        newMessage,
+      ]);
+
+      const cacheKey = getGroupCacheKey(
+        currentUser?.shortname,
+        selectedGroup.id
+      );
+      cacheMessages(cacheKey, groupMessages);
+    } else {
+      console.warn("⚠️ [Group Message] No selected group for caching");
+    }
+
+    scrollToBottom(chatContainer);
+  }
+
+  function getUserDisplayName(shortname) {
+    const user = users.find((u) => u.shortname === shortname);
+    return user ? user.name || user.displayname || shortname : shortname;
+  }
+
+  async function loadConversation(userShortname) {
+    if (!selectedUser) return;
+
     isMessagesLoading = true;
     messagesOffset = 0;
     hasMoreMessages = true;
@@ -513,7 +1099,7 @@
     try {
       const response = await getMessagesBetweenUsers(
         currentUser?.shortname,
-        user.shortname,
+        userShortname,
         MESSAGES_LIMIT,
         0
       );
@@ -533,18 +1119,18 @@
         hasMoreMessages = false;
       }
 
-      conversationMessages.set(user.shortname, [...messages]);
+      conversationMessages.set(userShortname, [...messages]);
 
-      const cacheKey = getCacheKey(currentUser?.shortname, user.shortname);
+      const cacheKey = getCacheKey(currentUser?.shortname, userShortname);
       cacheMessages(cacheKey, messages);
     } catch (error) {
       errorToastMessage(
         $_("messaging.toast_failed_load_history") + ": " + error
       );
-      messages = conversationMessages.get(user.shortname) || [];
+      messages = conversationMessages.get(userShortname) || [];
 
       if (messages.length === 0) {
-        const cacheKey = getCacheKey(currentUser?.shortname, user.shortname);
+        const cacheKey = getCacheKey(currentUser?.shortname, userShortname);
         messages = getCachedMessages(cacheKey);
       }
     } finally {
@@ -900,105 +1486,211 @@
   <div class="chat-content">
     <!-- Users Sidebar -->
     <div class="users-sidebar">
-      <div class="users-header">
-        <h3>
-          {showAllUsers
-            ? $_("messaging.all_users")
-            : $_("messaging.conversations")} ({users.length})
-        </h3>
-        <div class="users-header-actions">
-          <button
-            class="toggle-view-btn"
-            onclick={toggleUserView}
-            aria-label={showAllUsers
-              ? "Show conversation partners only"
-              : "Show all users"}
-            title={showAllUsers
-              ? "Show conversation partners only"
-              : "Show all users"}
-          >
-            {showAllUsers ? "👥" : "🌐"}
-          </button>
-          <button
-            class="refresh-btn"
-            onclick={loadUsers}
-            disabled={isUsersLoading}
-            aria-label="Refresh users"
-          >
-            {isUsersLoading ? "⟳" : "↻"}
-          </button>
-        </div>
+      <!-- Chat Mode Tabs -->
+      <div class="chat-mode-tabs">
+        <button
+          class="tab-btn"
+          class:active={chatMode === "direct"}
+          onclick={() => (chatMode = "direct")}
+        >
+          💬 Direct Messages ({users.length})
+        </button>
+        <button
+          class="tab-btn"
+          class:active={chatMode === "group"}
+          onclick={() => (chatMode = "group")}
+        >
+          👥 Groups ({groups.length})
+        </button>
       </div>
 
-      <div class="users-list">
-        {#if isUsersLoading}
-          <div class="loading">Loading users...</div>
-        {:else if users.length === 0}
-          <div class="no-users">
-            {#if showAllUsers}
-              <div class="no-users-message">
-                <p>{$_("messaging.no_users_found")}</p>
+      {#if chatMode === "direct"}
+        <!-- Direct Messages Section -->
+        <div class="users-header">
+          <h3>
+            {showAllUsers
+              ? $_("messaging.all_users")
+              : $_("messaging.conversations")} ({users.length})
+          </h3>
+          <div class="users-header-actions">
+            <button
+              class="toggle-view-btn"
+              onclick={toggleUserView}
+              aria-label={showAllUsers
+                ? "Show conversation partners only"
+                : "Show all users"}
+              title={showAllUsers
+                ? "Show conversation partners only"
+                : "Show all users"}
+            >
+              {showAllUsers ? "👥" : "🌐"}
+            </button>
+            <button
+              class="refresh-btn"
+              onclick={loadUsers}
+              disabled={isUsersLoading}
+              aria-label="Refresh users"
+            >
+              {isUsersLoading ? "⟳" : "↻"}
+            </button>
+          </div>
+        </div>
+
+        <div class="users-list">
+          {#if isUsersLoading}
+            <div class="loading">Loading users...</div>
+          {:else if users.length === 0}
+            <div class="no-users">
+              {#if showAllUsers}
+                <div class="no-users-message">
+                  <p>{$_("messaging.no_users_found")}</p>
+                </div>
+              {:else}
+                <div class="no-conversations-message">
+                  <p>{$_("messaging.no_conversations_yet")}</p>
+                  <button
+                    class="start-conversation-btn"
+                    onclick={toggleUserView}
+                  >
+                    {$_("messaging.browse_users_to_start")}
+                  </button>
+                </div>
+              {/if}
+            </div>
+          {:else}
+            {#each users as user (user.id)}
+              <div
+                class="user-item"
+                class:selected={selectedUser?.id === user.id &&
+                  chatMode === "direct"}
+                onclick={() => selectUser(user)}
+                role="button"
+                tabindex="0"
+                onkeydown={(e) => e.key === "Enter" && selectUser(user)}
+                aria-label={`Chat with ${user.name}`}
+              >
+                <div class="user-avatar mx-3">
+                  {#if user.avatar}
+                    <img
+                      src={user.avatar || "/placeholder.svg"}
+                      alt={user.name}
+                    />
+                  {:else}
+                    <div class="avatar-placeholder">
+                      {user.name.charAt(0).toUpperCase()}
+                    </div>
+                  {/if}
+                  <div
+                    class="online-indicator"
+                    class:online={user.online}
+                  ></div>
+                </div>
+
+                <div class="user-info">
+                  <div class="user-name">{user.name}</div>
+                  <div class="user-details">
+                    {#if user.email}
+                      <div class="user-email">{user.email}</div>
+                    {/if}
+                    {#if user.roles.length > 0}
+                      <div class="user-roles">{user.roles.join(", ")}</div>
+                    {/if}
+                  </div>
+                  <div class="user-status">
+                    {#if user.online}
+                      <span class="online-text">Online</span>
+                    {/if}
+                  </div>
+                </div>
               </div>
-            {:else}
-              <div class="no-conversations-message">
-                <p>{$_("messaging.no_conversations_yet")}</p>
-                <button class="start-conversation-btn" onclick={toggleUserView}>
-                  {$_("messaging.browse_users_to_start")}
+            {/each}
+          {/if}
+        </div>
+      {:else}
+        <!-- Groups Section -->
+        <div class="groups-header">
+          <h3>Groups ({groups.length})</h3>
+          <div class="groups-header-actions">
+            <button
+              class="create-group-btn"
+              onclick={() => (showGroupForm = true)}
+              aria-label="Create new group"
+            >
+              ➕ Create Group
+            </button>
+            <button
+              class="refresh-btn"
+              onclick={loadGroups}
+              disabled={isGroupsLoading}
+              aria-label="Refresh groups"
+            >
+              {isGroupsLoading ? "⟳" : "↻"}
+            </button>
+          </div>
+        </div>
+
+        <div class="groups-list">
+          {#if isGroupsLoading}
+            <div class="loading">Loading groups...</div>
+          {:else if groups.length === 0}
+            <div class="no-groups">
+              <div class="no-groups-message">
+                <p>No groups yet</p>
+                <button
+                  class="create-group-btn"
+                  onclick={() => (showGroupForm = true)}
+                >
+                  Create your first group
                 </button>
               </div>
-            {/if}
-          </div>
-        {:else}
-          {#each users as user (user.id)}
-            <div
-              class="user-item"
-              class:selected={selectedUser?.id === user.id}
-              onclick={() => selectUser(user)}
-              role="button"
-              tabindex="0"
-              onkeydown={(e) => e.key === "Enter" && selectUser(user)}
-              aria-label={`Chat with ${user.name}`}
-            >
-              <div class="user-avatar mx-3">
-                {#if user.avatar}
-                  <img
-                    src={user.avatar || "/placeholder.svg"}
-                    alt={user.name}
-                  />
-                {:else}
-                  <div class="avatar-placeholder">
-                    {user.name.charAt(0).toUpperCase()}
-                  </div>
-                {/if}
-                <div class="online-indicator" class:online={user.online}></div>
-              </div>
-
-              <div class="user-info">
-                <div class="user-name">{user.name}</div>
-                <div class="user-details">
-                  {#if user.email}
-                    <div class="user-email">{user.email}</div>
-                  {/if}
-                  {#if user.roles.length > 0}
-                    <div class="user-roles">{user.roles.join(", ")}</div>
-                  {/if}
-                </div>
-                <div class="user-status">
-                  {#if user.online}
-                    <span class="online-text">Online</span>
-                  {/if}
-                </div>
-              </div>
             </div>
-          {/each}
-        {/if}
-      </div>
+          {:else}
+            {#each groups as group (group.id)}
+              <div
+                class="group-item"
+                class:selected={selectedGroup?.id === group.id &&
+                  chatMode === "group"}
+                onclick={() => selectGroup(group)}
+                role="button"
+                tabindex="0"
+                onkeydown={(e) => e.key === "Enter" && selectGroup(group)}
+                aria-label={`Chat in ${group.name}`}
+              >
+                <div class="group-avatar">
+                  {#if group.avatar}
+                    <img src={group.avatar} alt={group.name} />
+                  {:else}
+                    <div class="avatar-placeholder group">
+                      {group.name.charAt(0).toUpperCase()}
+                    </div>
+                  {/if}
+                </div>
+
+                <div class="group-info">
+                  <div class="group-name">{group.name}</div>
+                  <div class="group-details">
+                    <div class="participant-count">
+                      {group.participants.length} participants
+                    </div>
+                    {#if group.description}
+                      <div class="group-description">{group.description}</div>
+                    {/if}
+                  </div>
+                  {#if isUserGroupAdmin(group, currentUser?.shortname)}
+                    <div class="admin-badge">Admin</div>
+                  {/if}
+                </div>
+              </div>
+            {/each}
+          {/if}
+        </div>
+      {/if}
     </div>
 
     <!-- Chat Area -->
     <div class="chat-area">
-      {#if selectedUser}
-        <!-- Chat Header -->
+      {#if selectedUser && chatMode === "direct"}
+        <!-- Direct Chat Header -->
         <div class="chat-user-header">
           <div class="chat-user-info">
             <div class="user-avatar small mx-3">
@@ -1069,7 +1761,7 @@
                   {#if message?.attachments && message?.attachments?.length > 0}
                     <MessengerAttachments
                       attachments={message.attachments}
-                      resource_type="messages"
+                      resource_type={ResourceType.media}
                       space_name="messages"
                       subpath="/messages"
                       parent_shortname={message.id}
@@ -1272,16 +1964,328 @@
             </div>
           </div>
         </div>
+      {:else if selectedGroup && chatMode === "group"}
+        <!-- Group Chat Header -->
+        <div class="chat-group-header">
+          <div class="chat-group-info">
+            <div class="group-avatar small">
+              {#if selectedGroup.avatar}
+                <img src={selectedGroup.avatar} alt={selectedGroup.name} />
+              {:else}
+                <div class="avatar-placeholder group">
+                  {selectedGroup.name.charAt(0).toUpperCase()}
+                </div>
+              {/if}
+            </div>
+            <div>
+              <div class="chat-group-name">{selectedGroup.name}</div>
+              <div class="chat-group-status">
+                {selectedGroup.participants.length} participants
+                {#if isUserGroupAdmin(selectedGroup, currentUser?.shortname)}
+                  • Admin
+                {/if}
+                <div class="group-participants-preview">
+                  {selectedGroup.participants
+                    .slice(0, 3)
+                    .map((participantId) => getUserDisplayName(participantId))
+                    .join(", ")}
+                  {#if selectedGroup.participants.length > 3}
+                    and {selectedGroup.participants.length - 3} more
+                  {/if}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="messages-container"
+          bind:this={chatContainer}
+          onscroll={handleScroll}
+        >
+          {#if isLoadingOlderMessages}
+            <div class="loading-older-messages">
+              <div class="loading-spinner"></div>
+              <span>Loading older messages...</span>
+            </div>
+          {/if}
+
+          {#if isMessagesLoading}
+            <div class="loading">Loading messages...</div>
+          {:else if groupMessages.length === 0}
+            <div class="no-messages">
+              <p>No messages in this group yet</p>
+            </div>
+          {:else}
+            {#each groupMessages as message (message.id)}
+              <div class="message group-message" class:own={message.isOwn}>
+                {#if !message.isOwn}
+                  {@const senderUser = users.find(
+                    (u) => u.shortname === message.senderId
+                  )}
+                  <div class="message-sender-info">
+                    <div class="sender-avatar tiny">
+                      {#if senderUser?.avatar}
+                        <img
+                          src={senderUser.avatar}
+                          alt={getUserDisplayName(message.senderId)}
+                        />
+                      {:else}
+                        <div class="avatar-placeholder">
+                          {getUserDisplayName(message.senderId)
+                            .charAt(0)
+                            .toUpperCase()}
+                        </div>
+                      {/if}
+                    </div>
+                    <div class="sender-details">
+                      <div class="message-sender">
+                        {getUserDisplayName(message.senderId)}
+                      </div>
+                      <div class="message-timestamp">
+                        {formatTime(message.timestamp)}
+                      </div>
+                    </div>
+                  </div>
+                {/if}
+                <div class="message-content" class:own-content={message.isOwn}>
+                  {#if message.content && message.content !== "attachment"}
+                    <div class="message-text">{message.content}</div>
+                  {/if}
+
+                  {#if message.isUploading}
+                    <div class="upload-status">
+                      <div class="upload-spinner"></div>
+                      <span>Uploading...</span>
+                    </div>
+                  {:else if message.uploadFailed}
+                    <div class="upload-failed">
+                      <span class="error-icon">⚠️</span>
+                      <span>Upload failed</span>
+                    </div>
+                  {/if}
+
+                  {#if message?.attachments && message?.attachments?.length > 0}
+                    <MessengerAttachments
+                      attachments={message.attachments}
+                      resource_type={ResourceType.media}
+                      space_name="messages"
+                      subpath="/messages"
+                      parent_shortname={message.id}
+                      isOwner={message.isOwn}
+                    />
+                  {/if}
+                </div>
+                {#if message.isOwn}
+                  <div class="message-timestamp own-timestamp">
+                    {formatTime(message.timestamp)}
+                  </div>
+                {/if}
+              </div>
+            {/each}
+          {/if}
+        </div>
+
+        <!-- Group Message Input -->
+        <div class="message-input-container">
+          <!-- Attachment Preview -->
+          {#if selectedAttachments.length > 0}
+            <div class="attachment-preview-container">
+              {#each selectedAttachments as file, index}
+                <div class="attachment-preview-item">
+                  {#if file.type.startsWith("audio/") && file.name.includes("voice_message_")}
+                    <!-- Voice Message Preview -->
+                    <div class="voice-message-icon">🎤</div>
+                    <div class="file-info">
+                      <div class="file-name">Voice Message</div>
+                      <div class="file-size">{formatFileSize(file.size)}</div>
+                    </div>
+                  {:else if getPreviewUrl(file)}
+                    <img
+                      src={getPreviewUrl(file)}
+                      alt={file.name}
+                      class="preview-image"
+                    />
+                    <div class="file-info">
+                      <div class="file-name">{file.name}</div>
+                      <div class="file-size">{formatFileSize(file.size)}</div>
+                    </div>
+                  {:else}
+                    <div class="file-icon">{getFileIcon(file)}</div>
+                    <div class="file-info">
+                      <div class="file-name">{file.name}</div>
+                      <div class="file-size">{formatFileSize(file.size)}</div>
+                    </div>
+                  {/if}
+                  <button
+                    class="remove-attachment-btn"
+                    onclick={() => removeAttachment(index)}
+                    aria-label="Remove attachment"
+                  >
+                    ✕
+                  </button>
+                </div>
+              {/each}
+            </div>
+          {/if}
+
+          <div class="message-input">
+            <button
+              class="attachment-btn"
+              onclick={() =>
+                document.getElementById("attachment-input").click()}
+              disabled={!isConnected || isRecording}
+              aria-label="Attach file"
+            >
+              📎
+            </button>
+
+            <input
+              type="file"
+              id="attachment-input"
+              multiple
+              accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
+              onchange={handleFileSelect}
+              style="display: none;"
+            />
+
+            <textarea
+              bind:value={currentMessage}
+              placeholder="Type a message to the group..."
+              disabled={!isConnected || isRecording}
+              rows="1"
+              onkeydown={handleKeydown}
+            ></textarea>
+
+            <div class="input-actions">
+              <button
+                class="send-btn"
+                onclick={sendGroupMessage}
+                disabled={(!currentMessage.trim() &&
+                  selectedAttachments.length === 0) ||
+                  !isConnected ||
+                  isAttachmentLoading ||
+                  isRecording}
+                aria-label="Send message"
+              >
+                {#if isAttachmentLoading}
+                  <div class="loading-spinner"></div>
+                {:else}
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="m22 2-7 20-4-9-9-4 20-7z" />
+                  </svg>
+                {/if}
+              </button>
+            </div>
+          </div>
+        </div>
       {:else}
         <div class="no-chat-selected">
           <div class="no-chat-message">
-            <h3>{$_("messaging.select_user_to_chat")}</h3>
+            <h3>
+              {chatMode === "direct"
+                ? $_("messaging.select_user_to_chat")
+                : "Select a group to chat"}
+            </h3>
           </div>
         </div>
       {/if}
     </div>
   </div>
 </div>
+
+<!-- Group Creation Modal -->
+{#if showGroupForm}
+  <div class="modal-overlay" role="dialog" aria-modal="true" tabindex="-1">
+    <div class="modal-content" role="document">
+      <div class="modal-header">
+        <h3>Create New Group</h3>
+        <button
+          class="close-btn"
+          onclick={() => (showGroupForm = false)}
+          aria-label="Close"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="groupName">Group Name</label>
+          <input
+            id="groupName"
+            type="text"
+            bind:value={newGroupName}
+            placeholder="Enter group name"
+            maxlength="50"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="groupDescription">Description (optional)</label>
+          <textarea
+            id="groupDescription"
+            bind:value={newGroupDescription}
+            placeholder="Enter group description"
+            rows="3"
+            maxlength="200"
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <fieldset>
+            <legend>Select Participants</legend>
+            <div class="participants-list">
+              {#each users.filter((u) => u.isActive) as user (user.id)}
+                <div class="participant-item">
+                  <input
+                    type="checkbox"
+                    id="participant-{user.id}"
+                    bind:group={selectedGroupParticipants}
+                    value={user}
+                  />
+                  <label for="participant-{user.id}">
+                    <div class="user-avatar tiny">
+                      {#if user.avatar}
+                        <img src={user.avatar} alt={user.name} />
+                      {:else}
+                        <div class="avatar-placeholder">
+                          {user.name.charAt(0).toUpperCase()}
+                        </div>
+                      {/if}
+                    </div>
+                    {user.name}
+                  </label>
+                </div>
+              {/each}
+            </div>
+          </fieldset>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="cancel-btn" onclick={() => (showGroupForm = false)}>
+          Cancel
+        </button>
+        <button
+          class="create-btn"
+          onclick={createNewGroup}
+          disabled={!newGroupName.trim() ||
+            selectedGroupParticipants.length === 0}
+        >
+          Create Group
+        </button>
+      </div>
+    </div>
+  </div>
+{/if}
 
 <style>
   .chat-container {
@@ -1626,6 +2630,106 @@
   .message {
     display: flex;
     margin-bottom: 1rem;
+  }
+
+  /* Group Message Enhancements */
+  .message.group-message {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .message.group-message.own {
+    align-items: flex-end;
+  }
+
+  .message.group-message:not(.own) {
+    align-items: flex-start;
+  }
+
+  .message-sender-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .sender-avatar.tiny {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .sender-avatar.tiny img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .sender-avatar.tiny .avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #e2e8f0;
+    color: #475569;
+    font-size: 0.6rem;
+    font-weight: 600;
+  }
+
+  .sender-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  .message-sender {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #475569;
+    margin: 0;
+  }
+
+  .message-content.own-content {
+    background: #3b82f6;
+    color: white;
+    border-bottom-right-radius: 4px;
+  }
+
+  .message.group-message .message-timestamp {
+    font-size: 0.625rem;
+    color: #94a3b8;
+    margin: 0;
+  }
+
+  .own-timestamp {
+    align-self: flex-end;
+    text-align: right;
+    margin-top: 0.25rem;
+  }
+
+  /* RTL adjustments for group messages */
+  .chat-container.rtl .message.group-message.own {
+    align-items: flex-start;
+  }
+
+  .chat-container.rtl .message.group-message:not(.own) {
+    align-items: flex-end;
+  }
+
+  .chat-container.rtl .message-sender-info {
+    flex-direction: row-reverse;
+  }
+
+  .chat-container.rtl .sender-details {
+    text-align: right;
+  }
+
+  .chat-container.rtl .own-timestamp {
+    align-self: flex-start;
+    text-align: left;
   }
 
   /* Default LTR message alignment */
@@ -2221,6 +3325,381 @@
   .message.own .upload-failed {
     background: rgba(255, 255, 255, 0.2);
     color: rgba(255, 255, 255, 0.9);
+  }
+
+  /* Group Chat Styles */
+  .chat-mode-tabs {
+    display: flex;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 1rem;
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #6b7280;
+    transition: all 0.2s ease;
+  }
+
+  .tab-btn.active {
+    color: #3b82f6;
+    border-bottom: 2px solid #3b82f6;
+    background: #f8fafc;
+  }
+
+  .tab-btn:hover {
+    background: #f1f5f9;
+  }
+
+  .groups-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .groups-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #1f2937;
+  }
+
+  .groups-header-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .create-group-btn {
+    padding: 0.5rem 1rem;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: background-color 0.2s ease;
+  }
+
+  .create-group-btn:hover {
+    background: #2563eb;
+  }
+
+  .groups-list {
+    padding: 1rem;
+    overflow-y: auto;
+    max-height: calc(100vh - 200px);
+  }
+
+  .group-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    border: 2px solid transparent;
+  }
+
+  .group-item:hover {
+    background: #f8fafc;
+  }
+
+  .group-item.selected {
+    background: #eff6ff;
+    border-color: #3b82f6;
+  }
+
+  .group-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 0.5rem;
+    margin-right: 0.75rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .group-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .group-avatar .avatar-placeholder.group {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1rem;
+  }
+
+  .group-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .group-name {
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 0.25rem;
+  }
+
+  .group-details {
+    font-size: 0.875rem;
+    color: #6b7280;
+  }
+
+  .participant-count {
+    margin-bottom: 0.125rem;
+  }
+
+  .group-description {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .admin-badge {
+    background: #10b981;
+    color: white;
+    font-size: 0.75rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 0.25rem;
+    margin-top: 0.25rem;
+    display: inline-block;
+  }
+
+  .chat-group-header {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    background: white;
+  }
+
+  .chat-group-info {
+    display: flex;
+    align-items: center;
+  }
+
+  .group-avatar.small {
+    width: 32px;
+    height: 32px;
+    margin-right: 0.75rem;
+  }
+
+  .chat-group-name {
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 0.125rem;
+  }
+
+  .chat-group-status {
+    font-size: 0.875rem;
+    color: #6b7280;
+  }
+
+  .group-participants-preview {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin-top: 0.25rem;
+    font-style: italic;
+  }
+
+  .message-sender {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-bottom: 0.25rem;
+    font-weight: 500;
+  }
+
+  .no-groups {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    color: #6b7280;
+  }
+
+  .no-groups-message {
+    text-align: center;
+  }
+
+  .no-groups-message p {
+    margin-bottom: 1rem;
+  }
+
+  /* Modal Styles */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+
+  .modal-content {
+    background: white;
+    border-radius: 0.75rem;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .modal-header h3 {
+    margin: 0;
+    color: #1f2937;
+  }
+
+  .close-btn {
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    cursor: pointer;
+    color: #6b7280;
+    padding: 0.25rem;
+  }
+
+  .close-btn:hover {
+    color: #374151;
+  }
+
+  .modal-body {
+    padding: 1.5rem;
+    max-height: 50vh;
+    overflow-y: auto;
+  }
+
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #374151;
+  }
+
+  .form-group input,
+  .form-group textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    transition: border-color 0.2s ease;
+  }
+
+  .form-group input:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  .participants-list {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+    padding: 0.5rem;
+  }
+
+  .participant-item {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem;
+    margin-bottom: 0.25rem;
+    border-radius: 0.25rem;
+    transition: background-color 0.2s ease;
+  }
+
+  .participant-item:hover {
+    background: #f8fafc;
+  }
+
+  .participant-item input[type="checkbox"] {
+    margin-right: 0.75rem;
+    width: auto;
+  }
+
+  .participant-item label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    margin: 0;
+  }
+
+  .user-avatar.tiny {
+    width: 24px;
+    height: 24px;
+    margin-right: 0.5rem;
+  }
+
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+    background: #f9fafb;
+  }
+
+  .cancel-btn {
+    padding: 0.75rem 1.5rem;
+    border: 1px solid #d1d5db;
+    background: white;
+    color: #374151;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .cancel-btn:hover {
+    background: #f9fafb;
+  }
+
+  .create-btn {
+    padding: 0.75rem 1.5rem;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+
+  .create-btn:hover {
+    background: #2563eb;
+  }
+
+  .create-btn:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
   }
 
   /* Responsive Design */
