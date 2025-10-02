@@ -67,7 +67,7 @@
           {#if file.type.startsWith("audio/") && file.name.includes("voice_message_")}
             <div class="voice-message-icon">🎤</div>
             <div class="file-info">
-              <div class="file-name">Voice Message</div>
+              <div class="file-name">{$_("messaging.voice_message")}</div>
               <div class="file-size">{formatFileSize(file.size)}</div>
             </div>
           {:else if getPreviewUrl(file)}
@@ -90,7 +90,7 @@
           <button
             class="remove-attachment-btn"
             onclick={() => onRemoveAttachment(index)}
-            aria-label="Remove attachment"
+            aria-label={$_("messaging.remove_attachment")}
           >
             ✕
           </button>
@@ -104,7 +104,7 @@
       class="attachment-btn"
       onclick={() => document.getElementById("attachment-input")?.click()}
       disabled={!isConnected || isRecording}
-      aria-label="Add attachment"
+      aria-label={$_("messaging.add_attachment")}
     >
       📎
     </button>
@@ -124,8 +124,8 @@
         class="voice-btn"
         onclick={onStartRecording}
         disabled={!isConnected}
-        aria-label="Record voice message"
-        title="Record voice message"
+        aria-label={$_("messaging.record_voice_message")}
+        title={$_("messaging.record_voice_message")}
       >
         🎤
       </button>
@@ -140,14 +140,14 @@
         <button
           class="stop-recording-btn"
           onclick={onStopRecording}
-          aria-label="Stop recording"
+          aria-label={$_("messaging.stop_recording")}
         >
           ⏹️
         </button>
         <button
           class="cancel-recording-btn"
           onclick={onCancelRecording}
-          aria-label="Cancel recording"
+          aria-label={$_("messaging.cancel_recording")}
         >
           ❌
         </button>
@@ -168,7 +168,7 @@
         class="send-btn"
         onclick={onSend}
         disabled={!canSend()}
-        aria-label="Send message"
+        aria-label={$_("messaging.send_message_btn")}
       >
         {#if isAttachmentLoading}
           <div class="loading-spinner"></div>

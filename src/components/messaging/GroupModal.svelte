@@ -43,8 +43,12 @@
 
   $effect(() => {
     isCreateMode = mode === "create";
-    modalTitle = isCreateMode ? "Create New Group" : "Edit Group Settings";
-    saveButtonText = isCreateMode ? "Create Group" : "Update Group";
+    modalTitle = isCreateMode
+      ? $_("messaging.create_new_group")
+      : $_("messaging.edit_group_settings");
+    saveButtonText = isCreateMode
+      ? $_("messaging.create_group")
+      : $_("messaging.update_group");
     canSave =
       groupName.trim() && (isCreateMode ? participants.length > 0 : true);
   });
@@ -55,31 +59,37 @@
     <div class="modal-content" role="document">
       <div class="modal-header">
         <h3>{modalTitle}</h3>
-        <button class="close-btn" onclick={onClose} aria-label="Close">
+        <button
+          class="close-btn"
+          onclick={onClose}
+          aria-label={$_("messaging.close")}
+        >
           ✕
         </button>
       </div>
 
       <div class="modal-body">
         <div class="form-group">
-          <label for="group-name">Group Name</label>
+          <label for="group-name">{$_("messaging.group_name")}</label>
           <input
             id="group-name"
             type="text"
             value={groupName}
             oninput={(e) => onNameChange(e.target.value)}
-            placeholder="Enter group name"
+            placeholder={$_("messaging.group_name_placeholder")}
             maxlength="50"
           />
         </div>
 
         <div class="form-group">
-          <label for="group-description">Description (Optional)</label>
+          <label for="group-description"
+            >{$_("messaging.group_description")}</label
+          >
           <textarea
             id="group-description"
             value={groupDescription}
             oninput={(e) => onDescriptionChange(e.target.value)}
-            placeholder="Enter group description"
+            placeholder={$_("messaging.group_description_placeholder")}
             maxlength="200"
             rows="3"
           ></textarea>
@@ -87,7 +97,9 @@
 
         {#if !isCreateMode && participants.length > 0}
           <div class="form-group">
-            <h4>Current Participants ({participants.length})</h4>
+            <h4>
+              {$_("messaging.current_participants")} ({participants.length})
+            </h4>
             <div class="participants-list">
               {#each participants as participantId}
                 {#if participantId !== currentUserShortname}
@@ -98,8 +110,8 @@
                     <button
                       class="remove-participant-btn"
                       onclick={() => onRemoveParticipant(participantId)}
-                      aria-label="Remove participant"
-                      title="Remove from group"
+                      aria-label={$_("messaging.remove_from_group")}
+                      title={$_("messaging.remove_from_group")}
                     >
                       ✕
                     </button>
@@ -107,9 +119,11 @@
                 {:else}
                   <div class="participant-item current-user">
                     <span class="participant-name"
-                      >{getUserDisplayName(participantId)} (You)</span
+                      >{getUserDisplayName(participantId)} ({$_(
+                        "messaging.you"
+                      )})</span
                     >
-                    <span class="admin-badge">Admin</span>
+                    <span class="admin-badge">{$_("messaging.admin")}</span>
                   </div>
                 {/if}
               {/each}
@@ -119,7 +133,9 @@
 
         <div class="form-group">
           <h4>
-            {isCreateMode ? "Select Participants" : "Add New Participants"}
+            {isCreateMode
+              ? $_("messaging.select_participants")
+              : $_("messaging.add_new_participants")}
           </h4>
           {#if availableUsers.length > 0}
             <div class="available-users-list">
@@ -129,8 +145,8 @@
                   <button
                     class="add-user-btn"
                     onclick={() => onAddParticipant(user)}
-                    aria-label="Add to group"
-                    title="Add to group"
+                    aria-label={$_("messaging.add_to_group")}
+                    title={$_("messaging.add_to_group")}
                   >
                     ➕
                   </button>
@@ -140,15 +156,17 @@
           {:else}
             <p class="no-users-message">
               {isCreateMode
-                ? "No users available"
-                : "No additional users available to add"}
+                ? $_("messaging.no_users_available")
+                : $_("messaging.no_additional_users")}
             </p>
           {/if}
         </div>
 
         {#if isCreateMode && participants.length > 0}
           <div class="form-group">
-            <h4>Selected Participants ({participants.length})</h4>
+            <h4>
+              {$_("messaging.selected_participants")} ({participants.length})
+            </h4>
             <div class="selected-participants">
               {#each participants as participantId}
                 <div class="selected-participant">
@@ -156,7 +174,7 @@
                   <button
                     class="remove-btn"
                     onclick={() => onRemoveParticipant(participantId)}
-                    aria-label="Remove participant"
+                    aria-label={$_("messaging.remove_from_group")}
                   >
                     ✕
                   </button>
@@ -168,7 +186,9 @@
       </div>
 
       <div class="modal-footer">
-        <button class="cancel-btn" onclick={onClose}> Cancel </button>
+        <button class="cancel-btn" onclick={onClose}>
+          {$_("common.cancel")}
+        </button>
         <button class="save-btn" onclick={onSave} disabled={!canSave}>
           {saveButtonText}
         </button>

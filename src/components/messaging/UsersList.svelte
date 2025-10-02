@@ -34,11 +34,11 @@
         class="toggle-view-btn"
         onclick={onToggleView}
         aria-label={showAllUsers
-          ? "Show conversation partners only"
-          : "Show all users"}
+          ? $_("messaging.show_conversation_partners")
+          : $_("messaging.show_all_users_tooltip")}
         title={showAllUsers
-          ? "Show conversation partners only"
-          : "Show all users"}
+          ? $_("messaging.show_conversation_partners")
+          : $_("messaging.show_all_users_tooltip")}
       >
         {showAllUsers ? "👥" : "🌐"}
       </button>
@@ -46,7 +46,7 @@
         class="refresh-btn"
         onclick={onRefresh}
         disabled={isLoading}
-        aria-label="Refresh users"
+        aria-label={$_("messaging.refresh_users_tooltip")}
       >
         {isLoading ? "⟳" : "↻"}
       </button>
@@ -55,7 +55,7 @@
 
   <div class="users-list">
     {#if isLoading}
-      <div class="loading">Loading users...</div>
+      <div class="loading">{$_("messaging.loading_users")}</div>
     {:else if users.length === 0}
       <div class="no-users">
         {#if showAllUsers}
@@ -80,7 +80,7 @@
           role="button"
           tabindex="0"
           onkeydown={(e) => e.key === "Enter" && onUserSelect(user)}
-          aria-label={`Chat with ${user.name}`}
+          aria-label={`${$_("messaging.chat_with")} ${user.name}`}
         >
           <div class="user-avatar mx-3">
             {#if user.avatar}
@@ -100,7 +100,7 @@
             </div>
             <div class="user-status">
               {#if user.online}
-                <span class="online-text">Online</span>
+                <span class="online-text">{$_("messaging.online")}</span>
               {/if}
             </div>
           </div>

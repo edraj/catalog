@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { _ } from "@/i18n";
+
   interface Props {
     chatMode: string;
     usersCount: number;
@@ -15,14 +17,14 @@
     class:active={chatMode === "direct"}
     onclick={() => onModeChange("direct")}
   >
-    💬 Direct Messages ({usersCount})
+    💬 {$_("messaging.direct_messages")} ({usersCount})
   </button>
   <button
     class="tab-btn"
     class:active={chatMode === "group"}
     onclick={() => onModeChange("group")}
   >
-    👥 Groups ({groupsCount})
+    👥 {$_("messaging.groups")} ({groupsCount})
   </button>
 </div>
 

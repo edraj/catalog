@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { _ } from "@/i18n";
   import type { GroupData } from "@/lib/utils/messagingUtils";
 
   interface Props {
@@ -22,20 +23,20 @@
 
 <div class="groups-section">
   <div class="groups-header">
-    <h3>Groups ({groups.length})</h3>
+    <h3>{$_("messaging.groups")} ({groups.length})</h3>
     <div class="groups-header-actions">
       <button
         class="create-group-btn"
         onclick={onCreateGroup}
-        aria-label="Create new group"
+        aria-label={$_("messaging.create_group_tooltip")}
       >
-        ➕ Create Group
+        ➕ {$_("messaging.create_group")}
       </button>
       <button
         class="refresh-btn"
         onclick={onRefresh}
         disabled={isLoading}
-        aria-label="Refresh groups"
+        aria-label={$_("messaging.refresh_groups_tooltip")}
       >
         {isLoading ? "⟳" : "↻"}
       </button>
@@ -44,13 +45,13 @@
 
   <div class="groups-list">
     {#if isLoading}
-      <div class="loading">Loading groups...</div>
+      <div class="loading">{$_("messaging.loading_groups")}</div>
     {:else if groups.length === 0}
       <div class="no-groups">
         <div class="no-groups-message">
-          <p>No groups yet</p>
+          <p>{$_("messaging.no_groups_yet")}</p>
           <button class="create-group-btn" onclick={onCreateGroup}>
-            Create your first group
+            {$_("messaging.create_first_group")}
           </button>
         </div>
       </div>
@@ -63,7 +64,7 @@
           role="button"
           tabindex="0"
           onkeydown={(e) => e.key === "Enter" && onGroupSelect(group)}
-          aria-label={`Chat in ${group.name}`}
+          aria-label={`${$_("messaging.chat_in")} ${group.name}`}
         >
           <div class="group-avatar">
             {#if group.avatar}
@@ -78,10 +79,11 @@
           <div class="group-info">
             <div class="group-name">{group.name}</div>
             <div class="group-description">
-              {group.description.en || "No description"}
+              {group.description.en || $_("messaging.no_description")}
             </div>
             <div class="group-participants">
-              {group.participants.length} participants
+              {group.participants.length}
+              {$_("messaging.participants")}
             </div>
           </div>
         </div>

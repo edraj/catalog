@@ -1732,7 +1732,7 @@
               <div class="chat-user-name">{selectedUser.name}</div>
               <div class="chat-user-status">
                 {#if selectedUser.online}
-                  <span class="online-text">Online</span>
+                  <span class="online-text">{$_("messaging.online")}</span>
                 {/if}
               </div>
             </div>
@@ -1747,12 +1747,12 @@
           {#if isLoadingOlderMessages}
             <div class="loading-older-messages">
               <div class="loading-spinner"></div>
-              <span>Loading older messages...</span>
+              <span>{$_("messaging.loading_older_messages")}</span>
             </div>
           {/if}
 
           {#if isMessagesLoading}
-            <div class="loading">Loading messages...</div>
+            <div class="loading">{$_("messaging.loading_messages")}</div>
           {:else if messages.length === 0}
             <div class="no-messages">
               <p>{$_("messaging.no_messages_yet")}</p>
@@ -1878,9 +1878,10 @@
             <div>
               <div class="chat-group-name">{selectedGroup.name}</div>
               <div class="chat-group-status">
-                {selectedGroup.participants.length} participants
+                {selectedGroup.participants.length}
+                {$_("messaging.participants")}
                 {#if isUserGroupAdmin(selectedGroup, currentUser?.shortname)}
-                  • Admin
+                  • {$_("messaging.admin")}
                 {/if}
                 <div class="group-participants-preview">
                   {selectedGroup.participants
@@ -1916,12 +1917,12 @@
           {#if isLoadingOlderMessages}
             <div class="loading-older-messages">
               <div class="loading-spinner"></div>
-              <span>Loading older messages...</span>
+              <span>{$_("messaging.loading_older_messages")}</span>
             </div>
           {/if}
 
           {#if isMessagesLoading}
-            <div class="loading">Loading messages...</div>
+            <div class="loading">{$_("messaging.loading_messages")}</div>
           {:else if groupMessages.length === 0}
             <div class="no-messages">
               <p>No messages in this group yet</p>
