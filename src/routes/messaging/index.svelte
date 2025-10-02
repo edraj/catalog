@@ -19,6 +19,7 @@
     addUserToGroup,
     removeUserFromGroup,
     makeUserGroupAdmin,
+    updateGroup,
   } from "@/lib/dmart_services";
   import { _ } from "@/i18n";
   import {
@@ -74,6 +75,12 @@
   let newGroupDescription = $state("");
   let selectedGroupParticipants = $state([]);
   let chatMode = $state("direct");
+
+  let showGroupEditForm = $state(false);
+  let editGroupName = $state("");
+  let editGroupDescription = $state("");
+  let editGroupParticipants = $state([]);
+  let availableUsersForGroup = $state([]);
 
   let conversationMessages = new Map();
   let groupConversationMessages = new Map();
@@ -345,72 +352,162 @@
       return;
     }
 
-    const messageContent = currentMessage.trim();
+    const messageContent = currentMessage.trim() || "";
+    const hasAttachments = selectedAttachments.length > 0;
+    const tempId = `temp_group_${Date.now()}`;
+
+    if (hasAttachments) {
+      isAttachmentLoading = true;
+    }
+
+    const tempMessage = {
+      id: tempId,
+      senderId: currentUser.shortname,
+      groupId: selectedGroup.id,
+      content: messageContent || (hasAttachments ? "📎 attachment" : ""),
+      timestamp: new Date(),
+      isOwn: true,
+      hasAttachments: hasAttachments,
+      attachments: hasAttachments ? selectedAttachments : null,
+      isUploading: hasAttachments,
+    };
+
+    groupMessages = [...groupMessages, tempMessage];
+    scrollToBottom(chatContainer);
+
+    currentMessage = "";
+    const attachmentsToProcess = [...selectedAttachments];
+    selectedAttachments = [];
 
     try {
-      if (selectedAttachments.length > 0) {
-        isAttachmentLoading = true;
-      } else {
-        const response = await createGroupMessage({
-          groupId: selectedGroup.id,
-          sender: currentUser.shortname,
-          content: messageContent,
-        });
+      const groupMessageData = {
+        groupId: selectedGroup.id,
+        sender: currentUser.shortname,
+        content: messageContent || (hasAttachments ? "attachment" : ""),
+      };
 
-        if (response) {
-          const newMessage = {
-            id: response,
-            senderId: currentUser.shortname,
-            groupId: selectedGroup.id,
-            content: messageContent,
-            timestamp: new Date(),
-            isOwn: true,
-          };
+      const persistedMessageId = await createGroupMessage(groupMessageData);
 
-          groupMessages = [...groupMessages, newMessage];
-          groupConversationMessages.set(selectedGroup.id, [...groupMessages]);
+      if (persistedMessageId) {
+        groupMessages = groupMessages.map((msg) =>
+          msg.id === tempId
+            ? { ...msg, id: persistedMessageId, isUploading: false }
+            : msg
+        );
 
-          const cacheKey = getGroupCacheKey(
-            currentUser?.shortname,
-            selectedGroup.id
-          );
-          cacheMessages(cacheKey, groupMessages);
+        if (hasAttachments && attachmentsToProcess.length > 0) {
+          try {
+            for (const attachment of attachmentsToProcess) {
+              const attachmentResult = await attachAttachmentsToEntity(
+                persistedMessageId,
+                "messages",
+                "messages",
+                attachment
+              );
 
-          const wsMessage = {
-            type: "message",
-            messageId: response,
-            senderId: currentUser.shortname,
-            groupId: selectedGroup.id,
-            content: messageContent,
-            timestamp: newMessage.timestamp.toISOString(),
-            hasAttachments: false,
-            participants: selectedGroup.participants,
-          };
-
-          if (socket && socket.readyState === WebSocket.OPEN) {
-            socket.send(JSON.stringify(wsMessage));
-          } else {
-            console.warn(
-              "⚠️ [Group Message] WebSocket not available for broadcasting:",
-              {
-                socketExists: !!socket,
-                readyState: socket?.readyState,
-                expectedState: WebSocket.OPEN,
+              if (!attachmentResult) {
+                errorToastMessage(
+                  $_("messaging.toast_attachment_failed", {
+                    values: { name: attachment.name },
+                  }) || `Failed to attach ${attachment.name}`
+                );
               }
+            }
+
+            setTimeout(async () => {
+              try {
+                const response = await getGroupMessages(
+                  selectedGroup.id,
+                  MESSAGES_LIMIT,
+                  0
+                );
+
+                if (
+                  response &&
+                  response.status === "success" &&
+                  response.records
+                ) {
+                  const updatedMessages = sortMessagesByTimestamp(
+                    response.records.map((record: any) =>
+                      transformGroupMessageRecord(
+                        record,
+                        currentUser?.shortname
+                      )
+                    ) as MessageData[]
+                  );
+
+                  groupMessages = updatedMessages;
+                  groupConversationMessages.set(selectedGroup.id, [
+                    ...updatedMessages,
+                  ]);
+
+                  const cacheKey = getGroupCacheKey(
+                    currentUser?.shortname,
+                    selectedGroup.id
+                  );
+                  cacheMessages(cacheKey, updatedMessages);
+
+                  scrollToBottom(chatContainer);
+                }
+              } catch (error) {
+                console.error("Error refreshing group messages:", error);
+              }
+            }, 1500);
+          } catch (attachmentError) {
+            errorToastMessage(
+              $_("messaging.toast_attachment_error") + ": " + attachmentError
+            );
+
+            groupMessages = groupMessages.map((msg) =>
+              msg.id === persistedMessageId
+                ? { ...msg, isUploading: false, uploadFailed: true }
+                : msg
             );
           }
-
-          currentMessage = "";
-          setTimeout(() => scrollToBottom(chatContainer), 100);
-        } else {
-          console.error("❌ [Group Message] API returned no response");
         }
+
+        groupConversationMessages.set(selectedGroup.id, [...groupMessages]);
+        const cacheKey = getGroupCacheKey(
+          currentUser?.shortname,
+          selectedGroup.id
+        );
+        cacheMessages(cacheKey, groupMessages);
+
+        const wsMessage = {
+          type: "message",
+          messageId: persistedMessageId,
+          senderId: currentUser.shortname,
+          groupId: selectedGroup.id,
+          content: messageContent || (hasAttachments ? "attachment" : ""),
+          timestamp: tempMessage.timestamp.toISOString(),
+          hasAttachments: hasAttachments,
+          participants: selectedGroup.participants,
+        };
+
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify(wsMessage));
+        } else {
+          console.warn(
+            "⚠️ [Group Message] WebSocket not available for broadcasting:",
+            {
+              socketExists: !!socket,
+              readyState: socket?.readyState,
+              expectedState: WebSocket.OPEN,
+            }
+          );
+        }
+
+        setTimeout(() => scrollToBottom(chatContainer), 100);
+      } else {
+        console.error("❌ [Group Message] API returned no response");
+        groupMessages = groupMessages.filter((msg) => msg.id !== tempId);
       }
     } catch (error) {
       console.error("❌ [Group Message] Error sending message:", error);
       errorToastMessage(
         $_("messaging.toast_failed_send_group_message") + ": " + error
       );
+      groupMessages = groupMessages.filter((msg) => msg.id !== tempId);
     } finally {
       isAttachmentLoading = false;
     }
@@ -452,6 +549,103 @@
       errorToastMessage(
         $_("messaging.toast_failed_create_group") + ": " + error
       );
+    }
+  }
+
+  async function openGroupEditForm() {
+    if (
+      !selectedGroup ||
+      !isUserGroupAdmin(selectedGroup, currentUser?.shortname)
+    ) {
+      errorToastMessage("Only group admins can edit group settings");
+      return;
+    }
+
+    editGroupName = selectedGroup.name;
+    editGroupDescription = selectedGroup.description.en || "";
+    editGroupParticipants = selectedGroup.participants || [];
+
+    try {
+      const response = await getAllUsers();
+      if (response.status === "success" && response.records) {
+        availableUsersForGroup = response.records
+          .map(transformUserRecord)
+          .filter(
+            (user) =>
+              user.isActive &&
+              user.id !== currentUser?.shortname &&
+              !editGroupParticipants.includes(user.shortname)
+          );
+      }
+    } catch (error) {
+      console.error("Failed to load users for group editing:", error);
+    }
+
+    showGroupEditForm = true;
+  }
+
+  async function updateGroupDetails() {
+    if (!editGroupName.trim()) {
+      errorToastMessage("Group name is required");
+      return;
+    }
+
+    if (!selectedGroup) return;
+
+    try {
+      const updateData = {
+        name: editGroupName.trim(),
+        description: editGroupDescription.trim(),
+        participants: editGroupParticipants,
+      };
+
+      const success = await updateGroup(selectedGroup.shortname, updateData);
+
+      if (success) {
+        successToastMessage("Group updated successfully");
+        showGroupEditForm = false;
+
+        selectedGroup = {
+          ...selectedGroup,
+          name: editGroupName.trim(),
+          description: editGroupDescription.trim(),
+          participants: editGroupParticipants,
+        };
+
+        await loadGroups();
+      } else {
+        errorToastMessage("Failed to update group");
+      }
+    } catch (error) {
+      errorToastMessage("Failed to update group: " + error);
+    }
+  }
+
+  function addParticipantToGroup(user) {
+    if (!editGroupParticipants.includes(user.shortname)) {
+      editGroupParticipants = [...editGroupParticipants, user.shortname];
+      availableUsersForGroup = availableUsersForGroup.filter(
+        (u) => u.shortname !== user.shortname
+      );
+    }
+  }
+
+  function removeParticipantFromGroup(userShortname) {
+    if (userShortname === currentUser?.shortname) {
+      errorToastMessage("You cannot remove yourself from the group");
+      return;
+    }
+
+    editGroupParticipants = editGroupParticipants.filter(
+      (p) => p !== userShortname
+    );
+
+    const userToAdd = users.find((u) => u.shortname === userShortname);
+    if (
+      userToAdd &&
+      !availableUsersForGroup.some((u) => u.shortname === userShortname)
+    ) {
+      availableUsersForGroup = [...availableUsersForGroup, userToAdd];
     }
   }
 
@@ -1306,7 +1500,11 @@
   function handleKeydown(event) {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
-      sendMessage();
+      if (chatMode === "group" && selectedGroup) {
+        sendGroupMessage();
+      } else if (chatMode === "direct" && selectedUser) {
+        sendMessage();
+      }
     }
   }
 
@@ -1673,7 +1871,9 @@
                       {group.participants.length} participants
                     </div>
                     {#if group.description}
-                      <div class="group-description">{group.description}</div>
+                      <div class="group-description">
+                        {group.description.en}
+                      </div>
                     {/if}
                   </div>
                   {#if isUserGroupAdmin(group, currentUser?.shortname)}
@@ -1996,6 +2196,18 @@
               </div>
             </div>
           </div>
+          {#if isUserGroupAdmin(selectedGroup, currentUser?.shortname)}
+            <div class="group-header-actions">
+              <button
+                class="edit-group-btn"
+                onclick={openGroupEditForm}
+                aria-label="Edit group"
+                title="Edit group settings"
+              >
+                ✏️
+              </button>
+            </div>
+          {/if}
         </div>
 
         <div
@@ -2281,6 +2493,114 @@
             selectedGroupParticipants.length === 0}
         >
           Create Group
+        </button>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- Group Edit Modal -->
+{#if showGroupEditForm}
+  <div class="modal-overlay" role="dialog" aria-modal="true" tabindex="-1">
+    <div class="modal-content" role="document">
+      <div class="modal-header">
+        <h3>Edit Group Settings</h3>
+        <button
+          class="close-btn"
+          onclick={() => (showGroupEditForm = false)}
+          aria-label="Close"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="edit-group-name">Group Name</label>
+          <input
+            id="edit-group-name"
+            type="text"
+            bind:value={editGroupName}
+            placeholder="Enter group name"
+            maxlength="50"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="edit-group-description">Description (Optional)</label>
+          <textarea
+            id="edit-group-description"
+            bind:value={editGroupDescription}
+            placeholder="Enter group description"
+            maxlength="200"
+            rows="3"
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <h4>Current Participants ({editGroupParticipants.length})</h4>
+          <div class="participants-list">
+            {#each editGroupParticipants as participantId}
+              {#if participantId !== currentUser?.shortname}
+                <div class="participant-item">
+                  <span class="participant-name"
+                    >{getUserDisplayName(participantId)}</span
+                  >
+                  <button
+                    class="remove-participant-btn"
+                    onclick={() => removeParticipantFromGroup(participantId)}
+                    aria-label="Remove participant"
+                    title="Remove from group"
+                  >
+                    ✕
+                  </button>
+                </div>
+              {:else}
+                <div class="participant-item current-user">
+                  <span class="participant-name"
+                    >{getUserDisplayName(participantId)} (You)</span
+                  >
+                  <span class="admin-badge">Admin</span>
+                </div>
+              {/if}
+            {/each}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <h4>Add New Participants</h4>
+          {#if availableUsersForGroup.length > 0}
+            <div class="available-users-list">
+              {#each availableUsersForGroup as user}
+                <div class="available-user-item">
+                  <span class="user-name">{user.name}</span>
+                  <button
+                    class="add-user-btn"
+                    onclick={() => addParticipantToGroup(user)}
+                    aria-label="Add to group"
+                    title="Add to group"
+                  >
+                    ➕
+                  </button>
+                </div>
+              {/each}
+            </div>
+          {:else}
+            <p class="no-users-message">No additional users available to add</p>
+          {/if}
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="cancel-btn" onclick={() => (showGroupEditForm = false)}>
+          Cancel
+        </button>
+        <button
+          class="update-btn"
+          onclick={updateGroupDetails}
+          disabled={!editGroupName.trim()}
+        >
+          Update Group
         </button>
       </div>
     </div>
@@ -3482,6 +3802,7 @@
     padding: 1rem;
     border-bottom: 1px solid #e5e7eb;
     background: white;
+    justify-content: space-between;
   }
 
   .chat-group-info {
@@ -3731,5 +4052,159 @@
     .chat-container.rtl .chat-area {
       order: unset;
     }
+  }
+
+  /* Group Edit Styles */
+  .group-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .edit-group-btn {
+    background: transparent;
+    border: none;
+    padding: 0.5rem;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+  }
+
+  .edit-group-btn:hover {
+    background: rgba(0, 0, 0, 0.1);
+  }
+
+  .form-group h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #374151;
+  }
+
+  .participants-list {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  .participant-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .participant-item:hover {
+    background: #f8fafc;
+  }
+
+  .participant-item.current-user {
+    background: #eff6ff;
+    border: 1px solid #dbeafe;
+  }
+
+  .participant-name {
+    font-weight: 500;
+    color: #374151;
+  }
+
+  .admin-badge {
+    background: #10b981;
+    color: white;
+    padding: 0.125rem 0.5rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  .remove-participant-btn {
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: background-color 0.2s;
+  }
+
+  .remove-participant-btn:hover {
+    background: #dc2626;
+  }
+
+  .available-users-list {
+    max-height: 150px;
+    overflow-y: auto;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  .available-user-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .available-user-item:hover {
+    background: #f8fafc;
+  }
+
+  .user-name {
+    font-weight: 500;
+    color: #374151;
+  }
+
+  .add-user-btn {
+    background: #10b981;
+    color: white;
+    border: none;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: background-color 0.2s;
+  }
+
+  .add-user-btn:hover {
+    background: #059669;
+  }
+
+  .no-users-message {
+    color: #6b7280;
+    font-style: italic;
+    text-align: center;
+    padding: 1rem;
+  }
+
+  .update-btn {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+  }
+
+  .update-btn:hover {
+    background: #2563eb;
+  }
+
+  .update-btn:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
   }
 </style>

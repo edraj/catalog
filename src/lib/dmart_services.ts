@@ -2288,7 +2288,7 @@ export async function updateGroup(
 
   if (!group) return false;
 
-  const currentPayload = group.attributes.payload?.body || {};
+  const currentPayload = group.payload?.body || {};
 
   const actionRequest: ActionRequest = {
     space_name: "messages",
@@ -2302,10 +2302,12 @@ export async function updateGroup(
           displayname: data.name
             ? { en: data.name }
             : group.attributes.displayname,
-          description:
-            data.description !== undefined
-              ? data.description
-              : group.attributes.description,
+          description: {
+            en:
+              data.description !== undefined
+                ? data.description
+                : group.attributes.description,
+          },
           payload: {
             content_type: "json",
             body: {
