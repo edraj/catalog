@@ -27,6 +27,12 @@
     errorToastMessage,
   } from "@/lib/toasts_messages";
   import MessengerAttachments from "@/components/MessengerAttachments.svelte";
+  import ChatHeader from "@/components/messaging/ChatHeader.svelte";
+  import ChatModeTabs from "@/components/messaging/ChatModeTabs.svelte";
+  import UsersList from "@/components/messaging/UsersList.svelte";
+  import GroupsList from "@/components/messaging/GroupsList.svelte";
+  import MessageInput from "@/components/messaging/MessageInput.svelte";
+  import GroupModal from "@/components/messaging/GroupModal.svelte";
   import {
     getDisplayName,
     formatTime,
@@ -58,42 +64,26 @@
   let socket = null;
   let isConnected = $state(false);
   let connectionStatus = $state("Disconnecting...");
+  const WS_URL = website.websocket;
+  const TOKEN = localStorage.getItem("authToken") || "";
 
+  let currentUser = $state(null);
   let users = $state([]);
   let selectedUser = $state(null);
-  let messages = $state([]);
-  let currentMessage = $state("");
-  let currentUser = $state(null);
-  const authToken = localStorage.getItem("authToken") || "";
+  let isUsersLoading = $state(true);
+  let showAllUsers = $state(false);
 
   let groups = $state([]);
   let selectedGroup = $state(null);
-  let groupMessages = $state([]);
   let isGroupsLoading = $state(true);
-  let showGroupForm = $state(false);
-  let newGroupName = $state("");
-  let newGroupDescription = $state("");
-  let selectedGroupParticipants = $state([]);
+
   let chatMode = $state("direct");
-
-  let showGroupEditForm = $state(false);
-  let editGroupName = $state("");
-  let editGroupDescription = $state("");
-  let editGroupParticipants = $state([]);
-  let availableUsersForGroup = $state([]);
-
+  let messages = $state([]);
+  let groupMessages = $state([]);
   let conversationMessages = new Map();
   let groupConversationMessages = new Map();
-  let attachment;
-  let isUsersLoading = $state(true);
-  let isMessagesLoading = $state(false);
-  let isLoadingOlderMessages = $state(false);
-  let hasMoreMessages = $state(true);
-  let messagesOffset = $state(0);
-  const MESSAGES_LIMIT = 10;
-  let chatContainer = $state(null);
-  let showAllUsers = $state(false);
 
+  let currentMessage = $state("");
   let selectedAttachments = $state([]);
   let isAttachmentLoading = $state(false);
 
@@ -104,10 +94,24 @@
   let recordingInterval = null;
   let stream = null;
 
-  const WS_URL = website.websocket;
-  const TOKEN = authToken;
-
+  let isMessagesLoading = $state(false);
+  let isLoadingOlderMessages = $state(false);
+  let hasMoreMessages = $state(true);
+  let messagesOffset = $state(0);
+  let chatContainer = $state(null);
   let isRTL = $state(false);
+
+  let showGroupForm = $state(false);
+  let showGroupEditForm = $state(false);
+  let newGroupName = $state("");
+  let newGroupDescription = $state("");
+  let selectedGroupParticipants = $state([]);
+  let editGroupName = $state("");
+  let editGroupDescription = $state("");
+  let editGroupParticipants = $state([]);
+  let availableUsersForGroup = $state([]);
+
+  const MESSAGES_LIMIT = 10;
 
   onMount(async () => {
     isRTL =
@@ -1668,222 +1672,37 @@
 </script>
 
 <div class="chat-container" class:rtl={isRTL}>
-  <!-- Header -->
-  <div class="chat-header">
-    <h1>{$_("messaging.title")}</h1>
-    <div
-      class="connection-status"
-      class:connected={isConnected}
-      class:disconnected={!isConnected}
-    >
-      <div class="status-indicator"></div>
-      <span>{connectionStatus}</span>
-    </div>
-  </div>
+  <ChatHeader {isConnected} {connectionStatus} />
 
   <div class="chat-content">
     <!-- Users Sidebar -->
     <div class="users-sidebar">
-      <!-- Chat Mode Tabs -->
-      <div class="chat-mode-tabs">
-        <button
-          class="tab-btn"
-          class:active={chatMode === "direct"}
-          onclick={() => (chatMode = "direct")}
-        >
-          💬 Direct Messages ({users.length})
-        </button>
-        <button
-          class="tab-btn"
-          class:active={chatMode === "group"}
-          onclick={() => (chatMode = "group")}
-        >
-          👥 Groups ({groups.length})
-        </button>
-      </div>
+      <ChatModeTabs
+        {chatMode}
+        onModeChange={(mode) => (chatMode = mode)}
+        usersCount={users.length}
+        groupsCount={groups.length}
+      />
 
       {#if chatMode === "direct"}
-        <!-- Direct Messages Section -->
-        <div class="users-header">
-          <h3>
-            {showAllUsers
-              ? $_("messaging.all_users")
-              : $_("messaging.conversations")} ({users.length})
-          </h3>
-          <div class="users-header-actions">
-            <button
-              class="toggle-view-btn"
-              onclick={toggleUserView}
-              aria-label={showAllUsers
-                ? "Show conversation partners only"
-                : "Show all users"}
-              title={showAllUsers
-                ? "Show conversation partners only"
-                : "Show all users"}
-            >
-              {showAllUsers ? "👥" : "🌐"}
-            </button>
-            <button
-              class="refresh-btn"
-              onclick={loadUsers}
-              disabled={isUsersLoading}
-              aria-label="Refresh users"
-            >
-              {isUsersLoading ? "⟳" : "↻"}
-            </button>
-          </div>
-        </div>
-
-        <div class="users-list">
-          {#if isUsersLoading}
-            <div class="loading">Loading users...</div>
-          {:else if users.length === 0}
-            <div class="no-users">
-              {#if showAllUsers}
-                <div class="no-users-message">
-                  <p>{$_("messaging.no_users_found")}</p>
-                </div>
-              {:else}
-                <div class="no-conversations-message">
-                  <p>{$_("messaging.no_conversations_yet")}</p>
-                  <button
-                    class="start-conversation-btn"
-                    onclick={toggleUserView}
-                  >
-                    {$_("messaging.browse_users_to_start")}
-                  </button>
-                </div>
-              {/if}
-            </div>
-          {:else}
-            {#each users as user (user.id)}
-              <div
-                class="user-item"
-                class:selected={selectedUser?.id === user.id &&
-                  chatMode === "direct"}
-                onclick={() => selectUser(user)}
-                role="button"
-                tabindex="0"
-                onkeydown={(e) => e.key === "Enter" && selectUser(user)}
-                aria-label={`Chat with ${user.name}`}
-              >
-                <div class="user-avatar mx-3">
-                  {#if user.avatar}
-                    <img
-                      src={user.avatar || "/placeholder.svg"}
-                      alt={user.name}
-                    />
-                  {:else}
-                    <div class="avatar-placeholder">
-                      {user.name.charAt(0).toUpperCase()}
-                    </div>
-                  {/if}
-                  <div
-                    class="online-indicator"
-                    class:online={user.online}
-                  ></div>
-                </div>
-
-                <div class="user-info">
-                  <div class="user-name">{user.name}</div>
-                  <div class="user-details">
-                    {#if user.email}
-                      <div class="user-email">{user.email}</div>
-                    {/if}
-                    {#if user.roles.length > 0}
-                      <div class="user-roles">{user.roles.join(", ")}</div>
-                    {/if}
-                  </div>
-                  <div class="user-status">
-                    {#if user.online}
-                      <span class="online-text">Online</span>
-                    {/if}
-                  </div>
-                </div>
-              </div>
-            {/each}
-          {/if}
-        </div>
+        <UsersList
+          {users}
+          selectedUserId={selectedUser?.shortname}
+          isLoading={isUsersLoading}
+          {showAllUsers}
+          onUserSelect={selectUser}
+          onToggleView={toggleUserView}
+          onRefresh={loadUsers}
+        />
       {:else}
-        <!-- Groups Section -->
-        <div class="groups-header">
-          <h3>Groups ({groups.length})</h3>
-          <div class="groups-header-actions">
-            <button
-              class="create-group-btn"
-              onclick={() => (showGroupForm = true)}
-              aria-label="Create new group"
-            >
-              ➕ Create Group
-            </button>
-            <button
-              class="refresh-btn"
-              onclick={loadGroups}
-              disabled={isGroupsLoading}
-              aria-label="Refresh groups"
-            >
-              {isGroupsLoading ? "⟳" : "↻"}
-            </button>
-          </div>
-        </div>
-
-        <div class="groups-list">
-          {#if isGroupsLoading}
-            <div class="loading">Loading groups...</div>
-          {:else if groups.length === 0}
-            <div class="no-groups">
-              <div class="no-groups-message">
-                <p>No groups yet</p>
-                <button
-                  class="create-group-btn"
-                  onclick={() => (showGroupForm = true)}
-                >
-                  Create your first group
-                </button>
-              </div>
-            </div>
-          {:else}
-            {#each groups as group (group.id)}
-              <div
-                class="group-item"
-                class:selected={selectedGroup?.id === group.id &&
-                  chatMode === "group"}
-                onclick={() => selectGroup(group)}
-                role="button"
-                tabindex="0"
-                onkeydown={(e) => e.key === "Enter" && selectGroup(group)}
-                aria-label={`Chat in ${group.name}`}
-              >
-                <div class="group-avatar">
-                  {#if group.avatar}
-                    <img src={group.avatar} alt={group.name} />
-                  {:else}
-                    <div class="avatar-placeholder group">
-                      {group.name.charAt(0).toUpperCase()}
-                    </div>
-                  {/if}
-                </div>
-
-                <div class="group-info">
-                  <div class="group-name">{group.name}</div>
-                  <div class="group-details">
-                    <div class="participant-count">
-                      {group.participants.length} participants
-                    </div>
-                    {#if group.description}
-                      <div class="group-description">
-                        {group.description.en}
-                      </div>
-                    {/if}
-                  </div>
-                  {#if isUserGroupAdmin(group, currentUser?.shortname)}
-                    <div class="admin-badge">Admin</div>
-                  {/if}
-                </div>
-              </div>
-            {/each}
-          {/if}
-        </div>
+        <GroupsList
+          {groups}
+          selectedGroupId={selectedGroup?.id}
+          isLoading={isGroupsLoading}
+          onGroupSelect={selectGroup}
+          onCreateGroup={() => (showGroupForm = true)}
+          onRefresh={loadGroups}
+        />
       {/if}
     </div>
 
@@ -2027,145 +1846,24 @@
           {/if}
         </div>
 
-        <!-- Message Input -->
-        <div class="message-input-container">
-          <!-- Attachment Preview -->
-          {#if selectedAttachments.length > 0}
-            <div class="attachment-preview-container">
-              {#each selectedAttachments as file, index}
-                <div class="attachment-preview-item">
-                  {#if file.type.startsWith("audio/") && file.name.includes("voice_message_")}
-                    <!-- Voice Message Preview -->
-                    <div class="voice-message-icon">🎤</div>
-                    <div class="file-info">
-                      <div class="file-name">Voice Message</div>
-                      <div class="file-size">{formatFileSize(file.size)}</div>
-                    </div>
-                  {:else if getPreviewUrl(file)}
-                    <img
-                      src={getPreviewUrl(file)}
-                      alt={file.name}
-                      class="preview-image"
-                    />
-                    <div class="file-info">
-                      <div class="file-name">{file.name}</div>
-                      <div class="file-size">{formatFileSize(file.size)}</div>
-                    </div>
-                  {:else}
-                    <div class="file-icon">{getFileIcon(file)}</div>
-                    <div class="file-info">
-                      <div class="file-name">{file.name}</div>
-                      <div class="file-size">{formatFileSize(file.size)}</div>
-                    </div>
-                  {/if}
-                  <button
-                    class="remove-attachment-btn"
-                    onclick={() => removeAttachment(index)}
-                    aria-label="Remove attachment"
-                  >
-                    ✕
-                  </button>
-                </div>
-              {/each}
-            </div>
-          {/if}
-
-          <div class="message-input">
-            <button
-              class="attachment-btn"
-              onclick={() =>
-                document.getElementById("attachment-input").click()}
-              disabled={!isConnected || isRecording}
-              aria-label="Add attachment"
-            >
-              📎
-            </button>
-
-            <!-- Voice Recording Button -->
-            {#if !isRecording}
-              <button
-                class="voice-btn"
-                onclick={startVoiceRecording}
-                disabled={!isConnected}
-                aria-label="Record voice message"
-                title="Record voice message"
-              >
-                🎤
-              </button>
-            {:else}
-              <div class="voice-recording-controls">
-                <div class="recording-indicator">
-                  <div class="recording-dot"></div>
-                  <span class="recording-duration"
-                    >{formatRecordingDuration(recordingDuration)}</span
-                  >
-                </div>
-                <button
-                  class="voice-control-btn cancel"
-                  onclick={cancelVoiceRecording}
-                  aria-label="Cancel recording"
-                  title="Cancel recording"
-                >
-                  ✕
-                </button>
-                <button
-                  class="voice-control-btn stop"
-                  onclick={stopVoiceRecording}
-                  aria-label="Stop recording"
-                  title="Stop recording"
-                >
-                  ⏹️
-                </button>
-              </div>
-            {/if}
-            <input
-              type="file"
-              id="attachment-input"
-              multiple
-              accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
-              onchange={handleFileSelect}
-              style="display: none;"
-            />
-
-            <textarea
-              bind:value={currentMessage}
-              placeholder={$_("messaging.type_a_message")}
-              disabled={!isConnected || isRecording}
-              rows="1"
-              onkeydown={handleKeydown}
-            ></textarea>
-
-            <div class="input-actions">
-              <button
-                class="send-btn"
-                onclick={sendMessage}
-                disabled={(!currentMessage.trim() &&
-                  selectedAttachments.length === 0) ||
-                  !isConnected ||
-                  isAttachmentLoading ||
-                  isRecording}
-                aria-label="Send message"
-              >
-                {#if isAttachmentLoading}
-                  <div class="loading-spinner"></div>
-                {:else}
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
-                    <path d="m22 2-7 20-4-9-9-4 20-7z" />
-                  </svg>
-                {/if}
-              </button>
-            </div>
-          </div>
-        </div>
+        <MessageInput
+          {currentMessage}
+          {selectedAttachments}
+          {isConnected}
+          {isRecording}
+          {isAttachmentLoading}
+          {recordingDuration}
+          placeholder={$_("messaging.type_a_message")}
+          onSend={sendMessage}
+          onFileSelect={handleFileSelect}
+          onKeydown={handleKeydown}
+          onStartRecording={startVoiceRecording}
+          onStopRecording={stopVoiceRecording}
+          onCancelRecording={cancelVoiceRecording}
+          onRemoveAttachment={removeAttachment}
+          onMessageChange={(value) => (currentMessage = value)}
+        />
       {:else if selectedGroup && chatMode === "group"}
-        <!-- Group Chat Header -->
         <div class="chat-group-header">
           <div class="chat-group-info">
             <div class="group-avatar small">
@@ -2298,106 +1996,23 @@
           {/if}
         </div>
 
-        <!-- Group Message Input -->
-        <div class="message-input-container">
-          <!-- Attachment Preview -->
-          {#if selectedAttachments.length > 0}
-            <div class="attachment-preview-container">
-              {#each selectedAttachments as file, index}
-                <div class="attachment-preview-item">
-                  {#if file.type.startsWith("audio/") && file.name.includes("voice_message_")}
-                    <!-- Voice Message Preview -->
-                    <div class="voice-message-icon">🎤</div>
-                    <div class="file-info">
-                      <div class="file-name">Voice Message</div>
-                      <div class="file-size">{formatFileSize(file.size)}</div>
-                    </div>
-                  {:else if getPreviewUrl(file)}
-                    <img
-                      src={getPreviewUrl(file)}
-                      alt={file.name}
-                      class="preview-image"
-                    />
-                    <div class="file-info">
-                      <div class="file-name">{file.name}</div>
-                      <div class="file-size">{formatFileSize(file.size)}</div>
-                    </div>
-                  {:else}
-                    <div class="file-icon">{getFileIcon(file)}</div>
-                    <div class="file-info">
-                      <div class="file-name">{file.name}</div>
-                      <div class="file-size">{formatFileSize(file.size)}</div>
-                    </div>
-                  {/if}
-                  <button
-                    class="remove-attachment-btn"
-                    onclick={() => removeAttachment(index)}
-                    aria-label="Remove attachment"
-                  >
-                    ✕
-                  </button>
-                </div>
-              {/each}
-            </div>
-          {/if}
-
-          <div class="message-input">
-            <button
-              class="attachment-btn"
-              onclick={() =>
-                document.getElementById("attachment-input").click()}
-              disabled={!isConnected || isRecording}
-              aria-label="Attach file"
-            >
-              📎
-            </button>
-
-            <input
-              type="file"
-              id="attachment-input"
-              multiple
-              accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
-              onchange={handleFileSelect}
-              style="display: none;"
-            />
-
-            <textarea
-              bind:value={currentMessage}
-              placeholder="Type a message to the group..."
-              disabled={!isConnected || isRecording}
-              rows="1"
-              onkeydown={handleKeydown}
-            ></textarea>
-
-            <div class="input-actions">
-              <button
-                class="send-btn"
-                onclick={sendGroupMessage}
-                disabled={(!currentMessage.trim() &&
-                  selectedAttachments.length === 0) ||
-                  !isConnected ||
-                  isAttachmentLoading ||
-                  isRecording}
-                aria-label="Send message"
-              >
-                {#if isAttachmentLoading}
-                  <div class="loading-spinner"></div>
-                {:else}
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
-                    <path d="m22 2-7 20-4-9-9-4 20-7z" />
-                  </svg>
-                {/if}
-              </button>
-            </div>
-          </div>
-        </div>
+        <MessageInput
+          {currentMessage}
+          {selectedAttachments}
+          {isConnected}
+          {isRecording}
+          {isAttachmentLoading}
+          {recordingDuration}
+          placeholder="Type a message to the group..."
+          onSend={sendGroupMessage}
+          onFileSelect={handleFileSelect}
+          onKeydown={handleKeydown}
+          onStartRecording={startVoiceRecording}
+          onStopRecording={stopVoiceRecording}
+          onCancelRecording={cancelVoiceRecording}
+          onRemoveAttachment={removeAttachment}
+          onMessageChange={(value) => (currentMessage = value)}
+        />
       {:else}
         <div class="no-chat-selected">
           <div class="no-chat-message">
@@ -2413,199 +2028,48 @@
   </div>
 </div>
 
-<!-- Group Creation Modal -->
-{#if showGroupForm}
-  <div class="modal-overlay" role="dialog" aria-modal="true" tabindex="-1">
-    <div class="modal-content" role="document">
-      <div class="modal-header">
-        <h3>Create New Group</h3>
-        <button
-          class="close-btn"
-          onclick={() => (showGroupForm = false)}
-          aria-label="Close"
-        >
-          ✕
-        </button>
-      </div>
+<!-- Group Modals -->
+<GroupModal
+  mode="create"
+  show={showGroupForm}
+  onClose={() => (showGroupForm = false)}
+  groupName={newGroupName}
+  groupDescription={newGroupDescription}
+  participants={selectedGroupParticipants}
+  availableUsers={users.filter((u) => u.isActive)}
+  onSave={createNewGroup}
+  onNameChange={(value) => (newGroupName = value)}
+  onDescriptionChange={(value) => (newGroupDescription = value)}
+  onAddParticipant={(user) => {
+    if (
+      !selectedGroupParticipants.some((p) => p.shortname === user.shortname)
+    ) {
+      selectedGroupParticipants = [...selectedGroupParticipants, user];
+    }
+  }}
+  onRemoveParticipant={(userShortname) => {
+    selectedGroupParticipants = selectedGroupParticipants.filter(
+      (p) => p.shortname !== userShortname
+    );
+  }}
+  {getUserDisplayName}
+/>
 
-      <div class="modal-body">
-        <div class="form-group">
-          <label for="groupName">Group Name</label>
-          <input
-            id="groupName"
-            type="text"
-            bind:value={newGroupName}
-            placeholder="Enter group name"
-            maxlength="50"
-          />
-        </div>
-
-        <div class="form-group">
-          <label for="groupDescription">Description (optional)</label>
-          <textarea
-            id="groupDescription"
-            bind:value={newGroupDescription}
-            placeholder="Enter group description"
-            rows="3"
-            maxlength="200"
-          ></textarea>
-        </div>
-
-        <div class="form-group">
-          <fieldset>
-            <legend>Select Participants</legend>
-            <div class="participants-list">
-              {#each users.filter((u) => u.isActive) as user (user.id)}
-                <div class="participant-item">
-                  <input
-                    type="checkbox"
-                    id="participant-{user.id}"
-                    bind:group={selectedGroupParticipants}
-                    value={user}
-                  />
-                  <label for="participant-{user.id}">
-                    <div class="user-avatar tiny">
-                      {#if user.avatar}
-                        <img src={user.avatar} alt={user.name} />
-                      {:else}
-                        <div class="avatar-placeholder">
-                          {user.name.charAt(0).toUpperCase()}
-                        </div>
-                      {/if}
-                    </div>
-                    {user.name}
-                  </label>
-                </div>
-              {/each}
-            </div>
-          </fieldset>
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button class="cancel-btn" onclick={() => (showGroupForm = false)}>
-          Cancel
-        </button>
-        <button
-          class="create-btn"
-          onclick={createNewGroup}
-          disabled={!newGroupName.trim() ||
-            selectedGroupParticipants.length === 0}
-        >
-          Create Group
-        </button>
-      </div>
-    </div>
-  </div>
-{/if}
-
-<!-- Group Edit Modal -->
-{#if showGroupEditForm}
-  <div class="modal-overlay" role="dialog" aria-modal="true" tabindex="-1">
-    <div class="modal-content" role="document">
-      <div class="modal-header">
-        <h3>Edit Group Settings</h3>
-        <button
-          class="close-btn"
-          onclick={() => (showGroupEditForm = false)}
-          aria-label="Close"
-        >
-          ✕
-        </button>
-      </div>
-
-      <div class="modal-body">
-        <div class="form-group">
-          <label for="edit-group-name">Group Name</label>
-          <input
-            id="edit-group-name"
-            type="text"
-            bind:value={editGroupName}
-            placeholder="Enter group name"
-            maxlength="50"
-          />
-        </div>
-
-        <div class="form-group">
-          <label for="edit-group-description">Description (Optional)</label>
-          <textarea
-            id="edit-group-description"
-            bind:value={editGroupDescription}
-            placeholder="Enter group description"
-            maxlength="200"
-            rows="3"
-          ></textarea>
-        </div>
-
-        <div class="form-group">
-          <h4>Current Participants ({editGroupParticipants.length})</h4>
-          <div class="participants-list">
-            {#each editGroupParticipants as participantId}
-              {#if participantId !== currentUser?.shortname}
-                <div class="participant-item">
-                  <span class="participant-name"
-                    >{getUserDisplayName(participantId)}</span
-                  >
-                  <button
-                    class="remove-participant-btn"
-                    onclick={() => removeParticipantFromGroup(participantId)}
-                    aria-label="Remove participant"
-                    title="Remove from group"
-                  >
-                    ✕
-                  </button>
-                </div>
-              {:else}
-                <div class="participant-item current-user">
-                  <span class="participant-name"
-                    >{getUserDisplayName(participantId)} (You)</span
-                  >
-                  <span class="admin-badge">Admin</span>
-                </div>
-              {/if}
-            {/each}
-          </div>
-        </div>
-
-        <div class="form-group">
-          <h4>Add New Participants</h4>
-          {#if availableUsersForGroup.length > 0}
-            <div class="available-users-list">
-              {#each availableUsersForGroup as user}
-                <div class="available-user-item">
-                  <span class="user-name">{user.name}</span>
-                  <button
-                    class="add-user-btn"
-                    onclick={() => addParticipantToGroup(user)}
-                    aria-label="Add to group"
-                    title="Add to group"
-                  >
-                    ➕
-                  </button>
-                </div>
-              {/each}
-            </div>
-          {:else}
-            <p class="no-users-message">No additional users available to add</p>
-          {/if}
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button class="cancel-btn" onclick={() => (showGroupEditForm = false)}>
-          Cancel
-        </button>
-        <button
-          class="update-btn"
-          onclick={updateGroupDetails}
-          disabled={!editGroupName.trim()}
-        >
-          Update Group
-        </button>
-      </div>
-    </div>
-  </div>
-{/if}
+<GroupModal
+  mode="edit"
+  show={showGroupEditForm}
+  onClose={() => (showGroupEditForm = false)}
+  groupName={editGroupName}
+  groupDescription={editGroupDescription}
+  participants={editGroupParticipants}
+  availableUsers={availableUsersForGroup}
+  onSave={updateGroupDetails}
+  onAddParticipant={addParticipantToGroup}
+  onRemoveParticipant={removeParticipantFromGroup}
+  onNameChange={(value) => (editGroupName = value)}
+  onDescriptionChange={(value) => (editGroupDescription = value)}
+  {getUserDisplayName}
+/>
 
 <style>
   .chat-container {
@@ -2613,67 +2077,6 @@
     display: flex;
     flex-direction: column;
     background: #f8fafc;
-  }
-
-  .chat-header {
-    background: white;
-    border-bottom: 1px solid #e2e8f0;
-    padding: 1rem 1.5rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  }
-
-  .chat-header h1 {
-    margin: 0;
-    color: #1e293b;
-    font-size: 1.5rem;
-  }
-
-  .connection-status {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    font-size: 0.875rem;
-    font-weight: 500;
-  }
-
-  .connection-status.connected {
-    background: #dcfce7;
-    color: #166534;
-  }
-
-  .connection-status.disconnected {
-    background: #fee2e2;
-    color: #991b1b;
-  }
-
-  .status-indicator {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-  }
-
-  .connected .status-indicator {
-    background: #16a34a;
-    animation: pulse 2s infinite;
-  }
-
-  .disconnected .status-indicator {
-    background: #dc2626;
-  }
-
-  @keyframes pulse {
-    0%,
-    100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.5;
-    }
   }
 
   .chat-content {
@@ -2711,182 +2114,7 @@
     order: 1;
   }
 
-  .users-header {
-    padding: 1rem;
-    border-bottom: 1px solid #e2e8f0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .users-header h3 {
-    margin: 0;
-    color: #1e293b;
-  }
-
-  .users-header-actions {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-  }
-
-  .toggle-view-btn,
-  .refresh-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 1.2rem;
-    padding: 0.25rem;
-    border-radius: 4px;
-    color: #64748b;
-    transition: all 0.2s;
-  }
-
-  .toggle-view-btn:hover,
-  .refresh-btn:hover {
-    background: #f1f5f9;
-    color: #1e293b;
-  }
-
-  .refresh-btn:disabled {
-    cursor: not-allowed;
-    animation: spin 1s linear infinite;
-  }
-
-  @keyframes spin {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
-  .users-list {
-    flex: 1;
-    overflow-y: auto;
-  }
-
-  .user-item {
-    display: flex;
-    align-items: center;
-    padding: 1rem;
-    border-bottom: 1px solid #f1f5f9;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-
-  .user-item:hover {
-    background: #f8fafc;
-  }
-
-  .user-item.selected {
-    background: #e0f2fe;
-  }
-
-  /* Border styling for selected user */
-  .user-item.selected {
-    border-right: 3px solid #0ea5e9;
-  }
-
-  .chat-container.rtl .user-item.selected {
-    border-right: none;
-    border-left: 3px solid #0ea5e9;
-  }
-
-  .user-avatar {
-    position: relative;
-    margin-right: 0.75rem;
-  }
-
-  .chat-container.rtl .user-avatar {
-    margin-right: 0;
-    margin-left: 0.75rem;
-  }
-
-  .user-avatar img,
-  .avatar-placeholder {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-  }
-
-  .user-avatar.small img,
-  .user-avatar.small .avatar-placeholder {
-    width: 32px;
-    height: 32px;
-  }
-
-  .avatar-placeholder {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: 600;
-    font-size: 1rem;
-  }
-
-  .user-avatar.small .avatar-placeholder {
-    font-size: 0.875rem;
-  }
-
-  .online-indicator {
-    position: absolute;
-    bottom: 2px;
-    right: 2px;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    border: 2px solid white;
-    background: #94a3b8;
-  }
-
-  .chat-container.rtl .online-indicator {
-    right: auto;
-    left: 2px;
-  }
-
-  .online-indicator.small {
-    width: 10px;
-    height: 10px;
-  }
-
-  .online-indicator.online {
-    background: #22c55e;
-  }
-
-  .user-info {
-    flex: 1;
-  }
-
-  .user-name {
-    font-weight: 500;
-    color: #1e293b;
-    margin-bottom: 0.25rem;
-  }
-
-  .user-details {
-    font-size: 0.75rem;
-    color: #64748b;
-    margin-bottom: 0.25rem;
-  }
-
-  .user-email {
-    margin-bottom: 0.125rem;
-  }
-
-  .user-roles {
-    font-style: italic;
-  }
-
-  .user-status {
-    font-size: 0.875rem;
-  }
-
-  .online-text {
-    color: #22c55e;
-  }
+  /* Messages and Chat Area Styles */
 
   .chat-user-header {
     padding: 1rem 1.5rem;
@@ -3094,122 +2322,6 @@
     margin-top: 0.25rem;
   }
 
-  .message-input-container {
-    padding: 1rem 1.5rem;
-    background: white;
-    border-top: 1px solid #e2e8f0;
-  }
-
-  .message-input {
-    display: flex;
-    align-items: flex-end;
-    gap: 0.75rem;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 1.5rem;
-    padding: 0.75rem 1rem;
-  }
-
-  .message-input textarea {
-    flex: 1;
-    border: none;
-    background: none;
-    resize: none;
-    outline: none;
-    font-family: inherit;
-    max-height: 120px;
-    min-height: 20px;
-  }
-
-  /* RTL text direction for textarea in RTL mode */
-  .chat-container.rtl .message-input textarea {
-    direction: rtl;
-    text-align: right;
-  }
-
-  .input-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .send-btn {
-    background: #0ea5e9;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background 0.2s;
-    flex-shrink: 0;
-  }
-
-  .send-btn:hover:not(:disabled) {
-    background: #0284c7;
-  }
-
-  .send-btn:disabled {
-    background: #94a3b8;
-    cursor: not-allowed;
-  }
-
-  .attachment-btn,
-  .voice-btn {
-    background: none;
-    border: none;
-    color: #64748b;
-    cursor: pointer;
-    padding: 0.5rem;
-    border-radius: 4px;
-    transition: all 0.2s;
-    font-size: 1.2rem;
-  }
-
-  .attachment-btn:hover:not(:disabled),
-  .voice-btn:hover:not(:disabled) {
-    background: #f1f5f9;
-    color: #1e293b;
-  }
-
-  .attachment-btn:disabled,
-  .voice-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  .voice-btn:hover:not(:disabled) {
-    color: #ef4444;
-  }
-
-  /* Voice Recording Styles */
-  .voice-recording-controls {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-    border-radius: 1rem;
-    padding: 0.5rem 0.75rem;
-  }
-
-  .recording-indicator {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .recording-dot {
-    width: 8px;
-    height: 8px;
-    background: #ef4444;
-    border-radius: 50%;
-    animation: pulse-recording 1.5s ease-in-out infinite;
-  }
-
   @keyframes pulse-recording {
     0%,
     100% {
@@ -3220,98 +2332,6 @@
       opacity: 0.5;
       transform: scale(1.2);
     }
-  }
-
-  .recording-duration {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #ef4444;
-    min-width: 40px;
-    font-family: monospace;
-  }
-
-  .voice-control-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0.25rem;
-    border-radius: 4px;
-    transition: all 0.2s;
-    font-size: 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .voice-control-btn.cancel {
-    color: #64748b;
-  }
-
-  .voice-control-btn.cancel:hover {
-    background: #f1f5f9;
-    color: #ef4444;
-  }
-
-  .voice-control-btn.stop {
-    color: #ef4444;
-  }
-
-  .voice-control-btn.stop:hover {
-    background: #fef2f2;
-    color: #dc2626;
-  }
-
-  /* Attachment Preview Styles */
-  .attachment-preview-container {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 0.5rem;
-    padding: 0.75rem;
-    margin-bottom: 0.5rem;
-    max-height: 200px;
-    overflow-y: auto;
-  }
-
-  .attachment-preview-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.5rem;
-    background: white;
-    border-radius: 0.375rem;
-    margin-bottom: 0.5rem;
-    border: 1px solid #e2e8f0;
-  }
-
-  .attachment-preview-item:last-child {
-    margin-bottom: 0;
-  }
-
-  .preview-image {
-    width: 40px;
-    height: 40px;
-    object-fit: cover;
-    border-radius: 0.25rem;
-  }
-
-  .file-icon {
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    background: #f1f5f9;
-    border-radius: 0.25rem;
-  }
-
-  .file-info {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .chat-container.rtl .file-info {
-    text-align: right;
   }
 
   .file-name {
@@ -3328,26 +2348,6 @@
     color: #64748b;
   }
 
-  .remove-attachment-btn {
-    background: #ef4444;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 0.75rem;
-    transition: all 0.2s;
-  }
-
-  .remove-attachment-btn:hover {
-    background: #dc2626;
-  }
-
-  /* Voice Message Styles */
   .voice-message-preview {
     display: flex;
     align-items: center;
@@ -3565,36 +2565,6 @@
     color: #64748b;
   }
 
-  .no-users {
-    padding: 2rem;
-    text-align: center;
-    color: #64748b;
-  }
-
-  .no-conversations-message {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    align-items: center;
-  }
-
-  .start-conversation-btn {
-    background: #0ea5e9;
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.5rem;
-    cursor: pointer;
-    font-size: 0.875rem;
-    font-weight: 500;
-    transition: background 0.2s;
-  }
-
-  .start-conversation-btn:hover {
-    background: #0284c7;
-  }
-
-  /* Upload Status Styles */
   .upload-status {
     display: flex;
     align-items: center;
@@ -3647,155 +2617,6 @@
     color: rgba(255, 255, 255, 0.9);
   }
 
-  /* Group Chat Styles */
-  .chat-mode-tabs {
-    display: flex;
-    border-bottom: 1px solid #e5e7eb;
-    margin-bottom: 1rem;
-  }
-
-  .tab-btn {
-    flex: 1;
-    padding: 0.75rem 1rem;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    font-size: 0.9rem;
-    color: #6b7280;
-    transition: all 0.2s ease;
-  }
-
-  .tab-btn.active {
-    color: #3b82f6;
-    border-bottom: 2px solid #3b82f6;
-    background: #f8fafc;
-  }
-
-  .tab-btn:hover {
-    background: #f1f5f9;
-  }
-
-  .groups-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem;
-    border-bottom: 1px solid #e5e7eb;
-  }
-
-  .groups-header h3 {
-    margin: 0;
-    font-size: 1.1rem;
-    color: #1f2937;
-  }
-
-  .groups-header-actions {
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  .create-group-btn {
-    padding: 0.5rem 1rem;
-    background: #3b82f6;
-    color: white;
-    border: none;
-    border-radius: 0.375rem;
-    cursor: pointer;
-    font-size: 0.875rem;
-    transition: background-color 0.2s ease;
-  }
-
-  .create-group-btn:hover {
-    background: #2563eb;
-  }
-
-  .groups-list {
-    padding: 1rem;
-    overflow-y: auto;
-    max-height: calc(100vh - 200px);
-  }
-
-  .group-item {
-    display: flex;
-    align-items: center;
-    padding: 0.75rem;
-    margin-bottom: 0.5rem;
-    border-radius: 0.5rem;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    border: 2px solid transparent;
-  }
-
-  .group-item:hover {
-    background: #f8fafc;
-  }
-
-  .group-item.selected {
-    background: #eff6ff;
-    border-color: #3b82f6;
-  }
-
-  .group-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 0.5rem;
-    margin-right: 0.75rem;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .group-avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .group-avatar .avatar-placeholder.group {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 600;
-    font-size: 1rem;
-  }
-
-  .group-info {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .group-name {
-    font-weight: 600;
-    color: #1f2937;
-    margin-bottom: 0.25rem;
-  }
-
-  .group-details {
-    font-size: 0.875rem;
-    color: #6b7280;
-  }
-
-  .participant-count {
-    margin-bottom: 0.125rem;
-  }
-
-  .group-description {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .admin-badge {
-    background: #10b981;
-    color: white;
-    font-size: 0.75rem;
-    padding: 0.125rem 0.5rem;
-    border-radius: 0.25rem;
-    margin-top: 0.25rem;
-    display: inline-block;
-  }
-
   .chat-group-header {
     display: flex;
     align-items: center;
@@ -3841,189 +2662,6 @@
     font-weight: 500;
   }
 
-  .no-groups {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 200px;
-    color: #6b7280;
-  }
-
-  .no-groups-message {
-    text-align: center;
-  }
-
-  .no-groups-message p {
-    margin-bottom: 1rem;
-  }
-
-  /* Modal Styles */
-  .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-  }
-
-  .modal-content {
-    background: white;
-    border-radius: 0.75rem;
-    width: 90%;
-    max-width: 500px;
-    max-height: 80vh;
-    overflow: hidden;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  }
-
-  .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.5rem;
-    border-bottom: 1px solid #e5e7eb;
-  }
-
-  .modal-header h3 {
-    margin: 0;
-    color: #1f2937;
-  }
-
-  .close-btn {
-    background: none;
-    border: none;
-    font-size: 1.25rem;
-    cursor: pointer;
-    color: #6b7280;
-    padding: 0.25rem;
-  }
-
-  .close-btn:hover {
-    color: #374151;
-  }
-
-  .modal-body {
-    padding: 1.5rem;
-    max-height: 50vh;
-    overflow-y: auto;
-  }
-
-  .form-group {
-    margin-bottom: 1.5rem;
-  }
-
-  .form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-    color: #374151;
-  }
-
-  .form-group input,
-  .form-group textarea {
-    width: 100%;
-    padding: 0.75rem;
-    border: 1px solid #d1d5db;
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    transition: border-color 0.2s ease;
-  }
-
-  .form-group input:focus,
-  .form-group textarea:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
-
-  .participants-list {
-    max-height: 200px;
-    overflow-y: auto;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.375rem;
-    padding: 0.5rem;
-  }
-
-  .participant-item {
-    display: flex;
-    align-items: center;
-    padding: 0.5rem;
-    margin-bottom: 0.25rem;
-    border-radius: 0.25rem;
-    transition: background-color 0.2s ease;
-  }
-
-  .participant-item:hover {
-    background: #f8fafc;
-  }
-
-  .participant-item input[type="checkbox"] {
-    margin-right: 0.75rem;
-    width: auto;
-  }
-
-  .participant-item label {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    margin: 0;
-  }
-
-  .user-avatar.tiny {
-    width: 24px;
-    height: 24px;
-    margin-right: 0.5rem;
-  }
-
-  .modal-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.75rem;
-    padding: 1.5rem;
-    border-top: 1px solid #e5e7eb;
-    background: #f9fafb;
-  }
-
-  .cancel-btn {
-    padding: 0.75rem 1.5rem;
-    border: 1px solid #d1d5db;
-    background: white;
-    color: #374151;
-    border-radius: 0.375rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .cancel-btn:hover {
-    background: #f9fafb;
-  }
-
-  .create-btn {
-    padding: 0.75rem 1.5rem;
-    background: #3b82f6;
-    color: white;
-    border: none;
-    border-radius: 0.375rem;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-  }
-
-  .create-btn:hover {
-    background: #2563eb;
-  }
-
-  .create-btn:disabled {
-    background: #9ca3af;
-    cursor: not-allowed;
-  }
-
-  /* Responsive Design */
   @media (max-width: 768px) {
     .users-sidebar {
       width: 280px;
@@ -4076,135 +2714,5 @@
 
   .edit-group-btn:hover {
     background: rgba(0, 0, 0, 0.1);
-  }
-
-  .form-group h4 {
-    margin: 0 0 0.5rem 0;
-    font-size: 1rem;
-    font-weight: 600;
-    color: #374151;
-  }
-
-  .participants-list {
-    max-height: 200px;
-    overflow-y: auto;
-    border: 1px solid #e2e8f0;
-    border-radius: 0.5rem;
-    padding: 0.5rem;
-  }
-
-  .participant-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.5rem;
-    border-radius: 0.25rem;
-    margin-bottom: 0.25rem;
-  }
-
-  .participant-item:hover {
-    background: #f8fafc;
-  }
-
-  .participant-item.current-user {
-    background: #eff6ff;
-    border: 1px solid #dbeafe;
-  }
-
-  .participant-name {
-    font-weight: 500;
-    color: #374151;
-  }
-
-  .admin-badge {
-    background: #10b981;
-    color: white;
-    padding: 0.125rem 0.5rem;
-    border-radius: 1rem;
-    font-size: 0.75rem;
-    font-weight: 500;
-  }
-
-  .remove-participant-btn {
-    background: #ef4444;
-    color: white;
-    border: none;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
-    cursor: pointer;
-    font-size: 0.875rem;
-    transition: background-color 0.2s;
-  }
-
-  .remove-participant-btn:hover {
-    background: #dc2626;
-  }
-
-  .available-users-list {
-    max-height: 150px;
-    overflow-y: auto;
-    border: 1px solid #e2e8f0;
-    border-radius: 0.5rem;
-    padding: 0.5rem;
-  }
-
-  .available-user-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.5rem;
-    border-radius: 0.25rem;
-    margin-bottom: 0.25rem;
-  }
-
-  .available-user-item:hover {
-    background: #f8fafc;
-  }
-
-  .user-name {
-    font-weight: 500;
-    color: #374151;
-  }
-
-  .add-user-btn {
-    background: #10b981;
-    color: white;
-    border: none;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
-    cursor: pointer;
-    font-size: 0.875rem;
-    transition: background-color 0.2s;
-  }
-
-  .add-user-btn:hover {
-    background: #059669;
-  }
-
-  .no-users-message {
-    color: #6b7280;
-    font-style: italic;
-    text-align: center;
-    padding: 1rem;
-  }
-
-  .update-btn {
-    background: #3b82f6;
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.5rem;
-    cursor: pointer;
-    font-weight: 500;
-    transition: background-color 0.2s;
-  }
-
-  .update-btn:hover {
-    background: #2563eb;
-  }
-
-  .update-btn:disabled {
-    background: #9ca3af;
-    cursor: not-allowed;
   }
 </style>
