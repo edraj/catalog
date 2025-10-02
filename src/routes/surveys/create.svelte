@@ -20,32 +20,38 @@
 
   async function handleSubmit() {
     if (!survey.title.trim()) {
-      error = "Survey title is required";
+      error = $_("create_survey.survey_title_required");
       return;
     }
 
     if (!survey.questions || survey.questions.length === 0) {
-      error = "At least one question is required";
+      error = $_("create_survey.one_question_required");
       return;
     }
 
     for (let i = 0; i < survey.questions.length; i++) {
       const question = survey.questions[i];
       if (!question.question.trim()) {
-        error = `Question ${i + 1} text is required`;
+        error = $_("create_survey.question_text_required_number", {
+          values: { number: i + 1 },
+        });
         return;
       }
 
       if (["single", "multi", "select"].includes(question.type)) {
         if (!question.options || question.options.length === 0) {
-          error = `Question ${i + 1} requires at least one option`;
+          error = $_("create_survey.question_options_required", {
+            values: { number: i + 1 },
+          });
           return;
         }
 
         for (let j = 0; j < question.options.length; j++) {
           const option = question.options[j];
           if (!option.value.trim() || !option.label.trim()) {
-            error = `Question ${i + 1}, option ${j + 1} requires both value and label`;
+            error = $_("create_survey.option_complete_required", {
+              values: { number: i + 1, option: j + 1 },
+            });
             return;
           }
         }
@@ -85,16 +91,16 @@
       );
 
       if (result) {
-        success = "Survey created successfully!";
+        success = $_("create_survey.success");
         setTimeout(() => {
           $goto("/surveys");
         }, 2000);
       } else {
-        error = "Failed to create survey. Please try again.";
+        error = $_("create_survey.error");
       }
     } catch (err) {
       console.error("Error creating survey:", err);
-      error = "An error occurred while creating the survey.";
+      error = $_("create_survey.error_creating");
     } finally {
       isLoading = false;
     }
@@ -113,13 +119,17 @@
   <div class="page-header">
     <div class="header-content">
       <div class="breadcrumb">
-        <a href="/surveys" class="breadcrumb-link">Surveys</a>
+        <a href="/surveys" class="breadcrumb-link"
+          >{$_("create_survey.breadcrumb_surveys")}</a
+        >
         <span class="breadcrumb-separator">/</span>
-        <span class="breadcrumb-current">Create Survey</span>
+        <span class="breadcrumb-current"
+          >{$_("create_survey.breadcrumb_text")}</span
+        >
       </div>
-      <h1 class="page-title">Create New Survey</h1>
+      <h1 class="page-title">{$_("create_survey.title")}</h1>
       <p class="page-description">
-        Design your survey by adding questions and configuring answer types.
+        {$_("create_survey.description")}
       </p>
     </div>
   </div>
@@ -161,7 +171,7 @@
           onclick={handleCancel}
           disabled={isLoading}
         >
-          Cancel
+          {$_("create_survey.cancel")}
         </button>
 
         <button
@@ -196,9 +206,9 @@
                 />
               </circle>
             </svg>
-            Creating Survey...
+            {$_("create_survey.creating")}
           {:else}
-            Create Survey
+            {$_("create_survey.create_button")}
           {/if}
         </button>
       </div>

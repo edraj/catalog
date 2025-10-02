@@ -16,11 +16,11 @@
   }
 
   const answerTypes = [
-    { value: "input", name: "Input Field" },
-    { value: "text", name: "Text Area" },
-    { value: "single", name: "Single Choice (Radio)" },
-    { value: "multi", name: "Multiple Choice (Checkboxes)" },
-    { value: "select", name: "Dropdown Selection" },
+    { value: "input", name: $_("survey_form.answer_type_input") },
+    { value: "text", name: $_("survey_form.answer_type_text") },
+    { value: "single", name: $_("survey_form.answer_type_single") },
+    { value: "multi", name: $_("survey_form.answer_type_multi") },
+    { value: "select", name: $_("survey_form.answer_type_select") },
   ];
 
   function addQuestion() {
@@ -108,25 +108,27 @@
 </script>
 
 <div class="survey-editor">
-  <h2 class="survey-title">Survey Builder</h2>
+  <h2 class="survey-title">{$_("survey_form.survey_builder")}</h2>
 
   <div class="survey-content">
     <!-- Survey Metadata -->
     <div class="metadata-section">
       <div class="form-group">
-        <label for="survey-title">Survey Title</label>
+        <label for="survey-title">{$_("survey_form.survey_title")}</label>
         <input
           id="survey-title"
           type="text"
-          placeholder="Enter survey title..."
+          placeholder={$_("survey_form.survey_title_placeholder")}
           bind:value={survey.title}
         />
       </div>
       <div class="form-group">
-        <label for="survey-description">Survey Description</label>
+        <label for="survey-description"
+          >{$_("survey_form.survey_description")}</label
+        >
         <textarea
           id="survey-description"
-          placeholder="Enter survey description..."
+          placeholder={$_("survey_form.survey_description_placeholder")}
           bind:value={survey.description}
           rows="3"
         ></textarea>
@@ -136,13 +138,13 @@
     <!-- Questions -->
     <div class="questions-section">
       <div class="section-header">
-        <h3>Questions</h3>
+        <h3>{$_("survey_form.questions")}</h3>
         <button
           type="button"
           class="btn btn-primary btn-sm"
           onclick={() => addQuestion()}
         >
-          Add Question
+          {$_("survey_form.add_question_button")}
         </button>
       </div>
 
@@ -158,13 +160,18 @@
               >
                 <div class="question-info">
                   <span class="question-text">
-                    {question.question || `Question ${questionIndex + 1}`}
+                    {question.question ||
+                      $_("survey_form.new_question", {
+                        values: { number: questionIndex + 1 },
+                      })}
                   </span>
                   {#if question.type}
                     <span class="badge badge-type">{question.type}</span>
                   {/if}
                   {#if question.required}
-                    <span class="badge badge-required">Required</span>
+                    <span class="badge badge-required"
+                      >{$_("survey_form.required_question")}</span
+                    >
                   {/if}
                 </div>
                 <svg
@@ -185,19 +192,21 @@
                   <div class="form-grid">
                     <div class="form-group">
                       <label for="question-text-{questionIndex}"
-                        >Question Text</label
+                        >{$_("survey_form.question_text_label")}</label
                       >
                       <input
                         id="question-text-{questionIndex}"
                         type="text"
-                        placeholder="Enter your question..."
+                        placeholder={$_(
+                          "survey_form.question_text_placeholder"
+                        )}
                         bind:value={question.question}
                       />
                     </div>
 
                     <div class="form-group">
                       <label for="answer-type-{questionIndex}"
-                        >Answer Type</label
+                        >{$_("survey_form.answer_type_label")}</label
                       >
                       <select
                         id="answer-type-{questionIndex}"
@@ -219,13 +228,13 @@
                   {#if ["single", "multi", "select"].includes(question.type)}
                     <div class="options-section">
                       <div class="options-header">
-                        <h4>Answer Options</h4>
+                        <h4>{$_("survey_form.answer_options_title")}</h4>
                         <button
                           type="button"
                           class="btn btn-secondary btn-sm"
                           onclick={() => addOption(questionIndex)}
                         >
-                          Add Option
+                          {$_("survey_form.add_option_button")}
                         </button>
                       </div>
 
@@ -237,12 +246,16 @@
                                 <div class="form-group">
                                   <label
                                     for="option-text-{questionIndex}-{optionIndex}"
-                                    >Answer Option</label
+                                    >{$_(
+                                      "survey_form.answer_option_label"
+                                    )}</label
                                   >
                                   <input
                                     id="option-text-{questionIndex}-{optionIndex}"
                                     type="text"
-                                    placeholder="Enter answer option..."
+                                    placeholder={$_(
+                                      "survey_form.answer_option_placeholder"
+                                    )}
                                     value={option.text || option.label || ""}
                                     oninput={(e) =>
                                       updateOptionText(
@@ -253,7 +266,9 @@
                                   />
                                   {#if option.value}
                                     <small class="value-preview"
-                                      >Value: {option.value}</small
+                                      >{$_("survey_form.value_preview", {
+                                        values: { value: option.value },
+                                      })}</small
                                     >
                                   {/if}
                                 </div>
@@ -264,7 +279,7 @@
                                     onclick={() =>
                                       removeOption(questionIndex, optionIndex)}
                                   >
-                                    Remove
+                                    {$_("survey_form.remove_option")}
                                   </button>
                                 </div>
                               </div>
@@ -274,8 +289,7 @@
                       {:else}
                         <div class="empty-options">
                           <p>
-                            No options added yet. Click "Add Option" to create
-                            answer choices.
+                            {$_("survey_form.no_options")}
                           </p>
                         </div>
                       {/if}
@@ -291,7 +305,7 @@
                         bind:checked={question.required}
                       />
                       <label for="required-{questionIndex}"
-                        >Required Question</label
+                        >{$_("survey_form.required_question")}</label
                       >
                     </div>
 
@@ -301,7 +315,7 @@
                         class="btn btn-danger btn-sm"
                         onclick={() => removeQuestion(questionIndex)}
                       >
-                        Delete Question
+                        {$_("survey_form.delete_question")}
                       </button>
                     </div>
                   </div>
@@ -312,7 +326,7 @@
         </div>
       {:else}
         <div class="empty-state">
-          <p>No questions added yet. Click "Add Question" to get started.</p>
+          <p>{$_("survey_form.no_questions")}</p>
         </div>
       {/if}
     </div>

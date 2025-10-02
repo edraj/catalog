@@ -78,6 +78,25 @@ export interface UserData {
   isActive: boolean;
 }
 
+export interface GroupData {
+  id: string;
+  shortname: string;
+  name: string;
+  description?: string;
+  avatar?: string | null;
+  participants: string[];
+  adminIds: string[];
+  createdBy: string;
+  createdAt: Date;
+  isActive: boolean;
+  isGroup: true;
+}
+
+export interface GroupMessageData extends Omit<MessageData, "receiverId"> {
+  groupId: string;
+  receiverId?: never;
+}
+
 export function transformUserRecord(record: any): UserData {
   const attrs = record.attributes;
   return {
@@ -105,6 +124,44 @@ export function transformMessageRecord(
     id: record.shortname,
     senderId: body.sender,
     receiverId: body.receiver,
+    content: body.content,
+    attachments: attachments,
+    timestamp: new Date(record.attributes.created_at || Date.now()),
+    isOwn: body.sender === currentUserShortname,
+  };
+}
+
+export function transformGroupRecord(record: any): GroupData {
+  const attrs = record.attributes;
+  const payload = attrs.payload?.body || {};
+
+  return {
+    id: record.shortname,
+    shortname: record.shortname,
+    name: getDisplayName(attrs.displayname) || record.shortname,
+    description: attrs.description || "",
+    avatar: attrs.social_avatar_url || null,
+    participants: payload.participants || [],
+    adminIds: payload.adminIds || [payload.createdBy],
+    createdBy: payload.createdBy || "",
+    createdAt: new Date(attrs.created_at || Date.now()),
+    isActive: attrs.is_active !== false,
+    isGroup: true,
+  };
+}
+
+export function transformGroupMessageRecord(
+  record: any,
+  currentUserShortname: string
+): GroupMessageData {
+  const attachments = record?.attachments?.media || null;
+  const payload = record.attributes.payload;
+  const body = payload.body;
+
+  return {
+    id: record.shortname,
+    senderId: body.sender,
+    groupId: body.groupId,
     content: body.content,
     attachments: attachments,
     timestamp: new Date(record.attributes.created_at || Date.now()),
@@ -158,4 +215,55 @@ export function sortMessagesByTimestamp(
   return messages.sort(
     (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
   );
+}
+
+export function isRelevantGroupMessage(
+  data: any,
+  groupId: string,
+  currentUserShortname: string
+): boolean {
+  return data.groupId === groupId && data.senderId !== currentUserShortname;
+}
+
+export function getGroupCacheKey(
+  currentUserShortname: string,
+  groupId: string
+): string {
+  return `group_chat_${currentUserShortname}_${groupId}`;
+}
+
+export function isUserGroupAdmin(
+  group: GroupData,
+  userShortname: string
+): boolean {
+  return group.adminIds.includes(userShortname);
+}
+
+export function isUserGroupParticipant(
+  group: GroupData,
+  userShortname: string
+): boolean {
+  return group.participants.includes(userShortname);
+}
+
+export function canUserAccessGroup(
+  group: GroupData,
+  userShortname: string
+): boolean {
+  return (
+    isUserGroupParticipant(group, userShortname) ||
+    isUserGroupAdmin(group, userShortname)
+  );
+}
+
+export function getGroupDisplayName(
+  group: GroupData,
+  fallback: string = "Unknown Group"
+): string {
+  return group.name || fallback;
+}
+
+export function formatGroupParticipantCount(count: number): string {
+  if (count === 1) return "1 participant";
+  return `${count} participants`;
 }

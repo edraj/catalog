@@ -89,7 +89,9 @@
             if (userResponse) {
               const survey = {
                 shortname: record.shortname,
-                title: record.attributes?.displayname?.en || "Untitled Survey",
+                title:
+                  record.attributes?.displayname?.en ||
+                  $_("surveys.untitled_survey"),
                 description: record.attributes?.description?.en || "",
                 questions: record.attributes?.payload?.body?.questions || [],
                 owner_shortname: record.attributes?.owner_shortname,
@@ -302,7 +304,8 @@
               >
                 <div class="survey-content">
                   <h3 class="survey-title">
-                    {survey.attributes?.displayname?.en || "Untitled Survey"}
+                    {survey.attributes?.displayname?.en ||
+                      $_("surveys.untitled_survey")}
                   </h3>
                   <p class="survey-description">
                     {survey.attributes?.description?.en || ""}
@@ -437,7 +440,8 @@
       <div class="modal-header">
         <h2>
           {#if selectedSurvey.modalType === "manage"}
-            {selectedSurvey.attributes?.displayname?.en || "Untitled Survey"}
+            {selectedSurvey.attributes?.displayname?.en ||
+              $_("surveys.untitled_survey")}
           {:else if selectedSurvey.modalType === "view-response"}
             {selectedSurvey.survey.title}
           {/if}
@@ -474,13 +478,6 @@
             </p>
 
             <div class="management-actions">
-              <button
-                class="btn btn-outline"
-                onclick={() => navigateToSurvey(selectedSurvey.shortname)}
-              >
-                {$_("survey_manage.view_survey")}
-              </button>
-
               {#if surveyAnalytics && surveyAnalytics.totalResponses > 0}
                 <button
                   class="btn btn-secondary"

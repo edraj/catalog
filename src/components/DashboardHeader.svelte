@@ -400,7 +400,6 @@
                       onclick={() => handleMenuItemClick("/polls")}
                       class="menu-item"
                     >
-                      <!-- Vote / Ballot box with check -->
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"
@@ -415,7 +414,6 @@
                           >Ballot box with a checked ballot</desc
                         >
 
-                        <!-- box -->
                         <rect
                           x="3"
                           y="7"
@@ -427,7 +425,6 @@
                           stroke="currentColor"
                           stroke-width="1.6"
                         />
-                        <!-- slot -->
                         <rect
                           x="7"
                           y="3"
@@ -437,7 +434,6 @@
                           ry="0.8"
                           fill="currentColor"
                         />
-                        <!-- ballot -->
                         <rect
                           x="6.2"
                           y="1.8"
@@ -450,7 +446,6 @@
                           stroke="currentColor"
                           stroke-width="1.4"
                         />
-                        <!-- check -->
                         <path
                           d="M9.5 11.5l2 2.2 4-4.5"
                           fill="none"
@@ -462,6 +457,39 @@
                       </svg>
 
                       <span>{$_("polls")}</span>
+                    </button>
+                    <button
+                      aria-label={`Surveys`}
+                      onclick={() => handleMenuItemClick("/surveys")}
+                      class="menu-item"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        width="24"
+                        height="24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.6"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        class="menu-icon"
+                      >
+                        <rect
+                          x="4"
+                          y="3"
+                          width="16"
+                          height="18"
+                          rx="2"
+                          ry="2"
+                        />
+                        <line x1="8" y1="8" x2="16" y2="8" />
+                        <line x1="8" y1="12" x2="16" y2="12" />
+                        <line x1="8" y1="16" x2="13" y2="16" />
+                        <polyline points="6 16 7.5 17.5 10 15" />
+                      </svg>
+
+                      <span>{$_("surveys")}</span>
                     </button>
                     <button
                       aria-label={`Notifications`}

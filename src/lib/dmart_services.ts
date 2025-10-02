@@ -857,7 +857,6 @@ export async function submitSurveyResponse(
   }
 }
 
-
 export async function getUserSurveyResponseRecord(
   survey_shortname: string
 ): Promise<any | null> {
@@ -986,7 +985,6 @@ export async function getAllSurveyResponses() {
   const response = await Dmart.query(query);
   return response.records || [];
 }
-
 
 export async function getUserSurveys() {
   const currentUser = get(user);
@@ -2068,14 +2066,27 @@ export async function getMessageByShortname(shortname: string) {
         return null;
       }
 
-      return {
-        id: record.shortname,
-        senderId: body.sender,
-        receiverId: body.receiver,
-        content: body.content,
-        timestamp: new Date(record.attributes.created_at || Date.now()),
-        messageType: body.message_type || "text",
-      };
+      if (body.messageType === "group_message" && body.groupId) {
+        return {
+          id: record.shortname,
+          senderId: body.sender,
+          groupId: body.groupId,
+          content: body.content,
+          timestamp: new Date(record.attributes.created_at || Date.now()),
+          messageType: body.messageType || "group_message",
+          isGroupMessage: true,
+        };
+      } else {
+        return {
+          id: record.shortname,
+          senderId: body.sender,
+          receiverId: body.receiver,
+          content: body.content,
+          timestamp: new Date(record.attributes.created_at || Date.now()),
+          messageType: body.message_type || "text",
+          isGroupMessage: false,
+        };
+      }
     }
 
     return null;
@@ -2208,8 +2219,8 @@ export async function getSurveys(
       subpath: "/surveys",
       search: "@resource_type:content",
       limit: limit,
-      sort_by: "created_at",
-      sort_type: SortyType.descending,
+      sort_by: "shortname",
+      sort_type: SortyType.ascending,
       offset: offset,
       retrieve_json_payload: true,
       retrieve_attachments: true,
@@ -2218,4 +2229,270 @@ export async function getSurveys(
     scope
   );
   return response;
+}
+
+export async function createGroup(data: {
+  name: string;
+  description?: string;
+  participants: string[];
+  createdBy: string;
+}) {
+  const actionRequest: ActionRequest = {
+    space_name: "messages",
+    request_type: RequestType.create,
+    records: [
+      {
+        resource_type: ResourceType.content,
+        shortname: "auto",
+        subpath: "/groups",
+        attributes: {
+          displayname: { en: data.name },
+          is_active: true,
+          payload: {
+            content_type: "json",
+            body: {
+              participants: data.participants,
+              adminIds: [data.createdBy],
+              createdBy: data.createdBy,
+              groupType: "group_chat",
+            },
+          },
+        },
+      },
+    ],
+  };
+
+  const response: ActionResponse = await Dmart.request(actionRequest);
+  if (response.status == "success" && response.records.length > 0) {
+    return response.records[0].shortname;
+  }
+  return null;
+}
+
+export async function updateGroup(
+  groupShortname: string,
+  data: {
+    name?: string;
+    description?: string;
+    participants?: string[];
+    adminIds?: string[];
+  }
+) {
+  const group = await getEntity(
+    groupShortname,
+    "messages",
+    "/groups",
+    ResourceType.content,
+    "managed"
+  );
+
+  if (!group) return false;
+
+  const currentPayload = group.payload?.body || {};
+
+  const actionRequest: ActionRequest = {
+    space_name: "messages",
+    request_type: RequestType.update,
+    records: [
+      {
+        resource_type: ResourceType.content,
+        shortname: groupShortname,
+        subpath: "/groups",
+        attributes: {
+          displayname: data.name
+            ? { en: data.name }
+            : group.attributes.displayname,
+          description: {
+            en:
+              data.description !== undefined
+                ? data.description
+                : group.attributes.description,
+          },
+          payload: {
+            content_type: "json",
+            body: {
+              ...currentPayload,
+              participants: data.participants || currentPayload.participants,
+              adminIds: data.adminIds || currentPayload.adminIds,
+            },
+          },
+        },
+      },
+    ],
+  };
+
+  const response: ActionResponse = await Dmart.request(actionRequest);
+  return response.status === "success";
+}
+
+export async function getUserGroups(
+  userShortname: string
+): Promise<ApiQueryResponse> {
+  const query: QueryRequest = {
+    space_name: "messages",
+    type: QueryType.search,
+    subpath: "/groups",
+    limit: 100,
+    offset: 0,
+    sort_by: "created_at",
+    sort_type: SortyType.descending,
+    filter_shortnames: [],
+    search: "",
+    exact_subpath: false,
+    retrieve_json_payload: true,
+    retrieve_attachments: false,
+  };
+
+  return await Dmart.query(query, "managed");
+}
+
+export async function getGroupDetails(groupShortname: string) {
+  return await getEntity(
+    groupShortname,
+    "messages",
+    "/groups",
+    ResourceType.content,
+    "managed",
+    true,
+    false
+  );
+}
+
+export async function createGroupMessage(data: {
+  groupId: string;
+  sender: string;
+  content: string;
+}) {
+  const actionRequest: ActionRequest = {
+    space_name: "messages",
+    request_type: RequestType.create,
+    records: [
+      {
+        resource_type: ResourceType.content,
+        shortname: "auto",
+        subpath: "/messages",
+        attributes: {
+          is_active: true,
+          payload: {
+            content_type: "json",
+            body: {
+              sender: data.sender,
+              groupId: data.groupId,
+              content: data.content,
+              messageType: "group_message",
+            },
+          },
+        },
+      },
+    ],
+  };
+
+  const response: ActionResponse = await Dmart.request(actionRequest);
+  if (response.status == "success" && response.records.length > 0) {
+    return response.records[0].shortname;
+  }
+  return null;
+}
+
+export async function getGroupMessages(
+  groupId: string,
+  limit: number = 10,
+  offset: number = 0
+) {
+  try {
+    const query: QueryRequest = {
+      space_name: "messages",
+      type: QueryType.search,
+      subpath: "messages",
+      limit: limit,
+      offset: offset,
+      sort_by: "created_at",
+      sort_type: SortyType.descending,
+      filter_shortnames: [],
+      search: "",
+      exact_subpath: true,
+      retrieve_json_payload: true,
+      retrieve_attachments: true,
+    };
+
+    const response = await Dmart.query(query, "managed");
+
+    if (response && response.status === "success") {
+      const filteredRecords = response.records.filter((record) => {
+        const payload = record.attributes.payload?.body;
+        if (!payload) return false;
+
+        const isConversation = payload.groupId === groupId;
+
+        return isConversation;
+      });
+
+      return {
+        status: "success",
+        records: filteredRecords,
+      };
+    } else {
+      throw new Error("Failed to fetch messages");
+    }
+  } catch (err) {
+    console.error("Error fetching messages between users:", err);
+    return { status: "error", records: [] };
+  }
+}
+
+export async function addUserToGroup(
+  groupShortname: string,
+  userShortname: string
+) {
+  const group = await getGroupDetails(groupShortname);
+  if (!group) return false;
+
+  const currentParticipants =
+    group.attributes.payload?.body?.participants || [];
+  if (currentParticipants.includes(userShortname)) {
+    return true;
+  }
+
+  const updatedParticipants = [...currentParticipants, userShortname];
+  return await updateGroup(groupShortname, {
+    participants: updatedParticipants,
+  });
+}
+
+export async function removeUserFromGroup(
+  groupShortname: string,
+  userShortname: string
+) {
+  const group = await getGroupDetails(groupShortname);
+  if (!group) return false;
+
+  const currentParticipants =
+    group.attributes.payload?.body?.participants || [];
+  const updatedParticipants = currentParticipants.filter(
+    (p) => p !== userShortname
+  );
+
+  const currentAdmins = group.attributes.payload?.body?.adminIds || [];
+  const updatedAdmins = currentAdmins.filter((a) => a !== userShortname);
+
+  return await updateGroup(groupShortname, {
+    participants: updatedParticipants,
+    adminIds: updatedAdmins,
+  });
+}
+
+export async function makeUserGroupAdmin(
+  groupShortname: string,
+  userShortname: string
+) {
+  const group = await getGroupDetails(groupShortname);
+  if (!group) return false;
+
+  const currentAdmins = group.attributes.payload?.body?.adminIds || [];
+  if (currentAdmins.includes(userShortname)) {
+    return true;
+  }
+
+  const updatedAdmins = [...currentAdmins, userShortname];
+  return await updateGroup(groupShortname, { adminIds: updatedAdmins });
 }
