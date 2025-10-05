@@ -2139,6 +2139,8 @@
   "survey_manage.submitted_on": "Submitted on",
   "survey_manage.your_answer": "Your answer",
   "survey_manage.survey_by": "Survey by ",
+  "surveys.type_your_answer": "Type your answer...",
+  "surveys.choose_an_option": "Choose an option...",
   "survey_manage.no_answer": "No answer provided",
   "surveys.retry": "Retry",
   "surveys.no_surveys_available": "No surveys available",

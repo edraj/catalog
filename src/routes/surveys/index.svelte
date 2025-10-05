@@ -393,7 +393,7 @@
                   <input
                     type="text"
                     class="form-input"
-                    placeholder="Type your answer..."
+                    placeholder={$_("surveys.type_your_answer")}
                     value={responses[selectedSurvey.shortname]?.[question.id] ||
                       ""}
                     disabled={userResponses[selectedSurvey.shortname]}
@@ -407,7 +407,7 @@
                 {:else if question.type === "text"}
                   <textarea
                     class="form-textarea"
-                    placeholder="Type your answer..."
+                    placeholder={$_("surveys.type_your_answer")}
                     rows="4"
                     value={responses[selectedSurvey.shortname]?.[question.id] ||
                       ""}
@@ -478,7 +478,7 @@
                         (e.target as HTMLInputElement).value
                       )}
                   >
-                    <option value="">Choose an option...</option>
+                    <option value="">{$_("surveys.choose_an_option")}</option>
                     {#each question.options as option (option.id)}
                       <option value={option.label}>{option.label}</option>
                     {/each}
@@ -807,9 +807,9 @@
   }
 
   .modal-description {
+    margin: 20px 0 20px 0;
     padding: 0 1.5rem;
     color: #6b7280;
-    margin: 0;
     line-height: 1.6;
   }
 
