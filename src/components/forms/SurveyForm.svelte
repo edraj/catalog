@@ -64,7 +64,7 @@
   function generateValue(text: string): string {
     return text
       .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, "")
+      .replace(/[^\u0600-\u06FF\u0750-\u077F\u08A0-\u08FFA-Za-z0-9\s]/g, "")
       .replace(/\s+/g, "_")
       .substring(0, 50);
   }

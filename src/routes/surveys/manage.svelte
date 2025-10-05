@@ -10,6 +10,7 @@
   import { ResourceType } from "@edraj/tsdmart";
   import { _, locale } from "@/i18n";
   import { user } from "@/stores/user";
+  import { derived } from "svelte/store";
 
   $goto;
 
@@ -21,6 +22,11 @@
   let selectedSurvey = $state(null);
   let surveyAnalytics = $state(null);
   let isModalOpen = $state(false);
+
+  const isRTL = derived(
+    locale,
+    ($locale) => $locale === "ar" || $locale === "ku"
+  );
 
   onMount(async () => {
     await loadSurveys();
@@ -427,6 +433,7 @@
     class="modal-overlay"
     role="button"
     tabindex="0"
+    class:rtl={$isRTL}
     onclick={closeSurveyModal}
     onkeydown={(e) => e.key === "Escape" && closeSurveyModal()}
   >
@@ -507,112 +514,281 @@
 
             {#if surveyAnalytics}
               <div class="analytics-section">
-                <h3>{$_("survey_manage.analytics")}</h3>
                 <div class="analytics-grid">
                   <div class="stat-card">
-                    <div class="stat-number">
-                      {surveyAnalytics.totalResponses}
+                    <div class="stat-icon">
+                      <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                        />
+                      </svg>
                     </div>
-                    <div class="stat-label">
-                      {$_("survey_manage.total_responses")}
+                    <div class="stat-content">
+                      <div class="stat-number">
+                        {surveyAnalytics.totalResponses}
+                      </div>
+                      <div class="stat-label">
+                        {$_("survey_manage.total_responses")}
+                      </div>
+                    </div>
+                    <div class="stat-trend positive">
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                        />
+                      </svg>
                     </div>
                   </div>
                 </div>
 
                 {#if surveyAnalytics.responseData && surveyAnalytics.responseData.length > 0}
-                  <div class="responses-list">
-                    <h4>{$_("survey_manage.recent_responses")}</h4>
-                    {#each surveyAnalytics.responseData.slice(0, 5) as response}
-                      <div class="response-item">
-                        <div class="response-header">
-                          <span class="respondent">{response.respondent}</span>
-                          <span class="response-date"
-                            >{formatDateTime(response.submittedAt)}</span
-                          >
-                        </div>
-                        <div class="response-summary">
-                          {#each Object.entries(response.responses) as [questionId, answer]}
-                            <div class="answer-item">
-                              {#if Array.isArray(answer)}
-                                <span>{answer.join(", ")}</span>
-                              {:else}
-                                <span>{answer}</span>
-                              {/if}
+                  <div class="responses-container">
+                    <div class="responses-header">
+                      <h4>{$_("survey_manage.recent_responses")}</h4>
+                      <span class="response-count"
+                        >{surveyAnalytics.responseData.length}
+                        {$_("survey_manage.responses")}</span
+                      >
+                    </div>
+
+                    <div class="responses-list">
+                      {#each surveyAnalytics.responseData.slice(0, 5) as response, idx}
+                        <div class="response-card">
+                          <div class="response-card-header">
+                            <div class="respondent-info">
+                              <div class="respondent-avatar">
+                                <svg
+                                  width="20"
+                                  height="20"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                                  />
+                                </svg>
+                              </div>
+                              <div class="respondent-details">
+                                <span class="respondent-name"
+                                  >{response.respondent}</span
+                                >
+                                <span class="response-number"
+                                  >Response #{idx + 1}</span
+                                >
+                              </div>
                             </div>
-                          {/each}
+                            <div class="response-meta">
+                              <span class="response-date">
+                                <svg
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                  />
+                                </svg>
+                                {formatDateTime(response.submittedAt)}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div class="response-content">
+                            {#each Object.entries(response.responses) as [questionId, answer]}
+                              {@const question =
+                                selectedSurvey.attributes?.payload?.body?.questions.find(
+                                  (q) => q.id === questionId
+                                )}
+                              {#if question}
+                                <div class="answer-group">
+                                  <div class="answer-question">
+                                    <svg
+                                      width="16"
+                                      height="16"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                    >
+                                      <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                      />
+                                    </svg>
+                                    <span>{question.question}</span>
+                                  </div>
+                                  <div class="answer-value">
+                                    {#if Array.isArray(answer)}
+                                      <div class="multi-answer-tags">
+                                        {#each answer as item}
+                                          <span class="mini-tag">{item}</span>
+                                        {/each}
+                                      </div>
+                                    {:else}
+                                      <span class="single-answer-text"
+                                        >{answer}</span
+                                      >
+                                    {/if}
+                                  </div>
+                                </div>
+                              {/if}
+                            {/each}
+                          </div>
                         </div>
+                      {/each}
+                    </div>
+
+                    {#if surveyAnalytics.responseData.length > 5}
+                      <div class="view-all-container">
+                        <button class="view-all-btn">
+                          {$_("survey_manage.view_all")} ({surveyAnalytics
+                            .responseData.length - 5}
+                          {$_("survey_manage.more")})
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                        </button>
                       </div>
-                    {/each}
+                    {/if}
                   </div>
                 {:else}
                   <div class="no-responses">
-                    <svg
-                      class="no-responses-icon"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-                      />
-                    </svg>
-                    <p>{$_("survey_manage.no_responses")}</p>
+                    <div class="no-responses-illustration">
+                      <svg
+                        class="no-responses-icon"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+                        />
+                      </svg>
+                    </div>
+                    <h4>{$_("survey_manage.no_responses_yet")}</h4>
+                    <p>{$_("survey_manage.no_responses_message")}</p>
+                    <button class="share-survey-btn">
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+                        />
+                      </svg>
+                      {$_("survey_manage.share_survey")}
+                    </button>
                   </div>
                 {/if}
               </div>
             {/if}
           </div>
-        {:else if selectedSurvey.modalType === "view-response"}
-          <!-- User Response View -->
-          <div class="response-view">
-            <div class="response-meta">
-              <p>
-                <strong>Survey by:</strong>
-                {selectedSurvey.owner_shortname}
-              </p>
-              <p>
-                <strong>Submitted on:</strong>
-                {formatDateTime(selectedSurvey.submittedAt)}
-              </p>
-            </div>
+          {#if selectedSurvey.modalType === "view-response"}
+            <div class="response-view">
+              <div class="response-meta">
+                <p>
+                  <strong>Survey by:</strong>
+                  {selectedSurvey.owner_shortname}
+                </p>
+                <p>
+                  <strong>Submitted on:</strong>
+                  {formatDateTime(selectedSurvey.submittedAt)}
+                </p>
+              </div>
 
-            <div class="questions-answers">
-              {#each selectedSurvey.questions as question, index}
-                <div class="question-block">
-                  <div class="question-header">
-                    <span class="question-number">{index + 1}</span>
-                    <h4 class="question-title">{question.question}</h4>
-                  </div>
+              <div class="questions-answers">
+                {#each selectedSurvey.questions as question, index}
+                  <div class="question-block">
+                    <div class="question-header">
+                      <span class="question-number">{index + 1}</span>
+                      <h4 class="question-title">{question.question}</h4>
+                    </div>
 
-                  <div class="user-answer">
-                    <strong>Your answer:</strong>
-                    {#if selectedSurvey.userResponse[question.id]}
-                      <span class="answer-text">
-                        {#if question.type === "single" || question.type === "select"}
-                          {selectedSurvey.userResponse[question.id]}
-                        {:else if question.type === "multiple"}
-                          {Array.isArray(
-                            selectedSurvey.userResponse[question.id]
-                          )
-                            ? selectedSurvey.userResponse[question.id].join(
-                                ", "
-                              )
-                            : selectedSurvey.userResponse[question.id]}
+                    <div class="user-answer">
+                      <strong>Your answer:</strong>
+                      {#if selectedSurvey.userResponse[question.id]}
+                        {#if question.type === "multi" && Array.isArray(selectedSurvey.userResponse[question.id])}
+                          <div class="answer-text multiple-answer">
+                            {#each selectedSurvey.userResponse[question.id] as answer}
+                              <span class="answer-tag">{answer}</span>
+                            {/each}
+                          </div>
+                        {:else if question.type === "single" || question.type === "select"}
+                          <span class="answer-text single-answer">
+                            {selectedSurvey.userResponse[question.id]}
+                          </span>
+                        {:else if question.type === "input"}
+                          <span class="answer-text text-answer">
+                            {selectedSurvey.userResponse[question.id]}
+                          </span>
                         {:else}
-                          {selectedSurvey.userResponse[question.id]}
+                          <span class="answer-text">
+                            {Array.isArray(
+                              selectedSurvey.userResponse[question.id]
+                            )
+                              ? selectedSurvey.userResponse[question.id].join(
+                                  " . \n "
+                                )
+                              : selectedSurvey.userResponse[question.id]}
+                          </span>
                         {/if}
-                      </span>
-                    {:else}
-                      <span class="no-answer">No answer provided</span>
-                    {/if}
+                      {:else}
+                        <span class="no-answer">No answer provided</span>
+                      {/if}
+                    </div>
                   </div>
-                </div>
-              {/each}
+                {/each}
+              </div>
             </div>
-          </div>
+          {/if}
         {/if}
       </div>
 
@@ -637,6 +813,9 @@
     padding: 2rem 0;
   }
 
+  .rtl {
+    direction: rtl;
+  }
   .header-content {
     max-width: 1200px;
     margin: 0 auto;
@@ -711,17 +890,6 @@
 
   .btn-primary:hover {
     background: #2563eb;
-  }
-
-  .btn-outline {
-    background: transparent;
-    color: #3b82f6;
-    border: 1px solid #3b82f6;
-  }
-
-  .btn-outline:hover {
-    background: #3b82f6;
-    color: white;
   }
 
   .btn-secondary {
@@ -897,38 +1065,66 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
     padding: 1rem;
+    animation: fadeIn 0.2s ease;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   .modal-content {
     background: white;
-    border-radius: 12px;
-    max-width: 800px;
+    border-radius: 16px;
+    max-width: 900px;
     width: 100%;
     max-height: 90vh;
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    box-shadow:
+      0 20px 25px -5px rgba(0, 0, 0, 0.1),
+      0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    animation: slideUp 0.3s ease;
+  }
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(20px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
   }
 
   .modal-header {
-    padding: 1.5rem;
+    padding: 2rem;
     border-bottom: 1px solid #e5e7eb;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    background: linear-gradient(to bottom, #ffffff, #f9fafb);
   }
 
   .modal-header h2 {
     margin: 0;
-    font-size: 1.5rem;
-    font-weight: 600;
+    font-size: 1.75rem;
+    font-weight: 700;
     color: #111827;
+    letter-spacing: -0.025em;
   }
 
   .modal-close {
@@ -937,27 +1133,50 @@
     color: #6b7280;
     cursor: pointer;
     padding: 0.5rem;
-    border-radius: 6px;
+    border-radius: 8px;
     transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .modal-close:hover {
     background: #f3f4f6;
     color: #374151;
+    transform: scale(1.05);
   }
 
   .modal-body {
-    padding: 1.5rem;
+    padding: 2rem;
     overflow-y: auto;
     flex: 1;
   }
 
+  .modal-body::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .modal-body::-webkit-scrollbar-track {
+    background: #f3f4f6;
+    border-radius: 4px;
+  }
+
+  .modal-body::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 4px;
+  }
+
+  .modal-body::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+  }
+
   .modal-footer {
-    padding: 1.5rem;
+    padding: 1.5rem 2rem;
     border-top: 1px solid #e5e7eb;
     display: flex;
     justify-content: flex-end;
     gap: 1rem;
+    background: #f9fafb;
   }
 
   .management-actions {
@@ -971,7 +1190,7 @@
   }
 
   .details-section h4 {
-    font-size: 1rem;
+    font-size: 1.125rem;
     font-weight: 600;
     color: #111827;
     margin: 0 0 1rem 0;
@@ -980,187 +1199,179 @@
   .questions-list {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.75rem;
   }
 
   .question-preview {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem;
+    gap: 0.75rem;
+    padding: 1rem;
     background: #f9fafb;
-    border-radius: 6px;
+    border-radius: 8px;
     font-size: 0.875rem;
+    border: 1px solid #e5e7eb;
+    transition: all 0.2s ease;
+  }
+
+  .question-preview:hover {
+    background: #f3f4f6;
+    border-color: #d1d5db;
   }
 
   .question-number {
-    font-weight: 600;
+    font-weight: 700;
     color: #3b82f6;
+    min-width: 1.5rem;
   }
 
   .question-text {
     flex: 1;
     color: #374151;
+    font-weight: 500;
   }
 
   .question-type {
     color: #6b7280;
     font-size: 0.75rem;
     background: #e5e7eb;
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
   }
 
   .required-indicator {
     color: #dc2626;
-    font-weight: 600;
+    font-weight: 700;
+    font-size: 1.25rem;
   }
 
   .analytics-section {
     margin-top: 2rem;
   }
 
-  .analytics-section h3 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #111827;
-    margin: 0 0 1rem 0;
-  }
-
   .analytics-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
+    gap: 1.5rem;
     margin-bottom: 2rem;
   }
 
   .stat-card {
-    background: #f9fafb;
-    padding: 1.5rem;
-    border-radius: 8px;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    padding: 2rem;
+    border-radius: 12px;
     text-align: center;
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
   }
 
   .stat-number {
-    font-size: 2rem;
-    font-weight: 700;
-    color: #3b82f6;
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: white;
   }
 
   .stat-label {
-    color: #6b7280;
+    color: rgba(255, 255, 255, 0.9);
     font-size: 0.875rem;
     margin-top: 0.5rem;
+    font-weight: 500;
   }
 
   .responses-list {
-    margin-top: 1rem;
-  }
-
-  .responses-list h4 {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #111827;
-    margin: 0 0 1rem 0;
-  }
-
-  .answer-item {
-    margin-bottom: 0.25rem;
-  }
-
-  .answer-item:last-child {
-    margin-bottom: 0;
-  }
-
-  .response-item {
-    background: #f9fafb;
-    padding: 1rem;
-    border-radius: 6px;
-    border-left: 3px solid #3b82f6;
-    margin-bottom: 0.75rem;
-  }
-
-  .response-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.5rem;
-  }
-
-  .respondent {
-    font-weight: 500;
-    color: #111827;
+    margin-top: 1.5rem;
   }
 
   .response-date {
     font-size: 0.75rem;
-    color: #6b7280;
-  }
-
-  .response-summary {
-    font-size: 0.875rem;
-    color: #6b7280;
+    color: #9ca3af;
+    font-weight: 500;
   }
 
   .no-responses {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 2rem;
+    padding: 3rem 2rem;
     text-align: center;
     color: #9ca3af;
   }
 
   .no-responses-icon {
-    width: 3rem;
-    height: 3rem;
+    width: 4rem;
+    height: 4rem;
     margin-bottom: 1rem;
+    opacity: 0.5;
   }
 
-  /* Response View */
   .response-view {
     max-height: 60vh;
     overflow-y: auto;
   }
 
   .response-meta {
-    background: #f9fafb;
-    padding: 1rem;
-    border-radius: 8px;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    padding: 1.5rem;
+    border-radius: 12px;
     margin-bottom: 2rem;
+    border: 1px solid #bae6fd;
+  }
+
+  .response-meta p {
+    margin: 0.5rem 0;
+    color: #0c4a6e;
+    font-size: 0.95rem;
+  }
+
+  .response-meta strong {
+    color: #075985;
+    font-weight: 600;
   }
 
   .questions-answers {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 2rem;
   }
 
   .question-block {
     border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    padding: 1.5rem;
+    border-radius: 12px;
+    padding: 0;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+  }
+
+  .question-block:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   }
 
   .question-header {
     display: flex;
     align-items: flex-start;
-    gap: 0.75rem;
-    margin-bottom: 1rem;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: #f9fafb;
+    border-bottom: 2px solid #e5e7eb;
   }
 
   .question-number {
-    background: #3b82f6;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     color: white;
-    width: 2rem;
-    height: 2rem;
+    width: 2.5rem;
+    height: 2.5rem;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.875rem;
-    font-weight: 600;
+    font-size: 1rem;
+    font-weight: 700;
     flex-shrink: 0;
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.4);
   }
 
   .question-title {
@@ -1168,29 +1379,160 @@
     font-weight: 600;
     color: #111827;
     margin: 0;
-  }
-
-  .question-description {
-    color: #6b7280;
-    margin: 0 0 1rem 0;
-    font-style: italic;
+    line-height: 1.5;
+    flex: 1;
   }
 
   .user-answer {
-    background: #f3f4f6;
-    padding: 1rem;
-    border-radius: 6px;
-    border-left: 4px solid #10b981;
+    padding: 1.5rem;
+    background: white;
+  }
+
+  .user-answer strong {
+    display: block;
+    color: #6b7280;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
   }
 
   .answer-text {
     color: #111827;
     font-weight: 500;
+    font-size: 1rem;
+    display: block;
+    line-height: 1.6;
+  }
+
+  .answer-text.multiple-answer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+
+  .answer-tag {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+    transition: all 0.2s ease;
+  }
+
+  .answer-tag:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(16, 185, 129, 0.4);
+  }
+
+  .answer-tag::before {
+    content: "✓";
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    width: 1.25rem;
+    height: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+  }
+
+  .answer-text.single-answer {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    color: #1e40af;
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    display: inline-block;
+    font-weight: 600;
+    border-left: 4px solid #3b82f6;
+    margin-top: 0.5rem;
+  }
+
+  /* Text Input Answer */
+  .answer-text.text-answer {
+    background: #f9fafb;
+    color: #374151;
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid #6b7280;
+    font-style: italic;
+    margin-top: 0.5rem;
+    line-height: 1.6;
   }
 
   .no-answer {
-    color: #6b7280;
+    color: #9ca3af;
     font-style: italic;
+    background: #f9fafb;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    display: inline-block;
+    border-left: 4px solid #e5e7eb;
+    margin-top: 0.5rem;
+  }
+
+  /* Button Styles */
+  .btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+  }
+
+  .btn-secondary {
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #d1d5db;
+  }
+
+  .btn-secondary:hover {
+    background: #e5e7eb;
+    border-color: #9ca3af;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .modal-content {
+      max-width: 100%;
+      max-height: 95vh;
+      border-radius: 12px 12px 0 0;
+    }
+
+    .modal-header {
+      padding: 1.5rem;
+    }
+
+    .modal-header h2 {
+      font-size: 1.25rem;
+    }
+
+    .modal-body {
+      padding: 1.5rem;
+    }
+
+    .question-header {
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .answer-tag {
+      font-size: 0.8rem;
+      padding: 0.4rem 0.8rem;
+    }
   }
 
   /* Mobile Responsive */
@@ -1234,6 +1576,444 @@
     .tab-button.active {
       border-left-color: #3b82f6;
       border-bottom-color: #e5e7eb;
+    }
+  }
+
+  /* Analytics Section */
+  .analytics-section {
+    margin-top: 2rem;
+    animation: fadeInUp 0.4s ease;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.8;
+    }
+  }
+
+  /* Enhanced Stat Card */
+  .stat-card {
+    background: white;
+    padding: 2rem;
+    border-radius: 16px;
+    border: 2px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%);
+  }
+
+  .stat-card:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 8px 16px rgba(59, 130, 246, 0.2);
+    transform: translateY(-4px);
+  }
+
+  .stat-icon {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  }
+
+  .stat-content {
+    flex: 1;
+  }
+
+  .stat-number {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #111827;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .stat-label {
+    color: #6b7280;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .stat-trend {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .stat-trend.positive {
+    background: #d1fae5;
+    color: #059669;
+  }
+
+  /* Responses Container */
+  .responses-container {
+    margin-top: 2rem;
+  }
+
+  .responses-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e5e7eb;
+  }
+
+  .responses-header h4 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+  }
+
+  .response-count {
+    background: #f3f4f6;
+    color: #6b7280;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .responses-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  /* Enhanced Response Card */
+  .response-card {
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+
+  .response-card:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.15);
+    transform: translateX(4px);
+  }
+
+  .response-card-header {
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .respondent-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .respondent-avatar {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+  }
+
+  .respondent-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .respondent-name {
+    font-weight: 700;
+    color: #111827;
+    font-size: 1rem;
+  }
+
+  .response-number {
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-weight: 500;
+  }
+
+  .response-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .response-date {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: #6b7280;
+    background: white;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    font-weight: 500;
+  }
+
+  .response-date svg {
+    flex-shrink: 0;
+  }
+
+  /* Response Content */
+  .response-content {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .answer-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .answer-question {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #6b7280;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .answer-question svg {
+    flex-shrink: 0;
+    color: #9ca3af;
+  }
+
+  .answer-value {
+    padding-left: 1.5rem;
+  }
+
+  .single-answer-text {
+    color: #111827;
+    font-weight: 600;
+    font-size: 0.95rem;
+    display: inline-block;
+    background: #f0f9ff;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    border-left: 3px solid #3b82f6;
+  }
+
+  .multi-answer-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .mini-tag {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    padding: 0.4rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+  }
+
+  .mini-tag::before {
+    content: "✓";
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    width: 1rem;
+    height: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+  }
+
+  .view-all-container {
+    margin-top: 1.5rem;
+    text-align: center;
+  }
+
+  .view-all-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: white;
+    color: #6b7280;
+    border: 2px solid #e5e7eb;
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .view-all-btn:hover {
+    border-color: #3b82f6;
+    color: #3b82f6;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.2);
+  }
+
+  .no-responses {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 4rem 2rem;
+    text-align: center;
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    border-radius: 16px;
+    border: 2px dashed #d1d5db;
+  }
+
+  .no-responses-illustration {
+    position: relative;
+    margin-bottom: 2rem;
+  }
+
+  .no-responses-icon {
+    width: 80px;
+    height: 80px;
+    color: #9ca3af;
+    opacity: 0.6;
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  .no-responses h4 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #374151;
+    margin: 0 0 0.5rem 0;
+  }
+
+  .no-responses p {
+    color: #6b7280;
+    font-size: 0.95rem;
+    margin: 0 0 1.5rem 0;
+    max-width: 400px;
+  }
+
+  .share-survey-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+  }
+
+  .share-survey-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(59, 130, 246, 0.4);
+  }
+
+  @media (max-width: 768px) {
+    .analytics-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .stat-card {
+      flex-direction: column;
+      text-align: center;
+      gap: 1rem;
+    }
+
+    .stat-trend {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+    }
+
+    .response-card-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .respondent-info {
+      width: 100%;
+    }
+
+    .response-meta {
+      width: 100%;
+      justify-content: flex-start;
+    }
+
+    .response-card:hover {
+      transform: translateY(-4px);
     }
   }
 </style>
