@@ -1185,6 +1185,8 @@
   "users_without_roles": "Users Without Roles",
   "no_roles_assigned": "No roles assigned",
   "manage_roles": "Manage Roles",
+  "search_roles": "Search roles...",
+  "no_roles_match_search": "No roles match your search",
   "close": "Close",
   "saving": "Saving...",
   "save_changes": "Save Changes",

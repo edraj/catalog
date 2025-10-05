@@ -1178,6 +1178,8 @@
   "users_without_roles": "المستخدمون بدون أدوار",
   "no_roles_assigned": "لم يتم تعيين أدوار",
   "manage_roles": "إدارة الأدوار",
+  "search_roles": "البحث عن الأدوار...",
+  "no_roles_match_search": "لا توجد أدوار تطابق بحثك",
   "close": "إغلاق",
   "saving": "جاري الحفظ...",
   "save_changes": "حفظ التغييرات",

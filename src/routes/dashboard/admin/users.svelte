@@ -29,6 +29,8 @@
   let searchTerm = $state("");
   let filteredUsers = $state([]);
   let selectedRoleFilter = $state("");
+  let roleSearchTerm = $state("");
+  let filteredRoles = $state([]);
 
   let currentPage = $state(1);
   let itemsPerPage = $state(20);
@@ -122,12 +124,16 @@
   function openRoleModal(user) {
     selectedUser = user;
     selectedRoles = [...user.roles];
+    roleSearchTerm = ""; // Reset search when opening modal
+    filteredRoles = availableRoles; // Initialize filtered roles
     showRoleModal = true;
   }
 
   function closeRoleModal() {
     selectedUser = null;
     selectedRoles = [];
+    roleSearchTerm = "";
+    filteredRoles = [];
     showRoleModal = false;
   }
 
@@ -138,6 +144,21 @@
     } else {
       selectedRoles = [...selectedRoles, roleShortname];
     }
+  }
+
+  function filterAvailableRoles() {
+    if (!roleSearchTerm.trim()) {
+      filteredRoles = availableRoles;
+      return;
+    }
+
+    const term = roleSearchTerm.toLowerCase();
+    filteredRoles = availableRoles.filter(
+      (role) =>
+        role.shortname.toLowerCase().includes(term) ||
+        role.displayname.toLowerCase().includes(term) ||
+        role.description.toLowerCase().includes(term)
+    );
   }
 
   async function saveUserRoles() {
@@ -486,21 +507,39 @@
             <div>{$_("noRolesAvailable")}</div>
           </div>
         {:else}
-          <div class="roles-selection">
-            {#each availableRoles as role}
-              <label class="role-option">
-                <input
-                  type="checkbox"
-                  checked={selectedRoles.includes(role.shortname)}
-                  onchange={() => toggleRole(role.shortname)}
-                />
-                <div class="role-content">
-                  <div class="role-name">{role.displayname}</div>
-                  <div class="role-description">{role.description}</div>
-                </div>
-              </label>
-            {/each}
+          <div class="role-search-container">
+            <input
+              type="text"
+              class="role-search-input"
+              placeholder={$_("search_roles") || "Search roles..."}
+              bind:value={roleSearchTerm}
+              oninput={filterAvailableRoles}
+            />
           </div>
+
+          {#if filteredRoles.length === 0}
+            <div class="empty-roles-state">
+              <p>
+                {$_("no_roles_match_search") || "No roles match your search"}
+              </p>
+            </div>
+          {:else}
+            <div class="roles-selection">
+              {#each filteredRoles as role}
+                <label class="role-option">
+                  <input
+                    type="checkbox"
+                    checked={selectedRoles.includes(role.shortname)}
+                    onchange={() => toggleRole(role.shortname)}
+                  />
+                  <div class="role-content">
+                    <div class="role-name">{role.displayname}</div>
+                    <div class="role-description">{role.description}</div>
+                  </div>
+                </label>
+              {/each}
+            </div>
+          {/if}
         {/if}
       </div>
 
@@ -905,6 +944,32 @@
     font-size: 14px;
     margin-bottom: 20px;
     line-height: 1.5;
+  }
+
+  .role-search-container {
+    margin-bottom: 16px;
+  }
+
+  .role-search-input {
+    width: 100%;
+    padding: 10px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+  }
+
+  .role-search-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  .empty-roles-state {
+    text-align: center;
+    padding: 32px;
+    color: #9ca3af;
+    font-size: 14px;
   }
 
   .alert {

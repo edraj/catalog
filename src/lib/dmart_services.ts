@@ -1844,7 +1844,7 @@ export async function filterUserByRole(
       type: QueryType.search,
       space_name: "management",
       subpath: "users",
-      search: "@resource_type:user",
+      search: `@resource_type:user @roles:${role}`,
       limit: limit,
       sort_by: "shortname",
       sort_type: SortyType.ascending,
@@ -1852,12 +1852,6 @@ export async function filterUserByRole(
       retrieve_json_payload: true,
       exact_subpath: false,
     });
-
-    if (response && response.records) {
-      response.records = response.records.filter((user) =>
-        user.attributes?.roles?.includes(role)
-      );
-    }
 
     return response;
   } catch (error) {
