@@ -2063,6 +2063,7 @@
   "surveys.no_surveys": "لا توجد استبيانات",
   "surveys.no_surveys_description": "لا توجد استبيانات للمشاركة حالياً.",
   "surveys.create_first": "أنشئ أول استبيان",
+  "survey_manage.survey_by": "استبيان بواسطة ",
   "surveys.search_placeholder": "ابحث في الاستبيانات...",
   "surveys.created": "تم الإنشاء",
   "surveys.author": "بواسطة",
