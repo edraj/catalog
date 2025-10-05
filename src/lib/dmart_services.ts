@@ -1811,20 +1811,48 @@ export async function setDefaultUserRole(
   }
 }
 
-export async function getAllUsers(): Promise<ApiQueryResponse> {
+export async function getAllUsers(
+  limit: number = 100,
+  offset: number = 0
+): Promise<ApiQueryResponse> {
   try {
     const response = await Dmart.query({
       type: QueryType.search,
       space_name: "management",
       subpath: "users",
       search: "@resource_type:user",
-      limit: 100,
+      limit: limit,
       sort_by: "shortname",
       sort_type: SortyType.ascending,
-      offset: 0,
+      offset: offset,
       retrieve_json_payload: true,
       exact_subpath: false,
     });
+    return response;
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    return null;
+  }
+}
+export async function filterUserByRole(
+  role: string,
+  limit: number = 100,
+  offset: number = 0
+): Promise<ApiQueryResponse> {
+  try {
+    const response = await Dmart.query({
+      type: QueryType.search,
+      space_name: "management",
+      subpath: "users",
+      search: `@resource_type:user @roles:${role}`,
+      limit: limit,
+      sort_by: "shortname",
+      sort_type: SortyType.ascending,
+      offset: offset,
+      retrieve_json_payload: true,
+      exact_subpath: false,
+    });
+
     return response;
   } catch (error) {
     console.error("Error fetching users:", error);

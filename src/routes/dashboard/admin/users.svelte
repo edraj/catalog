@@ -1,13 +1,20 @@
 <script lang="ts">
-    import {onMount} from "svelte";
-    import {getAllUsers, getSpaceContents, updateUserRoles,} from "@/lib/dmart_services";
-    import {errorToastMessage, successToastMessage,} from "@/lib/toasts_messages";
-    import {_, locale} from "@/i18n";
-    import {formatNumber} from "@/lib/helpers";
-    import {derived} from "svelte/store";
-    import {user} from "@/stores/user";
+  import { onMount } from "svelte";
+  import {
+    getAllUsers,
+    filterUserByRole,
+    getSpaceContents,
+    updateUserRoles,
+  } from "@/lib/dmart_services";
+  import {
+    errorToastMessage,
+    successToastMessage,
+  } from "@/lib/toasts_messages";
+  import { _, locale } from "@/i18n";
+  import { formatNumber } from "@/lib/helpers";
+  import { derived } from "svelte/store";
 
-    const isRTL = derived(
+  const isRTL = derived(
     locale,
     ($locale) => $locale === "ar" || $locale === "ku"
   );
@@ -22,12 +29,33 @@
   let searchTerm = $state("");
   let filteredUsers = $state([]);
   let selectedRoleFilter = $state("");
+  let roleSearchTerm = $state("");
+  let filteredRoles = $state([]);
+
+  let currentPage = $state(1);
+  let itemsPerPage = $state(20);
+  let totalUsers = $state(0);
+  let totalPages = $state(0);
 
   async function loadUsers() {
     try {
-      const usersResponse = await getAllUsers();
+      isLoading = true;
+      let usersResponse;
 
-      if (usersResponse.status === "success") {
+      if (selectedRoleFilter) {
+        usersResponse = await filterUserByRole(
+          selectedRoleFilter,
+          itemsPerPage,
+          (currentPage - 1) * itemsPerPage
+        );
+      } else {
+        usersResponse = await getAllUsers(
+          itemsPerPage,
+          (currentPage - 1) * itemsPerPage
+        );
+      }
+
+      if (usersResponse && usersResponse.status === "success") {
         users = usersResponse.records.map((user) => ({
           shortname: user.shortname,
           displayname: user.attributes?.displayname?.en || user.shortname,
@@ -36,6 +64,10 @@
           is_active: user.attributes?.is_active ?? true,
           created_at: user.attributes?.created_at || "N/A",
         }));
+
+        totalUsers = usersResponse.attributes?.total || users.length;
+        totalPages = Math.ceil(totalUsers / itemsPerPage);
+
         updateFilteredUsers();
       } else {
         errorToastMessage($_("failed_to_load_users"));
@@ -43,6 +75,8 @@
     } catch (error) {
       console.error("Error loading users:", error);
       errorToastMessage($_("failed_to_load_users"));
+    } finally {
+      isLoading = false;
     }
   }
 
@@ -84,24 +118,22 @@
       );
     }
 
-    if (selectedRoleFilter) {
-      filtered = filtered.filter((user) =>
-        user.roles.includes(selectedRoleFilter)
-      );
-    }
-
     filteredUsers = filtered;
   }
 
   function openRoleModal(user) {
     selectedUser = user;
     selectedRoles = [...user.roles];
+    roleSearchTerm = ""; // Reset search when opening modal
+    filteredRoles = availableRoles; // Initialize filtered roles
     showRoleModal = true;
   }
 
   function closeRoleModal() {
     selectedUser = null;
     selectedRoles = [];
+    roleSearchTerm = "";
+    filteredRoles = [];
     showRoleModal = false;
   }
 
@@ -112,6 +144,21 @@
     } else {
       selectedRoles = [...selectedRoles, roleShortname];
     }
+  }
+
+  function filterAvailableRoles() {
+    if (!roleSearchTerm.trim()) {
+      filteredRoles = availableRoles;
+      return;
+    }
+
+    const term = roleSearchTerm.toLowerCase();
+    filteredRoles = availableRoles.filter(
+      (role) =>
+        role.shortname.toLowerCase().includes(term) ||
+        role.displayname.toLowerCase().includes(term) ||
+        role.description.toLowerCase().includes(term)
+    );
   }
 
   async function saveUserRoles() {
@@ -150,6 +197,33 @@
     const role = availableRoles.find((r) => r.shortname === roleShortname);
     return role ? role.displayname : roleShortname;
   }
+
+  function goToPage(page: number) {
+    if (page >= 1 && page <= totalPages) {
+      currentPage = page;
+      loadUsers();
+    }
+  }
+
+  function nextPage() {
+    if (currentPage < totalPages) {
+      currentPage++;
+      loadUsers();
+    }
+  }
+
+  function previousPage() {
+    if (currentPage > 1) {
+      currentPage--;
+      loadUsers();
+    }
+  }
+
+  async function handleRoleFilterChange() {
+    currentPage = 1;
+    await loadUsers();
+  }
+
   $effect(() => {
     updateFilteredUsers();
   });
@@ -185,7 +259,7 @@
           <select
             class="role-filter-select"
             bind:value={selectedRoleFilter}
-            onchange={updateFilteredUsers}
+            onchange={handleRoleFilterChange}
           >
             <option value="">{$_("all_roles")}</option>
             {#each availableRoles as role}
@@ -277,6 +351,80 @@
           </div>
         {/each}
       </div>
+
+      {#if totalPages > 1}
+        <div class="pagination">
+          <button
+            class="btn btn-secondary btn-small"
+            onclick={previousPage}
+            disabled={currentPage === 1}
+          >
+            {$_("previous")}
+          </button>
+
+          <div class="pagination-pages">
+            {#if totalPages <= 7}
+              {#each Array(totalPages) as _, index}
+                <button
+                  class="page-btn"
+                  class:active={currentPage === index + 1}
+                  onclick={() => goToPage(index + 1)}
+                >
+                  {formatNumber(index + 1, $locale)}
+                </button>
+              {/each}
+            {:else}
+              <button
+                class="page-btn"
+                class:active={currentPage === 1}
+                onclick={() => goToPage(1)}
+              >
+                {formatNumber(1, $locale)}
+              </button>
+
+              {#if currentPage > 3}
+                <span class="page-ellipsis">...</span>
+              {/if}
+
+              {#each Array(totalPages) as _, index}
+                {#if index + 1 > 1 && index + 1 < totalPages && Math.abs(currentPage - (index + 1)) <= 1}
+                  <button
+                    class="page-btn"
+                    class:active={currentPage === index + 1}
+                    onclick={() => goToPage(index + 1)}
+                  >
+                    {formatNumber(index + 1, $locale)}
+                  </button>
+                {/if}
+              {/each}
+
+              {#if currentPage < totalPages - 2}
+                <span class="page-ellipsis">...</span>
+              {/if}
+
+              <button
+                class="page-btn"
+                class:active={currentPage === totalPages}
+                onclick={() => goToPage(totalPages)}
+              >
+                {formatNumber(totalPages, $locale)}
+              </button>
+            {/if}
+          </div>
+
+          <div class="pagination-info">
+            <span>{formatNumber(totalUsers, $locale)} {$_("total_users")}</span>
+          </div>
+
+          <button
+            class="btn btn-secondary btn-small"
+            onclick={nextPage}
+            disabled={currentPage === totalPages}
+          >
+            {$_("next")}
+          </button>
+        </div>
+      {/if}
     {/if}
   </div>
 
@@ -285,7 +433,7 @@
     <div class="stats-grid">
       <div class="stat-item">
         <div class="stat-number">
-          {formatNumber(users.length, $locale)}
+          {formatNumber(totalUsers, $locale)}
         </div>
         <div class="stat-label">{$_("total_users")}</div>
       </div>
@@ -328,7 +476,8 @@
   >
     <div
       class="modal"
-      tabindex="0"
+      role="dialog"
+      tabindex="-1"
       onkeydown={(e) => e.stopPropagation()}
       onclick={(e) => e.stopPropagation()}
     >
@@ -358,21 +507,39 @@
             <div>{$_("noRolesAvailable")}</div>
           </div>
         {:else}
-          <div class="roles-selection">
-            {#each availableRoles as role}
-              <label class="role-option">
-                <input
-                  type="checkbox"
-                  checked={selectedRoles.includes(role.shortname)}
-                  onchange={() => toggleRole(role.shortname)}
-                />
-                <div class="role-content">
-                  <div class="role-name">{role.displayname}</div>
-                  <div class="role-description">{role.description}</div>
-                </div>
-              </label>
-            {/each}
+          <div class="role-search-container">
+            <input
+              type="text"
+              class="role-search-input"
+              placeholder={$_("search_roles") || "Search roles..."}
+              bind:value={roleSearchTerm}
+              oninput={filterAvailableRoles}
+            />
           </div>
+
+          {#if filteredRoles.length === 0}
+            <div class="empty-roles-state">
+              <p>
+                {$_("no_roles_match_search") || "No roles match your search"}
+              </p>
+            </div>
+          {:else}
+            <div class="roles-selection">
+              {#each filteredRoles as role}
+                <label class="role-option">
+                  <input
+                    type="checkbox"
+                    checked={selectedRoles.includes(role.shortname)}
+                    onchange={() => toggleRole(role.shortname)}
+                  />
+                  <div class="role-content">
+                    <div class="role-name">{role.displayname}</div>
+                    <div class="role-description">{role.description}</div>
+                  </div>
+                </label>
+              {/each}
+            </div>
+          {/if}
         {/if}
       </div>
 
@@ -779,6 +946,32 @@
     line-height: 1.5;
   }
 
+  .role-search-container {
+    margin-bottom: 16px;
+  }
+
+  .role-search-input {
+    width: 100%;
+    padding: 10px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+  }
+
+  .role-search-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  .empty-roles-state {
+    text-align: center;
+    padding: 32px;
+    color: #9ca3af;
+    font-size: 14px;
+  }
+
   .alert {
     padding: 16px;
     border-radius: 8px;
@@ -861,6 +1054,68 @@
     border-top: 1px solid #e5e7eb;
   }
 
+  .pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-top: 1px solid #e5e7eb;
+    margin-top: 16px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .pagination-pages {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .page-btn {
+    min-width: 36px;
+    height: 36px;
+    padding: 0 8px;
+    border: 1px solid #d1d5db;
+    background: white;
+    color: #374151;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .page-btn:hover:not(.active) {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+  }
+
+  .page-btn.active {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+    font-weight: 600;
+  }
+
+  .page-ellipsis {
+    padding: 0 8px;
+    color: #9ca3af;
+    font-weight: 600;
+  }
+
+  .pagination-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #6b7280;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
   @media (max-width: 768px) {
     .filters-container {
       flex-direction: column;
@@ -894,6 +1149,28 @@
 
     .search-container {
       max-width: none;
+    }
+
+    .pagination {
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .pagination-pages {
+      order: 2;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .pagination-info {
+      order: 1;
+      justify-content: center;
+    }
+
+    .page-btn {
+      min-width: 32px;
+      height: 32px;
+      font-size: 13px;
     }
   }
 </style>

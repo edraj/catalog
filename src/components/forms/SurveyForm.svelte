@@ -360,8 +360,9 @@
 
   /* Metadata Section */
   .metadata-section {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    align-items: stretch;
+    flex-direction: column;
     gap: 1rem;
   }
 
