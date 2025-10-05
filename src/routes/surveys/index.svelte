@@ -451,7 +451,7 @@
                           value={option.value}
                           checked={responses[selectedSurvey.shortname]?.[
                             question.id
-                          ]?.includes(option.value) || false}
+                          ]?.includes(option.label) || false}
                           disabled={userResponses[selectedSurvey.shortname]}
                           onchange={(e) =>
                             handleMultiChoice(
