@@ -450,7 +450,7 @@
             {selectedSurvey.attributes?.displayname?.en ||
               $_("surveys.untitled_survey")}
           {:else if selectedSurvey.modalType === "view-response"}
-            {selectedSurvey.survey.title}
+            {selectedSurvey.title}
           {/if}
         </h2>
         <button
@@ -731,64 +731,64 @@
               </div>
             {/if}
           </div>
-          {#if selectedSurvey.modalType === "view-response"}
-            <div class="response-view">
-              <div class="response-meta">
-                <p>
-                  <strong>Survey by:</strong>
-                  {selectedSurvey.owner_shortname}
-                </p>
-                <p>
-                  <strong>Submitted on:</strong>
-                  {formatDateTime(selectedSurvey.submittedAt)}
-                </p>
-              </div>
-
-              <div class="questions-answers">
-                {#each selectedSurvey.questions as question, index}
-                  <div class="question-block">
-                    <div class="question-header">
-                      <span class="question-number">{index + 1}</span>
-                      <h4 class="question-title">{question.question}</h4>
-                    </div>
-
-                    <div class="user-answer">
-                      <strong>Your answer:</strong>
-                      {#if selectedSurvey.userResponse[question.id]}
-                        {#if question.type === "multi" && Array.isArray(selectedSurvey.userResponse[question.id])}
-                          <div class="answer-text multiple-answer">
-                            {#each selectedSurvey.userResponse[question.id] as answer}
-                              <span class="answer-tag">{answer}</span>
-                            {/each}
-                          </div>
-                        {:else if question.type === "single" || question.type === "select"}
-                          <span class="answer-text single-answer">
-                            {selectedSurvey.userResponse[question.id]}
-                          </span>
-                        {:else if question.type === "input"}
-                          <span class="answer-text text-answer">
-                            {selectedSurvey.userResponse[question.id]}
-                          </span>
-                        {:else}
-                          <span class="answer-text">
-                            {Array.isArray(
-                              selectedSurvey.userResponse[question.id]
-                            )
-                              ? selectedSurvey.userResponse[question.id].join(
-                                  " . \n "
-                                )
-                              : selectedSurvey.userResponse[question.id]}
-                          </span>
-                        {/if}
-                      {:else}
-                        <span class="no-answer">No answer provided</span>
-                      {/if}
-                    </div>
-                  </div>
-                {/each}
-              </div>
+        {/if}
+        {#if selectedSurvey.modalType === "view-response"}
+          <div class="response-view">
+            <div class="response-meta">
+              <p>
+                <strong>{$_("survey_manage.survey_by")}:</strong>
+                {selectedSurvey.owner_shortname}
+              </p>
+              <p>
+                <strong>{$_("survey_manage.submitted_on")} : </strong>
+                {formatDateTime(selectedSurvey.submittedAt)}
+              </p>
             </div>
-          {/if}
+
+            <div class="questions-answers">
+              {#each selectedSurvey.questions as question, index}
+                <div class="question-block">
+                  <div class="question-header">
+                    <span class="question-number">{index + 1}</span>
+                    <h4 class="question-title">{question.question}</h4>
+                  </div>
+
+                  <div class="user-answer">
+                    <strong>{$_("survey_manage.your_answer")} :</strong>
+                    {#if selectedSurvey.userResponse[question.id]}
+                      {#if question.type === "multi" && Array.isArray(selectedSurvey.userResponse[question.id])}
+                        <div class="answer-text multiple-answer">
+                          {#each selectedSurvey.userResponse[question.id] as answer}
+                            <span class="answer-tag">{answer}</span>
+                          {/each}
+                        </div>
+                      {:else if question.type === "single" || question.type === "select"}
+                        <span class="answer-text single-answer">
+                          {selectedSurvey.userResponse[question.id]}
+                        </span>
+                      {:else if question.type === "input"}
+                        <span class="answer-text text-answer">
+                          {selectedSurvey.userResponse[question.id]}
+                        </span>
+                      {:else}
+                        <span class="answer-text">
+                          {Array.isArray(
+                            selectedSurvey.userResponse[question.id]
+                          )
+                            ? selectedSurvey.userResponse[question.id].join(
+                                " . \n "
+                              )
+                            : selectedSurvey.userResponse[question.id]}
+                        </span>
+                      {/if}
+                    {:else}
+                      <span class="no-answer">No answer provided</span>
+                    {/if}
+                  </div>
+                </div>
+              {/each}
+            </div>
+          </div>
         {/if}
       </div>
 
@@ -885,6 +885,7 @@
 
   .btn-primary {
     background: #3b82f6;
+    margin-top: 20px;
     color: white;
   }
 
@@ -1788,7 +1789,8 @@
 
   .response-meta {
     display: flex;
-    align-items: center;
+    align-items: space-between;
+    justify-content: space-between;
     gap: 0.5rem;
   }
 
@@ -2009,7 +2011,7 @@
 
     .response-meta {
       width: 100%;
-      justify-content: flex-start;
+      justify-content: space-between;
     }
 
     .response-card:hover {
