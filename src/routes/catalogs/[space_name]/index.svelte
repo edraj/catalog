@@ -12,6 +12,7 @@
   import { Diamonds } from "svelte-loading-spinners";
   import { _, locale } from "@/i18n";
   import Avatar from "@/components/Avatar.svelte";
+  import ReportModal from "@/components/ReportModal.svelte";
   import { derived } from "svelte/store";
   import { formatNumberInText } from "@/lib/helpers";
 
@@ -34,7 +35,10 @@
   let searchTimeout: number;
   let tagCounts = $state({});
 
-  // Pagination state
+  let showReportModal = $state(false);
+  let reportItem = $state(null);
+  let subpath = $state("/");
+
   let currentOffset = $state(0);
   let itemsPerLoad = $state(20);
   let totalItemsCount = $state(0);
@@ -125,7 +129,7 @@
       const basicItems = response.records.map((item) => ({
         ...item,
         owner_avatar: null,
-        reactionCount: null, // null indicates loading state
+        reactionCount: null,
         commentCount: null,
         mediaCount: null,
         reportCount: null,
@@ -139,7 +143,7 @@
           item.shortname,
         folderPath: item.subpath || "/",
         folderName: getFolderNameFromPath(item.subpath || "/"),
-        isLoading: true, // Flag to show shimmer
+        isLoading: true,
       }));
 
       if (reset) {
@@ -203,7 +207,6 @@
     try {
       const results = await searchInCatalog(query.trim());
 
-      // Create basic search results first
       const basicSearchResults = results.map((item) => ({
         ...item,
         owner_avatar: null,
@@ -226,7 +229,6 @@
 
       searchResults = basicSearchResults;
 
-      // Enhance search results asynchronously
       enhanceSearchResultsAsync(basicSearchResults);
 
       const sortedResults = [...searchResults];
@@ -323,7 +325,6 @@
     }
   }
 
-  // Enhance items asynchronously and update the reactive state
   async function enhanceItemsAsync(items) {
     for (const item of items) {
       try {
@@ -350,17 +351,14 @@
           isLoading: false,
         };
 
-        // Update the item in both possible arrays
         updateItemInArray(allContents, item.shortname, enhancedData);
         updateItemInArray(tagFilteredContents, item.shortname, enhancedData);
 
-        // Trigger reactivity update
         allContents = allContents;
         tagFilteredContents = tagFilteredContents;
         applyFiltersAndSort();
       } catch (error) {
         console.warn(`Error enhancing item ${item.shortname}:`, error);
-        // Mark as loaded even if enhancement failed
         updateItemInArray(allContents, item.shortname, { isLoading: false });
         updateItemInArray(tagFilteredContents, item.shortname, {
           isLoading: false,
@@ -371,7 +369,6 @@
     }
   }
 
-  // Helper function to update an item in an array
   function updateItemInArray(array, shortname, updates) {
     const index = array.findIndex((item) => item.shortname === shortname);
     if (index !== -1) {
@@ -379,7 +376,6 @@
     }
   }
 
-  // Enhance search results asynchronously
   async function enhanceSearchResultsAsync(items) {
     for (const item of items) {
       try {
@@ -406,14 +402,11 @@
           isLoading: false,
         };
 
-        // Update the item in search results
         updateItemInArray(searchResults, item.shortname, enhancedData);
 
-        // Trigger reactivity update
         searchResults = searchResults;
       } catch (error) {
         console.warn(`Error enhancing search item ${item.shortname}:`, error);
-        // Mark as loaded even if enhancement failed
         updateItemInArray(searchResults, item.shortname, { isLoading: false });
         searchResults = searchResults;
       }
@@ -492,7 +485,6 @@
       }
     }
 
-    // Apply sorting
     filtered.sort((a, b) => {
       switch (sortBy) {
         case "name":
@@ -639,12 +631,10 @@
         });
     }
   }
-
-  function reportItem(item) {
-    const reason = prompt($_("catalog_contents.report.reason_prompt"));
-    if (reason && reason.trim()) {
-      alert($_("catalog_contents.report.submitted"));
-    }
+  function openReportModal(item) {
+    reportItem = item;
+    subpath = item.subpath || "/";
+    showReportModal = true;
   }
 
   function handleCardTagClick(event, tag) {
@@ -1350,7 +1340,7 @@
                       class="action-button report-button"
                       onclick={(e) => {
                         e.stopPropagation();
-                        reportItem(item);
+                        openReportModal(item);
                       }}
                       title={$_("catalog_contents.card.report")}
                       aria-label={$_("catalog_contents.card.report")}
@@ -1499,6 +1489,22 @@
     {/if}
   </div>
 </div>
+
+<ReportModal
+  bind:isVisible={showReportModal}
+  entryShortname={reportItem?.shortname || ""}
+  entryTitle={reportItem?.title || ""}
+  {spaceName}
+  {subpath}
+  on:close={() => {
+    showReportModal = false;
+    reportItem = null;
+  }}
+  on:reportSubmitted={() => {
+    showReportModal = false;
+    reportItem = null;
+  }}
+/>
 
 <style>
   .catalog-contents-page {

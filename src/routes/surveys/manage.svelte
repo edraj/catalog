@@ -709,23 +709,6 @@
                     </div>
                     <h4>{$_("survey_manage.no_responses_yet")}</h4>
                     <p>{$_("survey_manage.no_responses_message")}</p>
-                    <button class="share-survey-btn">
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                        />
-                      </svg>
-                      {$_("survey_manage.share_survey")}
-                    </button>
                   </div>
                 {/if}
               </div>
@@ -1957,27 +1940,6 @@
     font-size: 0.95rem;
     margin: 0 0 1.5rem 0;
     max-width: 400px;
-  }
-
-  .share-survey-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 12px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
-  }
-
-  .share-survey-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(59, 130, 246, 0.4);
   }
 
   @media (max-width: 768px) {
