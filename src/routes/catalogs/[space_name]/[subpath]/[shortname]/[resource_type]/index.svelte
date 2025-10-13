@@ -147,7 +147,7 @@
     window.history.back();
   }
 
-  async function handleAddComment() {
+  async function handleAddComment(parentCommentId?: string) {
     if (!$user || !$user.shortname) {
       showLoginPrompt = true;
       return;
@@ -165,11 +165,11 @@
         spaceName,
         actualSubpath,
         itemShortname,
-        newComment.trim()
+        newComment.trim(),
+        parentCommentId
       );
 
       if (success) {
-        successToastMessage($_("post_detail.comments.added_successfully"));
         newComment = "";
         await loadPostData();
       } else {
@@ -270,7 +270,6 @@
   }
 
   function handleRelatedContentClick(item) {
-    // const encodedSubpath = item.subpath?.replace(/\//g, "-") || "";
     $goto("/catalogs/[space_name]/[subpath]/[shortname]/[resource_type]", {
       space_name: spaceName,
       subpath: item.subpath,
@@ -369,7 +368,15 @@
 
         <PostContent {postData} />
 
-        <PostInteractions {reactions} {comments} locale={$locale} />
+        <PostInteractions
+          {reactions}
+          {comments}
+          locale={$locale}
+          {spaceName}
+          subpath={actualSubpath}
+          {itemShortname}
+          onCommentAdded={loadPostData}
+        />
         <InteractiveForm
           bind:newComment
           {isSubmittingComment}

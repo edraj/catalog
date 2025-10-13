@@ -781,7 +781,11 @@
       "add_failed": "نەتوانرا لێدوان زیاد بکرێت. تکایە دووبارە هەوڵبدە.",
       "add_error": "هەڵەیەک ڕوویدا لە کاتی زیادکردنی لێدوانەکەت.",
       "title": "لێدوانەکان ({count})",
-      "no_content": "ناوەڕۆک نییە"
+      "no_content": "ناوەڕۆک نییە",
+      "reply": "وەڵام بدە",
+      "cancel": " پاشگەزبوونەوە",
+      "submit_reply": "ناردنی وەڵام",
+      "reply_placeholder": "وەڵامێک بنووسە..."
     },
     "login_prompt": {
       "title": "چوونەژوورەوە پێویستە",
@@ -2131,6 +2135,7 @@
   "reports.admin.reply_modal.title": "وەڵامدانەوە بۆ ڕاپۆرت",
   "reports.admin.reply_modal.your_notes": "ملاحظاتەکەت",
   "reports.admin.reply_modal.notes_placeholder": "وەڵامت بنوسە بۆ ئەم ڕاپۆرتە...",
+  "reports": "ڕاپۆرتەکان",
   "reports.admin.reply_modal.action": "کردارەکەی پێویست",
   "reports.admin.reply_modal.send_reply": "ناردنی وەڵام",
   "reports.admin.reply_modal.sending": "لە ناردندایە..."

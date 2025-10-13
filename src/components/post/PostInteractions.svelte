@@ -6,10 +6,27 @@
     getReactionEmoji,
     getReactionType,
   } from "@/lib/utils/postUtils";
+  import NestedComments from "./NestedComments.svelte";
 
-  export let reactions: any[];
-  export let comments: any[];
-  export let locale: string;
+  interface Props {
+    reactions: any[];
+    comments: any[];
+    locale: string;
+    spaceName: string;
+    subpath: string;
+    itemShortname: string;
+    onCommentAdded?: () => void;
+  }
+
+  let {
+    reactions,
+    comments,
+    locale,
+    spaceName,
+    subpath,
+    itemShortname,
+    onCommentAdded = () => {},
+  }: Props = $props();
 </script>
 
 {#if reactions.length > 0 || comments.length > 0}
@@ -40,7 +57,7 @@
     {/if}
 
     {#if comments.length > 0}
-      <div class="comments-simple">
+      <div class="comments-section">
         <h4 class="simple-subtitle">
           {$_("post_detail.comments.title", {
             values: {
@@ -48,13 +65,13 @@
             },
           })}
         </h4>
-        <div class="comments-list-simple">
-          {#each comments as comment}
-            <div class="comment-simple">
-              {getCommentText(comment, $_("post_detail.comments.no_content"))}
-            </div>
-          {/each}
-        </div>
+        <NestedComments
+          {comments}
+          {spaceName}
+          {subpath}
+          {itemShortname}
+          {onCommentAdded}
+        />
       </div>
     {/if}
   </section>
@@ -128,31 +145,9 @@
     transform: translateY(-1px);
   }
 
-  .comments-simple {
+  .comments-section {
     border-top: 1px solid #e5e7eb;
     padding-top: 24px;
-  }
-
-  .comments-list-simple {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .comment-simple {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 12px 16px;
-    font-size: 14px;
-    line-height: 1.5;
-    color: #475569;
-    transition: all 0.2s ease;
-  }
-
-  .comment-simple:hover {
-    background: #f1f5f9;
-    border-color: #cbd5e1;
   }
 
   @media (max-width: 768px) {

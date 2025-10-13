@@ -235,6 +235,29 @@
                         <span>{$_("contact_messages")}</span>
                       </button>
                       <button
+                        aria-label={`Reports`}
+                        onclick={() =>
+                          handleMenuItemClick("/dashboard/reports")}
+                        class="menu-item"
+                      >
+                        <svg
+                          class="menu-icon"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M9 12h6m-6 4h6M9 8h1m3.5-6H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8.5L14.5 2z"
+                          />
+                        </svg>
+
+                        <span>{$_("reports")}</span>
+                      </button>
+                      <button
                         aria-label={`Manage Permissions`}
                         onclick={() =>
                           handleMenuItemClick("/dashboard/permissions")}
@@ -491,6 +514,7 @@
 
                       <span>{$_("surveys")}</span>
                     </button>
+
                     <button
                       aria-label={`Notifications`}
                       onclick={() => handleMenuItemClick("/notifications")}

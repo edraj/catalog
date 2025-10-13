@@ -1273,7 +1273,8 @@ export async function createComment(
   spaceName: string,
   subpath: string,
   shortname: string,
-  comment: string
+  comment: string,
+  parentCommentId?: string
 ) {
   const data: ActionRequest = {
     space_name: spaceName,
@@ -1290,6 +1291,7 @@ export async function createComment(
             body: {
               state: "commented",
               body: comment,
+              parent_comment_id: parentCommentId || null,
             },
           },
         },

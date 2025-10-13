@@ -874,7 +874,11 @@
       "add_failed": "Failed to add comment. Please try again.",
       "add_error": "An error occurred while adding your comment.",
       "title": "Comments ({count})",
-      "no_content": "No content"
+      "no_content": "No content",
+      "reply": "Reply",
+      "cancel": "Cancel",
+      "submit_reply": "Submit Reply",
+      "reply_placeholder": "Write a reply..."
     },
     "login_prompt": {
       "title": "Login Required",
@@ -2164,6 +2168,7 @@
   "surveys.untitled_survey": "Untitled Survey",
   "common.close": "Close",
   "polls": "Polls",
+  "reports": "Reports",
   "survey_form.survey_builder": "Survey Builder",
   "survey_form.survey_title": "Survey Title",
   "survey_form.survey_description": "Survey Description",

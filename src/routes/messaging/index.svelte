@@ -212,7 +212,6 @@
 
       connectWebSocket();
     } catch (error) {
-      errorToastMessage($_("messaging.toast_failed_initialize") + ": " + error);
       connectionStatus = $_("messaging.toast_failed_initialize");
     }
   }
@@ -222,7 +221,6 @@
       isUsersLoading = true;
 
       if (!currentUser?.shortname) {
-        errorToastMessage($_("messaging.toast_no_user_shortname"));
         users = [];
         return;
       }
@@ -269,7 +267,6 @@
       isGroupsLoading = true;
 
       if (!currentUser?.shortname) {
-        errorToastMessage($_("messaging.toast_no_user_shortname"));
         groups = [];
         return;
       }
@@ -508,9 +505,7 @@
       }
     } catch (error) {
       console.error("❌ [Group Message] Error sending message:", error);
-      errorToastMessage(
-        $_("messaging.toast_failed_send_group_message") + ": " + error
-      );
+
       groupMessages = groupMessages.filter((msg) => msg.id !== tempId);
     } finally {
       isAttachmentLoading = false;
@@ -680,9 +675,6 @@
             error,
             event.data
           );
-          errorToastMessage(
-            $_("messaging.toast_failed_parse_ws") + ": " + error
-          );
         }
       };
 
@@ -704,21 +696,16 @@
 
       socket.onerror = (error) => {
         console.error("❌ [WebSocket] Connection error:", error);
-        errorToastMessage($_("messaging.toast_ws_error") + ": " + error);
         connectionStatus = $_("messaging.toast_ws_error");
       };
     } catch (error) {
       console.error("❌ [WebSocket] Failed to create connection:", error);
-      errorToastMessage($_("messaging.toast_failed_connect_ws") + ": " + error);
       connectionStatus = $_("messaging.toast_failed_connect_ws");
     }
   }
 
   function handleWebSocketMessage(data) {
     if (data.type === "connection_response") {
-      if (data.message?.status === "success") {
-        successToastMessage($_("messaging.toast_ws_connected"));
-      }
       return;
     }
 
@@ -773,9 +760,6 @@
 
               if (document.hidden || !selectedGroup) {
                 const senderName = getUserDisplayName(data.senderId);
-                successToastMessage(
-                  `${senderName}: ${data.content.substring(0, 50)}${data.content.length > 50 ? "..." : ""}`
-                );
               }
             } else {
             }
@@ -785,9 +769,6 @@
           const groupName =
             getGroupDisplayName(data.groupId) || `Group ${data.groupId}`;
           const senderName = getUserDisplayName(data.senderId);
-          successToastMessage(
-            `${senderName} in ${groupName}: ${data.content.substring(0, 50)}${data.content.length > 50 ? "..." : ""}`
-          );
         } else {
         }
         return;
@@ -873,11 +854,6 @@
                 console.error("Error fetching attachment message:", error);
 
                 messages = messages.filter((msg) => msg.id !== tempMessage.id);
-
-                errorToastMessage(
-                  $_("messaging.toast_failed_fetch_attachment") ||
-                    "Failed to load attachment"
-                );
               }
             }, 1000);
 
@@ -955,9 +931,6 @@
 
               if (document.hidden || !selectedGroup) {
                 const senderName = getUserDisplayName(data.senderId);
-                successToastMessage(
-                  `${senderName}: ${data.content.substring(0, 50)}${data.content.length > 50 ? "..." : ""}`
-                );
               }
             }
           }
@@ -965,9 +938,6 @@
           const groupName =
             getGroupDisplayName(data.groupId) || `Group ${data.groupId}`;
           const senderName = getUserDisplayName(data.senderId);
-          successToastMessage(
-            `${senderName} in ${groupName}: ${data.content.substring(0, 50)}${data.content.length > 50 ? "..." : ""}`
-          );
         }
       }
 
@@ -1056,11 +1026,6 @@
 
                   messages = messages.filter(
                     (msg) => msg.id !== tempMessage.id
-                  );
-
-                  errorToastMessage(
-                    $_("messaging.toast_failed_fetch_attachment") ||
-                      "Failed to load attachment"
                   );
                 }
               }, 1000);
@@ -1230,9 +1195,6 @@
       }
     } catch (error) {
       console.error("❌ [Fetch Message] Error fetching message:", error);
-      errorToastMessage(
-        $_("messaging.toast_failed_fetch_by_shortname") + ": " + error
-      );
     }
   }
 
@@ -1322,9 +1284,6 @@
       const cacheKey = getCacheKey(currentUser?.shortname, userShortname);
       cacheMessages(cacheKey, messages);
     } catch (error) {
-      errorToastMessage(
-        $_("messaging.toast_failed_load_history") + ": " + error
-      );
       messages = conversationMessages.get(userShortname) || [];
 
       if (messages.length === 0) {
@@ -1472,13 +1431,9 @@
           socket.send(JSON.stringify(wsMessage));
         }
       } else {
-        errorToastMessage($_("messaging.toast_failed_persist_message"));
         messages = messages.filter((msg) => msg.id !== tempId);
       }
     } catch (error) {
-      errorToastMessage(
-        $_("messaging.toast_failed_send_message") + ": " + error
-      );
       messages = messages.filter((msg) => msg.id !== tempId);
     } finally {
       isAttachmentLoading = false;
@@ -1602,11 +1557,6 @@
           stream.getTracks().forEach((track) => track.stop());
           stream = null;
         }
-
-        successToastMessage(
-          $_("messaging.toast_voice_recorded") ||
-            "Voice message recorded successfully"
-        );
       };
 
       mediaRecorder.start();
@@ -1615,15 +1565,7 @@
       recordingInterval = setInterval(() => {
         recordingDuration++;
       }, 1000);
-
-      successToastMessage(
-        $_("messaging.toast_recording_started") || "Recording started..."
-      );
     } catch (error) {
-      errorToastMessage(
-        $_("messaging.toast_recording_failed") + ": " + error.message ||
-          "Failed to start recording"
-      );
       isRecording = false;
 
       if (stream) {
@@ -1664,10 +1606,6 @@
       stream.getTracks().forEach((track) => track.stop());
       stream = null;
     }
-
-    successToastMessage(
-      $_("messaging.toast_recording_cancelled") || "Recording cancelled"
-    );
   }
 </script>
 

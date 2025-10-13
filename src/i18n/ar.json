@@ -765,7 +765,11 @@
       "add_failed": "فشل في إضافة التعليق. حاول مرة أخرى.",
       "add_error": "حدث خطأ أثناء إضافة تعليقك.",
       "title": "التعليقات ({count})",
-      "no_content": "لا يوجد محتوى"
+      "no_content": "لا يوجد محتوى",
+      "reply": "رد",
+      "cancel": "إلغاء",
+      "submit_reply": "نشر الرد",
+      "reply_placeholder": "اكتب ردك هنا..."
     },
     "login_prompt": {
       "title": "تسجيل الدخول مطلوب",
@@ -2000,6 +2004,7 @@
   "No": "لا",
   "AddItem": "إضافة عنصر",
   "Remove": "حذف",
+  "reports": "تقارير",
   "NoItemsAddedYet": "لم يتم إضافة أي عناصر بعد.",
   "NoSchemaProvided": "لم يتم توفير مخطط أو المخطط لا يحتوي على خصائص.",
   "create_entry.entry_type.poll_title": "استطلاع رأي",

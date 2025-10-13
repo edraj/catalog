@@ -382,7 +382,7 @@
             </div>
 
             {#if poll.description}
-              <p class="poll-description">{poll.description}</p>
+              <p class="poll-description">{poll.description.en}</p>
             {/if}
 
             <div class="poll-candidates-preview">
@@ -558,7 +558,7 @@
 
       <div class="modal-body">
         {#if selectedPoll.description}
-          <p class="modal-description">{selectedPoll.description}</p>
+          <p class="modal-description">{selectedPoll.description.en}</p>
         {/if}
 
         <div class="modal-meta">
