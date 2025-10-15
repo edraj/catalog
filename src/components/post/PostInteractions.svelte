@@ -15,6 +15,7 @@
     spaceName: string;
     subpath: string;
     itemShortname: string;
+    entryOwnerShortname: string;
     onCommentAdded?: () => void;
   }
 
@@ -25,6 +26,7 @@
     spaceName,
     subpath,
     itemShortname,
+    entryOwnerShortname,
     onCommentAdded = () => {},
   }: Props = $props();
 </script>
@@ -70,6 +72,7 @@
           {spaceName}
           {subpath}
           {itemShortname}
+          {entryOwnerShortname}
           {onCommentAdded}
         />
       </div>

@@ -1302,6 +1302,77 @@ export async function createComment(
   return response.status == "success" && response.records.length > 0;
 }
 
+export async function deleteComment(
+  commentShortname: string,
+  spaceName: string,
+  subpath: string,
+  entryShortname: string
+) {
+  const actionRequest: ActionRequest = {
+    space_name: spaceName,
+    request_type: RequestType.delete,
+    records: [
+      {
+        resource_type: ResourceType.comment,
+        shortname: commentShortname,
+        subpath: `${subpath}/${entryShortname}`,
+        attributes: {},
+      },
+    ],
+  };
+
+  const response: ActionResponse = await Dmart.request(actionRequest);
+  return response.status === "success" && response.records.length > 0;
+}
+
+export async function deleteMultipleComments(
+  commentShortnames: string[],
+  spaceName: string,
+  subpath: string,
+  entryShortname: string
+) {
+  if (commentShortnames.length === 0) return true;
+
+  const records = commentShortnames.map((shortname) => ({
+    resource_type: ResourceType.comment,
+    shortname: shortname,
+    subpath: `${subpath}/${entryShortname}`,
+    attributes: {},
+  }));
+
+  const actionRequest: ActionRequest = {
+    space_name: spaceName,
+    request_type: RequestType.delete,
+    records: records,
+  };
+
+  const response: ActionResponse = await Dmart.request(actionRequest);
+  return response.status === "success";
+}
+
+export function findAllChildComments(
+  parentCommentId: string,
+  allComments: any[]
+): string[] {
+  const childIds: string[] = [];
+
+  // Find direct children
+  const directChildren = allComments.filter(
+    (comment) =>
+      comment.attributes?.payload?.body?.parent_comment_id === parentCommentId
+  );
+
+  // For each direct child, find their children recursively
+  directChildren.forEach((child) => {
+    childIds.push(child.shortname);
+    // Recursively find children of this child
+    const nestedChildren = findAllChildComments(child.shortname, allComments);
+    childIds.push(...nestedChildren);
+  });
+
+  return childIds;
+}
+
 export async function createReaction(
   shortname: string,
   spaceName: string,

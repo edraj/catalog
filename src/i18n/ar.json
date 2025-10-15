@@ -769,7 +769,19 @@
       "reply": "رد",
       "cancel": "إلغاء",
       "submit_reply": "نشر الرد",
-      "reply_placeholder": "اكتب ردك هنا..."
+      "reply_placeholder": "اكتب ردك هنا...",
+      "reply_added_successfully": "تم إضافة الرد بنجاح!",
+      "reply_failed": "فشل في إضافة الرد. حاول مرة أخرى.",
+      "reply_error": "حدث خطأ أثناء إضافة ردك.",
+      "delete": "حذف",
+      "confirm_delete": "هل أنت متأكد من أنك تريد حذف هذا التعليق؟",
+      "confirm_delete_with_replies": "هل أنت متأكد من أنك تريد حذف هذا التعليق و {count} ردود عليه؟",
+      "delete_not_allowed": "ليس لديك إذن لحذف هذا التعليق.",
+      "deleted_successfully": "تم حذف التعليق بنجاح!",
+      "deleted_with_replies_successfully": "تم حذف {count} تعليقات بنجاح!",
+      "delete_with_replies_warning": "سيتم حذف التعليق و {count} ردود عليه",
+      "delete_failed": "فشل في حذف التعليق. حاول مرة أخرى.",
+      "delete_error": "حدث خطأ أثناء حذف التعليق."
     },
     "login_prompt": {
       "title": "تسجيل الدخول مطلوب",
