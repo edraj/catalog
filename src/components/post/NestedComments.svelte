@@ -2,7 +2,12 @@
   import { _ } from "@/i18n";
   import { formatDate } from "@/lib/helpers";
   import { user } from "@/stores/user";
-  import { createComment } from "@/lib/dmart_services";
+  import {
+    createComment,
+    deleteComment,
+    deleteMultipleComments,
+    findAllChildComments,
+  } from "@/lib/dmart_services";
   import {
     successToastMessage,
     errorToastMessage,
@@ -13,6 +18,7 @@
     spaceName: string;
     subpath: string;
     itemShortname: string;
+    entryOwnerShortname: string;
     onCommentAdded?: () => void;
   }
 
@@ -21,12 +27,14 @@
     spaceName,
     subpath,
     itemShortname,
+    entryOwnerShortname,
     onCommentAdded = () => {},
   }: Props = $props();
 
   let replyingTo: string | null = $state(null);
   let replyText: string = $state("");
   let isSubmitting: boolean = $state(false);
+  let deletingCommentId: string | null = $state(null);
 
   function organizeComments(comments: any[]) {
     const commentMap = new Map();
@@ -74,6 +82,80 @@
   function cancelReply() {
     replyingTo = null;
     replyText = "";
+  }
+
+  function canDeleteComment(comment: any): boolean {
+    if (!$user?.shortname) return false;
+
+    const commentOwner = getCommentAuthor(comment);
+    return (
+      commentOwner === $user.shortname || // Comment owner can delete their own comment
+      entryOwnerShortname === $user.shortname // Entry owner can delete any comment on their entry
+    );
+  }
+
+  async function handleDeleteComment(comment: any) {
+    if (!canDeleteComment(comment)) {
+      errorToastMessage($_("post_detail.comments.delete_not_allowed"));
+      return;
+    }
+
+    // Find all child comments that will be deleted
+    const childCommentIds = findAllChildComments(comment.shortname, comments);
+    const hasReplies = childCommentIds.length > 0;
+
+    // Show appropriate confirmation message
+    const confirmMessage = hasReplies
+      ? $_("post_detail.comments.confirm_delete_with_replies", {
+          values: { count: childCommentIds.length },
+        })
+      : $_("post_detail.comments.confirm_delete");
+
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    deletingCommentId = comment.shortname;
+
+    try {
+      let success = false;
+
+      if (hasReplies) {
+        // Delete all child comments first, then the parent
+        const allCommentsToDelete = [...childCommentIds, comment.shortname];
+        success = await deleteMultipleComments(
+          allCommentsToDelete,
+          spaceName,
+          subpath,
+          itemShortname
+        );
+      } else {
+        // Delete just the single comment
+        success = await deleteComment(
+          comment.shortname,
+          spaceName,
+          subpath,
+          itemShortname
+        );
+      }
+
+      if (success) {
+        const message = hasReplies
+          ? $_("post_detail.comments.deleted_with_replies_successfully", {
+              values: { count: childCommentIds.length + 1 },
+            })
+          : $_("post_detail.comments.deleted_successfully");
+        successToastMessage(message);
+        onCommentAdded(); // Refresh the comments
+      } else {
+        errorToastMessage($_("post_detail.comments.delete_failed"));
+      }
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      errorToastMessage($_("post_detail.comments.delete_error"));
+    } finally {
+      deletingCommentId = null;
+    }
   }
 
   async function submitReply() {
@@ -144,28 +226,99 @@
             </div>
             <div class="comment-meta">
               <span class="comment-date">{getCommentDate(comment)}</span>
-              {#if $user?.shortname}
-                <button
-                  class="reply-button"
-                  onclick={() => startReply(comment.shortname)}
-                  disabled={replyingTo === comment.shortname}
-                >
-                  <svg
-                    class="reply-icon"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+              <div class="comment-actions">
+                {#if $user?.shortname}
+                  <button
+                    class="reply-button"
+                    onclick={() => startReply(comment.shortname)}
+                    disabled={replyingTo === comment.shortname}
                   >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
-                    />
-                  </svg>
-                  {$_("post_detail.comments.reply")}
-                </button>
-              {/if}
+                    <svg
+                      class="reply-icon"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
+                      />
+                    </svg>
+                    {$_("post_detail.comments.reply")}
+                  </button>
+                {/if}
+                {#if canDeleteComment(comment)}
+                  {@const hasReplies = comment.replies.length > 0}
+                  <button
+                    class="delete-button {hasReplies ? 'has-replies' : ''}"
+                    onclick={() => handleDeleteComment(comment)}
+                    disabled={deletingCommentId === comment.shortname}
+                    title={hasReplies
+                      ? $_("post_detail.comments.delete_with_replies_warning", {
+                          values: { count: comment.replies.length },
+                        })
+                      : $_("post_detail.comments.delete")}
+                  >
+                    {#if deletingCommentId === comment.shortname}
+                      <svg
+                        class="animate-spin delete-icon"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          class="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          stroke-width="4"
+                        ></circle>
+                        <path
+                          class="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                    {:else}
+                      <svg
+                        class="delete-icon"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                      </svg>
+                      {#if hasReplies}
+                        <svg
+                          class="warning-icon"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.268 16.5c-.77.833.192 2.5 1.732 2.5z"
+                          />
+                        </svg>
+                      {/if}
+                    {/if}
+                    {$_("post_detail.comments.delete")}
+                    {#if hasReplies}
+                      <span class="reply-count">({comment.replies.length})</span
+                      >
+                    {/if}
+                  </button>
+                {/if}
+              </div>
             </div>
           </div>
           <div class="comment-content">
@@ -256,6 +409,49 @@
                   </div>
                   <div class="comment-meta">
                     <span class="comment-date">{getCommentDate(reply)}</span>
+                    {#if canDeleteComment(reply)}
+                      <button
+                        class="delete-button small"
+                        onclick={() => handleDeleteComment(reply)}
+                        disabled={deletingCommentId === reply.shortname}
+                      >
+                        {#if deletingCommentId === reply.shortname}
+                          <svg
+                            class="animate-spin delete-icon"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              class="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              stroke-width="4"
+                            ></circle>
+                            <path
+                              class="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
+                          </svg>
+                        {:else}
+                          <svg
+                            class="delete-icon"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
+                        {/if}
+                      </button>
+                    {/if}
                   </div>
                 </div>
                 <div class="comment-content">
@@ -334,6 +530,12 @@
     color: #64748b;
   }
 
+  .comment-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
   .reply-button {
     display: flex;
     align-items: center;
@@ -362,6 +564,74 @@
   .reply-icon {
     width: 0.875rem;
     height: 0.875rem;
+  }
+
+  .delete-button {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    background: transparent;
+    border: 1px solid #fecaca;
+    border-radius: 0.375rem;
+    color: #dc2626;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .delete-button.small {
+    padding: 0.125rem 0.375rem;
+    font-size: 0.625rem;
+  }
+
+  .delete-button:hover:not(:disabled) {
+    background: #fef2f2;
+    color: #b91c1c;
+    border-color: #f87171;
+  }
+
+  .delete-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .delete-icon {
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+
+  .delete-button.small .delete-icon {
+    width: 0.75rem;
+    height: 0.75rem;
+  }
+
+  .delete-button.has-replies {
+    border-color: #fed7aa;
+    color: #ea580c;
+    background: #fff7ed;
+  }
+
+  .delete-button.has-replies:hover:not(:disabled) {
+    background: #fed7aa;
+    color: #c2410c;
+    border-color: #fb923c;
+  }
+
+  .warning-icon {
+    width: 0.75rem;
+    height: 0.75rem;
+    color: #f59e0b;
+  }
+
+  .reply-count {
+    font-size: 0.625rem;
+    font-weight: 600;
+    color: #f59e0b;
+    background: #fef3c7;
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+    margin-left: 0.25rem;
   }
 
   .comment-content {
@@ -491,6 +761,11 @@
 
     .comment-meta {
       gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .comment-actions {
+      gap: 0.375rem;
     }
 
     .reply-actions {
@@ -499,6 +774,24 @@
 
     .reply-item {
       margin-left: 0.5rem;
+    }
+
+    .reply-button,
+    .delete-button {
+      font-size: 0.625rem;
+      padding: 0.125rem 0.375rem;
+    }
+
+    .reply-icon,
+    .delete-icon,
+    .warning-icon {
+      width: 0.75rem;
+      height: 0.75rem;
+    }
+
+    .reply-count {
+      font-size: 0.5rem;
+      padding: 0.0625rem 0.125rem;
     }
   }
 </style>

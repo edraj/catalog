@@ -375,6 +375,7 @@
           {spaceName}
           subpath={actualSubpath}
           {itemShortname}
+          entryOwnerShortname={postData.owner_shortname}
           onCommentAdded={loadPostData}
         />
         <InteractiveForm

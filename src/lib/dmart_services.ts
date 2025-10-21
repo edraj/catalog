@@ -14,6 +14,7 @@ import { user } from "@/stores/user";
 import { get } from "svelte/store";
 import type { Translation } from "@edraj/tsdmart/dmart.model";
 import { getFileType } from "./helpers";
+import { tick } from "svelte";
 
 /**
  * Retrieves the current user's profile information
@@ -1302,6 +1303,74 @@ export async function createComment(
   return response.status == "success" && response.records.length > 0;
 }
 
+export async function deleteComment(
+  commentShortname: string,
+  spaceName: string,
+  subpath: string,
+  entryShortname: string
+) {
+  const actionRequest: ActionRequest = {
+    space_name: spaceName,
+    request_type: RequestType.delete,
+    records: [
+      {
+        resource_type: ResourceType.comment,
+        shortname: commentShortname,
+        subpath: `${subpath}/${entryShortname}`,
+        attributes: {},
+      },
+    ],
+  };
+
+  const response: ActionResponse = await Dmart.request(actionRequest);
+  return response.status === "success" && response.records.length > 0;
+}
+
+export async function deleteMultipleComments(
+  commentShortnames: string[],
+  spaceName: string,
+  subpath: string,
+  entryShortname: string
+) {
+  if (commentShortnames.length === 0) return true;
+
+  const records = commentShortnames.map((shortname) => ({
+    resource_type: ResourceType.comment,
+    shortname: shortname,
+    subpath: `${subpath}/${entryShortname}`,
+    attributes: {},
+  }));
+
+  const actionRequest: ActionRequest = {
+    space_name: spaceName,
+    request_type: RequestType.delete,
+    records: records,
+  };
+
+  const response: ActionResponse = await Dmart.request(actionRequest);
+  return response.status === "success";
+}
+
+export function findAllChildComments(
+  parentCommentId: string,
+  allComments: any[]
+): string[] {
+  const childIds: string[] = [];
+
+  const directChildren = allComments.filter(
+    (comment) =>
+      comment.attributes?.payload?.body?.parent_comment_id === parentCommentId
+  );
+
+  directChildren.forEach((child) => {
+    childIds.push(child.shortname);
+    const nestedChildren = findAllChildComments(child.shortname, allComments);
+    childIds.push(...nestedChildren);
+  });
+
+  return childIds;
+}
+
 export async function createReaction(
   shortname: string,
   spaceName: string,
@@ -2527,23 +2596,27 @@ export async function makeUserGroupAdmin(
   return await updateGroup(groupShortname, { adminIds: updatedAdmins });
 }
 
-export async function createReport(reportData: {
-  title: string;
-  description: string;
-  reported_entry: string;
-  reported_entry_title: string;
-  space_name: string;
-  subpath: string;
-  report_type: string;
-  status?: string;
-  type?: string;
-}) {
+export async function createReport(
+  reportData: {
+    title: string;
+    description: string;
+    reported_entry: string;
+    reported_entry_title: string;
+    space_name: string;
+    subpath: string;
+    report_type: string;
+    status?: string;
+    type?: string;
+  },
+  schema_shortname: string = "report",
+  workflow_shortname: string = "report_workflow"
+) {
   const actionRequest: ActionRequest = {
-    space_name: "reports",
+    space_name: "Report",
     request_type: RequestType.create,
     records: [
       {
-        resource_type: ResourceType.content,
+        resource_type: ResourceType.ticket,
         shortname: "auto",
         subpath: "/reports",
         attributes: {
@@ -2554,8 +2627,10 @@ export async function createReport(reportData: {
             ku: reportData.title,
           },
           tags: [reportData.report_type, reportData.status || "pending"],
+          workflow_shortname: workflow_shortname,
           payload: {
             content_type: ContentType.json,
+            schema_shortname: schema_shortname,
             body: {
               title: reportData.title,
               description: reportData.description,
@@ -2564,7 +2639,6 @@ export async function createReport(reportData: {
               reported_space: reportData.space_name,
               reported_subpath: reportData.subpath,
               report_type: reportData.report_type,
-              status: reportData.status || "pending",
               created_at: new Date().toISOString(),
               replies: [],
             },
@@ -2583,7 +2657,7 @@ export async function getReports(
   limit = 100,
   offset = 0
 ): Promise<ApiQueryResponse> {
-  let searchQuery = "@resource_type:content";
+  let searchQuery = "@resource_type:ticket";
   if (status) {
     searchQuery += ` AND @tags:${status}`;
   }
@@ -2591,7 +2665,7 @@ export async function getReports(
   const response = await Dmart.query(
     {
       type: QueryType.search,
-      space_name: "reports",
+      space_name: "Report",
       subpath: "/reports",
       search: searchQuery,
       limit: limit,
@@ -2613,9 +2687,9 @@ export async function getReportDetails(
   try {
     const entity = await getEntity(
       reportShortname,
-      "reports",
+      "Report",
       "/reports",
-      ResourceType.content,
+      ResourceType.ticket,
       "managed",
       true,
       true
@@ -2629,7 +2703,7 @@ export async function getReportDetails(
 
 export async function updateReportStatus(
   reportShortname: string,
-  newStatus: string,
+  newStatus: "Pending" | "Resolved" | "Canceled",
   adminReply?: string
 ) {
   try {
@@ -2646,27 +2720,33 @@ export async function updateReportStatus(
         timestamp: new Date().toISOString(),
         admin_shortname: "dmart",
         reply: adminReply,
-        action: newStatus === "solved" ? "resolved" : "replied",
+        action:
+          newStatus === "Resolved"
+            ? "Resolved"
+            : newStatus === "Canceled"
+            ? "Canceled"
+            : "Replied",
       });
     }
 
     const updatedBody = {
       ...currentBody,
-      status: newStatus,
       replies: updatedReplies,
       updated_at: new Date().toISOString(),
     };
 
-    const actionRequest: ActionRequest = {
-      space_name: "reports",
+    const workflowAction = newStatus;
+    const updateRequest: ActionRequest = {
+      space_name: "Report",
       request_type: RequestType.update,
       records: [
         {
-          resource_type: ResourceType.content,
+          resource_type: ResourceType.ticket,
           shortname: reportShortname,
-          subpath: "/reports",
+          subpath: "reports",
           attributes: {
             is_active: true,
+            tags: [currentReport.tags?.[0] || "general", newStatus],
             payload: {
               content_type: ContentType.json,
               body: updatedBody,
@@ -2676,8 +2756,19 @@ export async function updateReportStatus(
       ],
     };
 
-    const response: ActionResponse = await Dmart.request(actionRequest);
-    return response.status === "success";
+    const updateResponse: ActionResponse = await Dmart.request(updateRequest);
+    if (updateResponse.status !== "success") {
+      return false;
+    }
+
+    const progressResponse = await Dmart.progress_ticket(
+      "Report",
+      "reports",
+      reportShortname,
+      workflowAction
+    );
+
+    return progressResponse.status === "success";
   } catch (error) {
     console.error("Error updating report status:", error);
     return false;
@@ -2690,23 +2781,69 @@ export async function replyToReport(
   action?: "delete_entry" | "warn_user" | "no_action"
 ) {
   try {
-    const newStatus = action ? "solved" : "under_review";
+    let newStatus: "Pending" | "Resolved" | "Canceled" = action
+      ? "Resolved"
+      : "Pending";
 
-    if (action === "delete_entry") {
-      const reportDetails = await getReportDetails(reportShortname);
-      if (reportDetails?.payload.body.reported_entry) {
-        const entryShortname = reportDetails.payload.body.reported_entry;
-        const spaceName = reportDetails.payload.body.reported_space;
-        const subpath = reportDetails.payload.body.reported_subpath;
+    const reportDetails = await getReportDetails(reportShortname);
+    if (!reportDetails?.payload.body.reported_entry) {
+      console.warn("No reported entry found in report details");
+      return await updateReportStatus(
+        reportShortname,
+        newStatus,
+        `${reply}${action ? ` [Action taken: ${action}]` : ""}`
+      );
+    }
+
+    const entryShortname = reportDetails.payload.body.reported_entry;
+    const spaceName = reportDetails.payload.body.reported_space;
+    const subpath = reportDetails.payload.body.reported_subpath;
+
+    let reportedEntity = null;
+    let entryOwner = null;
+
+    try {
+      const resourceTypesToTry = [
+        ResourceType.content,
+        ResourceType.ticket,
+        ResourceType.media,
+      ];
+
+      for (const resourceType of resourceTypesToTry) {
+        try {
+          reportedEntity = await getEntity(
+            entryShortname,
+            spaceName,
+            subpath,
+            resourceType,
+            "managed",
+            false,
+            false
+          );
+
+          if (reportedEntity) {
+            entryOwner = reportedEntity.owner_shortname;
+            break;
+          }
+        } catch (e) {}
+      }
+    } catch (error) {
+      console.warn("Could not retrieve reported entity details:", error);
+    }
+
+    if (action === "delete_entry" && reportedEntity) {
+      try {
         await updateEntity(
           entryShortname,
           spaceName,
           subpath,
-          ResourceType.content,
+          reportedEntity.resource_type || ResourceType.content,
           { is_active: false },
           "",
           ""
         );
+      } catch (error) {
+        console.error("Error deactivating reported entry:", error);
       }
     }
 
