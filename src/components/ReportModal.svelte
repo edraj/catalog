@@ -6,6 +6,8 @@
     successToastMessage,
     errorToastMessage,
   } from "@/lib/toasts_messages";
+  import { params } from "@roxi/routify";
+  import ReportThankYouModal from "./ReportThankYouModal.svelte";
 
   const dispatch = createEventDispatcher();
 
@@ -18,6 +20,7 @@
   let isSubmitting = false;
   let reportTitle = "";
   let reportDescription = "";
+  let showThankYouModal = false;
 
   const reportTypes = [
     {
@@ -47,6 +50,7 @@
     reportDescription = "";
     selectedReportType = "other";
     isSubmitting = false;
+    showThankYouModal = false;
   }
 
   async function submitReport() {
@@ -76,10 +80,8 @@
       const success = await createReport(reportData);
 
       if (success) {
-        successToastMessage(
-          $_("reports.success.submitted") || "Report submitted successfully"
-        );
         closeModal();
+        showThankYouModal = true;
         dispatch("reportSubmitted");
       } else {
         errorToastMessage(
@@ -253,6 +255,11 @@
     </div>
   </div>
 {/if}
+
+<ReportThankYouModal
+  show={showThankYouModal}
+  onClose={() => (showThankYouModal = false)}
+/>
 
 <style>
   .modal-backdrop {

@@ -25,14 +25,17 @@
   const statusFilters = [
     { value: "all", label: $_("reports.admin.filters.all") || "All Reports" },
     {
-      value: "pending",
+      value: "Pending",
       label: $_("reports.admin.filters.pending") || "Pending",
     },
     {
-      value: "under_review",
-      label: $_("reports.admin.filters.under_review") || "Under Review",
+      value: "Resolved",
+      label: $_("reports.admin.filters.resolved") || "Resolved",
     },
-    { value: "solved", label: $_("reports.admin.filters.solved") || "Solved" },
+    {
+      value: "Canceled",
+      label: $_("reports.admin.filters.canceled") || "Canceled",
+    },
   ];
 
   const actionOptions = [
@@ -184,12 +187,12 @@
 
   function getStatusColor(status) {
     switch (status) {
-      case "pending":
+      case "Pending":
         return "bg-yellow-100 text-yellow-800";
-      case "under_review":
-        return "bg-blue-100 text-blue-800";
-      case "solved":
+      case "Resolved":
         return "bg-green-100 text-green-800";
+      case "Canceled":
+        return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -293,7 +296,7 @@
                     report.reportData.status
                   )}"
                 >
-                  {report.reportData.status || "pending"}
+                  {report.reportData.status || "Pending"}
                 </span>
               </div>
             </div>
@@ -357,7 +360,7 @@
             </div>
 
             <div class="report-actions">
-              {#if report.reportData.status !== "solved"}
+              {#if report.attributes.state === "Pending"}
                 <button
                   class="action-btn reply-btn"
                   onclick={() => openReplyModal(report)}
@@ -365,27 +368,30 @@
                   {$_("reports.admin.actions.reply") || "Reply"}
                 </button>
 
-                {#if report.reportData.status === "pending"}
-                  <button
-                    class="action-btn review-btn"
-                    onclick={() =>
-                      updateStatus(report.shortname, "under_review")}
-                  >
-                    {$_("reports.admin.actions.mark_reviewing") ||
-                      "Mark as Under Review"}
-                  </button>
-                {/if}
-
                 <button
                   class="action-btn solve-btn"
-                  onclick={() => updateStatus(report.shortname, "solved")}
+                  onclick={() => updateStatus(report.shortname, "Resolved")}
                 >
-                  {$_("reports.admin.actions.mark_solved") || "Mark as Solved"}
+                  {$_("reports.admin.actions.mark_resolved") ||
+                    "Mark as Resolved"}
                 </button>
-              {:else}
-                <span class="solved-text">
-                  {$_("reports.admin.status.solved") ||
+
+                <button
+                  class="action-btn cancel-btn"
+                  onclick={() => updateStatus(report.shortname, "Canceled")}
+                >
+                  {$_("reports.admin.actions.mark_canceled") ||
+                    "Mark as Canceled"}
+                </button>
+              {:else if report.attributes.state === "Resolved"}
+                <span class="resolved-text">
+                  {$_("reports.admin.status.resolved") ||
                     "This report has been resolved"}
+                </span>
+              {:else if report.attributes.state === "Canceled"}
+                <span class="canceled-text">
+                  {$_("reports.admin.status.canceled") ||
+                    "This report has been Canceled"}
                 </span>
               {/if}
             </div>
@@ -779,6 +785,26 @@
 
   .solve-btn:hover {
     background-color: #059669;
+  }
+
+  .cancel-btn {
+    background-color: #dc2626;
+  }
+
+  .cancel-btn:hover {
+    background-color: #b91c1c;
+  }
+
+  .resolved-text {
+    font-size: 0.875rem;
+    color: #059669;
+    font-style: italic;
+  }
+
+  .canceled-text {
+    font-size: 0.875rem;
+    color: #dc2626;
+    font-style: italic;
   }
 
   .solved-text {

@@ -29,6 +29,9 @@
   let connectionStatus = $state("Disconnected");
   let notificationError = $state(null);
 
+  let showReportModal = $state(false);
+  let selectedReportNotification = $state(null);
+
   onMount(async () => {
     $newNotificationType = "";
     await loadNotifications();
@@ -56,8 +59,8 @@
         ws.send(
           JSON.stringify({
             type: "notification_subscription",
-            space_name: "Reports",
-            subpath: "__ALL__",
+            space_name: "Report",
+            subpath: "/reports",
           })
         );
 
@@ -100,9 +103,6 @@
 
   function handleWebSocketMessage(data) {
     if (data.type === "connection_response") {
-      if (data.message?.status === "success") {
-        successToastMessage("WebSocket connected");
-      }
       return;
     }
 
@@ -110,9 +110,11 @@
       const message = data.message;
 
       if (
-        message.action_type === "create" &&
+        (message.action_type === "create" ||
+          message.action_type === "update") &&
         (message.resource_type === "comment" ||
-          message.resource_type === "reaction")
+          message.resource_type === "reaction" ||
+          message.resource_type === "ticket")
       ) {
         $newNotificationType = `create_${message.resource_type}`;
         loadNotifications(true);
@@ -124,8 +126,9 @@
       const message = data.message;
 
       if (
-        message.action_type === "create" &&
-        (message.space === "Reports" || message.space === "catalog")
+        (message.action_type === "create" ||
+          message.action_type === "update") &&
+        (message.space === "Report" || message.space === "catalog")
       ) {
         $newNotificationType = message.action_type;
         loadNotifications(true);
@@ -196,9 +199,11 @@
                   resource_type === ResourceType.ticket
                     ? entry_shortname
                     : _notification.parent_shortname,
-                  _notification.parent_space_name || "catalog",
-                  _notification.parent_subpath || "/",
-                  ResourceType.content,
+                  _notification.parent_space_name,
+                  _notification.parent_subpath,
+                  resource_type === ResourceType.ticket
+                    ? ResourceType.content
+                    : ResourceType.ticket,
                   "public"
                 );
 
@@ -280,6 +285,15 @@
       await markNotification($user.shortname, notification.shortname);
 
       if (
+        notification.resource_type === ResourceType.ticket ||
+        notification.resource_type === "ticket"
+      ) {
+        selectedReportNotification = notification;
+        showReportModal = true;
+        return;
+      }
+
+      if (
         notification.parent_shortname &&
         notification.parent_space_name &&
         notification.parent_subpath
@@ -296,7 +310,6 @@
           }
         );
       } else if (notification.entry_shortname && notification.entry_subpath) {
-        // Fallback to entry data if available
         $goto(
           "/dashboard/admin/[space_name]/[subpath]/[shortname]/[resource_type]",
           {
