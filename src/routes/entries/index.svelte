@@ -14,7 +14,6 @@
     ClockOutline,
     EditOutline,
     EyeOutline,
-    FilterOutline,
     FolderOutline,
     HeartSolid,
     MessagesSolid,
@@ -22,15 +21,18 @@
     PlusOutline,
     SearchOutline,
     TagOutline,
+    LayersSolid,
   } from "flowbite-svelte-icons";
 
   $goto;
   let entities = $state([]);
   let filteredEntities = $state([]);
+  let availableSpaces = $state([]);
   let isLoading = $state(true);
   let searchTerm = $state("");
   let statusFilter = $state("all");
   let resourceTypeFilter = $state("all");
+  let spaceFilter = $state("all");
   let sortBy = $state("updated_at");
   let sortOrder = $state("desc");
 
@@ -42,17 +44,14 @@
   function getLocalizedDisplayName(entity) {
     const displayname = entity.attributes?.displayname;
 
-    // If displayname is null or undefined, use shortname as fallback
     if (!displayname) {
       return entity.shortname || $_("my_entries.untitled");
     }
 
-    // If displayname is a string (not an object), return it directly
     if (typeof displayname === "string") {
       return displayname;
     }
 
-    // If displayname is an object with localized names
     const localizedName =
       displayname[$locale] ||
       displayname.en ||
@@ -61,27 +60,41 @@
     return localizedName || entity.shortname || $_("my_entries.untitled");
   }
 
+  function getLocalizedSpaceName(space) {
+    const displayname = space.attributes?.displayname;
+
+    if (!displayname) {
+      return space.shortname;
+    }
+
+    if (typeof displayname === "string") {
+      return displayname;
+    }
+
+    const localizedName =
+      displayname[$locale] ||
+      displayname.en ||
+      displayname.ar ||
+      displayname.ku;
+    return localizedName || space.shortname;
+  }
+
   function getContentPreview(entity) {
     const payload = entity.attributes?.payload;
     if (!payload || !payload.body) return "";
 
     const body = payload.body;
 
-    // Handle different content types
     if (entity.resource_type === "content") {
-      // For HTML content type, body is a string
       if (payload.content_type === "html" && typeof body === "string") {
         return body;
       }
 
-      // For JSON content type, body might be an object
       if (payload.content_type === "json") {
         if (typeof body === "object") {
-          // Try to extract meaningful text from JSON object
           if (body.body && typeof body.body === "string") {
             return body.body;
           }
-          // If it's an empty object or complex structure, return a summary
           return JSON.stringify(body).substring(0, 100) + "...";
         }
         if (typeof body === "string") {
@@ -89,7 +102,6 @@
         }
       }
 
-      // For other content types or if body is a string
       if (typeof body === "string") {
         return body;
       }
@@ -127,6 +139,33 @@
   onMount(async () => {
     await fetchEntities();
   });
+
+  function extractUserSpaces() {
+    availableSpaces = [];
+
+    if (!entities || entities.length === 0) {
+      return;
+    }
+
+    const spaceCountMap = new Map();
+
+    entities.forEach((entity) => {
+      if (entity.space_name) {
+        const count = spaceCountMap.get(entity.space_name) || 0;
+        spaceCountMap.set(entity.space_name, count + 1);
+      }
+    });
+
+    availableSpaces = Array.from(spaceCountMap.keys())
+      .sort()
+      .map((spaceName) => ({
+        shortname: spaceName,
+        entryCount: spaceCountMap.get(spaceName),
+        attributes: {
+          displayname: spaceName,
+        },
+      }));
+  }
 
   $effect(() => {
     if ($params.space_name && $params.subpath && $params.shortname) {
@@ -166,7 +205,6 @@
         owner_shortname: entity.attributes?.owner_shortname || "",
         comment: entity.attachments?.comment?.length ?? 0,
         reaction: entity.attachments?.reaction?.length ?? 0,
-        // Store the full entity for debugging
         _raw: entity,
       }));
     } catch (error) {
@@ -175,6 +213,7 @@
       entities = [];
     } finally {
       isLoading = false;
+      extractUserSpaces();
       filterAndSortEntities();
     }
   }
@@ -189,7 +228,8 @@
           entity.title?.toLowerCase().includes(search) ||
           entity.content?.toLowerCase().includes(search) ||
           entity.tags?.some((tag) => tag.toLowerCase().includes(search)) ||
-          entity.resource_type?.toLowerCase().includes(search)
+          entity.resource_type?.toLowerCase().includes(search) ||
+          entity.space_name?.toLowerCase().includes(search)
       );
     }
 
@@ -199,23 +239,8 @@
       );
     }
 
-    if (statusFilter !== "all") {
-      filtered = filtered.filter((entity) => {
-        switch (statusFilter) {
-          case "active":
-            return entity.is_active === true;
-          case "inactive":
-            return entity.is_active === false;
-          case "pending":
-            return entity.state === "pending";
-          case "approved":
-            return entity.state === "approved";
-          case "rejected":
-            return entity.state === "rejected";
-          default:
-            return true;
-        }
-      });
+    if (spaceFilter !== "all") {
+      filtered = filtered.filter((entity) => entity.space_name === spaceFilter);
     }
 
     filtered.sort((a, b) => {
@@ -262,6 +287,18 @@
   }
 
   function handleSortChange() {
+    filterAndSortEntities();
+  }
+
+  function filterBySpace(spaceName) {
+    spaceFilter = spaceName;
+    filterAndSortEntities();
+  }
+
+  function clearAllFilters() {
+    searchTerm = "";
+    spaceFilter = "all";
+    resourceTypeFilter = "all";
     filterAndSortEntities();
   }
 
@@ -344,9 +381,9 @@
       </div>
     </div>
 
-    <!-- Updated filters to include resource type filter -->
+    <!-- Updated filters to include resource type and space filters -->
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
         <!-- Search -->
         <div class="relative">
           <SearchOutline
@@ -373,22 +410,22 @@
           <option value="folder">Folder</option>
         </select>
 
-        <!-- Status Filter -->
+        <!-- Space Filter -->
         <div class="relative">
-          <FilterOutline
-            class="absolute top-1/2 transform -translate-y-1/2 w-5 h-5 ms-2 text-gray-400 filter-icon"
+          <LayersSolid
+            class="absolute top-1/2 transform -translate-y-1/2 w-5 h-5 ms-2 text-gray-400 space-icon"
           />
           <select
-            bind:value={statusFilter}
+            bind:value={spaceFilter}
             onchange={handleFilterChange}
-            class="w-full filter-select py-3 pl-8 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 appearance-none bg-white"
+            class="w-full space-select py-3 pl-8 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 appearance-none bg-white"
           >
-            <option value="all">{$_("my_entries.filter.all_status")}</option>
-            <option value="active">{$_("my_entries.filter.published")}</option>
-            <option value="inactive">{$_("my_entries.filter.draft")}</option>
-            <option value="pending">{$_("my_entries.filter.pending")}</option>
-            <option value="approved">{$_("my_entries.filter.approved")}</option>
-            <option value="rejected">Rejected</option>
+            <option value="all">All Spaces</option>
+            {#each availableSpaces as space}
+              <option value={space.shortname}>
+                {getLocalizedSpaceName(space)} ({space.entryCount})
+              </option>
+            {/each}
           </select>
         </div>
 
@@ -408,17 +445,89 @@
           <option value="reactions">{$_("my_entries.sort.reactions")}</option>
           <option value="comments">{$_("my_entries.sort.comments")}</option>
         </select>
-
-        <!-- Sort Order -->
-        <select
-          bind:value={sortOrder}
-          onchange={handleSortChange}
-          class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 appearance-none bg-white sort-order-select"
-        >
-          <option value="desc">{$_("my_entries.sort.newest_first")}</option>
-          <option value="asc">{$_("my_entries.sort.oldest_first")}</option>
-        </select>
       </div>
+
+      <!-- Active Filters Display -->
+      {#if spaceFilter !== "all" || statusFilter !== "all" || resourceTypeFilter !== "all" || searchTerm.trim()}
+        <div class="mt-4 flex flex-wrap gap-2 items-center">
+          <span class="text-sm font-medium text-gray-600">Active filters:</span>
+
+          {#if searchTerm.trim()}
+            <span
+              class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800"
+            >
+              Search: "{searchTerm}"
+              <button
+                onclick={() => {
+                  searchTerm = "";
+                  handleSearch();
+                }}
+                class="ml-2 hover:bg-blue-200 rounded-full p-1"
+              >
+                ×
+              </button>
+            </span>
+          {/if}
+
+          {#if spaceFilter !== "all"}
+            <span
+              class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-800"
+            >
+              Space: {spaceFilter}
+              <button
+                onclick={() => {
+                  spaceFilter = "all";
+                  handleFilterChange();
+                }}
+                class="ml-2 hover:bg-purple-200 rounded-full p-1"
+              >
+                ×
+              </button>
+            </span>
+          {/if}
+
+          {#if resourceTypeFilter !== "all"}
+            <span
+              class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800"
+            >
+              Type: {resourceTypeFilter}
+              <button
+                onclick={() => {
+                  resourceTypeFilter = "all";
+                  handleFilterChange();
+                }}
+                class="ml-2 hover:bg-green-200 rounded-full p-1"
+              >
+                ×
+              </button>
+            </span>
+          {/if}
+
+          {#if statusFilter !== "all"}
+            <span
+              class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-yellow-100 text-yellow-800"
+            >
+              Status: {statusFilter}
+              <button
+                onclick={() => {
+                  statusFilter = "all";
+                  handleFilterChange();
+                }}
+                class="ml-2 hover:bg-yellow-200 rounded-full p-1"
+              >
+                ×
+              </button>
+            </span>
+          {/if}
+
+          <button
+            onclick={clearAllFilters}
+            class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors duration-150"
+          >
+            Clear all
+          </button>
+        </div>
+      {/if}
     </div>
 
     {#if isLoading}
@@ -454,7 +563,7 @@
       </div>
     {:else}
       <!-- Stats Summary -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
           <div class="flex items-center justify-between stats-item">
             <div>
@@ -476,63 +585,18 @@
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
           <div class="flex items-center justify-between stats-item">
             <div>
-              <p class="text-sm font-medium text-gray-600">
-                {$_("my_entries.stats.published")}
-              </p>
-              <p class="text-3xl font-bold text-green-600">
+              <p class="text-sm font-medium text-gray-600">Spaces Used</p>
+              <p class="text-3xl font-bold text-purple-600">
                 {formatNumberInText(
-                  entities.filter((e) => e.is_active && e.state === "approved")
-                    .length,
+                  new Set(entities.map((e) => e.space_name)).size,
                   $locale
                 )}
               </p>
             </div>
             <div
-              class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center"
+              class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center"
             >
-              <EyeOutline class="w-6 h-6 text-green-600" />
-            </div>
-          </div>
-        </div>
-
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <div class="flex items-center justify-between stats-item">
-            <div>
-              <p class="text-sm font-medium text-gray-600">
-                {$_("my_entries.stats.total_reactions")}
-              </p>
-              <p class="text-3xl font-bold text-red-500">
-                {formatNumberInText(
-                  entities.reduce((sum, e) => sum + (e.reaction || 0), 0),
-                  $locale
-                )}
-              </p>
-            </div>
-            <div
-              class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center"
-            >
-              <HeartSolid class="w-6 h-6 text-red-500" />
-            </div>
-          </div>
-        </div>
-
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <div class="flex items-center justify-between stats-item">
-            <div>
-              <p class="text-sm font-medium text-gray-600">
-                {$_("my_entries.stats.total_comments")}
-              </p>
-              <p class="text-3xl font-bold text-blue-600">
-                {formatNumberInText(
-                  entities.reduce((sum, e) => sum + (e.comment || 0), 0),
-                  $locale
-                )}
-              </p>
-            </div>
-            <div
-              class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center"
-            >
-              <MessagesSolid class="w-6 h-6 text-blue-600" />
+              <LayersSolid class="w-6 h-6 text-purple-600" />
             </div>
           </div>
         </div>
@@ -555,6 +619,11 @@
                   class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider table-header"
                 >
                   Type
+                </th>
+                <th
+                  class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider table-header"
+                >
+                  Space
                 </th>
                 <th
                   class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider table-header"
@@ -642,6 +711,16 @@
                     >
                       {entity.resource_type}
                     </span>
+                  </td>
+
+                  <td class="px-6 py-4">
+                    <button
+                      aria-label="Filter by space {entity.space_name}"
+                      onclick={() => filterBySpace(entity.space_name)}
+                      class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 hover:bg-indigo-200 transition-colors duration-150 cursor-pointer"
+                    >
+                      {entity.space_name}
+                    </button>
                   </td>
 
                   <td class="px-6 py-4">
@@ -741,6 +820,11 @@
     right: 0.75rem;
   }
 
+  .rtl .space-icon {
+    left: auto;
+    right: 0.75rem;
+  }
+
   .rtl .search-input {
     padding-left: 1rem;
     padding-right: 2.75rem;
@@ -748,6 +832,12 @@
   }
 
   .rtl .filter-select {
+    padding-left: 1rem;
+    padding-right: 2.75rem;
+    text-align: right;
+  }
+
+  .rtl .space-select {
     padding-left: 1rem;
     padding-right: 2.75rem;
     text-align: right;

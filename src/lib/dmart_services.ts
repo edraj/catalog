@@ -155,14 +155,16 @@ export async function getEntities(search) {
 }
 
 export async function getMyEntities(shortname: string = "") {
-  const result = await getSpaces();
+  const result = await getSpaces(false, "managed", [
+    "messages",
+    "poll",
+    "surveys",
+  ]);
   const spaces = result.records.map((space) => space.shortname);
 
   const promises = spaces.map(async (space) => {
     let currentUser = get(user);
-    const search = `@owner_shortname:${
-      shortname || currentUser.shortname
-    } and -@space_name:messages`;
+    const search = `@owner_shortname:${shortname || currentUser.shortname}`;
 
     const queryRequest: QueryRequest = {
       filter_shortnames: [],
