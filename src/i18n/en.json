@@ -1371,6 +1371,8 @@
       "create_folder_failed": "Failed to create folder",
       "create_folder_error": "Error creating folder",
       "create_schema_failed": "Failed to create schema",
+      "create_workflow_failed": "Failed to create workflow",
+      "create_workflow_error": "Error creating workflow",
       "create_schema_error": "Error creating schema"
     },
     "empty": {
@@ -1436,7 +1438,8 @@
       "open": "Open",
       "view": "View",
       "delete": "Delete",
-      "create_schema": "Create Schema"
+      "create_schema": "Create Schema",
+      "create_workflow": "Create Workflow"
     },
     "filters": {
       "title": "Filters",

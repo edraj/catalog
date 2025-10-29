@@ -1325,7 +1325,9 @@
       "create_folder_failed": "درووستكردنی بوخچه سهركهوتوو نەبوو",
       "create_folder_error": "ههڵهی دروستكردنی بوخچه",
       "create_schema_failed": "درووستكردنی شێوازی سهركهوتوو نەبوو",
-      "create_schema_error": "ههڵهی دروستكردنی شێوازی"
+      "create_schema_error": "ههڵهی دروستكردنی شێوازی",
+      "create_workflow_failed": "شکستی دروستکردنی ڕێکاری",
+      "create_workflow_error": "هەڵە لە دروستکردنی ڕێکاری"
     },
     "confirm": {
       "delete_item": "ئایا دڵنیایت دهتهوێت '{name}' بسڕیتەوە؟"
@@ -1345,7 +1347,8 @@
       "open": "بكهرهوه",
       "view": "بینین",
       "delete": "بیسڕەوە",
-      "create_schema": "دروستکردنی شێوازی نوێ"
+      "create_schema": "دروستکردنی شێوازی نوێ",
+      "create_workflow": "دروستکردنی ڕێکاری"
     },
     "filters": {
       "title": "پاڵاوتن",
