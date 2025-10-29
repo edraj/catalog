@@ -1406,7 +1406,9 @@
       "create_folder_failed": "فشل إنشاء المجلد",
       "create_folder_error": "خطأ في إنشاء المجلد",
       "create_schema_failed": "فشل إنشاء المخطط",
-      "create_schema_error": "خطأ في إنشاء المخطط"
+      "create_schema_error": "خطأ في إنشاء المخطط",
+      "create_workflow_failed": "فشل إنشاء سير العمل",
+      "create_workflow_error": "خطأ في إنشاء سير العمل"
     },
     "confirm": {
       "delete_item": "هل أنت متأكد أنك تريد حذف '{name}'؟"
@@ -1426,7 +1428,8 @@
       "open": "فتح",
       "view": "عرض",
       "delete": "حذف",
-      "create_schema": "إنشاء مخطط"
+      "create_schema": "إنشاء مخطط",
+      "create_workflow": "إنشاء سير عمل"
     },
     "filters": {
       "title": "الفلاتر",

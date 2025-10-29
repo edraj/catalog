@@ -17,6 +17,7 @@
   import { formatNumber } from "@/lib/helpers";
   import SchemaForm from "@/components/forms/SchemaForm.svelte";
   import CreateTemplateModal from "@/components/CreateTemplateModal.svelte";
+  import WorkflowForm from "@/components/forms/WorkflowForm.svelte";
 
   $goto;
 
@@ -111,8 +112,6 @@
   onMount(async () => {
     await initializeContent();
   });
-
-  // The initialization should only happen on mount, not on every param change
 
   async function loadContents(reset = false) {
     if (reset && $isLoading) return;
@@ -218,7 +217,6 @@
   function applyFilters() {
     let filtered = [...$allContents];
 
-    // Filter by search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter((item) => {
@@ -236,12 +234,10 @@
       });
     }
 
-    // Filter by type
     if (selectedType !== "all") {
       filtered = filtered.filter((item) => item.resource_type === selectedType);
     }
 
-    // Filter by status
     if (selectedStatus !== "all") {
       filtered = filtered.filter((item) => {
         const isActive = item.attributes?.is_active;
@@ -249,7 +245,6 @@
       });
     }
 
-    // Sort the filtered results
     filtered.sort((a, b) => {
       let aValue, bValue;
 
@@ -288,7 +283,6 @@
     });
 
     filteredContents = filtered;
-    // Reset display count when filters change
     // currentDisplayCount = itemsPerLoad;
     updateDisplayedContents();
   }
@@ -648,10 +642,23 @@
   let showCreateSchemaModal = $state(false);
   let schemaContent = $state({});
   let isCreatingSchema = $state(false);
+  let showCreateWorkflowModal = $state(false);
+  let workflowContent = $state({});
+  let isCreatingWorkflow = $state(false);
 
   function handleCreateSchema() {
     schemaContent = {};
     showCreateSchemaModal = true;
+  }
+
+  function handleCreateWorkflow() {
+    workflowContent = {
+      name: "",
+      states: [],
+      illustration: "",
+      initial_state: [],
+    };
+    showCreateWorkflowModal = true;
   }
 
   async function handleSaveschema(event) {
@@ -691,6 +698,53 @@
       alert($_("admin_content.error.create_schema_error") + ": " + err.message);
     } finally {
       isCreatingSchema = false;
+    }
+  }
+
+  async function handleSaveWorkflow(event) {
+    event.preventDefault();
+    isCreatingWorkflow = true;
+
+    try {
+      const response = await Dmart.request({
+        space_name: spaceName,
+        request_type: RequestType.create,
+        records: [
+          {
+            resource_type: ResourceType.content,
+            shortname: metaContent.shortname || "auto",
+            subpath: `/${$actualSubpath}`,
+            attributes: {
+              displayname:
+                metaContent.displayname ||
+                ({
+                  ar: (workflowContent as any).name || "",
+                  en: (workflowContent as any).name || "",
+                } as any),
+              description: metaContent.description || {},
+              payload: {
+                body: workflowContent,
+                content_type: "json",
+              },
+              is_active: true,
+            },
+          },
+        ],
+      });
+
+      if (response) {
+        showCreateWorkflowModal = false;
+        await loadContents(true);
+      } else {
+        alert($_("admin_content.error.create_workflow_failed"));
+      }
+    } catch (err) {
+      console.error("Error creating workflow:", err);
+      alert(
+        $_("admin_content.error.create_workflow_error") + ": " + err.message
+      );
+    } finally {
+      isCreatingWorkflow = false;
     }
   }
 </script>
@@ -826,6 +880,29 @@
                   />
                 </svg>
                 {$_("admin_content.actions.create_schema")}
+              </button>
+            {/if}
+            {#if $actualSubpath === "workflows"}
+              <button
+                onclick={handleCreateWorkflow}
+                class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-2 shadow-sm"
+                class:flex-row-reverse={$isRTL}
+                aria-label={$_("admin_content.actions.create_workflow")}
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 4v16m8-8H4m4-8h8v8H8z"
+                  />
+                </svg>
+                {$_("admin_content.actions.create_workflow")}
               </button>
             {/if}
           {/if}
@@ -1516,6 +1593,98 @@
               {$_("admin_content.modal.creating")}
             {:else}
               {$_("admin_content.actions.create_schema")}
+            {/if}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+{/if}
+
+{#if showCreateWorkflowModal}
+  <div class="modal-overlay">
+    <div class="modal-container" class:rtl={$isRTL}>
+      <div class="modal-header">
+        <div class="modal-header-content" class:text-right={$isRTL}>
+          <h3 class="modal-title">{$_("admin_content.modal.create.title")}</h3>
+          <p class="modal-subtitle">
+            {$_("admin_content.modal.create.subtitle")}
+          </p>
+        </div>
+        <button
+          onclick={() => (showCreateWorkflowModal = false)}
+          class="modal-close-btn"
+          aria-label={$_("admin_content.modal.close")}
+        >
+          <svg
+            class="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            ></path>
+          </svg>
+        </button>
+      </div>
+
+      <form
+        onsubmit={(event) => {
+          event.preventDefault();
+          handleSaveWorkflow(event);
+        }}
+      >
+        <div class="modal-content">
+          <div class="form-section">
+            <div class="section-header" class:text-right={$isRTL}>
+              <h4 class="section-title">
+                {$_("admin_content.modal.basic_info.title")}
+              </h4>
+              <p class="section-description">
+                {$_("admin_content.modal.basic_info.description")}
+              </p>
+            </div>
+            <MetaForm
+              bind:formData={metaContent}
+              bind:validateFn={validateMetaForm}
+              isCreate={true}
+            />
+          </div>
+
+          <div class="form-section">
+            <div class="section-header" class:text-right={$isRTL}>
+              <h4 class="section-title">Workflow Definition</h4>
+              <p class="section-description">
+                Define the workflow states and transitions.
+              </p>
+            </div>
+            <WorkflowForm bind:content={workflowContent} />
+          </div>
+        </div>
+
+        <div class="modal-footer" class:flex-row-reverse={$isRTL}>
+          <button
+            type="button"
+            onclick={() => (showCreateWorkflowModal = false)}
+            class="btn btn-secondary"
+            disabled={isCreatingWorkflow}
+          >
+            {$_("admin_content.modal.cancel")}
+          </button>
+          <button
+            type="submit"
+            class="btn btn-primary"
+            disabled={isCreatingWorkflow}
+          >
+            {#if isCreatingWorkflow}
+              <div class="spinner"></div>
+              {$_("admin_content.modal.creating")}
+            {:else}
+              {$_("admin_content.actions.create_workflow")}
             {/if}
           </button>
         </div>
