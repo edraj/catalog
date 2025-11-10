@@ -1,17 +1,16 @@
 <script lang="ts">
   import { goto } from "@roxi/routify";
   import { _, locale } from "@/i18n";
-  import { checkExisting, register, requestOtp, roles } from "@/stores/user";
-
+  import { checkExisting, register, requestOtp } from "@/stores/user";
   import {
     ArrowLeftOutline,
-    CheckCircleSolid,
     EnvelopeSolid,
     EyeSlashSolid,
     EyeSolid,
     LockSolid,
     PhoneSolid,
     UserSolid,
+    CheckCircleSolid,
   } from "flowbite-svelte-icons";
   import { getEntity } from "@/lib/dmart_services";
   import { ResourceType } from "@edraj/tsdmart";
@@ -20,6 +19,7 @@
 
   let formData = $state({
     email: "",
+    shortname: "auto",
     phoneNumber: "",
     password: "",
     confirmPassword: "",
@@ -32,12 +32,13 @@
     description: "",
   });
 
-  let agreeToTerms = $state(false);
   let showPassword = $state(false);
   let showConfirmPassword = $state(false);
   let isSubmitting = $state(false);
   let showSuccess = $state(false);
   let showError = $state(false);
+  let errorMessage = $state("");
+  let successMessage = $state("");
   let otpCode = $state("");
   let isOtpStep = $state(false);
   let isVerifyingOtp = $state(false);
@@ -54,15 +55,15 @@
     password?: string;
     confirmPassword?: string;
     gender?: string;
+    shortname?: string;
     age?: string;
     address?: string;
     confessors?: string;
     profession?: string;
     description?: string;
-    terms?: string;
     otp?: string;
   };
-  let errors: Errors = {};
+  let errors: Errors = $state({});
 
   const isRTL = $locale === "ar" || $locale === "ku";
 
@@ -98,7 +99,6 @@
       confessors: "",
       profession: "",
       description: "",
-      terms: "",
       otp: "",
     };
 
@@ -146,11 +146,6 @@
       isValid = false;
     }
 
-    if (!agreeToTerms) {
-      errors.terms = $_("MustAgreeToTerms");
-      isValid = false;
-    }
-
     if (!isValid) {
       return;
     }
@@ -178,8 +173,12 @@
       } else if (error.message.includes("password")) {
         errors.password = error.message;
       } else {
-        console.error("Registration error:", error.message);
+        console.error("Seller creation error:", error.message);
         showError = true;
+        errorMessage =
+          error.message ||
+          $_("SellerCreationError") ||
+          "Failed to create seller account";
       }
     } finally {
       isSubmitting = false;
@@ -216,20 +215,7 @@
 
     isVerifyingOtp = true;
     try {
-      const defaultRole = await getEntity(
-        "web_config",
-        "applications",
-        "public",
-        ResourceType.content,
-        "public",
-        true,
-        false
-      );
-
-      const role =
-        defaultRole.payload.body.items.find(
-          (item) => item.key === "default_user_role"
-        )?.value || "catalog_user_role";
+      const sellerRole = "seller";
 
       const profileData = {
         gender: formData.gender,
@@ -246,24 +232,40 @@
 
       await register(
         formData.email,
-        "auto",
+        formData.shortname,
         otpCode,
         formData.password,
         formData.confirmPassword,
-        role,
+        sellerRole,
         profileData
       );
 
-      let userRoles: string[] = [];
-      roles.subscribe((value) => {
-        userRoles = value;
-      })();
+      showSuccess = true;
+      successMessage =
+        $_("SellerCreatedSuccessfully") ||
+        "Seller account created successfully!";
 
-      if (userRoles.includes("seller")) {
-        $goto("/sellers");
-      } else {
-        $goto("/entries");
-      }
+      formData = {
+        email: "",
+        shortname: "auto",
+        phoneNumber: "",
+        password: "",
+        confirmPassword: "",
+        gender: "",
+        age: "",
+        address: "",
+        confessorsText: "",
+        confessors: [],
+        profession: "",
+        description: "",
+      };
+      showAdditionalFields = false;
+      isOtpStep = false;
+      otpCode = "";
+
+      setTimeout(() => {
+        showSuccess = false;
+      }, 5000);
     } catch (error: any) {
       console.error("OTP verification error:", error.message);
       errors.otp = error.message || $_("OtpVerificationFailed");
@@ -282,6 +284,8 @@
     } catch (error: any) {
       console.error("Resend OTP error:", error.message);
       showError = true;
+      errorMessage =
+        error.message || $_("OtpResendError") || "Failed to resend OTP";
     }
   }
 
@@ -310,10 +314,6 @@
     showAdditionalFields = !showAdditionalFields;
   }
 
-  function goToLogin() {
-    $goto("/login");
-  }
-
   function goBack() {
     if (isOtpStep) {
       isOtpStep = false;
@@ -323,14 +323,14 @@
         clearInterval(resendTimer);
       }
     } else {
-      $goto("/");
+      $goto("/dashboard/admin");
     }
   }
 </script>
 
-<div class="register-container">
-  <div class="register-content">
-    <div class="register-header">
+<div class="create-seller-container">
+  <div class="create-seller-content">
+    <div class="create-seller-header">
       <div class="header-content">
         <div class="icon-wrapper">
           {#if isOtpStep}
@@ -339,17 +339,20 @@
             <UserSolid class="header-icon text-white" />
           {/if}
         </div>
-        <h1 class="register-title">
-          {isOtpStep ? $_("VerifyPhoneNumber") : $_("CreateAccount")}
+        <h1 class="create-seller-title">
+          {isOtpStep
+            ? $_("VerifyPhoneNumber") || "Verify OTP"
+            : $_("CreateSellerAccount") || "Create Seller Account"}
         </h1>
-        <p class="register-description">
+        <p class="create-seller-description">
           {isOtpStep
             ? $_("EnterOtpSentTo") +
               " " +
-              formData.phoneNumber +
+              formData.email +
               " " +
-              $_("OtpTestCode")
-            : $_("CreateAccountDescription")}
+              ($_("OtpTestCode") || "")
+            : $_("CreateSellerAccountDescription") ||
+              "Create a new seller account with the required information"}
         </p>
       </div>
     </div>
@@ -358,8 +361,8 @@
       <div class="success-message" class:rtl={isRTL}>
         <CheckCircleSolid class="success-icon" />
         <div class="success-content">
-          <h3 class="success-title">{$_("AccountCreated")}</h3>
-          <p class="success-description">{$_("AccountCreatedDescription")}</p>
+          <h3 class="success-title">{$_("Success") || "Success"}</h3>
+          <p class="success-description">{successMessage}</p>
         </div>
       </div>
     {/if}
@@ -378,13 +381,13 @@
           />
         </svg>
         <div class="error-content">
-          <p class="error-text">{$_("RegistrationError")}</p>
+          <p class="error-text">{errorMessage}</p>
         </div>
       </div>
     {/if}
 
     <div class="form-container">
-      <form onsubmit={handleSubmit} class="register-form">
+      <form onsubmit={handleSubmit} class="create-seller-form">
         {#if !isOtpStep}
           <!-- Required Fields Section -->
           <div class="form-section">
@@ -393,6 +396,27 @@
               {$_("RequiredInformation")}
             </h3>
 
+            <div class="form-group">
+              <label for="shortname" class="form-label" class:rtl={isRTL}>
+                <EnvelopeSolid class="label-icon" />
+                {$_("Shortname")}
+              </label>
+              <input
+                id="shortname"
+                type="text"
+                bind:value={formData.shortname}
+                placeholder={$_("ShortnamePlaceholder")}
+                class="form-input"
+                class:error={errors.shortname}
+                class:rtl={isRTL}
+                disabled={isSubmitting}
+              />
+              {#if errors.shortname}
+                <p class="error-text-small" class:rtl={isRTL}>
+                  {errors.shortname}
+                </p>
+              {/if}
+            </div>
             <div class="form-group">
               <label for="email" class="form-label" class:rtl={isRTL}>
                 <EnvelopeSolid class="label-icon" />
@@ -796,21 +820,33 @@
             {/if}
           </div>
 
-          <!-- Terms and Conditions -->
-          <div class="form-group">
-            <label for="agreeToTerms" class="checkbox-label" class:rtl={isRTL}>
-              <input
-                id="agreeToTerms"
-                type="checkbox"
-                bind:checked={agreeToTerms}
-                class="checkbox-input"
-                disabled={isSubmitting}
-              />
-              <span class="checkbox-text">{$_("AgreeToTerms")}</span>
-            </label>
-            {#if errors.terms}
-              <p class="error-text-small" class:rtl={isRTL}>{errors.terms}</p>
-            {/if}
+          <div class="button-group">
+            <button
+              aria-label={$_("CreateSeller") || "Create Seller"}
+              type="submit"
+              class="submit-button"
+              class:loading={isSubmitting}
+              class:rtl={isRTL}
+              disabled={isSubmitting}
+            >
+              {#if isSubmitting}
+                <div class="loading-spinner"></div>
+                {$_("CreatingSeller") || "Creating Seller..."}
+              {:else}
+                <UserSolid class="button-icon" />
+                {$_("SendOtp") || "Send OTP"}
+              {/if}
+            </button>
+
+            <button
+              aria-label={$_("Cancel") || "Cancel"}
+              type="button"
+              class="cancel-button"
+              onclick={goBack}
+              disabled={isSubmitting}
+            >
+              {$_("Cancel") || "Cancel"}
+            </button>
           </div>
         {:else}
           <!-- OTP Verification -->
@@ -852,27 +888,25 @@
               {/if}
             </button>
           </div>
-        {/if}
 
-        <button
-          aria-label={$_("SubmitForm")}
-          type="submit"
-          class="submit-button"
-          class:loading={isSubmitting || isVerifyingOtp}
-          class:rtl={isRTL}
-          disabled={isSubmitting || isVerifyingOtp}
-        >
-          {#if isSubmitting || isVerifyingOtp}
-            <div class="loading-spinner"></div>
-            {isOtpStep ? $_("VerifyingOtp") : $_("SigningUp")}
-          {:else if isOtpStep}
-            <LockSolid class="button-icon" />
-            {$_("VerifyOtp")}
-          {:else}
-            <UserSolid class="button-icon" />
-            {$_("SendOtp")}
-          {/if}
-        </button>
+          <button
+            aria-label={$_("SubmitForm")}
+            type="submit"
+            class="submit-button"
+            class:loading={isVerifyingOtp}
+            class:rtl={isRTL}
+            disabled={isVerifyingOtp}
+            style="width: 100%;"
+          >
+            {#if isVerifyingOtp}
+              <div class="loading-spinner"></div>
+              {$_("VerifyingOtp")}
+            {:else}
+              <LockSolid class="button-icon" />
+              {$_("VerifyOtp")}
+            {/if}
+          </button>
+        {/if}
       </form>
 
       {#if isOtpStep}
@@ -886,24 +920,13 @@
             {$_("BackToForm")}
           </button>
         </div>
-      {:else}
-        <div class="login-link" class:rtl={isRTL}>
-          <span class="login-text">{$_("AlreadyHaveAccount")}</span>
-          <button
-            aria-label={$_("GoToLogin")}
-            class="link-button"
-            onclick={goToLogin}
-          >
-            {$_("SignIn")}
-          </button>
-        </div>
       {/if}
     </div>
   </div>
 </div>
 
 <style>
-  .register-container {
+  .create-seller-container {
     min-height: 100vh;
     background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 100%);
     padding: 2rem 1rem;
@@ -918,12 +941,12 @@
       sans-serif;
   }
 
-  .register-content {
+  .create-seller-content {
     max-width: 800px;
     margin: 0 auto;
   }
 
-  .register-header {
+  .create-seller-header {
     text-align: center;
     margin-bottom: 2rem;
   }
@@ -943,14 +966,14 @@
     margin: 0 auto 1.5rem auto;
   }
 
-  .register-title {
+  .create-seller-title {
     font-size: 2rem;
     font-weight: 800;
     color: #1f2937;
     margin-bottom: 1rem;
   }
 
-  .register-description {
+  .create-seller-description {
     font-size: 1rem;
     color: #6b7280;
     line-height: 1.6;
@@ -996,7 +1019,7 @@
     border: 1px solid #f3f4f6;
   }
 
-  .register-form {
+  .create-seller-form {
     display: flex;
     flex-direction: column;
     gap: 2rem;
@@ -1018,12 +1041,6 @@
     margin-bottom: 0.5rem;
     padding-bottom: 0.5rem;
     border-bottom: 2px solid #f3f4f6;
-  }
-
-  .section-icon {
-    width: 1.25rem;
-    height: 1.25rem;
-    color: #3b82f6;
   }
 
   .expandable-section-header {
@@ -1277,30 +1294,6 @@
     left: 0.75rem;
   }
 
-  .toggle-icon {
-    width: 1.25rem;
-    height: 1.25rem;
-  }
-
-  .checkbox-label {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    cursor: pointer;
-    font-size: 0.875rem;
-    color: #374151;
-  }
-
-  .checkbox-input {
-    width: 1rem;
-    height: 1rem;
-    accent-color: #3b82f6;
-  }
-
-  .checkbox-text {
-    line-height: 1.4;
-  }
-
   .error-text-small {
     font-size: 0.75rem;
     color: #dc2626;
@@ -1311,7 +1304,14 @@
     text-align: right;
   }
 
+  .button-group {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
   .submit-button {
+    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1343,9 +1343,30 @@
     flex-direction: row-reverse;
   }
 
-  .button-icon {
-    width: 1.25rem;
-    height: 1.25rem;
+  .cancel-button {
+    flex: 0.5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    color: #6b7280;
+    font-weight: 600;
+    padding: 1rem 2rem;
+    border-radius: 0.75rem;
+    border: 1px solid #d1d5db;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 1rem;
+  }
+
+  .cancel-button:hover:not(:disabled) {
+    background: #f9fafb;
+    border-color: #9ca3af;
+  }
+
+  .cancel-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   .loading-spinner {
@@ -1366,44 +1387,16 @@
     }
   }
 
-  .login-link {
-    display: flex;
-    justify-content: center;
-    margin-top: 1.5rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid #e5e7eb;
-  }
-
-  .login-text {
-    color: #6b7280;
-    font-size: 0.875rem;
-  }
-
-  .link-button {
-    display: flex;
-    align-items: center;
-    background: none;
-    border: none;
-    color: #3b82f6;
-    font-weight: 600;
-    cursor: pointer;
-    text-decoration: underline;
-    font-size: 0.875rem;
-    margin-left: 0.25rem;
-  }
-
-  .login-link.rtl .link-button {
-    margin-left: 0;
-    margin-right: 0.25rem;
-  }
-
-  .link-button:hover {
-    color: #2563eb;
-  }
-
-  .back-icon {
-    width: 1rem;
-    height: 1rem;
+  .visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
   }
 
   .resend-otp-container {
@@ -1411,6 +1404,7 @@
     align-items: center;
     gap: 0.5rem;
     font-size: 0.875rem;
+    margin-bottom: 1rem;
   }
 
   .resend-text {
@@ -1441,29 +1435,41 @@
     text-align: center;
     align-items: center;
     display: flex;
+    justify-content: center;
     margin-top: 1.5rem;
     padding-top: 1.5rem;
     border-top: 1px solid #e5e7eb;
   }
 
-  .visually-hidden {
-    position: absolute !important;
-    width: 1px !important;
-    height: 1px !important;
-    padding: 0 !important;
-    margin: -1px !important;
-    overflow: hidden !important;
-    clip: rect(0, 0, 0, 0) !important;
-    white-space: nowrap !important;
-    border: 0 !important;
+  .link-button {
+    display: flex;
+    align-items: center;
+    background: none;
+    border: none;
+    color: #3b82f6;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+    font-size: 0.875rem;
+  }
+
+  .link-button:hover {
+    color: #2563eb;
+  }
+
+  .otp-input {
+    text-align: center;
+    letter-spacing: 0.5rem;
+    font-size: 1.5rem;
+    font-weight: 600;
   }
 
   @media (max-width: 640px) {
-    .register-container {
+    .create-seller-container {
       padding: 1rem;
     }
 
-    .register-title {
+    .create-seller-title {
       font-size: 1.75rem;
     }
 
@@ -1477,6 +1483,14 @@
 
     .optional-fields-grid {
       grid-template-columns: 1fr;
+    }
+
+    .button-group {
+      flex-direction: column;
+    }
+
+    .cancel-button {
+      flex: 1;
     }
   }
 </style>
