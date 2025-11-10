@@ -26,6 +26,7 @@
   let isEditMode = $state(false);
   let selectedFolderForEdit = $state(null);
 
+  // Search and Filter State
   let searchQuery = $state("");
   let selectedType = $state("all");
   let selectedStatus = $state("all");
@@ -33,6 +34,7 @@
   let sortOrder = $state("asc");
   let isSearchActive = $state(false);
 
+  // Filter Options
   const typeOptions = [
     { value: "all", label: $_("admin_dashboard.filters.all") },
     { value: "folder", label: $_("admin_dashboard.filters.folder") },
@@ -56,6 +58,7 @@
     { value: "owner", label: $_("admin_dashboard.sort.owner") },
   ];
 
+  // Modal States
   let showCreateFolderModal = $state(false);
   let folderContent = {
     title: "",
