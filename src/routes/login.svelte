@@ -7,7 +7,7 @@
     LockSolid,
     UserSolid,
   } from "flowbite-svelte-icons";
-  import { loginBy, signin } from "@/stores/user";
+  import { loginBy, signin, roles } from "@/stores/user";
 
   $goto;
   let identifier = "";
@@ -45,7 +45,17 @@
       } else {
         await signin(trimmedIdentifier, password);
       }
-      $goto("/entries");
+
+      let userRoles: string[] = [];
+      roles.subscribe((value) => {
+        userRoles = value;
+      })();
+
+      if (userRoles.includes("seller")) {
+        $goto("/sellers");
+      } else {
+        $goto("/entries");
+      }
     } catch (error) {
       isError = true;
       showError = true;
