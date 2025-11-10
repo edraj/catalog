@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from "@roxi/routify";
   import { _, locale } from "@/i18n";
-  import { checkExisting, register, requestOtp, roles } from "@/stores/user";
+  import { checkExisting, register, requestOtp } from "@/stores/user";
 
   import {
     ArrowLeftOutline,
@@ -246,24 +246,13 @@
 
       await register(
         formData.email,
-        "auto",
         otpCode,
         formData.password,
         formData.confirmPassword,
         role,
         profileData
       );
-
-      let userRoles: string[] = [];
-      roles.subscribe((value) => {
-        userRoles = value;
-      })();
-
-      if (userRoles.includes("seller")) {
-        $goto("/sellers");
-      } else {
-        $goto("/entries");
-      }
+      $goto("/entries");
     } catch (error: any) {
       console.error("OTP verification error:", error.message);
       errors.otp = error.message || $_("OtpVerificationFailed");
@@ -457,6 +446,9 @@
                 <option value="">{$_("SelectGender")}</option>
                 <option value="male">{$_("Male")}</option>
                 <option value="female">{$_("Female")}</option>
+                <option value="other">{$_("Other")}</option>
+                <option value="prefer-not-to-say">{$_("PreferNotToSay")}</option
+                >
               </select>
               {#if errors.gender}
                 <p class="error-text-small" class:rtl={isRTL}>
