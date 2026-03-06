@@ -13,7 +13,7 @@
     PhoneSolid,
     UserSolid,
   } from "flowbite-svelte-icons";
-  import { getEntity } from "@/lib/dmart_services";
+  import { getEntity } from "@/lib/dmart_services/dmart_services";
   import { ResourceType } from "@edraj/tsdmart";
 
   $goto;

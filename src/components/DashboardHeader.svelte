@@ -34,7 +34,7 @@
               type: "notification_subscription",
               space_name: "__ALL__",
               subpath: "__ALL__",
-            })
+            }),
           );
         };
 
@@ -117,52 +117,93 @@
       return () => document.removeEventListener("click", handleClickOutside);
     }
   });
+
+  function getInitials(u: any) {
+    if (!u) return "?";
+    let name = u.localized_displayname || u.shortname || "";
+    if (!name) return "?";
+    let parts = name.split(" ");
+    if (parts.length >= 2) {
+      return (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  }
 </script>
 
 <header
-  class="sticky top-0 z-40 w-full border-b border-gray-200 bg-white backdrop-blur-md supports-[backdrop-filter]:bg-white/80"
+  class={`sticky top-0 z-40 w-full ${$user.signedin ? "pt-4 pb-2 px-4 sm:px-6 lg:px-8 max-w-[1600px] mx-auto" : "border-b border-gray-200 bg-white backdrop-blur-md supports-[backdrop-filter]:bg-white/80"}`}
 >
-  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex h-16 items-center justify-between">
+  <div class={$user.signedin ? "" : "container mx-auto px-4 sm:px-6 lg:px-8"}>
+    <div
+      class={$user.signedin
+        ? "bg-white rounded-[2rem] shadow-sm flex h-[3.25rem] items-center justify-between px-2 pr-3 border border-black/5"
+        : "flex h-16 items-center justify-between"}
+    >
       <!-- Logo/Brand -->
-      <div class="flex items-center">
-        <a href="/" class="flex items-center space-x-3 group">
+      <div
+        class={$user.signedin ? "flex items-center pl-2" : "flex items-center"}
+      >
+        <a
+          href="/"
+          class={`flex items-center group ${$user.signedin ? "space-x-2" : "space-x-3"}`}
+        >
           <div
-            class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105"
+            class={`flex items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-sm transition-all duration-300 group-hover:scale-105 ${$user.signedin ? "h-8 w-8" : "h-10 w-10 shadow-lg group-hover:shadow-xl"}`}
           >
-            <svg
-              class="h-6 w-6 text-white"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
-              />
-            </svg>
+            CS
           </div>
           <span
-            class="font-bold text-xl text-gray-900 sm:inline-block group-hover:text-blue-600 transition-colors duration-200"
-            >{$_("Catalog")}</span
+            class={`font-bold text-gray-900 sm:inline-block transition-colors duration-200 ${$user.signedin ? "text-[1.1rem] group-hover:text-indigo-600" : "text-xl group-hover:text-blue-600"}`}
+            >{$_("Spaces")}</span
           >
         </a>
       </div>
 
       <!-- Navigation Items -->
-      <div class="flex items-center space-x-3">
+      <div
+        class={`flex items-center ${$user.signedin ? "space-x-1 sm:space-x-2" : "space-x-3"}`}
+      >
         {#if $user.signedin}
-          <SearchBar />
+          <div class="mr-2">
+            <SearchBar />
+          </div>
+
+          <button
+            aria-label={`Notifications`}
+            onclick={() => handleMenuItemClick("/notifications")}
+            class="p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors relative focus:outline-none"
+          >
+            <svg
+              class="w-5 h-5 {renderNotificationIconColor()}"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+              />
+            </svg>
+            {#if $newNotificationType}
+              <span
+                class="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500 border border-white animate-pulse"
+              ></span>
+            {/if}
+          </button>
 
           <!-- Menu Dropdown -->
-          <div class="relative menu-container">
+          <div class="relative menu-container flex items-center">
             <button
               onclick={toggleMenu}
-              class="nav-icon-btn menu-trigger"
+              class="p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors relative menu-trigger focus:outline-none"
               aria-label="Menu"
               title="Menu"
               aria-expanded={isMenuOpen}
             >
               <svg
-                class="nav-icon"
+                class="w-5 h-5"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -170,15 +211,19 @@
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
-                  stroke-width="2"
+                  stroke-width="1.5"
                   d="M4 6h16M4 12h16M4 18h16"
                 />
               </svg>
-              {#if $newNotificationType}
-                <span
-                  class="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500 border-2 border-white animate-pulse"
-                ></span>
-              {/if}
+            </button>
+
+            <!-- Avatar Trigger (also opens profile maybe? or just menu?) -->
+            <button
+              aria-label="Profile Menu"
+              onclick={toggleMenu}
+              class="ml-1 flex items-center justify-center h-[1.8rem] w-[1.8rem] rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-bold text-[0.65rem] ring-2 ring-transparent hover:ring-indigo-200 transition-all cursor-pointer focus:outline-none"
+            >
+              {getInitials($user)}
             </button>
 
             {#if isMenuOpen}
@@ -215,7 +260,7 @@
                         aria-label={`Contact Messages`}
                         onclick={() =>
                           handleMenuItemClick(
-                            "/dashboard/admin/contact-messages"
+                            "/dashboard/admin/contact-messages",
                           )}
                         class="menu-item"
                       >

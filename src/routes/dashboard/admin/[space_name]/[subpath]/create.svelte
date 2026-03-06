@@ -1,7 +1,7 @@
 <script>
   import { onMount } from "svelte";
   import { marked } from "marked";
-  import { createEntity, getTemplates } from "@/lib/dmart_services";
+  import { createEntity, getTemplates } from "@/lib/dmart_services/dmart_services.ts";
   import { ContentType, ResourceType } from "@edraj/tsdmart";
   import { goto, params } from "@roxi/routify";
 

@@ -1,17 +1,28 @@
 <script lang="ts">
-    import {preventDefault} from "svelte/legacy";
+  import { preventDefault } from "svelte/legacy";
+  import { Modal } from "flowbite-svelte";
 
-    import MetaRoleForm from "@/components/forms/MetaRoleForm.svelte";
-    import {errorToastMessage, successToastMessage,} from "@/lib/toasts_messages";
-    import {onMount} from "svelte";
-    import {createRole, deleteEntity, getEntity, getSpaceContents, getSpaces, updateRole,} from "@/lib/dmart_services";
-    import {ResourceType} from "@edraj/tsdmart";
-    import {_, locale} from "@/i18n";
-    import {derived} from "svelte/store";
+  import MetaRoleForm from "@/components/forms/MetaRoleForm.svelte";
+  import {
+    errorToastMessage,
+    successToastMessage,
+  } from "@/lib/toasts_messages";
+  import { onMount } from "svelte";
+  import {
+    createRole,
+    deleteEntity,
+    getEntity,
+    getSpaceContents,
+    getSpaces,
+    updateRole,
+  } from "@/lib/dmart_services/dmart_services";
+  import { ResourceType } from "@edraj/tsdmart";
+  import { _, locale } from "@/i18n";
+  import { derived } from "svelte/store";
 
-    const isRTL = derived(
+  const isRTL = derived(
     locale,
-    ($locale) => $locale === "ar" || $locale === "ku"
+    ($locale) => $locale === "ar" || $locale === "ku",
   );
 
   let roleTypes = $state([]);
@@ -37,7 +48,7 @@
       const rolesResponse = await getSpaceContents(
         "management",
         "roles",
-        "managed"
+        "managed",
       );
 
       if (rolesResponse.status === "success") {
@@ -84,7 +95,7 @@
         ResourceType.role,
         "managed",
         true,
-        false
+        false,
       );
 
       if (roleEntity) {
@@ -100,7 +111,7 @@
         roleExists = false;
         currentRoleShortname = "";
         successToastMessage(
-          `No existing ${roleType} role found. Using defaults.`
+          `No existing ${roleType} role found. Using defaults.`,
         );
       }
     } catch (error) {
@@ -127,7 +138,7 @@
         ResourceType.role,
         formData,
         "",
-        ""
+        "",
       );
 
       if (result) {
@@ -165,7 +176,7 @@
         "roles",
         ResourceType.role,
         "",
-        ""
+        "",
       );
 
       if (result) {
@@ -197,7 +208,7 @@
         currentRoleShortname,
         "management",
         "roles",
-        ResourceType.role
+        ResourceType.role,
       );
 
       if (result) {
@@ -250,7 +261,7 @@
       <div class="header-actions">
         <button
           aria-label={`Add role`}
-          class="btn btn-success"
+          class="btn btn-primary"
           onclick={() => (showAddModal = true)}
         >
           <span>+</span>
@@ -288,7 +299,7 @@
         </div>
       </div>
     {:else}
-      <div class="grid grid-cols-2">
+      <div class="role-selector-container">
         <div>
           <select class="form-select" bind:value={selectedRoleType}>
             {#each roleTypes as type}
@@ -296,7 +307,9 @@
             {/each}
           </select>
         </div>
-        <div style="display: flex; align-items: center; gap: 16px;">
+        <div
+          style="display: flex; align-items: center; gap: 16px; margin-top: 16px;"
+        >
           {#if lastSaved}
             <div class="status-indicator status-success">
               <span>✓</span>
@@ -352,7 +365,7 @@
     {:else}
       <MetaRoleForm bind:formData bind:validateFn />
 
-      <div class="card">
+      <div class="action-bar-wrapper">
         <div class="action-bar">
           <div class="action-buttons">
             <button
@@ -390,157 +403,91 @@
   {/if}
 </div>
 
-{#if showAddModal}
-  <div
-    class="modal-overlay"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="add-role-modal-title"
-    tabindex="0"
+<Modal
+  title={$_("add_new_role")}
+  bind:open={showAddModal}
+  size="lg"
+  class="bg-white dark:bg-white"
+  headerClass="text-gray-900 dark:text-gray-900"
+  placement="center"
+  autoclose={false}
+>
+  <label class="form-label" for="new-role-name">{$_("role_name")}</label>
+  <input
+    type="text"
+    class="form-input"
+    id="new-role-name"
+    bind:value={newRoleName}
+    placeholder={$_("enter_role_name")}
     onkeydown={(e) => {
-      if (e.key === "Escape") showAddModal = false;
+      if (e.key === "Enter") createNewRole();
     }}
-  >
-    <div
-      class="modal"
-      role="document"
-      tabindex="-1"
-      onkeydown={(e) => {
-        if (e.key === "Escape") showAddModal = false;
-      }}
+  />
+  {#snippet footer()}
+    <button
+      aria-label={`Cancel adding role`}
+      class="btn btn-secondary"
+      onclick={() => (showAddModal = false)}
     >
-      <div class="modal-header">
-        <h3 id="add-role-modal-title">{$_("add_new_role")}</h3>
-        <button
-          class="modal-close"
-          aria-label={$_("close")}
-          onclick={() => (showAddModal = false)}
-          onkeydown={(e) => {
-            if (e.key === "Enter") showAddModal = false;
-          }}
-        >
-          ×
-        </button>
-      </div>
-      <div class="modal-body">
-        <label class="form-label" for="new-role-name">{$_("role_name")}</label>
-        <input
-          type="text"
-          class="form-input"
-          id="new-role-name"
-          bind:value={newRoleName}
-          placeholder={$_("enter_role_name")}
-          onkeydown={(e) => {
-            if (e.key === "Enter") createNewRole();
-          }}
-        />
-      </div>
-      <div class="modal-footer">
-        <button
-          aria-label={`Cancel adding role`}
-          class="btn btn-secondary"
-          onclick={() => (showAddModal = false)}
-          onkeydown={(e) => {
-            if (e.key === "Enter") showAddModal = false;
-          }}
-        >
-          {$_("cancel")}
-        </button>
-        <button
-          aria-label={`Create new role`}
-          class="btn btn-primary"
-          onclick={preventDefault((e) => {
-            createNewRole();
-          })}
-          disabled={isCreating || !newRoleName.trim()}
-          onkeydown={(e) => {
-            if (e.key === "Enter") createNewRole();
-          }}
-        >
-          {#if isCreating}
-            <div class="spinner-small"></div>
-            {$_("creating")}
-          {:else}
-            {$_("create_role")}
-          {/if}
-        </button>
-      </div>
-    </div>
-  </div>
-{/if}
+      {$_("cancel")}
+    </button>
+    <button
+      aria-label={`Create new role`}
+      class="btn btn-primary"
+      onclick={preventDefault((e) => {
+        createNewRole();
+      })}
+      disabled={isCreating || !newRoleName.trim()}
+    >
+      {#if isCreating}
+        <div class="spinner-small"></div>
+        {$_("creating")}
+      {:else}
+        {$_("create_role")}
+      {/if}
+    </button>
+  {/snippet}
+</Modal>
 
-{#if showDeleteConfirm}
-  <div
-    class="modal-overlay"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="delete-role-modal-title"
-    tabindex="0"
-    onkeydown={(e) => {
-      if (e.key === "Escape") showDeleteConfirm = false;
-    }}
-  >
-    <div
-      class="modal"
-      role="document"
-      tabindex="-1"
-      onkeydown={(e) => {
-        if (e.key === "Escape") showDeleteConfirm = false;
-      }}
+<Modal
+  title={$_("delete_role")}
+  bind:open={showDeleteConfirm}
+  size="lg"
+  class="bg-white dark:bg-white"
+  headerClass="text-gray-900 dark:text-gray-900"
+  placement="center"
+  autoclose={false}
+>
+  <p>
+    {$_("are_you_sure_delete_role")}
+    <strong>"{selectedRoleType}"</strong>?
+  </p>
+  <p class="text-danger">{$_("action_cannot_be_undone")}</p>
+  {#snippet footer()}
+    <button
+      aria-label={`Cancel deleting role`}
+      class="btn btn-secondary"
+      onclick={() => (showDeleteConfirm = false)}
     >
-      <div class="modal-header">
-        <h3 id="delete-role-modal-title">{$_("delete_role")}</h3>
-        <button
-          class="modal-close"
-          aria-label={$_("close")}
-          onclick={() => (showDeleteConfirm = false)}
-          onkeydown={(e) => {
-            if (e.key === "Enter") showDeleteConfirm = false;
-          }}
-        >
-          ×
-        </button>
-      </div>
-      <div class="modal-body">
-        <p>
-          {$_("are_you_sure_delete_role")}
-          <strong>"{selectedRoleType}"</strong>?
-        </p>
-        <p class="text-danger">{$_("action_cannot_be_undone")}</p>
-      </div>
-      <div class="modal-footer">
-        <button
-          aria-label={`Cancel deleting role`}
-          class="btn btn-secondary"
-          onclick={() => (showDeleteConfirm = false)}
-          onkeydown={(e) => {
-            if (e.key === "Enter") showDeleteConfirm = false;
-          }}
-        >
-          {$_("cancel")}
-        </button>
-        <button
-          aria-label={`Delete role ${selectedRoleType}`}
-          class="btn btn-danger"
-          onclick={preventDefault((e) => {
-            deleteRole();
-          })}
-          disabled={isDeleting}
-          onkeydown={(e) => {
-            if (e.key === "Enter") deleteRole();
-          }}
-        >
-          {#if isDeleting}
-            <div class="spinner-small"></div>
-            {$_("deleting")}
-          {:else}
-            {$_("delete_role")}
-          {/if}
-        </button>
-      </div>
-    </div>
-  </div>
-{/if}
+      {$_("cancel")}
+    </button>
+    <button
+      aria-label={`Delete role ${selectedRoleType}`}
+      class="btn btn-danger"
+      onclick={preventDefault((e) => {
+        deleteRole();
+      })}
+      disabled={isDeleting}
+    >
+      {#if isDeleting}
+        <div class="spinner-small"></div>
+        {$_("deleting")}
+      {:else}
+        {$_("delete_role")}
+      {/if}
+    </button>
+  {/snippet}
+</Modal>
 
 <style>
   .rtl {
@@ -732,12 +679,12 @@
   }
 
   .btn-primary {
-    background: #3b82f6;
+    background: #6366f1;
     color: white;
   }
 
   .btn-primary:hover:not(:disabled) {
-    background: #2563eb;
+    background: #4f46e5;
     transform: translateY(-1px);
   }
 
@@ -771,6 +718,13 @@
     transform: translateY(-1px);
   }
 
+  .action-bar-wrapper {
+    margin-top: 24px;
+    margin-bottom: 24px;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
   .action-bar {
     display: flex;
     flex-wrap: wrap;
@@ -783,11 +737,16 @@
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
+    flex: 1;
   }
 
   .meta-info {
     font-size: 14px;
     color: #6b7280;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
   }
 
   .meta-info strong {
@@ -827,29 +786,7 @@
     margin-top: 4px;
   }
 
-  /* Modal Styles */
-  .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-  }
-
-  .modal {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-    max-width: 500px;
-    width: 90%;
-    max-height: 90vh;
-    overflow: hidden;
-  }
+  /* Modal Styles removed - now using flowbite Modal */
 
   .modal-header {
     display: flex;

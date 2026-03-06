@@ -1,7 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
   import { _, locale } from "@/i18n";
-  import { createReport } from "@/lib/dmart_services";
+  import { createReport } from "@/lib/dmart_services/dmart_services";
   import {
     successToastMessage,
     errorToastMessage,

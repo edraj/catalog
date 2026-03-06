@@ -1,11 +1,20 @@
 <script lang="ts">
-    import {onMount} from "svelte";
-    import {createEntity, getEntity, getSpaceContents, setDefaultUserRole,} from "@/lib/dmart_services";
-    import {errorToastMessage, successToastMessage,} from "@/lib/toasts_messages";
-    import {ResourceType} from "@edraj/tsdmart";
-    import {_} from "@/i18n";
+  import { onMount } from "svelte";
+  import {
+    createEntity,
+    getEntity,
+    getSpaceContents,
+    setDefaultUserRole,
+  } from "@/lib/dmart_services/dmart_services";
+  import {
+    errorToastMessage,
+    successToastMessage,
+  } from "@/lib/toasts_messages";
+  import { ResourceType } from "@edraj/tsdmart";
+  import { _ } from "@/i18n";
+  import { Modal } from "flowbite-svelte";
 
-    let availableRoles = $state([]);
+  let availableRoles = $state([]);
   let selectedDefaultRole = $state("");
   let currentDefaultRole = $state("");
   let isLoading = $state(true);
@@ -19,7 +28,7 @@
       const rolesResponse = await getSpaceContents(
         "management",
         "roles",
-        "managed"
+        "managed",
       );
 
       if (rolesResponse.status === "success") {
@@ -48,16 +57,16 @@
         ResourceType.content,
         "managed",
         true,
-        false
+        false,
       );
 
       if (defaultRole) {
         currentDefaultRole = defaultRole.payload.body.items.find(
-          (item) => item.key === "default_user_role"
+          (item) => item.key === "default_user_role",
         )?.value;
         selectedDefaultRole =
           defaultRole.payload.body.items.find(
-            (item) => item.key === "default_user_role"
+            (item) => item.key === "default_user_role",
           )?.value || "";
       } else {
         if (availableRoles.length > 0) {
@@ -95,7 +104,7 @@
         "public",
         ResourceType.content,
         "",
-        "configuration"
+        "configuration",
       );
 
       if (result) {
@@ -146,52 +155,51 @@
   });
 </script>
 
-{#if showAutoFixModal}
-  <div class="modal-overlay">
-    <div class="modal">
-      <div class="modal-header">
-        <h3>{$_("configurationMissing")}</h3>
-      </div>
-      <div class="modal-body">
-        <div class="alert alert-warning">
-          <div class="alert-icon">⚠</div>
-          <div>
-            <strong>{$_("configurationEntityNotFound")}</strong>
-            <p>
-              {$_("systemConfigurationEntityMissingDescription")}
-            </p>
-          </div>
-        </div>
-        <p>
-          {$_("autoCreateConfigurationEntityQuestion")}
-        </p>
-      </div>
-      <div class="modal-footer">
-        <button
-          aria-label={`Cancel fixing configuration`}
-          class="btn btn-secondary"
-          onclick={() => (showAutoFixModal = false)}
-          disabled={isAutoFixing}
-        >
-          {$_("cancel")}
-        </button>
-        <button
-          aria-label={`Create configuration entity`}
-          class="btn btn-primary"
-          onclick={autoFixConfiguration}
-          disabled={isAutoFixing}
-        >
-          {#if isAutoFixing}
-            <div class="spinner small"></div>
-            {$_("creating")}...
-          {:else}
-            {$_("autoFix")}
-          {/if}
-        </button>
-      </div>
+<Modal
+  title={$_("configurationMissing")}
+  bind:open={showAutoFixModal}
+  size="lg"
+  class="bg-white dark:bg-white"
+  headerClass="text-gray-900 dark:text-gray-900"
+  placement="center"
+  autoclose={false}
+>
+  <div class="alert alert-warning">
+    <div class="alert-icon">⚠</div>
+    <div>
+      <strong>{$_("configurationEntityNotFound")}</strong>
+      <p>
+        {$_("systemConfigurationEntityMissingDescription")}
+      </p>
     </div>
   </div>
-{/if}
+  <p>
+    {$_("autoCreateConfigurationEntityQuestion")}
+  </p>
+  {#snippet footer()}
+    <button
+      aria-label={`Cancel fixing configuration`}
+      class="btn btn-secondary"
+      onclick={() => (showAutoFixModal = false)}
+      disabled={isAutoFixing}
+    >
+      {$_("cancel")}
+    </button>
+    <button
+      aria-label={`Create configuration entity`}
+      class="btn btn-primary"
+      onclick={autoFixConfiguration}
+      disabled={isAutoFixing}
+    >
+      {#if isAutoFixing}
+        <div class="spinner small"></div>
+        {$_("creating")}...
+      {:else}
+        {$_("autoFix")}
+      {/if}
+    </button>
+  {/snippet}
+</Modal>
 
 <div class="container">
   <div class="page-header">
@@ -302,28 +310,7 @@
 </div>
 
 <style>
-  .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-  }
-
-  .modal {
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-    max-width: 500px;
-    width: 90%;
-    max-height: 90vh;
-    overflow-y: auto;
-  }
+  /* Modal Styles removed - now using flowbite Modal */
 
   .modal-header {
     padding: 20px 20px 0 20px;

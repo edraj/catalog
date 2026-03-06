@@ -156,56 +156,6 @@
   <h2 class="editor-title">{$_("editor.title")}</h2>
 
   <div class="editor-content">
-    <!-- Index Attributes Section -->
-    <div class="section">
-      <h3 class="section-title">{$_("sections.index_attributes.title")}</h3>
-      <p class="section-description">
-        {$_("sections.index_attributes.description")}
-      </p>
-
-      {#if errors["index_attributes"]}
-        <p class="error-message">{errors["index_attributes"]}</p>
-      {/if}
-
-      {#if content.index_attributes?.length > 0}
-        {#each content.index_attributes as attribute, index}
-          <div class="attribute-item">
-            <div class="attribute-input">
-              <label for="index_attribute_key_{index}"></label>
-              <input
-                class="input-field"
-                bind:value={attribute.key}
-                placeholder={$_("placeholders.key")}
-              />
-            </div>
-            <div class="attribute-input">
-              <label for="index_attribute_name_{index}"></label>
-              <input
-                class="input-field"
-                bind:value={attribute.name}
-                placeholder={$_("placeholders.name")}
-              />
-            </div>
-            <button
-              type="button"
-              class="button-danger button-small"
-              onclick={() => removeItem("index_attributes", index)}
-            >
-              {$_("buttons.remove")}
-            </button>
-          </div>
-        {/each}
-      {/if}
-
-      <button
-        type="button"
-        class="button-outline button-small add-button"
-        onclick={() => addItem("index_attributes", { key: "", name: "" })}
-      >
-        {$_("buttons.add_index_attribute")}
-      </button>
-    </div>
-
     <!-- Sort Settings -->
     <div class="grid-2">
       <div class="field-group">

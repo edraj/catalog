@@ -295,7 +295,6 @@
   "errorFetchingMessages": "An error occurred while fetching messages",
   "autoRepliedAttachment": "Auto-replied: Message contains attachment",
   "EmailAlreadyExists": "An account with this email already exists.",
-
   "InvalidEmail": "Invalid email address.",
   "PasswordTooShort": "Password must be at least 6 characters.",
   "ConfirmPasswordRequired": "Please confirm your password.",
@@ -319,7 +318,6 @@
   "SendOtp": "Send OTP",
   "BackToForm": "Back to form",
   "ChangePhoto": "Change Photo",
-
   "ShareIdeas": "Share Ideas",
   "BuildCommunity": "Build Community",
   "HeroDescription": "Catalog is where creators share their thoughts, engage with others, and build meaningful connections. Join a community that values authentic conversations and quality content.",
@@ -347,7 +345,6 @@
   "Community": "Community",
   "Privacy": "Privacy",
   "Copyright": "© 2025 Catalog. All rights reserved.",
-
   "catalogs.explore_title": "Explore Catalogs",
   "catalogs.explore_description": "Discover all available spaces and their content. Browse through different catalogs to find what interests you most.",
   "catalogs.no_catalogs_title": "No Catalogs Available",
@@ -429,7 +426,6 @@
   "common.unknown": "Unknown",
   "common.no_website": "No website",
   "common.loading_content": "Loading content...",
-
   "admin": "Admin",
   "dashboard": "Dashboard",
   "contact_messages": "Contact Messages",
@@ -447,7 +443,6 @@
     "shortname": "A shortname (use 'auto' for auto generated shortname)",
     "active": "Whether this item is currently active",
     "slug": "A URL-friendly version of the short name",
-
     "hero": {
       "title": "Help",
       "center": "Center",
@@ -747,7 +742,24 @@
       "no_contents_title": "No Contents",
       "no_contents_description": "This space is currently empty. Check back later for new content."
     },
-    "author_avatar_alt": "Author avatar"
+    "author_avatar_alt": "Author avatar",
+    "showing_tagged_content": "Showing content tagged with: {tags}",
+    "showing_all_content": "Showing all content",
+    "search_results_count": "Found <strong>{count}</strong> results for \"{query}\"",
+    "unknown_user": "Unknown User",
+    "unknown_handle": "unknown",
+    "general": "General",
+    "new_post": "New Post",
+    "filter_by_tag_label": "Filter by tag",
+    "search_posts_placeholder": "Search posts...",
+    "showing_posts": "Showing {displayed} of {total} posts",
+    "hot": "Hot",
+    "end_of_results": "End of results",
+    "stats": {
+      "posts": "Posts",
+      "members": "Members",
+      "tags": "Tags"
+    }
   },
   "resource_type": {
     "folder": "Folder",
@@ -759,16 +771,37 @@
   },
   "catalogs": {
     "root_folder": "Root Folder",
+    "discover": "DISCOVER",
     "hero": {
+      "title_explore": "Explore",
+      "title_spaces": "Spaces",
       "title": "Explore Catalogs",
-      "description": "Discover a wide range of curated catalogs from our community. Find content that interests you and connect with creators."
+      "description": "Discover a wide range of curated catalogs from our community. Find content that interests you and connect with creators.",
+      "subtitle": "Your company's knowledge hub for teams and ideas. Join discussions, share insights, and grow together."
+    },
+    "stats": {
+      "active_spaces": "Active Spaces",
+      "members": "Members",
+      "posts": "Posts"
     },
     "search": {
-      "placeholder": "Search Spaces...",
+      "placeholder": "Search spaces by name, topic, or tag...",
       "results_subtitle": "Search results based on your query",
       "results_title": "Search Results",
       "clear": "Clear Search"
     },
+    "filter": {
+      "category": "Category",
+      "tags": "Tags",
+      "all": "All",
+      "all_tags": "All Tags",
+      "sort_by": "Sort by",
+      "popular": "Popular",
+      "newest": "Newest",
+      "name": "Name"
+    },
+    "showing_spaces": "Showing {count} spaces",
+    "live": "Live",
     "sort": {
       "name": "Sort by name",
       "created": "Sort by created",
@@ -776,7 +809,8 @@
     },
     "error": {
       "title": "Error Loading Catalogs",
-      "failed_load": "Failed to load catalogs. Please try again."
+      "failed_load": "Failed to load catalogs. Please try again.",
+      "search_failed": "Search failed. Please try again."
     },
     "empty": {
       "no_results_title": "No Results Found",
@@ -785,10 +819,13 @@
       "no_catalogs_description": "There are no public catalogs available at the moment. Check back later."
     },
     "actions": {
-      "visit": "Visit"
+      "visit": "Visit",
+      "view_details": "View Details"
     },
     "unnamed_space": "Unnamed Space",
-    "no_description": "No description available"
+    "no_description": "No description available",
+    "by": "by",
+    "items_count": "{count} items"
   },
   "common": {
     "loading": "Loading...",
@@ -897,9 +934,14 @@
       "message": "Please log in to interact with this content. You can like, comment, and engage with the community once you're signed in.",
       "login": "Go to Login",
       "cancel": "Cancel"
+    },
+    "login_required": {
+      "title": "Login Required",
+      "message": "You must be logged in to leave a comment.",
+      "login_button": "Log In",
+      "register_button": "Register"
     }
   },
-
   "my_entries": {
     "title": "My Entries",
     "subtitle": "Manage and track your content submissions",
@@ -966,7 +1008,6 @@
       "fetch_failed": "An error occurred while fetching your entries"
     }
   },
-
   "entry_detail": {
     "loading": "Loading your entry...",
     "back_to_entries": "Back to My Entries",
@@ -1154,7 +1195,6 @@
   "role": "Role",
   "super_admin": "Super Admin",
   "create_space": "Create Space",
-
   "status": "Status",
   "owner": "Owner",
   "created": "Created",
@@ -1184,7 +1224,6 @@
   "failed_to_update_space": "Failed to update space. Please try again.",
   "unnamed_space": "Unnamed Space",
   "no_description_available": "No description available",
-
   "user_management": "User Management",
   "manage_users_and_roles": "Manage users and their role assignments",
   "users_overview": "Users Overview",
@@ -1210,7 +1249,6 @@
   "failed_to_load_users": "Failed to load users",
   "failed_to_load_roles": "Failed to load roles",
   "failed_to_update_user_roles": "Failed to update user roles",
-
   "user_permissions_management": "User Permissions Management",
   "configure_access_permissions": "Configure access permissions for different user types",
   "select_permission_type": "Select Permission Type",
@@ -1238,7 +1276,6 @@
   "failed_to_create_permission": "Failed to create permission",
   "failed_to_delete_permission": "Failed to delete permission",
   "no_permission_selected": "No permission selected to delete",
-
   "role_management": "Role Management",
   "configure_roles_and_permissions": "Configure roles and their associated permissions",
   "select_role_type": "Select Role Type",
@@ -1353,7 +1390,6 @@
     "unnamed_space": "Unnamed Space",
     "no_description": "No description available"
   },
-
   "admin_space": {
     "title": "Admin: {spaceName} Space",
     "subtitle": "Full administrative access to manage all content",
@@ -1408,7 +1444,6 @@
       }
     }
   },
-
   "admin_content": {
     "title": "Contents of {name}",
     "subtitle": "Managing contents in {spaceName} at {subpath}",
@@ -1495,7 +1530,6 @@
       "create_folder": "Create Folder"
     }
   },
-
   "search_filters": {
     "search_label": "Search Spaces",
     "search_placeholder": "Search by name, description, shortname, or owner...",
@@ -1512,7 +1546,6 @@
       "action": "Clear Filters"
     }
   },
-
   "no_users_match_filters": "No users match the selected filters",
   "admin_item_detail": {
     "breadcrumb": {
@@ -1768,7 +1801,6 @@
   "MobileNumberPlaceholder": "Enter your mobile number",
   "SpacesDashboard": "Spaces Dashboard",
   "AccountActive": "Your account is active and verified",
-
   "failedToLoadAvailableRoles": "Failed to load available roles",
   "failedToLoadRoles": "Failed to load roles",
   "failedToLoadCurrentDefaultRole": "Failed to load current default role",
@@ -1963,7 +1995,6 @@
   "messaging.refresh_users_tooltip": "Refresh users",
   "messaging.refresh_groups_tooltip": "Refresh groups",
   "messaging.create_group_tooltip": "Create new group",
-
   "RequiredInformation": "Required Information",
   "SelectGender": "Select Gender",
   "Male": "Male",
@@ -2060,7 +2091,6 @@
   "polls.multiple_choice": "Multiple choice allowed",
   "polls.single_choice": "Single choice only",
   "polls.more_candidates": "More candidates",
-
   "surveys": "Surveys",
   "surveys.title": "Surveys",
   "surveys.description": "Participate in surveys and share your opinions",
@@ -2086,7 +2116,6 @@
   "surveys.input_placeholder": "Type your answer...",
   "surveys.text_placeholder": "Type your answer...",
   "surveys.select_placeholder": "Choose an option...",
-
   "survey_form.title": "Survey Builder",
   "survey_form.survey_title_label": "Survey Title",
   "survey_form.survey_title_placeholder": "Enter survey title...",
@@ -2114,7 +2143,6 @@
   "survey_form.no_questions": "No questions added yet. Click \"Add Question\" to get started.",
   "survey_form.no_options": "No options added yet. Click \"Add Option\" to create answer choices.",
   "survey_form.new_question": "Question {number}",
-
   "create_survey.title": "Create New Survey",
   "create_survey.description": "Design your survey by adding questions and configuring answer types.",
   "create_survey.breadcrumb_surveys": "Surveys",
@@ -2130,7 +2158,6 @@
   "create_survey.success": "Survey created successfully!",
   "create_survey.error": "Failed to create survey. Please try again.",
   "create_survey.generic_error": "An error occurred while creating the survey.",
-
   "survey_manage.title": "Manage My Surveys",
   "survey_manage.description": "View and manage your surveys and their responses",
   "survey_manage.back_to_surveys": "Back to Surveys",

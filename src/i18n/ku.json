@@ -388,7 +388,6 @@
       "owner": "خاوەن",
       "created": "بەرواری دروستکردن"
     },
-
     "search": {
       "placeholder": "بە ناو، وەسف، یان خاوەن بگەڕێ...",
       "label": "گەڕان",
@@ -448,7 +447,6 @@
   },
   "space": {
     "showing_with_tags": "نیشاندانی بەرزەکان لەگەڵ نیشانەکان",
-
     "total_tags": "کۆی گشتی نیشانەکان",
     "filter_by_tags": "پاڵاوتن بە نیشانەکان",
     "show_all_tags": "نیشاندانی هەموو نیشانەکان",
@@ -482,7 +480,24 @@
       "no_contents_title": "هیچ ناوەڕۆکێک نییە",
       "no_contents_description": "ئەم مەکانە لە ئێستادا بەتاڵە. دواتر بگەڕێوە بۆ ناوەڕۆکی نوێ."
     },
-    "author_avatar_alt": "وێنۆچکەی نووسەر"
+    "author_avatar_alt": "وێنۆچکەی نووسەر",
+    "showing_tagged_content": "پیشاندانی ناوەڕۆکەکانی تاگ کراون بە: {tags}",
+    "showing_all_content": "پیشاندانی هەموو ناوەڕۆکەکان",
+    "search_results_count": "<strong>{count}</strong> ئەنجام دۆزرانەوە بۆ \"{query}\"",
+    "unknown_user": "بەکارهێنەری نەناسراو",
+    "unknown_handle": "نەناسراو",
+    "general": "گشتی",
+    "new_post": "پۆستی نوێ",
+    "filter_by_tag_label": "پاڵاوتنی بە تاگ",
+    "search_posts_placeholder": "گەڕان لە پۆستەکان...",
+    "showing_posts": "پیشاندانی {displayed} لە {total} پۆست",
+    "hot": "گەرم",
+    "end_of_results": "کۆتایی ئەنجامەکان",
+    "stats": {
+      "posts": "پۆستەکان",
+      "members": "ئەندامەکان",
+      "tags": "تاگەکان"
+    }
   },
   "resource_type": {
     "folder": "بوخچە",
@@ -701,7 +716,6 @@
       "button": "پەیوەندیمان پێوە بکە"
     }
   },
-
   "post_detail": {
     "breadcrumb": {
       "label": "ڕێچکەی ڕێنمایی",
@@ -804,6 +818,12 @@
       "message": "تکایە بچۆ ژوورەوە بۆ پەیوەندیدان بە ناوەڕۆکەکە. دەتوانیت دڵخۆشیت پێبکەیت، لێدوان بدەیت و بەشداربیت لە کۆمەڵگەکە.",
       "login": "بچۆ بۆ ژوورەوە",
       "cancel": "پاشگەزبوونەوە"
+    },
+    "login_required": {
+      "title": "چوونەژوورەوە پێویستە",
+      "message": "دەبێت بچیتە ژوورەوە بۆ جێهێشتنی لێدوان.",
+      "login_button": "چوونەژوورەوە",
+      "register_button": "خۆتۆمارکردن"
     }
   },
   "my_entries": {
@@ -1039,7 +1059,6 @@
     "error": "شکستی هێنا لە  تۆمار!",
     "attachment_error": "شکستی هێنا لە پاشکۆکردنی بە تۆمارەکە!"
   },
-
   "admin_dashboard": "پانێلی بەڕێوەبەری",
   "failed_to_load_spaces": "شکستی هێنا لە بارکردنی شوێنەکان",
   "error_loading_spaces": "هەڵە لە بارکردنی شوێنەکان",
@@ -1081,7 +1100,6 @@
   "failed_to_update_space": "شکستی هێنا لە نوێکردنەوەی شوێن. تکایە دووبارە هەوڵ بدەرەوە.",
   "unnamed_space": "شوێنی بێناو",
   "no_description_available": "هیچ وەسفێک بەردەست نییە",
-
   "user_management": "بەڕێوەبردنی بەکارهێنەران",
   "manage_users_and_roles": "بەڕێوەبردنی بەکارهێنەران و دیاریکردنی ڕۆڵەکان",
   "users_overview": "تێڕوانینی گشتی بۆ بەکارهێنەران",
@@ -1107,7 +1125,6 @@
   "failed_to_load_users": "شکستی هێنا لە بارکردنی بەکارهێنەران",
   "failed_to_load_roles": "شکستی هێنا لە بارکردنی ڕۆڵەکان",
   "failed_to_update_user_roles": "شکستی هێنا لە نوێکردنەوەی ڕۆڵەکانی بەکارهێنەر",
-
   "user_permissions_management": "بەڕێوەبردنی مۆڵەتەکانی بەکارهێنەر",
   "configure_access_permissions": "ڕێکخستنی مۆڵەتەکانی دەستپێگەیشتن بۆ جۆرە جیاوازەکانی بەکارهێنەر",
   "select_permission_type": "جۆری مۆڵەت هەڵبژێرە",
@@ -1133,7 +1150,6 @@
   "failed_to_create_permission": "شکستی هێنا لە دروستکردنی مۆڵەت",
   "failed_to_delete_permission": "شکستی هێنا لە سڕینەوەی مۆڵەت",
   "no_permission_selected": "هیچ مۆڵەتێک بۆ سڕینەوە هەڵنەبژێردراوە",
-
   "role_management": "بەڕێوەبردنی ڕۆڵەکان",
   "configure_roles_and_permissions": "ڕێکخستنی ڕۆڵەکان و مۆڵەتە پەیوەندیدارەکان",
   "select_role_type": "جۆری ڕۆڵ هەڵبژێرە",
@@ -1297,7 +1313,6 @@
       }
     }
   },
-
   "search_filters": {
     "search_label": "گەڕان لە بۆشاییەکان",
     "search_placeholder": "گەڕان بە ناو، پێناسە، ناوی کورت یان خاوەن...",
@@ -1579,7 +1594,6 @@
     "ticket": "تکت",
     "content": "ناوەڕۆک"
   },
-
   "fields": {
     "sort_by": "ڕیزکردن بەپێی",
     "sort_order": "ڕێکخستنی ڕیزکردن",
@@ -1662,7 +1676,6 @@
   "MobileNumberPlaceholder": "بەشێوەیەکی فەرمی ژمارەی مۆبایلەکەت بنووسە",
   "SpacesDashboard": " داشبۆردی بۆشاییەکان",
   "AccountActive": "حسابەکەت چالاک و پەسندکراوە",
-
   "failedToLoadAvailableRoles": "سەرکەوتوو نەبوو لە بارکردنی ڕۆڵە بەردەستەکان",
   "failedToLoadRoles": "سەرکەوتوو نەبوو لە بارکردنی ڕۆڵەکان",
   "failedToLoadCurrentDefaultRole": "سەرکەوتوو نەبوو لە بارکردنی ڕۆڵی بنچینەیی ئێستا",
@@ -1675,7 +1688,6 @@
   "configurationEntityNotFound": "ئەندامی ڕێکخستن نەدۆزرایەوە",
   "systemConfigurationEntityMissingDescription": "ئەندامی ڕێکخستنی سیستەم نەماوە. ئەمە پێویستە بۆ بەڕێوەبردنی ڕۆڵە بنچینەییەکانی بەکارهێنەران.",
   "autoCreateConfigurationEntityQuestion": "دەتەوێت بە شێوەیەکی خۆکارانە ئەندامی ڕێکخستنی ونبوو دروست بکەیت؟",
-
   "autoFix": "چاککردنەوەی خۆکارانە",
   "systemConfiguration": "ڕێکخستنی سیستەم",
   "systemConfigurationSubtitle": "ڕێکخستنی ڕێکخستنە بنچینەییەکان بۆ بەکارهێنەرە نوێکان و ڕەفتاری سیستەم",
@@ -1702,7 +1714,6 @@
   "noPermissionsAdded": "هیچ مۆڵەتێک زیاد نەکراوە",
   "or": "یان",
   "templates": "قاڵبەکان",
-
   "schema_editor.title": "دەستکاری شێوە",
   "schema_editor.schema_title_label": "ناونیشانی شێوە",
   "schema_editor.schema_title_placeholder": "ناونیشانی شێوە",
@@ -1977,7 +1988,6 @@
   "create_survey.survey_path": "ڕێگای ڕاپرسی",
   "survey_manage.untitled_survey": "ڕاپرسیی بێ ناونیشان",
   "survey_manage.no_responses_message": "هیچ وەڵامێک بۆ ئەم ڕاپرسییە نێردراوە.",
-
   "surveys": "لیستی سەرژمێری",
   "surveys.title": "سەرژمێرییەکان",
   "surveys.description": "بەژداربە لە سەرژمێری و بڵاوبکەوە بیرۆکەکانت",
@@ -2006,7 +2016,6 @@
   "surveys.input_placeholder": "وەڵام بنووسە...",
   "surveys.text_placeholder": "وەڵام بنووسە...",
   "surveys.select_placeholder": "هەڵبژاردنێک هەڵبژێرە...",
-
   "survey_form.title": "دروستکەری سەرژمێری",
   "survey_form.survey_title_label": "ناونیشانی سەرژمێری",
   "survey_form.survey_description_label": "پێناسی سەرژمێری",
@@ -2032,7 +2041,6 @@
   "survey_form.no_questions": "هیچ پرسیارێک زیاد نەکراوە. کرتە بکە لەسەر \"زیادکردنی پرسیار\" بۆ دەستپێکردن.",
   "survey_form.no_options": "هیچ هەڵبژاردنێک زیاد نەکراوە. کرتە بکە لەسەر \"زیادکردنی هەڵبژاردن\" بۆ دروستکردنی هەڵبژاردنەکان.",
   "survey_form.new_question": "پرسیار {number}",
-
   "create_survey.title": "دروستکردنی سەرژمێری نوێ",
   "create_survey.description": "سەرژمێرەکەت دیزاین بکە بە زیادکردنی پرسیار و دیاریکردنی جۆری وەڵام.",
   "create_survey.create_button": "دروستکردن",
@@ -2045,7 +2053,6 @@
   "create_survey.success": "سەرژمێری بەسەرکەوتوویی دروستکرا!",
   "create_survey.error": "شکستی هێنا لە دروستکردنی سەرژمێری. تکایە دوبارە هەوڵبدە.",
   "create_survey.generic_error": "هەڵەیەک ڕوویدا لە دروستکردنی سەرژمێری.",
-
   "survey_manage.title": "بەڕێوەبردنی سەرژمێرییەکانم",
   "survey_manage.description": "سەرژمێرییەکانت ببینە و بەڕێوە بەرەوە و وەڵامەکانت",
   "survey_manage.back_to_surveys": "گەڕانەوە بۆ سەرژمێری",

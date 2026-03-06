@@ -9,7 +9,7 @@
   marked.use(
     gfmHeadingId({
       prefix: "my-prefix-",
-    })
+    }),
   );
 
   export let postData: any;
@@ -23,18 +23,20 @@
     const body = postData.payload.body;
 
     if (contentType === "html") {
-      if (typeof body === "string" && body.includes("#")) {
-        return marked.parse(body);
-      }
       return body;
     } else if (contentType === "json") {
-      if (typeof body === "object") {
-        return Object.entries(body)
-          .map(([key, value]) => `<strong>${key}:</strong> ${value}`)
-          .join("<br>");
+      if (typeof body === "object" && body !== null) {
+        return `<pre class="bg-gray-50 rounded-xl p-4 text-sm overflow-x-auto text-gray-700 leading-relaxed">${JSON.stringify(body, null, 2)}</pre>`;
       } else {
         return body;
       }
+    } else {
+      // By default, parse string body as Markdown (covers "markdown", "md", or missing type)
+      if (typeof body === "string") {
+        return marked.parse(body) as string;
+      }
+      // Fallback for unexpected non-string bodies without a known type
+      return `<pre class="bg-gray-50 rounded-xl p-4 text-sm whitespace-pre-wrap text-gray-700">${JSON.stringify(body)}</pre>`;
     }
   }
 </script>
@@ -45,13 +47,10 @@
       <span class="title-accent"></span>
       {$_("post_detail.sections.content")}
     </h3>
-
     <div class="post-content">
-      <div class="content-text my-4 mx-6">
-        <div class="content-display bg-white p-6 rounded-lg shadow-sm border">
-          <div
-            class="prose prose-lg max-w-none prose-headings:text-gray-900 prose-headings:font-bold prose-p:text-gray-700 prose-p:leading-relaxed prose-strong:text-gray-900 prose-a:text-blue-600 hover:prose-a:text-blue-800 prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-ul:list-disc prose-ol:list-decimal prose-li:mb-1"
-          >
+      <div class="content-text">
+        <div class="content-display bg-white p-6">
+          <div class="markdown-preview">
             {@html renderContent(postData)}
           </div>
         </div>
@@ -61,6 +60,24 @@
 {/if}
 
 <style>
+  .markdown-preview {
+    height: 100%;
+    padding: 1rem;
+    overflow-y: auto;
+    background: white;
+    font-family:
+      "uthmantn",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
+      "Helvetica Neue",
+      Arial,
+      sans-serif;
+    line-height: 1.6;
+    color: #374151;
+  }
+
   .content-section {
     margin-bottom: 32px;
   }
@@ -86,7 +103,6 @@
 
   .post-content {
     background: #ffffff;
-    border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   }
@@ -106,17 +122,61 @@
   }
 
   /* Enhanced markdown styles */
-  .post-content :global(ul),
-  .post-content :global(ol) {
+  .markdown-preview :global(h1) {
+    font-size: 1.875rem;
+    font-weight: 700;
+    margin: 1.5rem 0 1rem 0;
+    color: #1f2937;
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 0.5rem;
+  }
+
+  .markdown-preview :global(h2) {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 1.25rem 0 0.75rem 0;
+    color: #1f2937;
+  }
+
+  .markdown-preview :global(h3) {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 1rem 0 0.5rem 0;
+    color: #1f2937;
+  }
+
+  .markdown-preview :global(h4),
+  .markdown-preview :global(h5),
+  .markdown-preview :global(h6) {
+    color: #1e293b;
+    font-weight: 600;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .markdown-preview :global(p) {
+    margin: 0.75rem 0;
+  }
+
+  .markdown-preview :global(ul),
+  .markdown-preview :global(ol) {
     margin: 0.75rem 0;
     padding-left: 1.5rem;
   }
 
-  .post-content :global(li) {
+  .markdown-preview :global(ul) {
+    list-style-type: disc;
+  }
+
+  .markdown-preview :global(ol) {
+    list-style-type: decimal;
+  }
+
+  .markdown-preview :global(li) {
     margin: 0.25rem 0;
   }
 
-  .post-content :global(code) {
+  .markdown-preview :global(code) {
     background: #f3f4f6;
     padding: 0.125rem 0.25rem;
     border-radius: 0.25rem;
@@ -124,7 +184,7 @@
     font-size: 0.875rem;
   }
 
-  .post-content :global(pre) {
+  .markdown-preview :global(pre) {
     background: #1f2937;
     color: #f9fafb;
     padding: 1rem;
@@ -133,79 +193,56 @@
     margin: 1rem 0;
   }
 
-  .post-content :global(pre code) {
+  .markdown-preview :global(pre code) {
     background: transparent;
     padding: 0;
     color: inherit;
   }
 
-  .post-content :global(table) {
+  .markdown-preview :global(table) {
     width: 100%;
     border-collapse: collapse;
     margin: 1rem 0;
   }
 
-  .post-content :global(th),
-  .post-content :global(td) {
+  .markdown-preview :global(th),
+  .markdown-preview :global(td) {
     padding: 0.5rem 0.75rem;
     border: 1px solid #d1d5db;
     text-align: left;
   }
 
-  .post-content :global(th) {
+  .markdown-preview :global(th) {
     background: #f9fafb;
     font-weight: 600;
   }
 
-  .post-content :global(strong) {
+  .markdown-preview :global(strong) {
     font-weight: 600;
   }
 
-  .post-content :global(em) {
+  .markdown-preview :global(em) {
     font-style: italic;
   }
 
-  .post-content :global(del) {
+  .markdown-preview :global(del) {
     text-decoration: line-through;
   }
 
-  /* JSON content styles */
-  .post-content :global(br) {
-    margin-bottom: 0.5rem;
-  }
-
-  .post-content {
-    margin-bottom: 2rem;
-    line-height: 1.7;
-    color: #374151;
-  }
-
-  .post-content :global(h1),
-  .post-content :global(h2),
-  .post-content :global(h3),
-  .post-content :global(h4),
-  .post-content :global(h5),
-  .post-content :global(h6) {
-    color: #1e293b;
-    font-weight: 600;
-    margin-top: 0.5rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .post-content :global(p) {
-    margin-bottom: 1.25rem;
-  }
-
-  .post-content :global(a) {
+  .markdown-preview :global(a) {
     color: #3b82f6;
     text-decoration: underline;
   }
 
-  .post-content :global(blockquote) {
+  .markdown-preview :global(blockquote) {
     border-left: 4px solid #3b82f6;
     padding-left: 1rem;
     margin: 1.5rem 0;
     font-style: italic;
     color: #64748b;
+  }
+
+  .markdown-preview :global(br) {
+    margin-bottom: 0.5rem;
   }
 </style>

@@ -5,7 +5,7 @@
     filterUserByRole,
     getSpaceContents,
     updateUserRoles,
-  } from "@/lib/dmart_services";
+  } from "@/lib/dmart_services/dmart_services";
   import {
     errorToastMessage,
     successToastMessage,
@@ -13,10 +13,11 @@
   import { _, locale } from "@/i18n";
   import { formatNumber } from "@/lib/helpers";
   import { derived } from "svelte/store";
+  import { Modal } from "flowbite-svelte";
 
   const isRTL = derived(
     locale,
-    ($locale) => $locale === "ar" || $locale === "ku"
+    ($locale) => $locale === "ar" || $locale === "ku",
   );
 
   let users = $state([]);
@@ -46,12 +47,12 @@
         usersResponse = await filterUserByRole(
           selectedRoleFilter,
           itemsPerPage,
-          (currentPage - 1) * itemsPerPage
+          (currentPage - 1) * itemsPerPage,
         );
       } else {
         usersResponse = await getAllUsers(
           itemsPerPage,
-          (currentPage - 1) * itemsPerPage
+          (currentPage - 1) * itemsPerPage,
         );
       }
 
@@ -85,7 +86,7 @@
       const rolesResponse = await getSpaceContents(
         "management",
         "roles",
-        "managed"
+        "managed",
       );
 
       if (rolesResponse.status === "success") {
@@ -114,7 +115,7 @@
           user.shortname.toLowerCase().includes(term) ||
           user.displayname.toLowerCase().includes(term) ||
           user.email.toLowerCase().includes(term) ||
-          user.roles.some((role) => role.toLowerCase().includes(term))
+          user.roles.some((role) => role.toLowerCase().includes(term)),
       );
     }
 
@@ -157,7 +158,7 @@
       (role) =>
         role.shortname.toLowerCase().includes(term) ||
         role.displayname.toLowerCase().includes(term) ||
-        role.description.toLowerCase().includes(term)
+        role.description.toLowerCase().includes(term),
     );
   }
 
@@ -168,11 +169,11 @@
     try {
       const success = await updateUserRoles(
         selectedUser.shortname,
-        selectedRoles
+        selectedRoles,
       );
       if (success) {
         const userIndex = users.findIndex(
-          (u) => u.shortname === selectedUser.shortname
+          (u) => u.shortname === selectedUser.shortname,
         );
         if (userIndex > -1) {
           users[userIndex].roles = [...selectedRoles];
@@ -453,7 +454,7 @@
         <div class="stat-number">
           {formatNumber(
             users.filter((u) => u.roles.length === 0).length,
-            $locale
+            $locale,
           )}
         </div>
         <div class="stat-label">{$_("users_without_roles")}</div>
@@ -462,117 +463,82 @@
   </div>
 </div>
 
-{#if showRoleModal && selectedUser}
-  <div
-    class="modal-overlay"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="modal-title"
-    tabindex="-1"
-    onkeydown={(e) => {
-      if (e.key === "Escape") closeRoleModal();
-    }}
-    onclick={closeRoleModal}
-  >
-    <div
-      class="modal"
-      role="dialog"
-      tabindex="-1"
-      onkeydown={(e) => e.stopPropagation()}
-      onclick={(e) => e.stopPropagation()}
-    >
-      <div class="modal-header">
-        <h3 id="modal-title">
-          {$_("manageRolesFor")}
-          {selectedUser.displayname}
-        </h3>
-        <button
-          class="close-btn"
-          aria-label={$_("close")}
-          onkeydown={(e) => {
-            if (e.key === "Enter") closeRoleModal();
-          }}
-          onclick={closeRoleModal}>×</button
-        >
-      </div>
+<Modal
+  title="{$_('manageRolesFor')} {selectedUser?.displayname ?? ''}"
+  bind:open={showRoleModal}
+  size="lg"
+  class="bg-white dark:bg-white"
+  headerClass="text-gray-900 dark:text-gray-900"
+  placement="center"
+  autoclose={false}
+>
+  <p class="modal-description">
+    {$_("selectRolesToAssignDescription")}
+  </p>
 
-      <div class="modal-body">
-        <p class="modal-description">
-          {$_("selectRolesToAssignDescription")}
-        </p>
-
-        {#if availableRoles.length === 0}
-          <div class="alert alert-warning">
-            <div class="alert-icon">⚠</div>
-            <div>{$_("noRolesAvailable")}</div>
-          </div>
-        {:else}
-          <div class="role-search-container">
-            <input
-              type="text"
-              class="role-search-input"
-              placeholder={$_("search_roles") || "Search roles..."}
-              bind:value={roleSearchTerm}
-              oninput={filterAvailableRoles}
-            />
-          </div>
-
-          {#if filteredRoles.length === 0}
-            <div class="empty-roles-state">
-              <p>
-                {$_("no_roles_match_search") || "No roles match your search"}
-              </p>
-            </div>
-          {:else}
-            <div class="roles-selection">
-              {#each filteredRoles as role}
-                <label class="role-option">
-                  <input
-                    type="checkbox"
-                    checked={selectedRoles.includes(role.shortname)}
-                    onchange={() => toggleRole(role.shortname)}
-                  />
-                  <div class="role-content">
-                    <div class="role-name">{role.displayname}</div>
-                    <div class="role-description">{role.description}</div>
-                  </div>
-                </label>
-              {/each}
-            </div>
-          {/if}
-        {/if}
-      </div>
-
-      <div class="modal-footer">
-        <button
-          class="btn btn-secondary"
-          onkeydown={(e) => {
-            if (e.key === "Enter") closeRoleModal();
-          }}
-          onclick={closeRoleModal}
-          disabled={isUpdating}
-        >
-          {$_("cancel")}
-        </button>
-        <button
-          class="btn btn-primary"
-          onkeydown={(e) => {
-            if (e.key === "Enter") saveUserRoles();
-          }}
-          onclick={saveUserRoles}
-          disabled={isUpdating || availableRoles.length === 0}
-        >
-          {#if isUpdating}
-            <div class="spinner small"></div>
-            {$_("saving")}
-          {:else}
-            {$_("saveChanges")}
-          {/if}
-        </button>
-      </div>
+  {#if availableRoles.length === 0}
+    <div class="alert alert-warning">
+      <div class="alert-icon">⚠</div>
+      <div>{$_("noRolesAvailable")}</div>
     </div>
-  </div>
-{/if}
+  {:else}
+    <div class="role-search-container">
+      <input
+        type="text"
+        class="role-search-input"
+        placeholder={$_("search_roles") || "Search roles..."}
+        bind:value={roleSearchTerm}
+        oninput={filterAvailableRoles}
+      />
+    </div>
+
+    {#if filteredRoles.length === 0}
+      <div class="empty-roles-state">
+        <p>
+          {$_("no_roles_match_search") || "No roles match your search"}
+        </p>
+      </div>
+    {:else}
+      <div class="roles-selection">
+        {#each filteredRoles as role}
+          <label class="role-option">
+            <input
+              type="checkbox"
+              checked={selectedRoles.includes(role.shortname)}
+              onchange={() => toggleRole(role.shortname)}
+            />
+            <div class="role-content">
+              <div class="role-name">{role.displayname}</div>
+              <div class="role-description">{role.description}</div>
+            </div>
+          </label>
+        {/each}
+      </div>
+    {/if}
+  {/if}
+
+  {#snippet footer()}
+    <button
+      class="btn btn-secondary"
+      onclick={closeRoleModal}
+      disabled={isUpdating}
+    >
+      {$_("cancel")}
+    </button>
+    <button
+      class="btn btn-primary"
+      onclick={saveUserRoles}
+      disabled={isUpdating || availableRoles.length === 0}
+    >
+      {#if isUpdating}
+        <div class="spinner small"></div>
+        {$_("saving")}
+      {:else}
+        {$_("saveChanges")}
+      {/if}
+    </button>
+  {/snippet}
+</Modal>
 
 <style>
   .rtl {
@@ -880,29 +846,7 @@
     font-size: 14px;
   }
 
-  .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    padding: 20px;
-  }
-
-  .modal {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-    max-width: 600px;
-    width: 100%;
-    max-height: 80vh;
-    overflow-y: auto;
-  }
+  /* Modal Styles removed - now using flowbite Modal */
 
   .modal-header {
     display: flex;

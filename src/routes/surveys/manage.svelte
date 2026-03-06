@@ -6,7 +6,7 @@
     getSurveys,
     getEntity,
     getUserSurveyResponses,
-  } from "@/lib/dmart_services";
+  } from "@/lib/dmart_services/dmart_services";
   import { ResourceType } from "@edraj/tsdmart";
   import { _, locale } from "@/i18n";
   import { user } from "@/stores/user";

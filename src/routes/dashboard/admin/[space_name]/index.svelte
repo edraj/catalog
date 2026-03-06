@@ -1,7 +1,11 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { Modal } from "flowbite-svelte";
   import { goto, params } from "@roxi/routify";
-  import { deleteEntity, getSpaceContents } from "@/lib/dmart_services";
+  import {
+    deleteEntity,
+    getSpaceContents,
+  } from "@/lib/dmart_services/dmart_services";
   import { Diamonds } from "svelte-loading-spinners";
   import { _, locale } from "@/i18n";
   import { derived } from "svelte/store";
@@ -14,7 +18,7 @@
 
   const isRTL = derived(
     locale,
-    ($locale) => $locale === "ar" || $locale === "ku"
+    ($locale) => $locale === "ar" || $locale === "ku",
   );
 
   let isLoading = $state(false);
@@ -363,7 +367,7 @@
     } catch (err) {
       console.error(
         `Error ${isEditMode ? "updating" : "creating"} folder:`,
-        err
+        err,
       );
       const errorMessage = isEditMode
         ? $_("admin_space.error.update_folder_error")
@@ -381,7 +385,7 @@
       !confirm(
         $_("admin_space.confirm.delete_item", {
           values: { name: item.shortname },
-        })
+        }),
       )
     ) {
       return;
@@ -392,7 +396,7 @@
         item.shortname,
         spaceName,
         actualSubpath,
-        item.resource_type
+        item.resource_type,
       );
       if (success) {
         await loadContents();
@@ -475,50 +479,50 @@
 </script>
 
 <div class="min-h-screen bg-gray-50" class:rtl={$isRTL}>
-  <div class="bg-white border-b border-gray-200">
-    <div class="container mx-auto px-4 py-6 max-w-7xl">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center space-x-4" class:space-x-reverse={$isRTL}>
-          <button
-            onclick={goBack}
-            class="flex items-center text-gray-600 hover:text-gray-900 transition-colors duration-200"
-            class:flex-row-reverse={$isRTL}
-            aria-label={$_("admin_space.navigation.go_back")}
+  <div class="bg-white border-b border-gray-100" class:rtl={$isRTL}>
+    <div class="container mx-auto px-4 py-8 max-w-5xl">
+      <div class="flex items-start justify-between">
+        <button
+          onclick={goBack}
+          class="flex items-center text-gray-500 hover:text-gray-900 transition-colors duration-200 text-sm font-medium pt-1"
+          class:flex-row-reverse={$isRTL}
+          aria-label={$_("admin_space.navigation.go_back")}
+        >
+          <svg
+            class="w-4 h-4 mr-2"
+            class:mr-2={!$isRTL}
+            class:ml-2={$isRTL}
+            class:rotate-180={$isRTL}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-            <svg
-              class="w-5 h-5 mr-2"
-              class:mr-2={!$isRTL}
-              class:ml-2={$isRTL}
-              class:rotate-180={$isRTL}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M15 19l-7-7 7-7"
-              ></path>
-            </svg>
-            {$_("admin_space.navigation.back_to_admin")}
-          </button>
-          <div class="h-6 w-px bg-gray-300"></div>
-          <div class:text-right={$isRTL}>
-            <h1 class="text-2xl font-bold text-gray-900 capitalize">
-              {$_("admin_space.title", { values: { spaceName } })}
-            </h1>
-            <p class="text-gray-600">
-              {$_("admin_space.subtitle")}
-            </p>
-          </div>
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"
+            ></path>
+          </svg>
+          Back to Admin
+        </button>
+
+        <div
+          class="flex-1 ml-6 text-left"
+          class:mr-6={$isRTL}
+          class:text-right={$isRTL}
+        >
+          <h1 class="text-[26px] leading-[30px] font-bold text-gray-900 mb-1">
+            Admin: <span class="capitalize">{spaceName}</span> Space
+          </h1>
+          <!--          <p class="text-[14px] font-medium text-indigo-400">-->
+          <!--            Full administrative access to manage all content-->
+          <!--          </p>-->
         </div>
 
         <button
-          aria-label={`Create new folder`}
           onclick={handleCreateFolder}
-          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
-          class:flex-row-reverse={$isRTL}
+          class="bg-indigo-500 hover:bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200 flex items-center justify-center gap-1.5 shadow-sm"
         >
           <svg
             class="w-4 h-4"
@@ -533,13 +537,13 @@
               d="M12 4v16m8-8H4"
             ></path>
           </svg>
-          {$_("admin_space.actions.create_folder")}
+          Create Folder
         </button>
       </div>
     </div>
   </div>
 
-  <div class="container mx-auto px-4 py-8 max-w-7xl">
+  <div class="container mx-auto px-4 pb-12 max-w-5xl">
     {#if isLoading}
       <div class="flex justify-center py-16">
         <Diamonds color="#3b82f6" size="60" unit="px" />
@@ -596,207 +600,32 @@
       </div>
     {:else}
       <!-- Search and Filter Section -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
-        <div class="p-6 border-b border-gray-200">
-          <div
-            class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4"
-          >
-            <div class="flex-1">
-              <h2 class="text-lg font-semibold text-gray-900 mb-2">
-                {$_("admin_dashboard.manage_spaces", {
-                  values: {
-                    count: formatNumberInText(
-                      displayedContents.length,
-                      $locale
-                    ),
-                  },
-                })}
-              </h2>
-              <p class="text-sm text-gray-600">
-                {#if isSearchActive}
-                  Showing {formatNumberInText(
-                    displayedContents.length,
-                    $locale
-                  )} of {formatNumberInText(allContents.length, $locale)} spaces
-                {:else}
-                  {$_("admin_dashboard.admin_access_description")}
-                {/if}
-              </p>
-            </div>
-          </div>
+      <div
+        class="bg-white rounded-[20px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 p-6 mb-8 mt-4"
+      >
+        <div class="mb-6">
+          <h2 class="text-base font-bold text-gray-900">
+            Manage Spaces ({displayedContents.length})
+          </h2>
+          <!--          <p class="text-[13px] text-gray-400 mt-1">-->
+          <!--            Administrative access to all spaces-->
+          <!--          </p>-->
         </div>
 
-        <!-- Search and Filter Controls -->
-        <div class="p-6 bg-gray-50 border-b border-gray-200">
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <!-- Search Input -->
-            <div class="lg:col-span-2">
-              <label
-                for="search"
-                class="block text-sm font-medium text-gray-700 mb-2"
-              >
-                {$_("search_filters.search_label")}
-              </label>
-              <div class="relative">
-                <div
-                  class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
-                >
-                  <svg
-                    class="h-5 w-5 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    ></path>
-                  </svg>
-                </div>
-                <label for="search"></label>
-                <input
-                  id="search"
-                  type="text"
-                  bind:value={searchQuery}
-                  placeholder={$_("search_filters.search_placeholder")}
-                  class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
-                />
-                {#if searchQuery}
-                  <button
-                    onclick={() => {
-                      searchQuery = "";
-                    }}
-                    class="absolute inset-y-0 right-0 pr-3 flex items-center"
-                    aria-label={$_("search_filters.clear_search")}
-                  >
-                    <svg
-                      class="h-4 w-4 text-gray-400 hover:text-gray-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M6 18L18 6M6 6l12 12"
-                      ></path>
-                    </svg>
-                  </button>
-                {/if}
-              </div>
-            </div>
-
-            <!-- Type Filter -->
-            <div>
-              <label
-                for="type-filter"
-                class="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Type
-              </label>
-              <select
-                id="type-filter"
-                bind:value={selectedType}
-                class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              >
-                {#each typeOptions as option}
-                  <option value={option.value}>{option.label}</option>
-                {/each}
-              </select>
-            </div>
-
-            <!-- Status Filter -->
-            <div>
-              <label
-                for="status-filter"
-                class="block text-sm font-medium text-gray-700 mb-2"
-              >
-                {$_("search_filters.status_label")}
-              </label>
-              <select
-                id="status-filter"
-                bind:value={selectedStatus}
-                class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              >
-                {#each statusOptions as option}
-                  <option value={option.value}>{option.label}</option>
-                {/each}
-              </select>
-            </div>
-
-            <!-- Sort Options -->
-            <div>
-              <label
-                for="sort-by"
-                class="block text-sm font-medium text-gray-700 mb-2"
-              >
-                {$_("search_filters.sort_label")}
-              </label>
-              <div class="flex gap-2">
-                <select
-                  id="sort-by"
-                  bind:value={sortBy}
-                  class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                >
-                  {#each sortOptions as option}
-                    <option value={option.value}>{option.label}</option>
-                  {/each}
-                </select>
-                <button
-                  onclick={toggleSortOrder}
-                  class="px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  title={$_("search_filters.toggle_sort")}
-                  aria-label={$_("search_filters.toggle_sort")}
-                >
-                  <svg
-                    class="w-4 h-4 text-gray-600 {sortOrder === 'desc'
-                      ? 'rotate-180'
-                      : ''}"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-                    ></path>
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Clear Filters -->
-          {#if isSearchActive}
-            <div class="mt-4 flex items-center justify-between">
-              <div class="text-sm text-gray-600">
-                {$_("search_filters.results_count", {
-                  values: {
-                    displayed: formatNumberInText(
-                      displayedContents.length,
-                      $locale
-                    ),
-                    total: formatNumberInText(allContents.length, $locale),
-                  },
-                })}
-                {#if searchQuery}
-                  {$_("search_filters.results_for", {
-                    values: { query: searchQuery },
-                  })}
-                {/if}
-              </div>
-              <button
-                onclick={clearFilters}
-                class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                aria-label={$_("search_filters.clear_filters")}
+        <div class="space-y-4">
+          <!-- Search spaces -->
+          <div>
+            <label
+              for="search-input"
+              class="block text-[13px] font-medium text-gray-500 mb-1.5"
+              >Search Spaces</label
+            >
+            <div class="relative">
+              <div
+                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
               >
                 <svg
-                  class="w-4 h-4 mr-1.5"
+                  class="h-4 w-4 text-gray-300"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -805,229 +634,143 @@
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     stroke-width="2"
-                    d="M6 18L18 6M6 6l12 12"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                   ></path>
                 </svg>
-                {$_("search_filters.clear_filters")}
+              </div>
+              <input
+                id="search-input"
+                type="text"
+                bind:value={searchQuery}
+                placeholder="Search by name, description, shortname, or owner..."
+                class="block w-full pl-9 pr-10 py-2.5 text-sm border-none bg-gray-50 rounded-xl text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500"
+              />
+              {#if searchQuery}
+                <button
+                  onclick={() => {
+                    searchQuery = "";
+                  }}
+                  class="absolute inset-y-0 right-0 pr-3 flex items-center justify-center hover:text-gray-600 transition-colors"
+                >
+                  <svg
+                    class="h-4 w-4 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    ></path>
+                  </svg>
+                </button>
+              {/if}
+            </div>
+          </div>
+
+          <div class="flex gap-4">
+            <!-- Type Filter -->
+            <div class="flex-1">
+              <label
+                for="type-filter"
+                class="block text-[13px] font-medium text-indigo-500 mb-1.5 ml-1"
+                >Type</label
+              >
+              <select
+                id="type-filter"
+                bind:value={selectedType}
+                onchange={applyFilters}
+                class="block w-full px-3 py-2 text-sm border-none bg-gray-50 rounded-xl text-gray-700 focus:ring-2 focus:ring-indigo-500"
+              >
+                {#each typeOptions as option}
+                  <option value={option.value}
+                    >{option.label === "All"
+                      ? option.label
+                      : option.label}</option
+                  >
+                {/each}
+              </select>
+            </div>
+
+            <!-- Status Filter -->
+            <div class="flex-1">
+              <label
+                for="status-filter"
+                class="block text-[13px] font-medium text-indigo-500 mb-1.5 ml-1"
+                >Status</label
+              >
+              <select
+                id="status-filter"
+                bind:value={selectedStatus}
+                onchange={applyFilters}
+                class="block w-full px-3 py-2 text-sm border-none bg-gray-50 rounded-xl text-gray-700 focus:ring-2 focus:ring-indigo-500"
+              >
+                {#each statusOptions as option}
+                  <option value={option.value}
+                    >{option.label === "All"
+                      ? option.label
+                      : option.label}</option
+                  >
+                {/each}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label
+              for="sort-by"
+              class="block text-[13px] font-medium text-indigo-500 mb-1.5 ml-1"
+              >Sort By</label
+            >
+            <div class="flex gap-2 items-center">
+              <select
+                id="sort-by"
+                bind:value={sortBy}
+                onchange={applyFilters}
+                class="block w-auto min-w-[200px] px-3 py-2 text-sm border-none bg-gray-50 rounded-xl text-gray-700 focus:ring-2 focus:ring-indigo-500"
+              >
+                {#each sortOptions as option}
+                  <option value={option.value}
+                    >{option.label === "Name"
+                      ? option.label
+                      : option.label}</option
+                  >
+                {/each}
+              </select>
+              <button
+                onclick={toggleSortOrder}
+                class="h-[36px] w-[36px] flex items-center justify-center bg-gray-50 rounded-xl text-gray-500 hover:bg-gray-100 transition-colors focus:ring-2 focus:ring-indigo-500"
+                title={$_("search_filters.toggle_sort")}
+                aria-label={$_("search_filters.toggle_sort")}
+              >
+                <svg
+                  class="w-4 h-4 {sortOrder === 'desc'
+                    ? 'rotate-180'
+                    : ''} transition-transform duration-200"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                  ></path>
+                </svg>
               </button>
             </div>
-          {/if}
+          </div>
         </div>
-
-        <!-- Results -->
-        {#if displayedContents.length === 0 && isSearchActive}
-          <div class="text-center py-12">
-            <svg
-              class="mx-auto w-12 h-12 text-gray-300 mb-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.291-1.007-5.691-2.709M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-              ></path>
-            </svg>
-            <h3 class="text-lg font-medium text-gray-900 mb-2">
-              {$_("search_filters.no_results_title")}
-            </h3>
-            <p class="text-gray-500 mb-4">
-              {$_("search_filters.no_results_description")}
-            </p>
-            <button
-              onclick={clearFilters}
-              class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-600 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              {$_("search_filters.clear_filters")}
-            </button>
-          </div>
-        {:else}
-          <div
-            class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 p-6"
-          >
-            {#each displayedContents as item}
-              <div
-                class="bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md cursor-pointer transition-all duration-200 p-4 group"
-                onclick={() => handleItemClick(item)}
-                role="button"
-                tabindex="0"
-                onkeydown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    handleItemClick(item);
-                  }
-                }}
-              >
-                <div
-                  class="flex items-start justify-between mb-3"
-                  class:flex-row-reverse={$isRTL}
-                >
-                  <div
-                    class="flex items-start space-x-3 flex-1 min-w-0"
-                    class:space-x-reverse={$isRTL}
-                    class:flex-row-reverse={$isRTL}
-                  >
-                    <div class="text-2xl">
-                      {getItemIcon(item)}
-                    </div>
-                    <div class="flex-1 min-w-0" class:text-right={$isRTL}>
-                      <h3 class="text-sm font-semibold text-gray-900 truncate">
-                        {getDisplayName(item)}
-                      </h3>
-                      <p class="text-xs text-gray-500 mt-1">
-                        <span
-                          class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {getResourceTypeColor(
-                            item.resource_type
-                          )}"
-                        >
-                          {item.resource_type}
-                        </span>
-                      </p>
-                    </div>
-                    {#if item.resource_type === "folder"}
-                      <button
-                        onclick={(e) => {
-                          e.stopPropagation();
-                          handleEditFolder(item);
-                        }}
-                        class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
-                        aria-label="Edit folder"
-                        title="Edit folder"
-                      >
-                        <svg
-                          class="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                          ></path>
-                        </svg>
-                      </button>
-                    {/if}
-                  </div>
-                  <button
-                    onclick={(e) => handleDeleteItem(item, e)}
-                    class="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 transition-all duration-200 p-1"
-                    aria-label={$_("admin_space.actions.delete_item")}
-                  >
-                    <svg
-                      class="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                      ></path>
-                    </svg>
-                  </button>
-                </div>
-
-                <div class="space-y-2">
-                  {#if getDescription(item) !== "No description available"}
-                    <p
-                      class="text-xs text-gray-600 line-clamp-2"
-                      class:text-right={$isRTL}
-                    >
-                      {getDescription(item)}
-                    </p>
-                  {/if}
-
-                  <div
-                    class="flex items-center justify-between text-xs text-gray-500"
-                  >
-                    <div
-                      class="flex items-center space-x-2"
-                      class:space-x-reverse={$isRTL}
-                    >
-                      <span
-                        class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {item
-                          .attributes?.is_active
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'}"
-                      >
-                        {item.attributes?.is_active
-                          ? $_("status.active")
-                          : $_("status.inactive")}
-                      </span>
-                    </div>
-
-                    {#if item.attributes?.created_at}
-                      <span class:text-right={$isRTL}>
-                        {formatDate(item.attributes.created_at)}
-                      </span>
-                    {/if}
-                  </div>
-
-                  {#if item.attributes?.owner_shortname}
-                    <div
-                      class="flex items-center space-x-2 text-xs text-gray-500"
-                      class:space-x-reverse={$isRTL}
-                      class:flex-row-reverse={$isRTL}
-                    >
-                      <div
-                        class="w-4 h-4 bg-gray-200 rounded-full flex items-center justify-center"
-                      >
-                        <span class="text-xs font-medium text-gray-600">
-                          {item.attributes.owner_shortname
-                            .charAt(0)
-                            .toUpperCase()}
-                        </span>
-                      </div>
-                      <span>{item.attributes.owner_shortname}</span>
-                    </div>
-                  {/if}
-
-                  {#if item.subpath && item.subpath !== "/"}
-                    <p
-                      class="text-xs text-blue-600 mt-1 truncate"
-                      class:text-right={$isRTL}
-                    >
-                      {item.subpath}
-                    </p>
-                  {/if}
-                </div>
-              </div>
-            {/each}
-          </div>
-        {/if}
       </div>
-    {/if}
-  </div>
-</div>
 
-{#if showCreateFolderModal}
-  <div class="modal-overlay">
-    <div class="modal-container" class:rtl={$isRTL}>
-      <div class="modal-header">
-        <div class="modal-header-content" class:text-right={$isRTL}>
-          <h3 class="modal-title">
-            {isEditMode
-              ? $_("admin_space.modal.edit.title")
-              : $_("admin_space.modal.create.title")}
-          </h3>
-          <p class="modal-subtitle">
-            {isEditMode
-              ? $_("admin_space.modal.edit.subtitle")
-              : $_("admin_space.modal.create.subtitle")}
-          </p>
-        </div>
-        <button
-          onclick={() => (showCreateFolderModal = false)}
-          class="modal-close-btn"
-          aria-label={$_("admin_space.modal.close")}
-        >
+      <!-- Results -->
+      {#if displayedContents.length === 0 && isSearchActive}
+        <div class="text-center py-12">
           <svg
-            class="w-6 h-6"
+            class="mx-auto w-12 h-12 text-gray-300 mb-4"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -1036,74 +779,224 @@
               stroke-linecap="round"
               stroke-linejoin="round"
               stroke-width="2"
-              d="M6 18L18 6M6 6l12 12"
+              d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.291-1.007-5.691-2.709M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
             ></path>
           </svg>
-        </button>
-      </div>
-
-      <div class="modal-content">
-        <div class="form-section">
-          <div class="section-header" class:text-right={$isRTL}>
-            <h4 class="section-title">
-              {$_("admin_space.modal.basic_info.title")}
-            </h4>
-            <p class="section-description">
-              {$_("admin_space.modal.basic_info.description")}
-            </p>
-          </div>
-          <MetaForm
-            bind:formData={metaContent}
-            bind:validateFn={validateMetaForm}
-            isCreate={!isEditMode}
-          />
+          <h3 class="text-lg font-medium text-gray-900 mb-2">
+            {$_("search_filters.no_results_title")}
+          </h3>
+          <p class="text-gray-500 mb-4">
+            {$_("search_filters.no_results_description")}
+          </p>
+          <button
+            onclick={clearFilters}
+            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-600 bg-indigo-50 hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            {$_("search_filters.clear_filters")}
+          </button>
         </div>
+      {:else}
+        <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {#each displayedContents as item}
+            <div
+              class="bg-white rounded-[20px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 p-6 hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] hover:border-indigo-100 cursor-pointer transition-all duration-300 group flex flex-col h-full"
+              onclick={() => handleItemClick(item)}
+              role="button"
+              tabindex="0"
+              onkeydown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  handleItemClick(item);
+                }
+              }}
+            >
+              <!-- Card Header: Icon, Title, and Actions -->
+              <div
+                class="flex items-start justify-between mb-4"
+                class:flex-row-reverse={$isRTL}
+              >
+                <div
+                  class="flex gap-4 min-w-0 flex-1"
+                  class:flex-row-reverse={$isRTL}
+                >
+                  <div
+                    class="w-12 h-12 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center flex-shrink-0 text-2xl"
+                  >
+                    {getItemIcon(item)}
+                  </div>
+                  <div class="flex-1 min-w-0" class:text-right={$isRTL}>
+                    <h3
+                      class="text-base font-bold text-gray-900 truncate"
+                      title={getDisplayName(item)}
+                    >
+                      {getDisplayName(item)}
+                    </h3>
+                    <p
+                      class="text-sm text-gray-500 mt-1 mb-2 line-clamp-2 min-h-[40px]"
+                    >
+                      {getDescription(item) !== "No description available"
+                        ? getDescription(item)
+                        : "No description provided."}
+                    </p>
+                  </div>
+                </div>
 
-        <div class="form-section">
-          <div class="section-header" class:text-right={$isRTL}>
-            <h4 class="section-title">
-              {$_("admin_space.modal.folder_config.title")}
-            </h4>
-            <p class="section-description">
-              {$_("admin_space.modal.folder_config.description")}
-            </p>
-          </div>
-          <FolderForm
-            bind:content={folderContent}
-            space_name={spaceName}
-            on:foo={handleSaveFolder}
-          />
+                {#if item.resource_type === "folder"}
+                  <div class="relative pt-1 pl-2">
+                    <button
+                      onclick={(e) => {
+                        e.stopPropagation();
+                        handleEditFolder(item);
+                      }}
+                      class="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors bg-gray-50 mb-1 block opacity-0 group-hover:opacity-100 focus:opacity-100"
+                      title="Edit folder"
+                    >
+                      <svg
+                        class="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                        ></path>
+                      </svg>
+                    </button>
+                    <button
+                      onclick={(e) => handleDeleteItem(item, e)}
+                      class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors bg-gray-50 block opacity-0 group-hover:opacity-100 focus:opacity-100"
+                      title="Delete folder"
+                    >
+                      <svg
+                        class="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        ></path>
+                      </svg>
+                    </button>
+                  </div>
+                {/if}
+              </div>
+
+              <div class="flex-grow"></div>
+
+              <div
+                class="mt-2 pt-4 border-t border-gray-100 flex items-center justify-between"
+              >
+                <span
+                  class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium {item
+                    .attributes?.is_active
+                    ? 'bg-emerald-50 text-emerald-700'
+                    : 'bg-red-50 text-red-700'}"
+                >
+                  <span
+                    class="w-1.5 h-1.5 rounded-full {item.attributes?.is_active
+                      ? 'bg-emerald-500'
+                      : 'bg-red-500'} mr-1.5"
+                  ></span>
+                  {item.attributes?.is_active
+                    ? $_("status.active")
+                    : $_("status.inactive")}
+                </span>
+
+                {#if item.attributes?.created_at}
+                  <span class="text-xs text-gray-400 font-medium">
+                    {formatDate(item.attributes.created_at)}
+                  </span>
+                {/if}
+              </div>
+            </div>
+          {/each}
         </div>
-      </div>
-
-      <div class="modal-footer" class:flex-row-reverse={$isRTL}>
-        <button
-          onclick={() => (showCreateFolderModal = false)}
-          class="btn btn-secondary"
-          disabled={isCreatingFolder}
-        >
-          {$_("admin_space.modal.cancel")}
-        </button>
-        <button
-          onclick={handleSaveFolder}
-          class="btn btn-primary"
-          disabled={isCreatingFolder}
-        >
-          {#if isCreatingFolder}
-            <Diamonds size="20" color="#ffffff" />
-            {isEditMode
-              ? $_("admin_space.modal.updating")
-              : $_("admin_space.modal.creating")}
-          {:else}
-            {isEditMode
-              ? $_("admin_space.modal.updatebtn")
-              : $_("admin_space.modal.createbtn")}
-          {/if}
-        </button>
-      </div>
-    </div>
+      {/if}
+    {/if}
   </div>
-{/if}
+</div>
+
+<Modal
+  title={isEditMode
+    ? $_("admin_space.modal.edit.title")
+    : $_("admin_space.modal.create.title")}
+  bind:open={showCreateFolderModal}
+  size="lg"
+  class="bg-white dark:bg-white"
+  headerClass="text-gray-900 dark:text-gray-900"
+  placement="center"
+  autoclose={false}
+>
+  <p class="text-sm text-gray-500 -mt-2 mb-4">
+    {isEditMode
+      ? $_("admin_space.modal.edit.subtitle")
+      : $_("admin_space.modal.create.subtitle")}
+  </p>
+
+  <div class="form-section">
+    <div class="section-header" class:text-right={$isRTL}>
+      <h4 class="section-title">
+        {$_("admin_space.modal.basic_info.title")}
+      </h4>
+      <p class="section-description">
+        {$_("admin_space.modal.basic_info.description")}
+      </p>
+    </div>
+    <MetaForm
+      bind:formData={metaContent}
+      bind:validateFn={validateMetaForm}
+      isCreate={!isEditMode}
+    />
+  </div>
+
+  <div class="form-section mt-6">
+    <div class="section-header" class:text-right={$isRTL}>
+      <h4 class="section-title">
+        {$_("admin_space.modal.folder_config.title")}
+      </h4>
+      <p class="section-description">
+        {$_("admin_space.modal.folder_config.description")}
+      </p>
+    </div>
+    <FolderForm
+      bind:content={folderContent}
+      space_name={spaceName}
+      on:foo={handleSaveFolder}
+    />
+  </div>
+
+  {#snippet footer()}
+    <button
+      onclick={() => (showCreateFolderModal = false)}
+      class="btn btn-secondary"
+      disabled={isCreatingFolder}
+    >
+      {$_("admin_space.modal.cancel")}
+    </button>
+    <button
+      onclick={handleSaveFolder}
+      class="btn btn-primary"
+      disabled={isCreatingFolder}
+    >
+      {#if isCreatingFolder}
+        <Diamonds size="20" color="#ffffff" />
+        {isEditMode
+          ? $_("admin_space.modal.updating")
+          : $_("admin_space.modal.creating")}
+      {:else}
+        {isEditMode
+          ? $_("admin_space.modal.updatebtn")
+          : $_("admin_space.modal.createbtn")}
+      {/if}
+    </button>
+  {/snippet}
+</Modal>
 
 <style>
   .rtl {
@@ -1115,94 +1008,6 @@
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-  }
-
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
-    z-index: 50;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-    animation: fadeIn 0.2s ease-out;
-  }
-
-  .modal-container {
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    width: 100%;
-    max-width: 80rem;
-    max-height: 95vh;
-    display: flex;
-    flex-direction: column;
-    animation: slideIn 0.3s ease-out;
-    border: 1px solid rgba(229, 231, 235, 0.8);
-  }
-
-  .modal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1.5rem 2rem;
-    border-bottom: 1px solid #f3f4f6;
-    background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
-    border-radius: 16px 16px 0 0;
-    flex-shrink: 0;
-  }
-
-  .rtl .modal-header {
-    flex-direction: row-reverse;
-  }
-
-  .modal-header-content {
-    flex: 1;
-  }
-
-  .modal-title {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #111827;
-    margin: 0 0 0.25rem 0;
-  }
-
-  .modal-subtitle {
-    font-size: 0.875rem;
-    color: #6b7280;
-    margin: 0;
-  }
-
-  .modal-close-btn {
-    background: none;
-    border: none;
-    color: #6b7280;
-    cursor: pointer;
-    padding: 0.5rem;
-    border-radius: 8px;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-
-  .modal-close-btn:hover {
-    background: #f3f4f6;
-    color: #374151;
-    transform: scale(1.05);
-  }
-
-  .modal-content {
-    flex: 1;
-    overflow-y: auto;
-    padding: 2rem;
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-    min-height: 0;
   }
 
   .form-section {
@@ -1227,17 +1032,6 @@
     font-size: 0.875rem;
     color: #6b7280;
     margin: 0;
-  }
-
-  .modal-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.75rem;
-    padding: 1.5rem 2rem;
-    border-top: 1px solid #f3f4f6;
-    background: #fafafa;
-    border-radius: 0 0 16px 16px;
-    flex-shrink: 0;
   }
 
   .btn {
@@ -1317,95 +1111,5 @@
     to {
       transform: rotate(360deg);
     }
-  }
-
-  @media (max-width: 1024px) {
-    .modal-container {
-      max-width: 95vw;
-      margin: 0.5rem;
-    }
-
-    .modal-header {
-      padding: 1rem 1.5rem;
-    }
-
-    .modal-content {
-      padding: 1.5rem;
-    }
-
-    .modal-footer {
-      padding: 1rem 1.5rem;
-    }
-  }
-
-  @media (max-width: 640px) {
-    .modal-container {
-      max-width: 100vw;
-      max-height: 100vh;
-      margin: 0;
-      border-radius: 0;
-    }
-
-    .modal-header {
-      padding: 1rem;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 1rem;
-    }
-
-    .rtl .modal-header {
-      align-items: flex-end;
-    }
-
-    .modal-header-content {
-      flex: none;
-      width: 100%;
-    }
-
-    .modal-close-btn {
-      position: absolute;
-      top: 1rem;
-      right: 1rem;
-    }
-
-    .rtl .modal-close-btn {
-      right: auto;
-      left: 1rem;
-    }
-
-    .modal-content {
-      padding: 1rem;
-    }
-
-    .modal-footer {
-      padding: 1rem;
-      flex-direction: column-reverse;
-    }
-
-    .rtl .modal-footer {
-      flex-direction: column;
-    }
-
-    .btn {
-      width: 100%;
-    }
-  }
-
-  .modal-content::-webkit-scrollbar {
-    width: 8px;
-  }
-
-  .modal-content::-webkit-scrollbar-track {
-    background: #f1f5f9;
-    border-radius: 4px;
-  }
-
-  .modal-content::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 4px;
-  }
-
-  .modal-content::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
   }
 </style>

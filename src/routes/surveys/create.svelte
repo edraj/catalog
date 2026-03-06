@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { goto } from "@roxi/routify";
   import SurveyForm from "@/components/forms/SurveyForm.svelte";
-  import { createEntity } from "@/lib/dmart_services";
+  import { createEntity } from "@/lib/dmart_services/dmart_services";
   import { ResourceType } from "@edraj/tsdmart";
   import { _, locale } from "@/i18n";
 
@@ -87,7 +87,7 @@
         ResourceType.content,
         "",
         "",
-        "json"
+        "json",
       );
 
       if (result) {
@@ -116,25 +116,31 @@
 </svelte:head>
 
 <div class="create-survey-page">
-  <div class="page-header">
-    <div class="header-content">
-      <div class="breadcrumb">
-        <a href="/surveys" class="breadcrumb-link"
-          >{$_("create_survey.breadcrumb_surveys")}</a
+  <div class="page-container">
+    <div class="page-header">
+      <button class="back-button" onclick={handleCancel} aria-label="Go back">
+        <svg
+          class="w-5 h-5 text-gray-400 hover:text-gray-600 transition-colors"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
         >
-        <span class="breadcrumb-separator">/</span>
-        <span class="breadcrumb-current"
-          >{$_("create_survey.breadcrumb_text")}</span
-        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M10 19l-7-7m0 0l7-7m-7 7h18"
+          />
+        </svg>
+      </button>
+      <div class="title-container">
+        <h1 class="page-title">{$_("create_survey.title")}</h1>
+        <p class="page-description">
+          Build a survey to collect feedback from the community
+        </p>
       </div>
-      <h1 class="page-title">{$_("create_survey.title")}</h1>
-      <p class="page-description">
-        {$_("create_survey.description")}
-      </p>
     </div>
-  </div>
 
-  <div class="page-content">
     {#if error}
       <div class="alert alert-error">
         <svg class="alert-icon" fill="currentColor" viewBox="0 0 20 20">
@@ -163,17 +169,65 @@
 
     <div class="form-container">
       <SurveyForm bind:survey />
+    </div>
 
-      <div class="form-actions">
+    <!-- Move Actions Outside -->
+    <div class="form-actions">
+      <button
+        type="button"
+        class="cancel-btn"
+        onclick={handleCancel}
+        disabled={isLoading}
+      >
+        {$_("create_survey.cancel")}
+      </button>
+
+      <div class="right-actions">
         <button
           type="button"
-          class="btn btn-secondary"
-          onclick={handleCancel}
+          class="btn btn-outline"
           disabled={isLoading}
+          onclick={() => console.log("Preview not implemented yet")}
         >
-          {$_("create_survey.cancel")}
+          <svg
+            class="w-4 h-4 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            ><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+            ></path><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+            ></path></svg
+          >
+          Preview
         </button>
-
+        <button
+          type="button"
+          class="btn btn-outline"
+          disabled={isLoading}
+          onclick={() => console.log("Save Draft not implemented yet")}
+        >
+          <svg
+            class="w-4 h-4 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            ><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
+            ></path></svg
+          >
+          Save Draft
+        </button>
         <button
           type="button"
           class="btn btn-primary"
@@ -181,7 +235,7 @@
           disabled={isLoading}
         >
           {#if isLoading}
-            <svg class="spinner" viewBox="0 0 24 24">
+            <svg class="spinner mr-2" viewBox="0 0 24 24">
               <circle
                 cx="12"
                 cy="12"
@@ -219,65 +273,51 @@
 <style>
   .create-survey-page {
     min-height: 100vh;
-    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-  }
-
-  .page-header {
-    background: white;
-    border-bottom: 1px solid #e2e8f0;
+    background-color: #f9fafb; /* Lighter, solid background to match Figma */
     padding: 2rem 0;
   }
 
-  .header-content {
-    max-width: 1200px;
+  .page-container {
+    max-width: 800px;
     margin: 0 auto;
-    padding: 0 2rem;
-  }
-
-  .breadcrumb {
+    padding: 0 1rem;
     display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-    font-size: 0.875rem;
+    flex-direction: column;
+    gap: 1.5rem;
   }
 
-  .breadcrumb-link {
-    color: #3b82f6;
-    text-decoration: none;
-    transition: color 0.2s ease;
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
   }
 
-  .breadcrumb-link:hover {
-    color: #2563eb;
-    text-decoration: underline;
+  .back-button {
+    background: none;
+    border: none;
+    padding: 0.5rem;
+    cursor: pointer;
+    margin-top: -0.25rem; /* Align icon with title text roughly */
   }
 
-  .breadcrumb-separator {
-    color: #9ca3af;
-  }
-
-  .breadcrumb-current {
-    color: #6b7280;
+  .title-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
   }
 
   .page-title {
-    font-size: 2rem;
+    font-size: 1.5rem;
     font-weight: 700;
     color: #111827;
-    margin: 0 0 0.5rem 0;
-  }
-
-  .page-description {
-    font-size: 1.125rem;
-    color: #6b7280;
     margin: 0;
   }
 
-  .page-content {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 2rem;
+  .page-description {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin: 0;
   }
 
   .alert {
@@ -286,7 +326,6 @@
     gap: 0.75rem;
     padding: 1rem;
     border-radius: 8px;
-    margin-bottom: 2rem;
     font-weight: 500;
   }
 
@@ -309,26 +348,41 @@
   }
 
   .form-container {
-    background: white;
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow:
-      0 10px 25px -5px rgba(0, 0, 0, 0.1),
-      0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    /* We remove the monolithic box-shadow, the SurveyForm component will handle its own cards */
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
   }
 
   .form-actions {
     display: flex;
-    justify-content: flex-end;
-    gap: 1rem;
-    padding: 2rem;
-    background: #f9fafb;
-    border-top: 1px solid #e5e7eb;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+    padding-top: 1rem;
+  }
+
+  .right-actions {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .cancel-btn {
+    background: none;
+    border: none;
+    color: #6b7280;
+    font-weight: 500;
+    font-size: 0.875rem;
+    cursor: pointer;
+    padding: 0.5rem;
+  }
+
+  .cancel-btn:hover:not(:disabled) {
+    color: #374151;
   }
 
   .btn {
-    padding: 0.75rem 1.5rem;
-    border: none;
+    padding: 0.625rem 1.25rem;
     border-radius: 8px;
     font-size: 0.875rem;
     font-weight: 600;
@@ -336,8 +390,6 @@
     transition: all 0.2s ease;
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    min-width: 120px;
     justify-content: center;
   }
 
@@ -347,24 +399,24 @@
   }
 
   .btn-primary {
-    background: #3b82f6;
+    background-color: #5a67d8; /* Matching the purple-blue from Figma roughly */
     color: white;
+    border: none;
   }
 
   .btn-primary:hover:not(:disabled) {
-    background: #2563eb;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    background-color: #4c51bf;
   }
 
-  .btn-secondary {
-    background: #6b7280;
-    color: white;
+  .btn-outline {
+    background-color: white;
+    color: #374151;
+    border: 1px solid #e5e7eb;
   }
 
-  .btn-secondary:hover:not(:disabled) {
-    background: #4b5563;
-    transform: translateY(-1px);
+  .btn-outline:hover:not(:disabled) {
+    background-color: #f9fafb;
+    border-color: #d1d5db;
   }
 
   .spinner {
@@ -383,30 +435,17 @@
   }
 
   /* Mobile Responsive */
-  @media (max-width: 768px) {
-    .header-content {
-      padding: 0 1rem;
-    }
-
-    .page-content {
-      padding: 1rem;
-    }
-
-    .page-title {
-      font-size: 1.5rem;
-    }
-
-    .page-description {
-      font-size: 1rem;
-    }
-
+  @media (max-width: 640px) {
     .form-actions {
       flex-direction: column;
-      gap: 0.75rem;
+      gap: 1rem;
+      align-items: stretch;
     }
-
-    .btn {
-      width: 100%;
+    .right-actions {
+      flex-direction: column;
+    }
+    .cancel-btn {
+      order: 2;
     }
   }
 </style>

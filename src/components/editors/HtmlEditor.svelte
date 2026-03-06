@@ -1,9 +1,9 @@
 <script lang="ts">
-    import {Dmart} from "@edraj/tsdmart";
-    import {onMount} from "svelte";
-    import {getFileExtension} from "../../lib/fileUtils";
+  import { Dmart } from "@edraj/tsdmart";
+  import { onMount } from "svelte";
+  import { getFileExtension } from "../../lib/fileUtils";
 
-    let {
+  let {
     uid = "",
     content = $bindable(""),
     isEditMode = false,
@@ -165,60 +165,60 @@
     attachmentsGroup.className = "toolbar-group";
 
     addToolbarButton(textFormatGroup, "Bold", "B", () =>
-      editor.formatText("bold")
+      editor.formatText("bold"),
     );
     addToolbarButton(textFormatGroup, "Italic", "I", () =>
-      editor.formatText("italic")
+      editor.formatText("italic"),
     );
     addToolbarButton(textFormatGroup, "Underline", "U", () =>
-      editor.formatText("underline")
+      editor.formatText("underline"),
     );
     addToolbarButton(textFormatGroup, "Strike", "S", () =>
-      editor.formatText("strike")
+      editor.formatText("strike"),
     );
     addToolbarButton(textFormatGroup, "Superscript", "x²", () =>
-      editor.formatText("superscript")
+      editor.formatText("superscript"),
     );
     addToolbarButton(textFormatGroup, "Subscript", "x₂", () =>
-      editor.formatText("subscript")
+      editor.formatText("subscript"),
     );
     addToolbarButton(textFormatGroup, "Remove Format", "X", () =>
-      editor.removeFormat()
+      editor.removeFormat(),
     );
 
     addToolbarButton(lineFormatGroup, "Heading 1", "H1", () =>
-      editor.formatLine({ header: 1 })
+      editor.formatLine({ header: 1 }),
     );
     addToolbarButton(lineFormatGroup, "Heading 2", "H2", () =>
-      editor.formatLine({ header: 2 })
+      editor.formatLine({ header: 2 }),
     );
     addToolbarButton(lineFormatGroup, "Paragraph", "¶", () =>
-      editor.formatLine("paragraph")
+      editor.formatLine("paragraph"),
     );
     addToolbarButton(lineFormatGroup, "Blockquote", '""', () =>
-      editor.formatLine("blockquote")
+      editor.formatLine("blockquote"),
     );
     addToolbarButton(lineFormatGroup, "Ordered List", "1.", () =>
-      editor.formatLine({ list: "ordered" })
+      editor.formatLine({ list: "ordered" }),
     );
     addToolbarButton(lineFormatGroup, "Unordered List", "•", () =>
-      editor.formatLine({ list: "bullet" })
+      editor.formatLine({ list: "bullet" }),
     );
     addToolbarButton(lineFormatGroup, "Horizontal Rule", "—", () =>
-      editor.formatLine("hr")
+      editor.formatLine("hr"),
     );
 
     addToolbarButton(alignmentGroup, "Align Left", "↤", () =>
-      editor.formatLine("align-left")
+      editor.formatLine("align-left"),
     );
     addToolbarButton(alignmentGroup, "Align Center", "↔", () =>
-      editor.formatLine("align-center")
+      editor.formatLine("align-center"),
     );
     addToolbarButton(alignmentGroup, "Align Right", "↦", () =>
-      editor.formatLine("align-right")
+      editor.formatLine("align-right"),
     );
     addToolbarButton(alignmentGroup, "Justify", "☰", () =>
-      editor.formatLine("align-justify")
+      editor.formatLine("align-justify"),
     );
 
     addToolbarButton(insertGroup, "Link", "🔗", () => {
@@ -240,10 +240,10 @@
     }
 
     addToolbarButton(historyGroup, "Undo", "↶", () =>
-      editor.modules.history.undo()
+      editor.modules.history.undo(),
     );
     addToolbarButton(historyGroup, "Redo", "↷", () =>
-      editor.modules.history.redo()
+      editor.modules.history.redo(),
     );
 
     addToolbarButton(directionGroup, "LTR", "LTR", () => {
@@ -275,28 +275,35 @@
     button.className = "toolbar-button";
     button.textContent = icon;
 
+    // Prevent the editor from losing focus/selection when toolbar buttons are clicked.
+    // Without this, clicking a button blurs the editor, clearing the selection
+    // before formatLine/formatText can apply the formatting.
+    button.addEventListener("mousedown", (event) => {
+      event.preventDefault();
+    });
+
     button.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
+      // Re-focus the editor so formatting commands have a valid selection context.
+      maindiv.focus();
       action(event);
     });
     toolbar.appendChild(button);
   }
 
-
   function insertAttachment(attachment) {
     const filename = attachment?.attributes?.payload?.body;
 
     if (editor && attachment) {
-      const url = Dmart.get_attachment_url(
-        attachment.resource_type,
-        space_name,
-        subpath,
-        parent_shortname,
-        attachment.shortname,
-        getFileExtension(filename),
-        "public"
-      );
+      const url = Dmart.getAttachmentUrl({
+        resource_type: attachment.resource_type,
+        space_name: space_name,
+        subpath: subpath,
+        parent_shortname: parent_shortname,
+        shortname: attachment.shortname,
+        ext: getFileExtension(filename),
+      });
 
       const fileExtension = getFileExtension(filename)?.toLowerCase();
       const imageExtensions = [
@@ -356,7 +363,7 @@
 <div class="editor-card">
   <div class="editor-content">
     <div
-      class="editor-container"
+      class="editor-container prose max-w-none"
       bind:this={maindiv}
       id="htmleditor-{uid}"
       tabindex="0"

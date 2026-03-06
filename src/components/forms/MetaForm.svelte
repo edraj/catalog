@@ -1,11 +1,16 @@
 <script lang="ts">
-    import {goto, params} from "@roxi/routify";
-    import {Dmart, RequestType, ResourceType} from "@edraj/tsdmart";
-    import {_} from "svelte-i18n";
+  import { goto, params } from "@roxi/routify";
+  import { Dmart, RequestType, ResourceType } from "@edraj/tsdmart";
+  import { _ } from "svelte-i18n";
 
-    $goto;
+  $goto;
 
-  let { isCreate, formData = $bindable(), validateFn = $bindable() } = $props();
+  let {
+    isCreate,
+    fullWidth = false,
+    formData = $bindable(),
+    validateFn = $bindable(),
+  } = $props();
 
   formData = {
     ...formData,
@@ -125,7 +130,7 @@
   }
 </script>
 
-<div class="form-card">
+<div class="form-card" class:form-card-full={fullWidth}>
   <form bind:this={form} class="form-container">
     <!-- Shortname Field -->
     <div class="field-group">
@@ -386,6 +391,11 @@
     margin: 0.5rem auto;
     padding: 1.5rem;
     border: 1px solid #e5e7eb;
+  }
+
+  .form-card-full {
+    max-width: 100%;
+    margin: 0;
   }
 
   .form-container {

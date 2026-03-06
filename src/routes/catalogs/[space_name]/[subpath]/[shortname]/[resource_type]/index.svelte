@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import { goto, params } from "@roxi/routify";
   import {
     checkCurrentUserReactedIdea,
@@ -8,7 +7,7 @@
     deleteReactionComment,
     getEntity,
     getRelatedContents,
-  } from "@/lib/dmart_services";
+  } from "@/lib/dmart_services/dmart_services";
   import { Diamonds } from "svelte-loading-spinners";
   import { _, locale } from "@/i18n";
   import { derived } from "svelte/store";
@@ -18,6 +17,7 @@
   import PostContent from "@/components/post/PostContent.svelte";
   import PostInteractions from "@/components/post/PostInteractions.svelte";
   import InteractiveForm from "@/components/post/InteractiveForm.svelte";
+  import NestedComments from "@/components/post/NestedComments.svelte";
   import BreadcrumbNavigation from "@/components/navigation/BreadcrumbNavigation.svelte";
   import { user } from "@/stores/user";
   import {
@@ -52,12 +52,11 @@
   let showLoginPrompt = $state(false);
   const isRTL = derived(
     locale,
-    ($locale) => $locale === "ar" || $locale === "ku"
+    ($locale) => $locale === "ar" || $locale === "ku",
   );
 
-  onMount(async () => {
-    isOwner = $user.shortname === itemShortname;
-    await initializeContent();
+  $effect(() => {
+    isOwner = $user?.shortname === itemShortname;
   });
   function initializeContent() {
     spaceName = $params.space_name;
@@ -69,7 +68,7 @@
       spaceName,
       actualSubpath,
       itemShortname,
-      $_("post_detail.breadcrumb.catalogs")
+      $_("post_detail.breadcrumb.catalogs"),
     );
 
     loadPostData();
@@ -87,7 +86,7 @@
         actualSubpath,
         $params.resource_type,
         "public",
-        true
+        true,
       );
 
       if (response && response.uuid) {
@@ -112,7 +111,7 @@
     isLoadingRelated = true;
     try {
       const editorRelationship = postData.relationships?.find(
-        (rel) => rel.attributes?.role === "editor"
+        (rel) => rel.attributes?.role === "editor",
       );
       const editorShortname = editorRelationship?.related_to?.shortname;
 
@@ -122,12 +121,12 @@
         "public",
         postData.tags || [],
         postData.owner_shortname,
-        6
+        6,
       );
 
       if (response?.records) {
         relatedContent = response.records.filter(
-          (item) => item.shortname !== itemShortname
+          (item) => item.shortname !== itemShortname,
         );
       }
     } catch (err) {
@@ -166,7 +165,7 @@
         actualSubpath,
         itemShortname,
         newComment.trim(),
-        parentCommentId
+        parentCommentId,
       );
 
       if (success) {
@@ -197,7 +196,7 @@
           ResourceType.reaction,
           `${actualSubpath}/${itemShortname}`,
           userReactionId,
-          spaceName
+          spaceName,
         );
 
         if (success) {
@@ -211,7 +210,7 @@
         const success = await createReaction(
           itemShortname,
           spaceName,
-          actualSubpath
+          actualSubpath,
         );
 
         if (success) {
@@ -238,7 +237,7 @@
         $user.shortname,
         itemShortname,
         spaceName,
-        actualSubpath
+        actualSubpath,
       );
       userReactionId = reactionId;
     } catch (error) {
@@ -301,7 +300,7 @@
     onGoBack={goBack}
   />
 
-  <main class="main-content">
+  <main class="main-content ">
     {#if isLoading}
       <div class="loading-container">
         <div class="loading-content">
@@ -344,186 +343,184 @@
             <p class="description-text">{getDescription(postData)}</p>
           </div>
         {/if}
-
-        {#if postData.tags && postData.tags.length > 0 && postData.tags[0] !== ""}
-          <div class="tags-section mx-6 my-6 p-2">
-            <h3 class="section-title">
-              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  d="M20.59 13.41L10.59 3.41A2 2 0 0 0 9.17 3H4a2 2 0 0 0-2 2v5.17a2 2 0 0 0 .59 1.42l10 10a2 2 0 0 0 2.83 0l5.17-5.17a2 2 0 0 0 0-2.83z"
-                />
-                <circle cx="7.5" cy="7.5" r="1.5" />
-              </svg>
-              {$_("post_detail.sections.tags")}
-            </h3>
-            <div class="tags-container my-4">
-              {#each postData.tags as tag}
-                {#if tag && tag.trim()}
-                  <span class="tag">#{tag}</span>
-                {/if}
-              {/each}
-            </div>
-          </div>
-        {/if}
-
         <PostContent {postData} />
 
         <PostInteractions
-          {reactions}
-          {comments}
-          locale={$locale}
-          {spaceName}
-          subpath={actualSubpath}
-          {itemShortname}
-          entryOwnerShortname={postData.owner_shortname}
-          onCommentAdded={loadPostData}
+          reactionsCount={reactions.length}
+          commentsCount={comments.length}
+          {userReactionId}
+          {isSubmittingReaction}
+          onToggleReaction={handleToggleReaction}
         />
+      </article>
+
+      <section class="post-card comments-card mb-6">
+        <div class="comments-header-row mb-6">
+          <div class="comments-accent-bar"></div>
+          <h3 class="comments-title">
+            {$_("post_detail.sections.comments", { default: "Comments" })}
+          </h3>
+          <span class="comments-count-badge">{comments.length}</span>
+        </div>
+
         <InteractiveForm
           bind:newComment
           {isSubmittingComment}
-          {isSubmittingReaction}
-          {userReactionId}
           onAddComment={handleAddComment}
-          onToggleReaction={handleToggleReaction}
         />
-        {#if mediaFiles.length > 0}
-          <section class="media-section">
-            <h3 class="section-title-large">
-              <span class="title-accent-green"></span>
-              {$_("post_detail.media.title", {
-                values: {
-                  count: formatNumberInText(mediaFiles.length, $locale),
-                },
-              })}
-            </h3>
-            <Attachments
-              attachments={mediaFiles}
-              resource_type={ResourceType.ticket}
-              space_name={spaceName}
+
+        {#if comments.length > 0}
+          <div class="comments-list mt-6">
+            <NestedComments
+              {comments}
+              {spaceName}
               subpath={actualSubpath}
-              parent_shortname={itemShortname}
-              {isOwner}
+              {itemShortname}
+              entryOwnerShortname={postData.owner_shortname}
+              onCommentAdded={loadPostData}
             />
-          </section>
+          </div>
         {/if}
-        {#if postData.relationships && postData.relationships.length > 0}
-          <section class="relationships-section">
-            <h3 class="section-title-large">
-              <span class="title-accent-purple"></span>
-              {$_("post_detail.sections.relationships")}
+      </section>
+
+      {#if mediaFiles.length > 0}
+        <section class="post-card media-section mb-6">
+          <h3 class="section-title-large">
+            <span class="title-accent-green"></span>
+            {$_("post_detail.media.title", {
+              values: {
+                count: formatNumberInText(mediaFiles.length, $locale),
+              },
+            })}
+          </h3>
+          <Attachments
+            attachments={mediaFiles}
+            resource_type={ResourceType.ticket}
+            space_name={spaceName}
+            subpath={actualSubpath}
+            parent_shortname={itemShortname}
+            {isOwner}
+          />
+        </section>
+      {/if}
+      {#if postData.relationships && postData.relationships.length > 0}
+        <section class="post-card relationships-section mb-6">
+          <h3 class="section-title-large">
+            <span class="title-accent-purple"></span>
+            {$_("post_detail.sections.relationships")}
+          </h3>
+          <div class="relationships-grid">
+            {#each postData.relationships as relationship}
+              <button
+                aria-label={`View relationship with ${relationship.related_to?.shortname}`}
+                class="relationship-item clickable"
+                onclick={() => handleRelationshipClick(relationship)}
+                disabled={relationship.attributes?.role !== "editor"}
+              >
+                <div class="relationship-content">
+                  <span class="relationship-role">
+                    {relationship.attributes?.role ||
+                      $_("post_detail.relationships.related")}
+                  </span>
+                  <span class="relationship-name">
+                    {relationship.related_to?.shortname || $_("common.unknown")}
+                  </span>
+                  {#if relationship.related_to?.space_name}
+                    <span class="relationship-space">
+                      ({relationship.related_to.space_name})
+                    </span>
+                  {/if}
+                </div>
+                <div class="relationship-meta">
+                  <span class="relationship-type">
+                    {relationship.attributes?.relation || "unknown"}
+                  </span>
+                  {#if relationship.attributes?.relation === "editor"}
+                    <svg
+                      class="click-icon"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                      />
+                    </svg>
+                  {/if}
+                </div>
+              </button>
+            {/each}
+          </div>
+        </section>
+      {/if}
+
+      <!-- Related Content Section -->
+      {#if relatedContent.length > 0}
+        <section class="related-wrapper mb-6">
+          <div class="related-header-row mb-4">
+            <div class="related-accent-bar"></div>
+            <h3 class="related-title">
+              {$_("related_content", { default: "Related Posts" })}
             </h3>
-            <div class="relationships-grid">
-              {#each postData.relationships as relationship}
+          </div>
+          {#if isLoadingRelated}
+            <div class="loading-related">
+              <Diamonds color="#f97316" size="40" unit="px" />
+              <p>{$_("loading")}</p>
+            </div>
+          {:else}
+            <div class="related-content-grid">
+              {#each relatedContent as item}
                 <button
-                  aria-label={`View relationship with ${relationship.related_to?.shortname}`}
-                  class="relationship-item clickable"
-                  onclick={() => handleRelationshipClick(relationship)}
-                  disabled={relationship.attributes?.role !== "editor"}
+                  aria-label={`View related content: ${getDisplayName(item)}`}
+                  class="related-content-card"
+                  onclick={() => handleRelatedContentClick(item)}
                 >
-                  <div class="relationship-content">
-                    <span class="relationship-role">
-                      {relationship.attributes?.role ||
-                        $_("post_detail.relationships.related")}
-                    </span>
-                    <span class="relationship-name">
-                      {relationship.related_to?.shortname ||
-                        $_("common.unknown")}
-                    </span>
-                    {#if relationship.related_to?.space_name}
-                      <span class="relationship-space">
-                        ({relationship.related_to.space_name})
-                      </span>
-                    {/if}
+                  <div class="related-content-header">
+                    <h4 class="related-content-title">
+                      {getDisplayName(item)}
+                    </h4>
+                    <svg
+                      class="external-link-icon"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                      />
+                    </svg>
                   </div>
-                  <div class="relationship-meta">
-                    <span class="relationship-type">
-                      {relationship.attributes?.relation || "unknown"}
+                  <div class="related-content-meta">
+                    <span class="related-content-date">
+                      {formatDate(item.attributes?.updated_at)}
                     </span>
-                    {#if relationship.attributes?.relation === "editor"}
-                      <svg
-                        class="click-icon"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                        />
-                      </svg>
-                    {/if}
+                    <span class="related-content-author">
+                      {getAuthorInfo(item, $locale)}
+                    </span>
                   </div>
+                  {#if item.tags && item.tags.length > 0}
+                    <div class="related-content-tags">
+                      {#each item.tags.slice(0, 3) as tag}
+                        <span class="related-tag">#{tag}</span>
+                      {/each}
+                      {#if item.tags.length > 3}
+                        <span class="tag-more">+{item.tags.length - 3}</span>
+                      {/if}
+                    </div>
+                  {/if}
                 </button>
               {/each}
             </div>
-          </section>
-        {/if}
-
-        <!-- Related Content Section -->
-        {#if relatedContent.length > 0}
-          <section class="related-content-section">
-            <h3 class="section-title-large">
-              <span class="title-accent-orange"></span>
-              {$_("related_content")}
-            </h3>
-            {#if isLoadingRelated}
-              <div class="loading-related">
-                <Diamonds color="#f97316" size="40" unit="px" />
-                <p>{$_("loading")}</p>
-              </div>
-            {:else}
-              <div class="related-content-grid">
-                {#each relatedContent as item}
-                  <button
-                    aria-label={`View related content: ${getDisplayName(item)}`}
-                    class="related-content-card"
-                    onclick={() => handleRelatedContentClick(item)}
-                  >
-                    <div class="related-content-header">
-                      <h4 class="related-content-title">
-                        {getDisplayName(item)}
-                      </h4>
-                      <svg
-                        class="external-link-icon"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                        />
-                      </svg>
-                    </div>
-                    <div class="related-content-meta">
-                      <span class="related-content-date">
-                        {formatDate(item.attributes?.updated_at)}
-                      </span>
-                      <span class="related-content-author">
-                        {getAuthorInfo(item, $locale)}
-                      </span>
-                    </div>
-                    {#if item.tags && item.tags.length > 0}
-                      <div class="related-content-tags">
-                        {#each item.tags.slice(0, 3) as tag}
-                          <span class="related-tag">#{tag}</span>
-                        {/each}
-                        {#if item.tags.length > 3}
-                          <span class="tag-more">+{item.tags.length - 3}</span>
-                        {/if}
-                      </div>
-                    {/if}
-                  </button>
-                {/each}
-              </div>
-            {/if}
-          </section>
-        {/if}
-      </article>
+          {/if}
+        </section>
+      {/if}
     {:else}
       <div class="no-data-container">
         <div class="no-data-icon">
@@ -590,7 +587,7 @@
 <style>
   .page-container {
     min-height: 100vh;
-    background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 50%, #e0e7ff 100%);
+    background: #fafafa;
   }
 
   .rtl {
@@ -696,8 +693,9 @@
 
   .main-content {
     max-width: 80rem;
+    /*max-width: 48rem; !* Centered column layout *!*/
     margin: 0 auto;
-    padding: 2rem 1.5rem;
+    padding: 0 1.5rem 4rem;
   }
 
   .loading-container {
@@ -750,159 +748,74 @@
   }
 
   .post-card {
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(8px);
-    border-radius: 1rem;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    border: 1px solid rgba(148, 163, 184, 0.3);
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    border: 1px solid #f1f5f9;
+    padding: 32px;
     overflow: hidden;
   }
 
-  .post-header {
-    padding: 2rem;
-    background: linear-gradient(135deg, #f0f9ff 0%, #dbeafe 100%);
-    border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+  .mb-6 {
+    margin-bottom: 24px;
   }
 
-  .rtl .post-header {
-    text-align: right;
+  .comments-card {
+    padding: 24px 32px;
   }
 
-  .post-title-section {
-    display: flex;
-    align-items: flex-start;
-    gap: 1.5rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .post-icon {
-    width: 4rem;
-    height: 4rem;
-    border-radius: 0.75rem;
-    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  .comments-header-row {
     display: flex;
     align-items: center;
-    justify-content: center;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25);
-    font-size: 2rem;
-    flex-shrink: 0;
+    gap: 12px;
   }
 
-  .post-title-content {
-    flex: 1;
-    min-width: 0;
+  .comments-accent-bar {
+    width: 4px;
+    height: 20px;
+    background: #8b5cf6;
+    border-radius: 9999px;
   }
 
-  .post-title {
-    font-size: 2rem;
+  .comments-title {
+    font-size: 18px;
     font-weight: 700;
     color: #0f172a;
-    margin-bottom: 0.5rem;
-    line-height: 1.2;
+    margin: 0;
   }
 
-  .post-badges {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-  }
-
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.25rem 0.75rem;
+  .comments-count-badge {
+    background: #f1f5f9;
+    color: #64748b;
+    padding: 2px 8px;
     border-radius: 9999px;
-    font-size: 0.75rem;
+    font-size: 12px;
     font-weight: 600;
   }
 
-  .badge-primary {
-    background: #e0e7ff;
-    color: #3730a3;
-  }
-
-  .badge-success {
-    background: #d1fae5;
-    color: #065f46;
-  }
-
-  .badge-error {
-    background: #fee2e2;
-    color: #991b1b;
-  }
-
-  .status-dot {
-    width: 0.5rem;
-    height: 0.5rem;
-    border-radius: 50%;
-    margin-right: 0.5rem;
-  }
-
-  .rtl .status-dot {
-    margin-right: 0;
-    margin-left: 0.5rem;
-  }
-
-  .status-active {
-    background: #10b981;
-  }
-
-  .status-inactive {
-    background: #ef4444;
-  }
-
-  /* New compact meta card styles */
-  .meta-card {
-    background: rgba(255, 255, 255, 0.7);
-    border-radius: 0.75rem;
-    padding: 1rem;
-    border: 1px solid rgba(148, 163, 184, 0.2);
-    backdrop-filter: blur(4px);
-    min-width: 280px;
-    flex-shrink: 0;
-  }
-
-  .meta-row {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 0.75rem;
-  }
-
-  .meta-row:last-child {
-    margin-bottom: 0;
-  }
-
-  .meta-item-compact {
+  .related-header-row {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    flex: 1;
-    min-width: 0;
+    gap: 12px;
   }
 
-  .meta-icon-small {
-    width: 1rem;
-    height: 1rem;
-    color: #64748b;
-    flex-shrink: 0;
+  .related-accent-bar {
+    width: 4px;
+    height: 20px;
+    background: #ef4444; /* red accent */
+    border-radius: 9999px;
   }
 
-  .meta-text {
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: #374151;
-    truncate: true;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  .related-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
   }
 
   .description-section {
-    padding: 1rem;
-    background: rgba(255, 255, 255, 0.6);
-    border-radius: 0.75rem;
-    margin-bottom: 1.5rem;
+    padding: 1.5rem;
+    margin: 0;
   }
 
   .rtl .description-section {
@@ -913,30 +826,26 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    font-size: 0.875rem;
+    font-size: 1rem;
     font-weight: 600;
-    color: #374151;
-    margin-bottom: 0.5rem;
+    color: #1a202c;
+    margin-bottom: 0.75rem;
   }
 
   .section-title svg {
-    width: 1rem;
-    height: 1rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    color: #4a5568;
   }
 
   .description-text {
-    color: #374151;
-    line-height: 1.6;
+    color: #4a5568;
+    line-height: 1.7;
     margin: 0;
+    font-size: 0.95rem;
   }
 
   .tags-section {
-    background: white;
-    border-radius: 12px;
-    padding: 24px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    border: 1px solid #e5e7eb;
-    margin-bottom: 24px;
     margin-top: 1.5rem;
   }
 
@@ -1194,9 +1103,7 @@
   }
 
   /* Related Content Styles */
-  .related-content-section {
-    padding: 0 2rem 2rem;
-    border-top: 1px solid rgba(148, 163, 184, 0.2);
+  .related-wrapper {
     margin-top: 1rem;
     padding-top: 1rem;
   }
@@ -1217,10 +1124,11 @@
   }
 
   .related-content-card {
-    background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%);
-    border: 1px solid #fdba74;
-    border-radius: 0.75rem;
-    padding: 1rem;
+    background: #ffffff;
+    border: 1px solid #f1f5f9;
+    border-left: 3px solid #f472b6; /* slightly pink/red edge accent, similar to design */
+    border-radius: 12px;
+    padding: 16px;
     text-align: left;
     transition: all 0.2s ease;
     cursor: pointer;
@@ -1228,9 +1136,11 @@
   }
 
   .related-content-card:hover {
-    background: linear-gradient(135deg, #fed7aa 0%, #fb923c 100%);
+    border-color: #cbd5e1;
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(249, 115, 22, 0.15);
+    box-shadow:
+      0 4px 6px -1px rgba(0, 0, 0, 0.1),
+      0 2px 4px -1px rgba(0, 0, 0, 0.06);
   }
 
   .related-content-header {
@@ -1285,8 +1195,8 @@
     border-radius: 9999px;
     font-size: 0.625rem;
     font-weight: 500;
-    background: rgba(249, 115, 22, 0.1);
-    color: #ea580c;
+    background: #f1f5f9;
+    color: #475569;
   }
 
   .tag-more {

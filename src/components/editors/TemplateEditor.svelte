@@ -1,6 +1,6 @@
 <script>
   import { createEventDispatcher, onMount } from "svelte";
-  import { getTemplates } from "@/lib/dmart_services";
+  import { getTemplates } from "@/lib/dmart_services/dmart_services.ts";
   import { derived, writable } from "svelte/store";
 
   const dispatch = createEventDispatcher();

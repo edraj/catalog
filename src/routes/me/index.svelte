@@ -10,7 +10,7 @@
     setAvatar,
     updatePassword,
     updateProfile,
-  } from "@/lib/dmart_services";
+  } from "@/lib/dmart_services/dmart_services";
   import {
     errorToastMessage,
     successToastMessage,
@@ -85,7 +85,7 @@
 
       if (response?.status === "success" && response?.records) {
         const userSchemaRecord = response.records.find(
-          (record) => record.shortname === "user"
+          (record) => record.shortname === "user",
         );
 
         if (userSchemaRecord && userSchemaRecord.attributes?.payload?.body) {
@@ -132,9 +132,9 @@
           space_name: entity.attributes?.space_name || "",
           subpath: entity?.subpath || "",
           owner_shortname: entity.attributes?.owner_shortname || "",
-          comment: entity.attachments?.comment?.length ?? 0,
-          reaction: entity.attachments?.reaction?.length ?? 0,
-        }))
+          comment: (entity as any).attachments?.comment?.length ?? 0,
+          reaction: (entity as any).attachments?.reaction?.length ?? 0,
+        })),
       );
     } catch (error) {
       console.error("Error fetching entities:", error);
@@ -160,7 +160,7 @@
 
     if ($oldPassword === $newPassword) {
       errorToastMessage(
-        "New password must be different from the current password"
+        "New password must be different from the current password",
       );
       return;
     }
@@ -168,12 +168,8 @@
     isChangingPassword.set(true);
 
     try {
-      const loginResult = await loginBy($user.attributes.email, $oldPassword);
+      await loginBy($user.attributes.email, $oldPassword);
 
-      if (!loginResult) {
-        errorToastMessage("Current password is incorrect");
-        return;
-      }
       const response = await updatePassword({
         shortname: $user.shortname,
         password: $newPassword,
@@ -201,14 +197,14 @@
 
     if (!$displayname.trim()) {
       errorToastMessage(
-        `Display name is required for ${$locale === "ar" ? "Arabic" : $locale === "en" ? "English" : $locale.toUpperCase()}`
+        `Display name is required for ${$locale === "ar" ? "Arabic" : $locale === "en" ? "English" : $locale.toUpperCase()}`,
       );
       return;
     }
 
     if (!$description.trim()) {
       errorToastMessage(
-        `Description is required for ${$locale === "ar" ? "Arabic" : $locale === "en" ? "English" : $locale.toUpperCase()}`
+        `Description is required for ${$locale === "ar" ? "Arabic" : $locale === "en" ? "English" : $locale.toUpperCase()}`,
       );
       return;
     }
@@ -296,7 +292,7 @@
     } catch (error) {
       console.error("Error updating avatar:", error);
       errorToastMessage(
-        "An error occurred while updating your profile picture"
+        "An error occurred while updating your profile picture",
       );
     } finally {
       isUploadingAvatar.set(false);
@@ -364,133 +360,243 @@
         </div>
       </div>
     {:else if $profileSection === ProfileSection.ME}
-      <div class="profile-grid">
-        <!-- Profile Sidebar -->
-        <div class="profile-sidebar">
-          <!-- Avatar Card -->
-          <div class="avatar-card">
-            <div class="avatar-header">
-              <div class="avatar-container">
-                <div class="avatar-wrapper">
-                  <div class="avatar-image">
-                    <Avatar src={$avatar} size="128" />
-                  </div>
-
-                  <div
-                    class="avatar-overlay"
-                    onclick={triggerFileInput}
-                    onkeydown={(e) => {
-                      if (e.key === "Enter") triggerFileInput();
-                    }}
-                    role="button"
-                    tabindex="0"
-                  >
-                    {#if $isUploadingAvatar}
-                      <Diamonds color="#ffffff" size="24" unit="px" />
-                    {:else}
-                      <div class="overlay-content">
-                        <svg
-                          class="overlay-icon"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0118.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-                          />
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                        </svg>
-                        <span class="overlay-text">{$_("EditPhoto")}</span>
-                      </div>
-                    {/if}
-                  </div>
+      <div class="max-w-3xl mx-auto space-y-6">
+        <!-- Top Profile Card -->
+        <div
+          class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex items-center justify-between"
+        >
+          <div class="flex items-center gap-6">
+            <div class="relative group">
+              <div
+                class="w-20 h-20 rounded-full overflow-hidden border border-gray-100 shadow-sm relative"
+              >
+                <Avatar src={$avatar} size="80" />
+                <div
+                  class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                  onclick={triggerFileInput}
+                  onkeydown={(e) => e.key === "Enter" && triggerFileInput()}
+                  role="button"
+                  tabindex="0"
+                >
+                  {#if $isUploadingAvatar}
+                    <Diamonds color="#ffffff" size="20" unit="px" />
+                  {:else}
+                    <svg
+                      class="w-6 h-6 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0118.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                      />
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                    </svg>
+                  {/if}
                 </div>
-
-                <input
-                  bind:this={$fileInput}
-                  type="file"
-                  accept="image/*"
-                  class="hidden"
-                  onchange={handleAvatarChange}
-                  disabled={$isUploadingAvatar}
-                />
               </div>
-
-              <div class="user-info">
-                <h2 class="user-name">
-                  {$displayname || $user.shortname}
-                </h2>
-                <p class="user-handle">@{$user.shortname}</p>
-              </div>
+              <input
+                bind:this={$fileInput}
+                type="file"
+                accept="image/*"
+                class="hidden"
+                onchange={handleAvatarChange}
+                disabled={$isUploadingAvatar}
+              />
             </div>
 
-            <div class="avatar-actions">
-              <button
-                class="change-photo-btn"
-                onclick={triggerFileInput}
-                disabled={$isUploadingAvatar}
-              >
-                {#if $isUploadingAvatar}
-                  <Diamonds color="#ffffff" size="16" unit="px" />
-                  Uploading...
-                {:else}
-                  <svg
-                    class="btn-icon"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    />
-                  </svg>
-                  {$_("ChangePhoto")}
-                {/if}
-              </button>
+            <div>
+              <h2 class="text-xl font-bold text-gray-900">
+                {$displayname || $user.shortname}
+              </h2>
+              <p class="text-sm text-gray-500 font-medium">
+                @{$user.shortname}
+              </p>
             </div>
           </div>
 
-          <!-- Quick Stats -->
-          <div class="stats-card">
-            <h3 class="stats-title">
-              <svg class="stats-icon" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" />
-                <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" />
-              </svg>
-              {$_("QuickStats")}
-            </h3>
-            <div class="stats-list">
-              <div class="stat-item">
-                <span class="stat-label">{$_("TotalEntities")}</span>
-                <span class="stat-value">{$entities.length}</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">{$_("ProfileStatus")}</span>
-                <span class="status-badge active">{$_("Active")}</span>
-              </div>
+          <div class="flex items-center gap-6">
+            <div class="text-center">
+              <p
+                class="text-xs text-gray-400 font-medium tracking-wider uppercase mb-1"
+              >
+                Entries
+              </p>
+              <p class="text-xl font-bold text-indigo-600">
+                {$entities.length}
+              </p>
+            </div>
+            <div class="text-center pt-1">
+              <p
+                class="text-xs text-gray-400 font-medium tracking-wider uppercase mb-1"
+              >
+                Status
+              </p>
+              <span
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600"
+              >
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                Active
+              </span>
             </div>
           </div>
         </div>
 
         <!-- Main Content -->
         <div class="main-content">
-          <!-- Basic Profile Information -->
-          <div class="form-card">
-            <div class="card-header">
-              <h3 class="card-title">
+          <!-- Profile Info -->
+          <div
+            class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
+          >
+            <div class="flex items-center gap-2 mb-6">
+              <svg
+                class="w-5 h-5 text-indigo-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                />
+              </svg>
+              <h3 class="text-lg font-semibold text-gray-900">Profile Info</h3>
+            </div>
+
+            <form
+              id="profile-form"
+              onsubmit={preventDefault(handleSubmit)}
+              class="space-y-6"
+            >
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-2">
+                  <label
+                    for="displayname"
+                    class="block text-sm font-medium text-gray-700"
+                  >
+                    Display Name <span class="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="displayname"
+                    type="text"
+                    required
+                    bind:value={$displayname}
+                    class="w-full px-4 py-3 bg-gray-50/50 border border-transparent rounded-2xl text-sm focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
+                    placeholder={$_("DisplayNamePlaceholder")}
+                    dir={$locale === "ar" || $locale === "ku" ? "rtl" : "ltr"}
+                  />
+                </div>
+
+                <div class="space-y-2">
+                  <label
+                    for="email"
+                    class="block text-sm font-medium text-gray-700"
+                  >
+                    Email
+                  </label>
+                  <!-- Figma design uses an icon inside the input. I will use a simple wrapper. -->
+                  <div class="relative">
+                    <div
+                      class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+                    >
+                      <svg
+                        class="h-5 w-5 text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                        />
+                      </svg>
+                    </div>
+                    <input
+                      id="email"
+                      type="email"
+                      bind:value={$email}
+                      class="w-full pl-10 pr-4 py-3 bg-gray-50/50 border border-transparent rounded-2xl text-sm focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
+                      placeholder={$_("EmailPlaceholder")}
+                    />
+                  </div>
+                </div>
+
+                <div class="space-y-2 md:col-span-2">
+                  <label
+                    for="msisdn"
+                    class="block text-sm font-medium text-gray-700"
+                  >
+                    Mobile
+                  </label>
+                  <div class="relative">
+                    <div
+                      class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+                    >
+                      <svg
+                        class="h-5 w-5 text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                        />
+                      </svg>
+                    </div>
+                    <input
+                      id="msisdn"
+                      type="tel"
+                      bind:value={$msisdn}
+                      class="w-full pl-10 pr-4 py-3 bg-gray-50/50 border border-transparent rounded-2xl text-sm focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
+                      placeholder={$_("MobileNumberPlaceholder")}
+                    />
+                  </div>
+                </div>
+
+                <div class="space-y-2 md:col-span-2">
+                  <label
+                    for="description"
+                    class="block text-sm font-medium text-gray-700"
+                  >
+                    Bio <span class="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    id="description"
+                    required
+                    bind:value={$description}
+                    rows="4"
+                    class="w-full px-4 py-3 bg-gray-50/50 border border-transparent rounded-2xl text-sm resize-y focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
+                    placeholder="Tell us about yourself"
+                    dir={$locale === "ar" || $locale === "ku" ? "rtl" : "ltr"}
+                  ></textarea>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Dynamic Profile Fields -->
+          {#if $userSchema}
+            <div
+              class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
+            >
+              <div class="flex items-center gap-2 mb-6">
                 <svg
-                  class="card-icon"
+                  class="w-5 h-5 text-indigo-600"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -499,131 +605,18 @@
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     stroke-width="2"
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
                   />
                 </svg>
-                {$_("ProfilePreferences")}
-              </h3>
-              <p class="card-subtitle">{$_("ManageBasicProfile")}</p>
-            </div>
-
-            <div class="card-content">
-              <form
-                onsubmit={preventDefault(handleSubmit)}
-                class="profile-form"
-              >
-                <div class="form-row">
-                  <div class="form-group">
-                    <label for="displayname" class="form-label">
-                      {$_("DisplayName")} ({$_($locale.toUpperCase())})
-                      <span class="required">*</span>
-                    </label>
-                    <input
-                      id="displayname"
-                      type="text"
-                      required
-                      bind:value={$displayname}
-                      class="form-input"
-                      placeholder={$_("DisplayNamePlaceholder")}
-                      dir={$locale === "ar" || $locale === "ku" ? "rtl" : "ltr"}
-                    />
-                  </div>
-
-                  <div class="form-group">
-                    <label for="email" class="form-label">
-                      {$_("EmailAddress")}
-                    </label>
-                    <input
-                      id="email"
-                      type="email"
-                      bind:value={$email}
-                      class="form-input"
-                      placeholder={$_("EmailPlaceholder")}
-                    />
-                  </div>
-                </div>
-
-                <div class="form-group">
-                  <label for="msisdn" class="form-label">
-                    {$_("MobileNumber")}
-                  </label>
-                  <input
-                    id="msisdn"
-                    type="tel"
-                    bind:value={$msisdn}
-                    class="form-input"
-                    placeholder={$_("MobileNumberPlaceholder")}
-                  />
-                </div>
-
-                <div class="form-group">
-                  <label for="description" class="form-label">
-                    {$_("Description")} ({$_($locale.toUpperCase())})
-                    <span class="required">*</span>
-                  </label>
-                  <textarea
-                    id="description"
-                    required
-                    bind:value={$description}
-                    rows="4"
-                    class="form-textarea"
-                    placeholder={$_("DescriptionPlaceholder")}
-                    dir={$locale === "ar" || $locale === "ku" ? "rtl" : "ltr"}
-                  ></textarea>
-                </div>
-
-                <button type="submit" class="submit-btn">
-                  <svg
-                    class="btn-icon"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  {$_("SaveChanges")}
-                </button>
-              </form>
-            </div>
-          </div>
-
-          <!-- Dynamic Profile Fields -->
-          {#if $userSchema}
-            <div class="form-card">
-              <div class="card-header secondary">
-                <h3 class="card-title">
-                  <svg
-                    class="card-icon"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                    />
-                  </svg>
-                  {$_("AdditionalProfileInfo")}
+                <h3 class="text-lg font-semibold text-gray-900">
+                  Additional Details
                 </h3>
-                <p class="card-subtitle">
-                  {$_("CompleteProfileDetails")}
-                </p>
               </div>
 
-              <div class="card-content">
+              <div class="space-y-6">
                 {#if $loadingSchema}
-                  <div class="loading-container">
-                    <div class="loading-content">
-                      <Diamonds color="#6b21a8" size="40" unit="px" />
-                      <p class="loading-text">{$_("LoadingProfileFields")}</p>
-                    </div>
+                  <div class="flex justify-center py-8">
+                    <Diamonds color="#4f46e5" size="40" unit="px" />
                   </div>
                 {:else}
                   <DynamicSchemaBasedForms
@@ -637,203 +630,212 @@
 
           <!-- Account Settings -->
           {#if $user}
-            <div class="form-card">
-              <div class="card-header success">
-                <h3 class="card-title">
-                  <svg
-                    class="card-icon"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                    />
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                  </svg>
-                  {$_("AccountSettings")}
-                </h3>
-                <p class="card-subtitle">
-                  {$_("ManageAccountSecurity")}
-                </p>
+            <div
+              class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
+            >
+              <div class="flex items-center gap-2 mb-6">
+                <svg
+                  class="w-5 h-5 text-indigo-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                  />
+                </svg>
+                <h3 class="text-lg font-semibold text-gray-900">Account</h3>
               </div>
 
-              <div class="card-content">
-                <div class="account-status">
-                  <div class="status-info">
-                    <h4 class="status-title">{$_("AccountStatus")}</h4>
-                    <p class="status-description">{$_("AccountActive")}</p>
-                  </div>
-                  <div class="status-indicator">
-                    <div class="status-dot"></div>
-                    <span class="status-badge active">{$_("Active")}</span>
-                  </div>
-                </div>
-
-                <div class="password-section">
-                  <div class="password-header">
-                    <div class="password-info">
-                      <h4 class="password-title">
-                        <svg
-                          class="password-icon"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                          />
-                        </svg>
-                        {$_("Password")}
+              <div class="space-y-6">
+                <!-- Status Row -->
+                <div
+                  class="flex items-center justify-between p-4 bg-gray-50/50 rounded-xl border border-gray-100"
+                >
+                  <div class="flex items-center gap-3">
+                    <svg
+                      class="w-5 h-5 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                      />
+                    </svg>
+                    <div>
+                      <h4 class="text-sm font-semibold text-gray-900">
+                        Account Status
                       </h4>
-                      <p class="password-description">
-                        {$_("SecureAccountPassword")}
+                      <p class="text-xs text-gray-500 mt-0.5">
+                        Active and verified
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      class="password-toggle-btn"
-                      onclick={() =>
-                        showChangePassword.set(!$showChangePassword)}
-                    >
-                      {$showChangePassword
-                        ? $_("Cancel")
-                        : $_("ChangePassword")}
-                    </button>
                   </div>
-
-                  {#if $showChangePassword}
-                    <form
-                      onsubmit={preventDefault(handlePasswordChange)}
-                      class="password-form"
-                    >
-                      <div class="password-fields">
-                        <div class="password-field full-width">
-                          <label for="oldPassword" class="form-label">
-                            {$_("CurrentPassword")}
-                          </label>
-                          <input
-                            id="oldPassword"
-                            type="password"
-                            required
-                            bind:value={$oldPassword}
-                            class="form-input"
-                            placeholder={$_("EnterCurrentPassword")}
-                            disabled={$isChangingPassword}
-                          />
-                        </div>
-
-                        <div class="password-field">
-                          <label for="newPassword" class="form-label">
-                            {$_("NewPassword")}
-                          </label>
-                          <input
-                            id="newPassword"
-                            type="password"
-                            required
-                            minlength="8"
-                            bind:value={$newPassword}
-                            class="form-input"
-                            placeholder={$_("EnterNewPassword")}
-                            disabled={$isChangingPassword}
-                          />
-                        </div>
-
-                        <div class="password-field">
-                          <label for="confirmPassword" class="form-label">
-                            {$_("ConfirmNewPassword")}
-                          </label>
-                          <input
-                            id="confirmPassword"
-                            type="password"
-                            required
-                            bind:value={$confirmPassword}
-                            class="form-input"
-                            placeholder={$_("ConfirmNewPassword")}
-                            disabled={$isChangingPassword}
-                          />
-                        </div>
-                      </div>
-
-                      <div class="password-hint">
-                        💡 {$_("PasswordHint")}
-                      </div>
-
-                      <div class="password-actions">
-                        <button
-                          type="submit"
-                          disabled={$isChangingPassword}
-                          class="submit-btn"
-                        >
-                          {#if $isChangingPassword}
-                            <Diamonds color="#ffffff" size="16" unit="px" />
-                            {$_("ChangingPassword")}
-                          {:else}
-                            <svg
-                              class="btn-icon"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M5 13l4 4L19 7"
-                              />
-                            </svg>
-                            {$_("ChangePassword")}
-                          {/if}
-                        </button>
-                        <button
-                          type="button"
-                          onclick={() => {
-                            showChangePassword.set(false);
-                            oldPassword.set("");
-                            newPassword.set("");
-                            confirmPassword.set("");
-                          }}
-                          class="cancel-btn"
-                          disabled={$isChangingPassword}
-                        >
-                          {$_("Cancel")}
-                        </button>
-                      </div>
-                    </form>
-                  {:else}
-                    <div class="password-display">
-                      <svg
-                        class="password-display-icon"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                        />
-                      </svg>
-                      <span class="password-dots">••••••••••••</span>
-                      <span class="protected-badge">{$_("Protected")}</span>
-                    </div>
-                  {/if}
+                  <span
+                    class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600"
+                  >
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"
+                    ></span>
+                    Active
+                  </span>
                 </div>
+
+                <!-- Password Row -->
+                <div
+                  class="flex items-center justify-between p-4 bg-gray-50/50 rounded-xl border border-gray-100"
+                >
+                  <div class="flex items-center gap-3">
+                    <svg
+                      class="w-5 h-5 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                      />
+                    </svg>
+                    <div>
+                      <h4 class="text-sm font-semibold text-gray-900">
+                        Password
+                      </h4>
+                      <p class="text-xs text-gray-500 mt-0.5">Protected</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    class="px-4 py-2 text-sm font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
+                    onclick={() => showChangePassword.set(!$showChangePassword)}
+                  >
+                    {$showChangePassword ? "Cancel" : "Change"}
+                  </button>
+                </div>
+
+                {#if $showChangePassword}
+                  <form
+                    onsubmit={preventDefault(handlePasswordChange)}
+                    class="p-5 bg-gray-50/50 border border-gray-100 rounded-xl space-y-4 shadow-inner"
+                  >
+                    <div>
+                      <label
+                        for="oldPassword"
+                        class="block text-sm font-medium text-gray-700 mb-1"
+                      >
+                        {$_("CurrentPassword")}
+                      </label>
+                      <input
+                        id="oldPassword"
+                        type="password"
+                        required
+                        bind:value={$oldPassword}
+                        class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
+                        disabled={$isChangingPassword}
+                      />
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label
+                          for="newPassword"
+                          class="block text-sm font-medium text-gray-700 mb-1"
+                        >
+                          {$_("NewPassword")}
+                        </label>
+                        <input
+                          id="newPassword"
+                          type="password"
+                          required
+                          minlength="8"
+                          bind:value={$newPassword}
+                          class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
+                          disabled={$isChangingPassword}
+                        />
+                      </div>
+
+                      <div>
+                        <label
+                          for="confirmPassword"
+                          class="block text-sm font-medium text-gray-700 mb-1"
+                        >
+                          {$_("ConfirmNewPassword")}
+                        </label>
+                        <input
+                          id="confirmPassword"
+                          type="password"
+                          required
+                          bind:value={$confirmPassword}
+                          class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
+                          disabled={$isChangingPassword}
+                        />
+                      </div>
+                    </div>
+
+                    <div class="pt-2 flex gap-3">
+                      <button
+                        type="submit"
+                        disabled={$isChangingPassword}
+                        class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                      >
+                        {#if $isChangingPassword}
+                          <Diamonds color="#ffffff" size="16" unit="px" />
+                          {$_("ChangingPassword")}
+                        {:else}
+                          {$_("ChangePassword")}
+                        {/if}
+                      </button>
+                      <button
+                        type="button"
+                        onclick={() => {
+                          showChangePassword.set(false);
+                          oldPassword.set("");
+                          newPassword.set("");
+                          confirmPassword.set("");
+                        }}
+                        class="px-5 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-semibold rounded-xl transition-colors"
+                        disabled={$isChangingPassword}
+                      >
+                        {$_("Cancel")}
+                      </button>
+                    </div>
+                  </form>
+                {/if}
               </div>
             </div>
           {/if}
+
+          <!-- Submit Action -->
+          <div class="pt-4">
+            <button
+              type="submit"
+              form="profile-form"
+              class="w-full py-4 px-6 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm text-base font-semibold flex items-center justify-center gap-2 transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
+                />
+              </svg>
+              Save Changes
+            </button>
+          </div>
         </div>
       </div>
     {:else if $entities.length === 0}
@@ -1030,542 +1032,6 @@
     border-radius: 9999px;
     font-size: 0.75rem;
     font-weight: 500;
-  }
-
-  /* Loading */
-  .loading-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 8rem 0;
-  }
-
-  .loading-content {
-    text-align: center;
-  }
-
-  .loading-text {
-    margin-top: 1rem;
-    color: #6b7280;
-    font-weight: 500;
-  }
-
-  /* Profile Grid */
-  .profile-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 2rem;
-  }
-
-  @media (min-width: 1280px) {
-    .profile-grid {
-      grid-template-columns: 320px 1fr;
-    }
-  }
-
-  /* Profile Sidebar */
-  .profile-sidebar {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-  }
-
-  /* Avatar Card */
-  .avatar-card {
-    background: white;
-    border-radius: 1.5rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    border: 1px solid #e5e7eb;
-    overflow: hidden;
-  }
-
-  .avatar-header {
-    padding: 2rem;
-    text-align: center;
-    color: black;
-  }
-
-  .avatar-container {
-    position: relative;
-    display: inline-block;
-    margin-bottom: 1.5rem;
-  }
-
-  .avatar-wrapper {
-    position: relative;
-    display: inline-block;
-  }
-
-  .avatar-image {
-    width: 8rem;
-    height: 8rem;
-    border-radius: 50%;
-    overflow: hidden;
-    border: 4px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  }
-
-  .avatar-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.5);
-    border-radius: 50%;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-  }
-
-  .avatar-wrapper:hover .avatar-overlay {
-    opacity: 1;
-  }
-
-  .overlay-content {
-    text-align: center;
-    color: white;
-  }
-
-  .overlay-icon {
-    width: 2rem;
-    height: 2rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .overlay-text {
-    font-size: 0.875rem;
-    font-weight: 600;
-  }
-
-  .user-name {
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-  }
-
-  .user-handle {
-    font-size: 1.125rem;
-    opacity: 0.8;
-  }
-
-  .avatar-actions {
-    padding: 1.5rem;
-  }
-
-  .change-photo-btn {
-    width: 100%;
-    background-color: #2563eb;
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.75rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-  }
-
-  .change-photo-btn:hover:not(:disabled) {
-    background-color: #1d4ed8;
-    transform: translateY(-1px);
-  }
-
-  .change-photo-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  /* Stats Card */
-  .stats-card {
-    background: white;
-    border-radius: 1rem;
-    padding: 1.5rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    border: 1px solid #e5e7eb;
-  }
-
-  .stats-title {
-    font-size: 1.125rem;
-    font-weight: 700;
-    color: #111827;
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .stats-icon {
-    width: 1.25rem;
-    height: 1.25rem;
-    color: #2563eb;
-  }
-
-  .stats-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .stat-item {
-    display: flex;
-    justify-content: between;
-    align-items: center;
-  }
-
-  .stat-label {
-    color: #6b7280;
-  }
-
-  .stat-value {
-    font-weight: 700;
-    color: #2563eb;
-  }
-
-  .status-badge {
-    padding: 0.25rem 0.75rem;
-    border-radius: 9999px;
-    font-size: 0.75rem;
-    font-weight: 600;
-  }
-
-  .status-badge.active {
-    background-color: #dcfce7;
-    color: #166534;
-  }
-
-  /* Main Content */
-  .main-content {
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-  }
-
-  /* Form Cards */
-  .form-card {
-    background: white;
-    border-radius: 1rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    border: 1px solid #e5e7eb;
-    overflow: hidden;
-  }
-
-  .card-header {
-    padding: 1.5rem;
-    background-color: #2563eb;
-    color: white;
-  }
-
-  .card-header.secondary {
-    background-color: #7c3aed;
-  }
-
-  .card-header.success {
-    background-color: #059669;
-  }
-
-  .card-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .card-icon {
-    width: 1.75rem;
-    height: 1.75rem;
-  }
-
-  .card-subtitle {
-    opacity: 0.9;
-    margin-top: 0.5rem;
-  }
-
-  .card-content {
-    padding: 2rem;
-  }
-
-  /* Forms */
-  .profile-form {
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-  }
-
-  .form-row {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-  }
-
-  @media (min-width: 1024px) {
-    .form-row {
-      grid-template-columns: 1fr 1fr;
-    }
-  }
-
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .form-label {
-    font-weight: 600;
-    color: #374151;
-    font-size: 0.875rem;
-  }
-
-  .required {
-    color: #dc2626;
-    margin-left: 0.25rem;
-  }
-
-  .form-input,
-  .form-textarea {
-    width: 100%;
-    padding: 1rem;
-    border: 2px solid #e5e7eb;
-    border-radius: 0.75rem;
-    font-size: 0.875rem;
-    transition: border-color 0.2s ease;
-    background-color: #f9fafb;
-  }
-
-  .form-input:hover,
-  .form-textarea:hover {
-    background-color: white;
-  }
-
-  .form-input:focus,
-  .form-textarea:focus {
-    outline: none;
-    border-color: #2563eb;
-    background-color: white;
-  }
-
-  .form-textarea {
-    resize: vertical;
-    min-height: 100px;
-    font-family: inherit;
-  }
-
-  /* Buttons */
-  .submit-btn {
-    width: 100%;
-    background-color: #2563eb;
-    color: white;
-    border: none;
-    padding: 1rem 2rem;
-    border-radius: 0.75rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-  }
-
-  .submit-btn:hover:not(:disabled) {
-    background-color: #1d4ed8;
-    transform: translateY(-1px);
-  }
-
-  .submit-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  .btn-icon {
-    width: 1.25rem;
-    height: 1.25rem;
-  }
-
-  /* Account Settings */
-  .account-status {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.5rem;
-    background-color: #f0fdf4;
-    border-radius: 0.75rem;
-    border: 1px solid #bbf7d0;
-    margin-bottom: 2rem;
-  }
-
-  .status-info h4 {
-    font-weight: 700;
-    color: #111827;
-    font-size: 1.125rem;
-    margin-bottom: 0.25rem;
-  }
-
-  .status-info p {
-    color: #6b7280;
-    margin-top: 0.25rem;
-  }
-
-  .status-indicator {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .status-dot {
-    width: 0.75rem;
-    height: 0.75rem;
-    background-color: #22c55e;
-    border-radius: 50%;
-    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  }
-
-  /* Password Section */
-  .password-section {
-    border-top: 1px solid #e5e7eb;
-    padding-top: 2rem;
-  }
-
-  .password-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 1.5rem;
-  }
-
-  .password-info h4 {
-    font-weight: 700;
-    color: #111827;
-    font-size: 1.125rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.25rem;
-  }
-
-  .password-icon {
-    width: 1.25rem;
-    height: 1.25rem;
-    color: #6b7280;
-  }
-
-  .password-info p {
-    color: #6b7280;
-    font-size: 0.875rem;
-    margin-top: 0.25rem;
-  }
-
-  .password-toggle-btn {
-    padding: 0.75rem 1.5rem;
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #2563eb;
-    background-color: #eff6ff;
-    border: none;
-    border-radius: 0.75rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .password-toggle-btn:hover {
-    color: #1d4ed8;
-    background-color: #dbeafe;
-  }
-
-  .password-form {
-    background-color: #f9fafb;
-    padding: 1.5rem;
-    border-radius: 0.75rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-  }
-
-  .password-fields {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-  }
-
-  @media (min-width: 768px) {
-    .password-fields {
-      grid-template-columns: 1fr 1fr;
-    }
-  }
-
-  .password-field.full-width {
-    grid-column: 1 / -1;
-  }
-
-  .password-hint {
-    font-size: 0.875rem;
-    color: #6b7280;
-    background-color: #eff6ff;
-    padding: 0.75rem;
-    border-radius: 0.5rem;
-  }
-
-  .password-actions {
-    display: flex;
-    gap: 1rem;
-    padding-top: 1rem;
-  }
-
-  .cancel-btn {
-    padding: 1rem 1.5rem;
-    color: #6b7280;
-    background-color: #f3f4f6;
-    border: none;
-    border-radius: 0.75rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .cancel-btn:hover:not(:disabled) {
-    color: #374151;
-    background-color: #e5e7eb;
-  }
-
-  .cancel-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-
-  .password-display {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem;
-    background-color: #f9fafb;
-    border-radius: 0.75rem;
-  }
-
-  .password-display-icon {
-    width: 1.5rem;
-    height: 1.5rem;
-    color: #9ca3af;
-  }
-
-  .password-dots {
-    color: #6b7280;
-    font-family: monospace;
-    letter-spacing: 0.1em;
-  }
-
-  .protected-badge {
-    font-size: 0.875rem;
-    color: #6b7280;
-    background-color: #e5e7eb;
-    padding: 0.25rem 0.75rem;
-    border-radius: 9999px;
   }
 
   /* Empty State */

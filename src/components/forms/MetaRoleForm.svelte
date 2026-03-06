@@ -1,10 +1,10 @@
 <script lang="ts">
-    import {onMount} from "svelte";
-    import {Dmart, QueryType} from "@edraj/tsdmart";
-    import {writable} from "svelte/store";
-    import {_} from "@/i18n";
+  import { onMount } from "svelte";
+  import { Dmart, QueryType } from "@edraj/tsdmart";
+  import { writable } from "svelte/store";
+  import { _ } from "@/i18n";
 
-    let {
+  let {
     formData = $bindable(),
     validateFn = $bindable(),
   }: {
@@ -63,9 +63,9 @@
         filteredPermissions.set(
           perms
             .filter((perm) =>
-              perm.shortname.toLowerCase().includes(term.toLowerCase())
+              perm.shortname.toLowerCase().includes(term.toLowerCase()),
             )
-            .map((perm) => ({ key: perm.shortname, value: perm.shortname }))
+            .map((perm) => ({ key: perm.shortname, value: perm.shortname })),
         );
       });
     });
@@ -79,7 +79,7 @@
       formData.permissions = [...formData.permissions, permission.value];
     } else {
       formData.permissions = formData.permissions.filter(
-        (p) => p !== permission.value
+        (p) => p !== permission.value,
       );
     }
   }
@@ -100,7 +100,7 @@
     } else {
       availablePermissions.subscribe((perms) => {
         filteredPermissions.set(
-          perms.map((perm) => ({ key: perm.shortname, value: perm.shortname }))
+          perms.map((perm) => ({ key: perm.shortname, value: perm.shortname })),
         );
       });
     }
@@ -281,17 +281,16 @@
   .search-input {
     width: 100%;
     padding: 12px 16px 12px 44px;
-    border: 2px solid #e5e7eb;
+    border: none;
     border-radius: 8px;
     font-size: 14px;
-    background: white;
+    background: #f9fafb;
     transition: all 0.2s ease;
   }
 
   .search-input:focus {
     outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
   }
 
   .dropdown {
@@ -339,10 +338,7 @@
   }
 
   .permissions-container {
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    padding: 16px;
-    background: #f9fafb;
+    padding: 16px 0;
   }
 
   .permissions-list {

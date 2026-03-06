@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { goto, params } from "@roxi/routify";
-  import { getMyEntities } from "@/lib/dmart_services";
+  import { getMyEntities } from "@/lib/dmart_services/dmart_services";
   import {
     formatDate,
     formatNumberInText,
@@ -38,7 +38,7 @@
 
   const isRTL = derived(
     locale,
-    ($locale) => $locale === "ar" || $locale === "ku"
+    ($locale) => $locale === "ar" || $locale === "ku",
   );
 
   function getLocalizedDisplayName(entity) {
@@ -229,13 +229,13 @@
           entity.content?.toLowerCase().includes(search) ||
           entity.tags?.some((tag) => tag.toLowerCase().includes(search)) ||
           entity.resource_type?.toLowerCase().includes(search) ||
-          entity.space_name?.toLowerCase().includes(search)
+          entity.space_name?.toLowerCase().includes(search),
       );
     }
 
     if (resourceTypeFilter !== "all") {
       filtered = filtered.filter(
-        (entity) => entity.resource_type === resourceTypeFilter
+        (entity) => entity.resource_type === resourceTypeFilter,
       );
     }
 
@@ -354,582 +354,590 @@
   }
 </script>
 
-<div
-  class="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50"
-  class:rtl={$isRTL}
->
-  <div class="container mx-auto px-6 py-8 max-w-7xl">
-    <div class="mb-8">
-      <div
-        class="flex flex-col lg:flex-row lg:items-center justify-between gap-6"
-      >
-        <div>
-          <h1 class="text-4xl hero-title">{$_("my_entries.title")}</h1>
-          <p class="text-gray-600 text-lg">
-            {$_("my_entries.subtitle")}
-          </p>
-        </div>
-
-        <button
-          aria-label={$_("my_entries.create_new")}
-          onclick={createNewEntry}
-          class="btn-primary inline-flex items-center"
-        >
-          <PlusOutline class="mx-2 w-5 h-5" />
-          {$_("my_entries.create_new")}
-        </button>
+<div class="min-h-screen bg-gray-50/30" class:rtl={$isRTL}>
+  <div class="container mx-auto px-6 py-10 max-w-7xl">
+    <!-- Header -->
+    <div
+      class="mb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6"
+    >
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900 mb-2 tracking-tight">
+          {$_("my_entries.title") || "My Entries"}
+        </h1>
+        <p class="text-gray-500 text-[15px]">
+          {$_("my_entries.subtitle") ||
+            "Manage and track your content submissions"}
+        </p>
       </div>
+      <button
+        aria-label={$_("my_entries.create_new") || "Create New Entry"}
+        onclick={createNewEntry}
+        class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-full font-semibold flex items-center justify-center gap-2 transition-all shadow-sm shadow-indigo-200 text-sm"
+      >
+        <PlusOutline class="w-4 h-4" />
+        {$_("my_entries.create_new") || "Create New Entry"}
+      </button>
     </div>
 
-    <!-- Updated filters to include resource type and space filters -->
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-        <!-- Search -->
-        <div class="relative">
-          <SearchOutline
-            class="absolute top-1/2 transform -translate-y-1/2 w-5 h-5 ms-2 text-gray-400 search-icon"
-          />
-          <label for="search-input" class="visually-hidden"></label>
-          <input
-            type="text"
-            bind:value={searchTerm}
-            placeholder={$_("my_entries.search.placeholder")}
-            class="w-full search-input py-3 pl-8 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
-          />
-        </div>
+    <!-- Top Bar (Search & Filters) -->
+    <div
+      class="bg-white rounded-2xl border border-gray-100 p-3 mb-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] flex flex-col md:flex-row gap-3"
+    >
+      <!-- Search -->
+      <div class="relative flex-grow min-w-[200px]">
+        <SearchOutline
+          class="absolute left-4 top-1/2 transform -translate-y-1/2 w-[18px] h-[18px] text-gray-400"
+        />
+        <input
+          type="text"
+          bind:value={searchTerm}
+          placeholder="Search entries"
+          class="w-full pl-11 pr-4 py-2.5 bg-gray-50/50 border border-transparent rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-gray-700 placeholder-gray-400"
+        />
+      </div>
 
-        <!-- Resource Type Filter -->
+      <!-- Resource Type Filter -->
+      <div class="relative min-w-[150px] md:max-w-[180px]">
         <select
           bind:value={resourceTypeFilter}
           onchange={handleFilterChange}
-          class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 appearance-none bg-white"
+          class="w-full appearance-none px-4 py-2.5 bg-gray-50/50 border border-transparent rounded-xl text-sm font-semibold text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all cursor-pointer"
         >
           <option value="all">All Types</option>
           <option value="content">Content</option>
           <option value="media">Media</option>
           <option value="folder">Folder</option>
         </select>
-
-        <!-- Space Filter -->
-        <div class="relative">
-          <LayersSolid
-            class="absolute top-1/2 transform -translate-y-1/2 w-5 h-5 ms-2 text-gray-400 space-icon"
-          />
-          <select
-            bind:value={spaceFilter}
-            onchange={handleFilterChange}
-            class="w-full space-select py-3 pl-8 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 appearance-none bg-white"
+        <div
+          class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-gray-400"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-            <option value="all">All Spaces</option>
-            {#each availableSpaces as space}
-              <option value={space.shortname}>
-                {getLocalizedSpaceName(space)} ({space.entryCount})
-              </option>
-            {/each}
-          </select>
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 9l-7 7-7-7"
+            ></path>
+          </svg>
         </div>
+      </div>
 
-        <!-- Sort By -->
+      <!-- Space Filter -->
+      <div class="relative min-w-[150px] md:max-w-[200px]">
+        <LayersSolid
+          class="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
+        />
+        <select
+          bind:value={spaceFilter}
+          onchange={handleFilterChange}
+          class="w-full appearance-none pl-11 pr-10 py-2.5 bg-gray-50/50 border border-transparent rounded-xl text-sm font-semibold text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all cursor-pointer"
+        >
+          <option value="all">All Spaces</option>
+          {#each availableSpaces as space}
+            <option value={space.shortname}>
+              {getLocalizedSpaceName(space)} ({space.entryCount})
+            </option>
+          {/each}
+        </select>
+        <div
+          class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-gray-400"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 9l-7 7-7-7"
+            ></path>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Sort By -->
+      <div class="relative min-w-[150px] md:max-w-[180px]">
         <select
           bind:value={sortBy}
           onchange={handleSortChange}
-          class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 appearance-none bg-white sort-select"
+          class="w-full appearance-none px-4 py-2.5 bg-gray-50/50 border border-transparent rounded-xl text-sm font-semibold text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all cursor-pointer"
         >
-          <option value="updated_at"
-            >{$_("my_entries.sort.last_updated")}</option
-          >
-          <option value="created_at"
-            >{$_("my_entries.sort.date_created")}</option
-          >
-          <option value="title">{$_("my_entries.sort.title")}</option>
-          <option value="reactions">{$_("my_entries.sort.reactions")}</option>
-          <option value="comments">{$_("my_entries.sort.comments")}</option>
+          <option value="updated_at">Last Updated</option>
+          <option value="created_at">Date Created</option>
+          <option value="title">Title</option>
+          <option value="reactions">Reactions</option>
+          <option value="comments">Comments</option>
         </select>
-      </div>
-
-      <!-- Active Filters Display -->
-      {#if spaceFilter !== "all" || statusFilter !== "all" || resourceTypeFilter !== "all" || searchTerm.trim()}
-        <div class="mt-4 flex flex-wrap gap-2 items-center">
-          <span class="text-sm font-medium text-gray-600">Active filters:</span>
-
-          {#if searchTerm.trim()}
-            <span
-              class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800"
-            >
-              Search: "{searchTerm}"
-              <button
-                onclick={() => {
-                  searchTerm = "";
-                  handleSearch();
-                }}
-                class="ml-2 hover:bg-blue-200 rounded-full p-1"
-              >
-                ×
-              </button>
-            </span>
-          {/if}
-
-          {#if spaceFilter !== "all"}
-            <span
-              class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-800"
-            >
-              Space: {spaceFilter}
-              <button
-                onclick={() => {
-                  spaceFilter = "all";
-                  handleFilterChange();
-                }}
-                class="ml-2 hover:bg-purple-200 rounded-full p-1"
-              >
-                ×
-              </button>
-            </span>
-          {/if}
-
-          {#if resourceTypeFilter !== "all"}
-            <span
-              class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800"
-            >
-              Type: {resourceTypeFilter}
-              <button
-                onclick={() => {
-                  resourceTypeFilter = "all";
-                  handleFilterChange();
-                }}
-                class="ml-2 hover:bg-green-200 rounded-full p-1"
-              >
-                ×
-              </button>
-            </span>
-          {/if}
-
-          {#if statusFilter !== "all"}
-            <span
-              class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-yellow-100 text-yellow-800"
-            >
-              Status: {statusFilter}
-              <button
-                onclick={() => {
-                  statusFilter = "all";
-                  handleFilterChange();
-                }}
-                class="ml-2 hover:bg-yellow-200 rounded-full p-1"
-              >
-                ×
-              </button>
-            </span>
-          {/if}
-
-          <button
-            onclick={clearAllFilters}
-            class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors duration-150"
+        <div
+          class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-gray-400"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-            Clear all
-          </button>
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 9l-7 7-7-7"
+            ></path>
+          </svg>
         </div>
-      {/if}
+      </div>
     </div>
 
-    {#if isLoading}
-      <div class="flex justify-center items-center py-20">
-        <div class="text-center">
-          <div
-            class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"
-          ></div>
-          <p class="text-gray-600 text-lg">{$_("my_entries.loading")}</p>
-        </div>
-      </div>
-    {:else if filteredEntities.length === 0}
-      <div class="text-center py-20">
-        <h3 class="text-2xl font-semibold text-gray-900 my-3">
-          {entities.length === 0
-            ? $_("my_entries.empty.no_entries")
-            : $_("my_entries.empty.no_matches")}
-        </h3>
-        <p class="text-gray-600 mb-8 max-w-md mx-auto">
-          {entities.length === 0
-            ? $_("my_entries.empty.no_entries_description")
-            : $_("my_entries.empty.no_matches_description")}
-        </p>
-        {#if entities.length === 0}
-          <button
-            aria-label={$_("my_entries.create_new")}
-            onclick={createNewEntry}
-            class="inline-flex items-center btn-primary"
+    <!-- Active Filters Display -->
+    {#if spaceFilter !== "all" || statusFilter !== "all" || resourceTypeFilter !== "all" || searchTerm.trim()}
+      <div class="mb-6 flex flex-wrap gap-2 items-center">
+        <!-- Render tags cleanly -->
+        {#if searchTerm.trim()}
+          <span
+            class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-200"
           >
-            {$_("my_entries.create_first")}
-          </button>
+            Search: {searchTerm}
+            <button
+              onclick={() => {
+                searchTerm = "";
+                handleSearch();
+              }}
+              class="ml-1.5 hover:text-gray-900"
+              ><svg
+                class="w-3.5 h-3.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                >
+                </path>
+              </svg></button
+            >
+          </span>
         {/if}
+        {#if resourceTypeFilter !== "all"}
+          <span
+            class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-200"
+          >
+            Type: {resourceTypeFilter}
+            <button
+              onclick={() => {
+                resourceTypeFilter = "all";
+                handleFilterChange();
+              }}
+              class="ml-1.5
+                    hover:text-gray-900"
+              ><svg
+                class="w-3.5 h-3.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                >
+                </path>
+              </svg></button
+            >
+          </span>
+        {/if}
+        {#if spaceFilter !== "all"}
+          <span
+            class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-200"
+          >
+            Space: {spaceFilter}
+            <button
+              onclick={() => {
+                spaceFilter = "all";
+                handleFilterChange();
+              }}
+              class="ml-1.5
+                    hover:text-gray-900"
+              ><svg
+                class="w-3.5 h-3.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                >
+                </path>
+              </svg></button
+            >
+          </span>
+        {/if}
+        <button
+          onclick={clearAllFilters}
+          class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 ml-2"
+          >Clear all</button
+        >
+      </div>
+    {/if}
+
+    {#if isLoading}
+      <div class="flex justify-center items-center py-32">
+        <div
+          class="animate-spin rounded-full h-10 w-10 border-2 border-indigo-200 border-t-indigo-600"
+        ></div>
       </div>
     {:else}
       <!-- Stats Summary -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <div class="flex items-center justify-between stats-item">
-            <div>
-              <p class="text-sm font-medium text-gray-600">
-                {$_("my_entries.stats.total_entries")}
-              </p>
-              <p class="text-3xl font-bold text-gray-900">
-                {formatNumberInText(entities.length, $locale)}
-              </p>
-            </div>
-            <div
-              class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center"
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div
+          class="bg-white rounded-2xl p-6 border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] flex items-center justify-between"
+        >
+          <div>
+            <p
+              class="text-[13px] font-bold text-gray-400 uppercase tracking-wide mb-1"
             >
-              <EditOutline class="w-6 h-6 text-indigo-600" />
-            </div>
+              Total Entries
+            </p>
+            <p class="text-4xl font-extrabold text-gray-900">
+              {formatNumberInText(entities.length, $locale)}
+            </p>
+          </div>
+          <div
+            class="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center"
+          >
+            <svg
+              class="w-6 h-6 text-indigo-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              >
+              </path>
+            </svg>
           </div>
         </div>
 
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <div class="flex items-center justify-between stats-item">
-            <div>
-              <p class="text-sm font-medium text-gray-600">Spaces Used</p>
-              <p class="text-3xl font-bold text-purple-600">
-                {formatNumberInText(
-                  new Set(entities.map((e) => e.space_name)).size,
-                  $locale
-                )}
-              </p>
-            </div>
-            <div
-              class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center"
+        <div
+          class="bg-white rounded-2xl p-6 border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] flex items-center justify-between"
+        >
+          <div>
+            <p
+              class="text-[13px] font-bold text-gray-400 uppercase tracking-wide mb-1"
             >
-              <LayersSolid class="w-6 h-6 text-purple-600" />
-            </div>
+              Spaces Used
+            </p>
+            <p class="text-4xl font-extrabold text-[#00d084]">
+              {formatNumberInText(
+                new Set(entities.map((e) => e.space_name)).size,
+                $locale,
+              )}
+            </p>
+          </div>
+          <div
+            class="w-12 h-12 bg-[#00d084]/10 rounded-2xl flex items-center justify-center"
+          >
+            <svg
+              class="w-6 h-6 text-[#00d084]"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+              >
+              </path>
+            </svg>
           </div>
         </div>
       </div>
 
-      <!-- Entries Table -->
-      <div
-        class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
-      >
-        <div class="overflow-x-auto">
-          <table class="w-full entries-table">
-            <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
-              <tr>
-                <th
-                  class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider table-header"
-                >
-                  {$_("my_entries.table.entry")}
-                </th>
-                <th
-                  class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider table-header"
-                >
-                  Type
-                </th>
-                <th
-                  class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider table-header"
-                >
-                  Space
-                </th>
-                <th
-                  class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider table-header"
-                >
-                  {$_("my_entries.table.status")}
-                </th>
-                <th
-                  class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider table-header"
-                >
-                  {$_("my_entries.table.engagement")}
-                </th>
-                <th
-                  class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider table-header"
-                >
-                  {$_("my_entries.table.updated")}
-                </th>
-                <th
-                  class="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider table-header-actions"
-                >
-                  {$_("my_entries.table.actions")}
-                </th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-              {#each filteredEntities as entity, index}
-                {@const SvelteComponent = getResourceTypeIcon(
-                  entity.resource_type
-                )}
-                <tr
-                  class="hover:bg-gray-50 transition-colors duration-150 group"
-                >
-                  <td class="px-6 py-4">
-                    <div class="flex items-start space-x-4 entry-content">
-                      <!-- Added resource type icon -->
-                      <div class="flex-shrink-0 mt-1">
-                        <SvelteComponent class="w-5 h-5 text-gray-400" />
-                      </div>
-                      <div class="flex-1 min-w-0">
-                        <h3
-                          class="text-lg font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors duration-150 line-clamp-2"
-                        >
-                          {entity.title || $_("my_entries.untitled")}
-                        </h3>
-                        {#if entity.content}
-                          <p class="text-sm text-gray-600 mt-1 line-clamp-2">
-                            {@html truncateString(entity.content)}
-                          </p>
-                        {/if}
-                        {#if entity.tags && entity.tags.length > 0}
-                          <div class="flex flex-wrap gap-1 mt-2 tags-container">
-                            {#each entity.tags.slice(0, 3) as tag}
-                              <span
-                                class="inline-flex items-center px-2 py-1 bg-indigo-50 text-indigo-700 rounded-md text-xs font-medium"
-                              >
-                                <TagOutline class="w-3 h-3 tag-icon-inline" />
-                                {tag}
-                              </span>
-                            {/each}
-                            {#if entity.tags.length > 3}
-                              <span
-                                class="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-600 rounded-md text-xs font-medium"
-                              >
-                                {$_("my_entries.tags.more", {
-                                  values: {
-                                    count: formatNumberInText(
-                                      entity.tags.length - 3,
-                                      $locale
-                                    ),
-                                  },
-                                })}
-                              </span>
-                            {/if}
-                          </div>
-                        {/if}
-                      </div>
-                    </div>
-                  </td>
-
-                  <!-- Added resource type column -->
-                  <td class="px-6 py-4">
-                    <span
-                      class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {getResourceTypeColor(
-                        entity.resource_type
-                      )}"
-                    >
-                      {entity.resource_type}
-                    </span>
-                  </td>
-
-                  <td class="px-6 py-4">
-                    <button
-                      aria-label="Filter by space {entity.space_name}"
-                      onclick={() => filterBySpace(entity.space_name)}
-                      class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 hover:bg-indigo-200 transition-colors duration-150 cursor-pointer"
-                    >
-                      {entity.space_name}
-                    </button>
-                  </td>
-
-                  <td class="px-6 py-4">
-                    <span
-                      class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium {getStatusBadge(
-                        entity
-                      ).class}"
-                    >
-                      {getStatusBadge(entity).text}
-                    </span>
-                  </td>
-
-                  <td class="px-6 py-4">
-                    <div
-                      class="flex items-center space-x-4 text-sm engagement-stats"
-                    >
-                      <div class="flex items-center text-red-500">
-                        <HeartSolid class="w-4 h-4 engagement-icon" />
-                        <span class="font-medium"
-                          >{formatNumberInText(entity.reaction, $locale) ||
-                            0}</span
-                        >
-                      </div>
-                      <div class="flex items-center text-blue-500">
-                        <MessagesSolid class="w-4 h-4 engagement-icon" />
-                        <span class="font-medium"
-                          >{formatNumberInText(entity.comment, $locale) ||
-                            0}</span
-                        >
-                      </div>
-                    </div>
-                  </td>
-
-                  <td class="px-6 py-4">
-                    <div
-                      class="flex items-center text-sm text-gray-600 date-info"
-                    >
-                      <ClockOutline class="w-4 h-4 date-icon" />
-                      {entity.updated_at}
-                    </div>
-                  </td>
-
-                  <td class="px-6 py-4 text-right">
-                    <div
-                      class="flex items-center justify-end space-x-2 action-buttons"
-                    >
-                      <button
-                        aria-label={$_("my_entries.actions.view")}
-                        onclick={() => viewEntity(entity)}
-                        class="inline-flex items-center px-3 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors duration-150"
-                      >
-                        <EyeOutline class="w-4 h-4 action-icon" />
-                        {$_("my_entries.actions.view")}
-                      </button>
-                      <button
-                        aria-label={$_("my_entries.actions.edit")}
-                        onclick={() => editEntity(entity)}
-                        class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-150"
-                      >
-                        <EditOutline class="w-4 h-4 action-icon" />
-                        {$_("my_entries.actions.edit")}
-                      </button>
-                    </div>
-                  </td>
+      {#if filteredEntities.length === 0}
+        <div
+          class="text-center py-24 bg-white rounded-3xl border border-gray-100 shadow-sm mt-8"
+        >
+          <svg
+            class="w-12 h-12 text-gray-300 mx-auto mb-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+            >
+            </path>
+          </svg>
+          <h3 class="text-xl font-bold text-gray-900">
+            {entities.length === 0 ? "No entries found" : "No matching entries"}
+          </h3>
+          <p class="text-gray-500 mt-2">
+            {entities.length === 0
+              ? "Create your first entry to get started."
+              : "Try adjusting your search or filters."}
+          </p>
+          {#if entities.length === 0}
+            <button
+              onclick={createNewEntry}
+              class="mt-6 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-full font-semibold transition-colors shadow-sm text-sm inline-flex items-center gap-2"
+            >
+              <PlusOutline class="w-4 h-4" /> Create First Entry
+            </button>
+          {/if}
+        </div>
+      {:else}
+        <!-- Entries Table -->
+        <div
+          class="bg-white rounded-[2rem] border border-gray-100 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] overflow-hidden"
+        >
+          <div class="overflow-x-auto">
+            <table class="w-full text-left whitespace-nowrap">
+              <thead>
+                <tr class="border-b border-gray-100">
+                  <th
+                    class="px-8 py-5 text-[11px] font-bold text-gray-400 uppercase tracking-widest bg-white"
+                  >
+                    ENTRY</th
+                  >
+                  <th
+                    class="px-6 py-5 text-[11px] font-bold text-gray-400 uppercase tracking-widest bg-white"
+                  >
+                    TYPE</th
+                  >
+                  <th
+                    class="px-6 py-5 text-[11px] font-bold text-gray-400 uppercase tracking-widest bg-white"
+                  >
+                    SPACE</th
+                  >
+                  <th
+                    class="px-6 py-5 text-[11px] font-bold text-gray-400 uppercase tracking-widest bg-white"
+                  >
+                    STATUS</th
+                  >
+                  <th
+                    class="px-6 py-5 text-[11px] font-bold text-gray-400 uppercase tracking-widest bg-white"
+                  >
+                    ENGAGEMENT</th
+                  >
+                  <th
+                    class="px-6 py-5 text-[11px] font-bold text-gray-400 uppercase tracking-widest bg-white"
+                  >
+                    UPDATED</th
+                  >
+                  <th
+                    class="px-8 py-5 text-[11px] font-bold text-gray-400 uppercase tracking-widest text-right bg-white"
+                  >
+                    ACTIONS</th
+                  >
                 </tr>
-              {/each}
-            </tbody>
-          </table>
-        </div>
-      </div>
+              </thead>
+              <tbody class="divide-y divide-gray-50">
+                {#each filteredEntities as entity}
+                  <tr class="hover:bg-gray-50/50 transition-colors group">
+                    <!-- ENTRY -->
+                    <td class="px-8 py-5 flex items-start gap-4">
+                      <div
+                        class="w-10 h-10 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center flex-shrink-0 mt-0.5"
+                      >
+                        <svg
+                          class="w-5 h-5 text-gray-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          >
+                          </path>
+                        </svg>
+                      </div>
+                      <div class="min-w-0 max-w-[280px]">
+                        <h3
+                          class="text-[14px] font-bold text-gray-900 truncate tracking-tight"
+                        >
+                          {entity.title || "Untitled"}
+                        </h3>
+                        <p
+                          class="text-[12px] text-gray-400 truncate mt-0.5 font-medium"
+                        >
+                          #{entity.tags?.join(" #") || "general"}
+                        </p>
+                      </div>
+                    </td>
 
-      <!-- Results Summary -->
-      <div class="mt-6 text-center text-sm text-gray-600">
-        {$_("my_entries.results.showing", {
-          values: {
-            filtered: formatNumberInText(filteredEntities.length, $locale),
-            total: formatNumberInText(entities.length, $locale),
-          },
-        })}
-      </div>
+                    <!-- TYPE -->
+                    <td class="px-6 py-5">
+                      {#if entity.resource_type === "media"}
+                        <span
+                          class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-purple-50 text-purple-600"
+                          >media</span
+                        >
+                      {:else if entity.resource_type === "content"}
+                        <span
+                          class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-cyan-50 text-cyan-600"
+                          >content</span
+                        >
+                      {:else if entity.resource_type === "json"}
+                        <span
+                          class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-green-50 text-green-600"
+                          >json</span
+                        >
+                      {:else if entity.resource_type === "poll"}
+                        <span
+                          class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-pink-50 text-pink-600"
+                          >poll</span
+                        >
+                      {:else if entity.resource_type === "template"}
+                        <span
+                          class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-orange-50 text-orange-600"
+                          >template</span
+                        >
+                      {:else}
+                        <span
+                          class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-gray-100 text-gray-600"
+                          >{entity.resource_type || "unknown"}</span
+                        >
+                      {/if}
+                    </td>
+
+                    <!-- SPACE -->
+                    <td class="px-6 py-5">
+                      <span
+                        class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-[#f1f5f9] text-[#64748b]"
+                      >
+                        {entity.space_name}
+                      </span>
+                    </td>
+
+                    <!-- STATUS -->
+                    <td class="px-6 py-5">
+                      {#if entity.is_active && entity.state !== "pending" && entity.state !== "rejected"}
+                        <div
+                          class="flex items-center gap-1.5 text-[12px] font-extrabold text-[#00d084]"
+                        >
+                          <div
+                            class="w-1.5 h-1.5 rounded-full bg-[#00d084]"
+                          ></div>
+                           Active
+                        </div>
+                      {:else}
+                        <div
+                          class="flex items-center gap-1.5 text-[12px] font-extrabold text-orange-400"
+                        >
+                          <div
+                            class="w-1.5 h-1.5 rounded-full bg-orange-400"
+                          ></div>
+                           Draft
+                        </div>
+                      {/if}
+                    </td>
+
+                    <!-- ENGAGEMENT -->
+                    <td class="px-6 py-5">
+                      <div
+                        class="flex items-center gap-3 text-[13px] font-medium text-gray-400"
+                      >
+                        <div class="flex items-center gap-1">
+                          <svg
+                            class="w-4 h-4 text-red-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                            >
+                            </path>
+                          </svg>
+                          {formatNumberInText(entity.reaction, $locale) || 0}
+                        </div>
+                        <div class="flex items-center gap-1">
+                          <svg
+                            class="w-4 h-4 text-blue-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                            >
+                            </path>
+                          </svg>
+                          {formatNumberInText(entity.comment, $locale) || 0}
+                        </div>
+                      </div>
+                    </td>
+
+                    <!-- UPDATED -->
+                    <td class="px-6 py-5 text-[12px] font-medium text-gray-400">
+                      {entity.updated_at.replace(",", "")}
+                    </td>
+
+                    <!-- ACTIONS -->
+                    <td class="px-8 py-5 text-right">
+                      <div
+                        class="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <button
+                          onclick={() => viewEntity(entity)}
+                          class="flex items-center gap-1 text-[12px]
+                                        font-bold text-gray-400 hover:text-indigo-600 transition-colors"
+                        >
+                          <EyeOutline class="w-4 h-4" /> View
+                        </button>
+                        <button
+                          onclick={() => editEntity(entity)}
+                          class="flex items-center gap-1 text-[12px]
+                                        font-bold text-gray-400 hover:text-indigo-600 transition-colors"
+                        >
+                          <EditOutline class="w-4 h-4" /> Edit
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          </div>
+          <div
+            class="py-4 border-t border-gray-50 text-center text-xs font-semibold text-indigo-400 bg-white"
+          >
+            Showing {filteredEntities.length} of {entities.length} entries
+          </div>
+        </div>
+      {/if}
     {/if}
   </div>
 </div>
-
-<style>
-  .rtl {
-    direction: rtl;
-  }
-
-  .rtl .search-icon {
-    left: auto;
-    right: 0.75rem;
-  }
-
-  .rtl .filter-icon {
-    left: auto;
-    right: 0.75rem;
-  }
-
-  .rtl .space-icon {
-    left: auto;
-    right: 0.75rem;
-  }
-
-  .rtl .search-input {
-    padding-left: 1rem;
-    padding-right: 2.75rem;
-    text-align: right;
-  }
-
-  .rtl .filter-select {
-    padding-left: 1rem;
-    padding-right: 2.75rem;
-    text-align: right;
-  }
-
-  .rtl .space-select {
-    padding-left: 1rem;
-    padding-right: 2.75rem;
-    text-align: right;
-  }
-
-  .rtl .sort-select,
-  .rtl .sort-order-select {
-    text-align: right;
-  }
-
-  .rtl .table-header {
-    text-align: right;
-  }
-
-  .rtl .table-header-actions {
-    text-align: left;
-  }
-
-  .rtl .tag-icon-inline {
-    margin-right: 0;
-    margin-left: 0.25rem;
-  }
-
-  .rtl .engagement-icon {
-    margin-right: 0;
-    margin-left: 0.25rem;
-  }
-
-  .rtl .date-icon {
-    margin-right: 0;
-    margin-left: 0.5rem;
-  }
-
-  .rtl .action-icon {
-    margin-right: 0;
-    margin-left: 0.25rem;
-  }
-
-  .line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .btn-primary {
-    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-    color: white;
-    font-weight: 600;
-    padding: 1rem 2rem;
-    border-radius: 0.75rem;
-    border: none;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-    font-size: 1.1rem;
-    width: 20%;
-    height: 20%;
-  }
-
-  .hero-title {
-    font-weight: 800;
-    color: #1f2937;
-    margin-bottom: 1.5rem;
-    line-height: 1.1;
-    letter-spacing: -0.02em;
-  }
-
-  .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
-  }
-
-  @media (max-width: 768px) {
-    .rtl .stats-item {
-      flex-direction: row;
-    }
-
-    .rtl .entry-content {
-      flex-direction: column;
-      space-x-reverse: 0;
-    }
-
-    .rtl .engagement-stats {
-      flex-direction: row;
-      space-x-reverse: 0;
-    }
-
-    .rtl .action-buttons {
-      flex-direction: row;
-      space-x-reverse: 0;
-      justify-content: flex-start;
-    }
-  }
-</style>

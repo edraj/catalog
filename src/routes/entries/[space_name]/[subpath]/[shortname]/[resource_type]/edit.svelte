@@ -9,7 +9,7 @@
     attachAttachmentsToEntity,
     getEntity,
     updateEntity,
-  } from "@/lib/dmart_services";
+  } from "@/lib/dmart_services/dmart_services";
   import {
     errorToastMessage,
     successToastMessage,

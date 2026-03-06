@@ -1,12 +1,11 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import { goto, params } from "@roxi/routify";
   import {
     createFolder,
     deleteEntity,
     getAvatar,
     getSpaceContents,
-  } from "@/lib/dmart_services";
+  } from "@/lib/dmart_services/dmart_services";
   import { Diamonds } from "svelte-loading-spinners";
   import { _, locale } from "@/i18n";
   import { Dmart, RequestType, ResourceType } from "@edraj/tsdmart";
@@ -51,7 +50,7 @@
 
   const isRTL = derived(
     locale,
-    ($locale) => $locale === "ar" || $locale === "ku"
+    ($locale) => $locale === "ar" || $locale === "ku",
   );
 
   const typeOptions = [
@@ -109,8 +108,22 @@
     await loadContents(true);
   }
 
-  onMount(async () => {
-    await initializeContent();
+  let _prevSubpath = "";
+  let _prevSpaceName = "";
+
+  $effect(() => {
+    const currentSubpath = $params.subpath;
+    const currentSpaceName = $params.space_name;
+
+    // Re-initialize whenever the routing params actually change
+    if (
+      currentSubpath !== _prevSubpath ||
+      currentSpaceName !== _prevSpaceName
+    ) {
+      _prevSubpath = currentSubpath;
+      _prevSpaceName = currentSpaceName;
+      initializeContent();
+    }
   });
 
   async function loadContents(reset = false) {
@@ -137,12 +150,12 @@
         "managed",
         100,
         0,
-        true
+        false,
       );
       for (const item of parent?.records) {
         if (
           item?.attributes?.payload?.body?.content_schema_shortnames?.includes(
-            "templates"
+            "templates",
           ) &&
           item?.shortname == `${$actualSubpath}`
         ) {
@@ -154,7 +167,8 @@
         `/${$actualSubpath}`,
         "managed",
         itemsPerLoad,
-        currentOffset
+        currentOffset,
+        true,
       );
 
       if (response && response.records) {
@@ -168,7 +182,7 @@
               avatarUrl = "";
             }
             return { ...item, avatarUrl };
-          })
+          }),
         );
 
         if (reset) {
@@ -316,7 +330,7 @@
           subpath: subpath,
           shortname: item.shortname,
           resource_type: item.resource_type,
-        }
+        },
       );
     }
   }
@@ -350,7 +364,7 @@
       !confirm(
         $_("admin_content.confirm.delete_item", {
           values: { name: item.shortname },
-        })
+        }),
       )
     ) {
       return;
@@ -361,7 +375,7 @@
         item.shortname,
         spaceName,
         `/${$actualSubpath}`,
-        item.resource_type
+        item.resource_type,
       );
       if (success) {
         await loadContents(true);
@@ -741,7 +755,7 @@
     } catch (err) {
       console.error("Error creating workflow:", err);
       alert(
-        $_("admin_content.error.create_workflow_error") + ": " + err.message
+        $_("admin_content.error.create_workflow_error") + ": " + err.message,
       );
     } finally {
       isCreatingWorkflow = false;
@@ -749,125 +763,91 @@
   }
 </script>
 
-<div class="admin-contents-page" class:rtl={$isRTL}>
-  <div class="header-section">
-    <div class="container mx-auto px-4 py-6 max-w-7xl">
-      <nav class="flex mb-4" aria-label={$_("admin_content.breadcrumb.label")}>
-        <ol class="inline-flex items-center space-x-1 md:space-x-3">
-          {#each breadcrumbs as crumb, index}
-            <li class="inline-flex items-center">
-              {#if index > 0}
-                <svg
-                  class="breadcrumb-separator"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fill-rule="evenodd"
-                    d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                    clip-rule="evenodd"
-                  ></path>
-                </svg>
-              {/if}
-              {#if crumb.path}
-                <button
-                  onclick={() => navigateToBreadcrumb(crumb.path)}
-                  class="breadcrumb-link"
-                  aria-label={crumb.name}
-                >
-                  {crumb.name}
-                </button>
-              {:else}
-                <span class="breadcrumb-current">
-                  {crumb.name}
-                </span>
-              {/if}
-            </li>
-          {/each}
-        </ol>
-      </nav>
-
-      <div class="header-content">
-        <div class="header-info">
-          <h1 class="page-title">
-            {$_("admin_content.title", {
-              values: {
-                name:
-                  breadcrumbs[breadcrumbs.length - 1]?.name ||
-                  $actualSubpath.split("/").pop(),
-              },
-            })}
-          </h1>
-          <p class="page-description">
-            {$_("admin_content.subtitle", {
-              values: { spaceName, subpath: $actualSubpath },
-            })}
-          </p>
+<div class="min-h-screen bg-gray-50" class:rtl={$isRTL}>
+  <div class="bg-gray-50">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+      <div
+        class="flex flex-col md:flex-row md:items-center justify-between gap-4"
+      >
+        <div class="flex items-center gap-4">
+          <button
+            onclick={() =>
+              navigateToBreadcrumb(breadcrumbs[1]?.path || "/dashboard/admin")}
+            class="w-10 h-10 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center transition-colors shadow-sm"
+            aria-label="Go back"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 19l-7-7 7-7"
+              ></path>
+            </svg>
+          </button>
+          <div>
+            <nav
+              class="flex text-sm text-gray-500 font-medium mb-1"
+              aria-label="Breadcrumb"
+            >
+              <ol class="inline-flex items-center space-x-2">
+                {#each breadcrumbs as crumb, index}
+                  <li class="inline-flex items-center">
+                    {#if index > 0}
+                      <svg
+                        class="w-4 h-4 mx-1 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M9 5l7 7-7 7"
+                        ></path>
+                      </svg>
+                    {/if}
+                    {#if crumb.path}
+                      <button
+                        onclick={() => navigateToBreadcrumb(crumb.path)}
+                        class="hover:text-indigo-600 transition-colors"
+                      >
+                        {crumb.name}
+                      </button>
+                    {:else}
+                      <span class="text-gray-900">{crumb.name}</span>
+                    {/if}
+                  </li>
+                {/each}
+              </ol>
+            </nav>
+            <h1 class="text-2xl font-bold text-gray-900">
+              {$_("admin_content.title", {
+                values: {
+                  name:
+                    breadcrumbs[breadcrumbs.length - 1]?.name ||
+                    $actualSubpath.split("/").pop(),
+                },
+              })}
+            </h1>
+          </div>
         </div>
 
-        <div
-          class="flex items-center space-x-3"
-          class:space-x-reverse={$isRTL}
-          class:flex-row-reverse={$isRTL}
-        >
+        <div class="flex items-center gap-3">
           {#if $actualSubpath !== "/" && $actualSubpath !== ""}
-            <button
-              onclick={handleCreateItem}
-              class="bg-green-500 hover:bg-green-600 text-white mx-2 px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
-              aria-label={$_("admin_content.actions.create_new_item")}
-            >
-              <svg
-                class="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 4v16m8-8H4m4-8h8v8H8z"
-                />
-              </svg>
-              {$_("admin_content.actions.create_new_item")}
-            </button>
-
-            <button
-              onclick={handleCreateFolder}
-              class="bg-yellow-500 hover:bg-yellow-600 mx-2 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
-              class:flex-row-reverse={$isRTL}
-              aria-label={$_("admin_content.actions.create_folder")}
-            >
-              <svg
-                class="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M3 7h4l2-2h8l2 2h2v10H3V7z"
-                />
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 10v4m2-2h-4"
-                />
-              </svg>
-              {$_("admin_content.actions.create_folder")}
-            </button>
-            {#if $actualSubpath === "schema"}
+            {#if $actualSubpath !== "schema"}
               <button
-                onclick={handleCreateSchema}
-                class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
-                class:flex-row-reverse={$isRTL}
-                aria-label={$_("admin_content.actions.create_schema")}
+                onclick={handleCreateFolder}
+                class="bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 px-4 py-2 rounded-xl font-medium transition-colors duration-200 flex items-center gap-2 shadow-sm"
               >
                 <svg
-                  class="w-4 h-4"
+                  class="w-4 h-4 text-gray-500"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -876,18 +856,21 @@
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     stroke-width="2"
-                    d="M16 18l6-6-6-6M8 6l-6 6 6 6"
-                  />
+                    d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+                  ></path>
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 10v4m2-2h-4"
+                  ></path>
                 </svg>
-                {$_("admin_content.actions.create_schema")}
+                {$_("admin_content.actions.create_folder")}
               </button>
-            {/if}
-            {#if $actualSubpath === "workflows"}
+
               <button
-                onclick={handleCreateWorkflow}
-                class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-2 shadow-sm"
-                class:flex-row-reverse={$isRTL}
-                aria-label={$_("admin_content.actions.create_workflow")}
+                onclick={handleCreateItem}
+                class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-xl font-medium transition-colors duration-200 flex items-center gap-2 shadow-sm"
               >
                 <svg
                   class="w-4 h-4"
@@ -900,9 +883,26 @@
                     stroke-linejoin="round"
                     stroke-width="2"
                     d="M12 4v16m8-8H4m4-8h8v8H8z"
-                  />
+                  ></path>
                 </svg>
-                {$_("admin_content.actions.create_workflow")}
+                {$_("admin_content.actions.create_new_item")}
+              </button>
+            {/if}
+
+            {#if $actualSubpath === "schema"}
+              <button
+                onclick={handleCreateSchema}
+                class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl font-medium transition-colors shadow-sm"
+              >
+                {$_("admin_content.actions.create_schema")}
+              </button>
+            {/if}
+            {#if $actualSubpath === "workflows"}
+              <button
+                onclick={handleCreateWorkflow}
+                class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl font-semibold transition-colors shadow-sm"
+              >
+                Workflow
               </button>
             {/if}
           {/if}
@@ -911,17 +911,20 @@
     </div>
   </div>
 
-  <div class="container mx-auto px-4 py-8 max-w-7xl">
+  <div class="container mx-auto px-4 pb-12 max-w-6xl">
     {#if $isLoading || isInitialLoad}
-      <div class="loading-state">
-        <Diamonds color="#3b82f6" size="60" unit="px" />
-        <p class="loading-text">{$_("admin_content.loading")}</p>
+      <div class="flex justify-center py-16">
+        <Diamonds color="#4f46e5" size="60" unit="px" />
       </div>
     {:else if error}
-      <div class="error-state">
-        <div class="error-icon">
+      <div
+        class="bg-white rounded-[24px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 p-12 text-center max-w-lg mx-auto"
+      >
+        <div
+          class="w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-4"
+        >
           <svg
-            class="w-12 h-12 text-red-500"
+            class="w-8 h-8"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -934,132 +937,29 @@
             ></path>
           </svg>
         </div>
-        <h3 class="error-title">
+        <h3 class="text-xl font-bold text-gray-900 mb-2">
           {$_("admin_content.error.title")}
         </h3>
-        <p class="error-message">{error}</p>
-        <button onclick={() => loadContents(true)} class="retry-button">
+        <p class="text-gray-500 mb-6">{error}</p>
+        <button
+          onclick={() => loadContents(true)}
+          class="bg-gray-900 hover:bg-gray-800 text-white px-6 py-2.5 rounded-xl font-medium transition-colors"
+        >
           {$_("admin_content.error.try_again")}
         </button>
       </div>
     {:else}
-      <div class="search-filter-section">
-        <div class="search-filter-header">
-          <h2 class="section-title">{$_("admin_content.filters.title")}</h2>
-          {#if searchQuery || selectedType !== "all" || selectedStatus !== "all"}
-            <button onclick={clearFilters} class="clear-all-filters-button">
-              {$_("admin_content.filters.clear_all")}
-            </button>
-          {/if}
-        </div>
-
-        <div class="search-filter-controls">
-          <div class="filter-controls">
-            <div class="filter-group">
-              <label class="filter-label" for="sort-by"
-                >{$_("admin_content.filters.sort_by")}</label
-              >
-              <div class="sort-controls">
-                <select
-                  bind:value={sortBy}
-                  class="filter-select sort-select"
-                  aria-label={$_("admin_content.filters.sort_by")}
-                  onchange={() => applyFilters()}
-                  id="sort-by"
-                >
-                  {#each sortOptions as option}
-                    <option value={option.value}>{option.label}</option>
-                  {/each}
-                </select>
-                <button
-                  onclick={toggleSortOrder}
-                  class="sort-order-button"
-                  title={$_("admin_content.filters.toggle_sort")}
-                  aria-label={$_("admin_content.filters.toggle_sort")}
-                >
-                  <svg
-                    class="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    {#if sortOrder === "asc"}
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
-                      ></path>
-                    {:else}
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l-4-4"
-                      ></path>
-                    {/if}
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <div class="filter-group">
-              <label class="filter-label" for="type-select"
-                >{$_("admin_item_detail.relationships.headers.type")}</label
-              >
-              <select
-                bind:value={selectedType}
-                class="filter-select"
-                onchange={() => applyFilters()}
-                id="type-select"
-              >
-                {#each typeOptions as option}
-                  <option value={option.value}>{option.label}</option>
-                {/each}
-              </select>
-            </div>
-
-            <div class="filter-group">
-              <label class="filter-label" for="status-select"
-                >{$_("admin_dashboard.table.status")}</label
-              >
-              <select
-                bind:value={selectedStatus}
-                class="filter-select"
-                onchange={() => applyFilters()}
-                id="status-select"
-              >
-                {#each statusOptions as option}
-                  <option value={option.value}>{option.label}</option>
-                {/each}
-              </select>
-            </div>
-
-            <div class="filter-group">
-              <label class="filter-label" for="items-per-load"
-                >{$_("admin_content.infinite_scroll.items_per_load")}</label
-              >
-              <select
-                bind:value={itemsPerLoad}
-                onchange={(e) =>
-                  handleItemsPerLoadChange(
-                    parseInt((e.target as HTMLSelectElement).value)
-                  )}
-                class="filter-select"
-                aria-label={$_("admin_content.infinite_scroll.items_per_load")}
-                id="items-per-load"
-              >
-                {#each itemsPerLoadOptions as option}
-                  <option value={option}>{option}</option>
-                {/each}
-              </select>
-            </div>
-          </div>
-
-          <div class="search-input-group">
-            <div class="search-input-wrapper">
+      <!-- Stats -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div
+          class="bg-white rounded-[20px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 p-6"
+        >
+          <div class="flex items-center gap-4">
+            <div
+              class="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-500"
+            >
               <svg
-                class="search-icon"
+                class="w-6 h-6"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -1068,17 +968,85 @@
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
                 ></path>
               </svg>
-              <label for="search-input"></label>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-gray-500">Total Items</p>
+              <h3 class="text-2xl font-bold text-gray-900 mt-1">
+                {formatNumber(totalItemsDerived, $locale)}
+              </h3>
+            </div>
+          </div>
+        </div>
+        <div
+          class="bg-white rounded-[20px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 p-6"
+        >
+          <div class="flex items-center gap-4">
+            <div
+              class="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-500"
+            >
+              <svg
+                class="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                ></path>
+              </svg>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-gray-500">Active Items</p>
+              <h3 class="text-2xl font-bold text-gray-900 mt-1">
+                {formatNumber(
+                  $allContents.filter((i) => i.attributes?.is_active).length,
+                  $locale,
+                )}
+              </h3>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Content Container -->
+      <div
+        class="bg-white rounded-[24px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 overflow-hidden"
+      >
+        <!-- Search and Filters Bar -->
+        <div class="p-6 border-b border-gray-100">
+          <div
+            class="flex flex-col md:flex-row md:items-center justify-between gap-4"
+          >
+            <div class="relative max-w-sm flex-1">
+              <div
+                class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"
+              >
+                <svg
+                  class="h-5 w-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  ></path>
+                </svg>
+              </div>
               <input
                 type="text"
                 bind:value={searchQuery}
-                placeholder={$_("admin_content.search.placeholder")}
-                class="search-input"
-                aria-label={$_("admin_content.search.label")}
                 oninput={() => applyFilters()}
+                placeholder={$_("admin_content.search.placeholder")}
+                class="block w-full pl-11 pr-10 py-2.5 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-colors"
               />
               {#if searchQuery}
                 <button
@@ -1086,11 +1054,10 @@
                     searchQuery = "";
                     applyFilters();
                   }}
-                  class="clear-search-button"
-                  aria-label={$_("admin_content.search.clear")}
+                  class="absolute inset-y-0 right-0 pr-3 flex items-center"
                 >
                   <svg
-                    class="w-4 h-4"
+                    class="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -1105,258 +1072,47 @@
                 </button>
               {/if}
             </div>
-          </div>
-        </div>
 
-        <div class="results-summary">
-          <div class="results-info">
-            {$_("admin_content.infinite_scroll.showing_of", {
-              values: {
-                displayed: formatNumber(
-                  displayedContentsDerived.length,
-                  $locale
-                ),
-                total: formatNumber(totalItemsDerived, $locale),
-              },
-            })}
-            {#if searchQuery}
-              {$_("admin_content.results.for_query", {
-                values: { query: searchQuery },
-              })}
-            {/if}
-          </div>
-        </div>
-      </div>
-
-      {#if totalItemsDerived !== 0}
-        <div class="card-list-container">
-          <div class="card-list">
-            {#each displayedContentsDerived as item, index}
-              <div
-                class="admin-content-card"
-                onclick={() => handleItemClick(item)}
-                role="button"
-                tabindex="0"
-                onkeydown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    handleItemClick(item);
-                  }
-                }}
+            <div class="flex flex-wrap items-center gap-3">
+              <select
+                bind:value={selectedType}
+                onchange={() => applyFilters()}
+                class="bg-gray-50 border-none text-sm font-medium text-gray-700 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 cursor-pointer"
               >
-                <div class="card-avatar">
-                  {#if item.attributes?.owner_shortname}
-                    {#await getAvatar(item.attributes?.owner_shortname) then avatar}
-                      <Avatar
-                        src={avatar}
-                        size="40"
-                        alt={item.attributes?.owner_shortname}
-                      />
-                    {/await}
-                    <div class="avatar-fallback">
-                      {item.attributes?.owner_shortname.charAt(0).toUpperCase()}
-                    </div>
-                  {:else}
-                    <div class="avatar-unknown">
-                      <span class="text-sm font-medium text-gray-600">?</span>
-                    </div>
-                  {/if}
-                </div>
+                {#each typeOptions as option}
+                  <option value={option.value}>{option.label}</option>
+                {/each}
+              </select>
 
-                <div class="card-content">
-                  <div class="card-header">
-                    <h3 class="card-title">
-                      <span class="title-icon">{getItemIcon(item)}</span>
-                      {getDisplayName(item)}
-                    </h3>
-                    <span
-                      class="resource-type-badge {getResourceTypeColor(
-                        item.resource_type
-                      )}"
-                    >
-                      {item.resource_type}
-                    </span>
-                  </div>
+              <select
+                bind:value={selectedStatus}
+                onchange={() => applyFilters()}
+                class="bg-gray-50 border-none text-sm font-medium text-gray-700 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+              >
+                {#each statusOptions as option}
+                  <option value={option.value}>{option.label}</option>
+                {/each}
+              </select>
 
-                  <div class="card-meta">
-                    <span class="meta-text"
-                      >{$_("admin_content.card.managed_by")}</span
-                    >
-                    <span class="meta-author">
-                      {item.attributes?.owner_shortname || $_("common.unknown")}
-                    </span>
-                    <span class="meta-separator">•</span>
-                    <span class="meta-time">
-                      {formatRelativeTime(item.attributes?.created_at)}
-                    </span>
-                  </div>
+              <select
+                bind:value={sortBy}
+                onchange={() => applyFilters()}
+                class="bg-gray-50 border-none text-sm font-medium text-gray-700 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+              >
+                {#each sortOptions as option}
+                  <option value={option.value}>{option.label}</option>
+                {/each}
+              </select>
 
-                  {#if getDescription(item)}
-                    <div class="card-description">
-                      <p class="description-text">
-                        {getDescription(item)}
-                      </p>
-                    </div>
-                  {/if}
-
-                  <div class="card-details">
-                    <div class="detail-item">
-                      <span class="detail-label"
-                        >{$_("admin_dashboard.table.status")} :</span
-                      >
-                      <span
-                        class="status-badge {item.attributes?.is_active
-                          ? 'status-active'
-                          : 'status-inactive'}"
-                      >
-                        {item.attributes?.is_active
-                          ? $_("admin_content.status.active")
-                          : $_("admin_content.status.inactive")}
-                      </span>
-                    </div>
-                    {#if item.subpath && item.subpath !== "/"}
-                      <div class="detail-item">
-                        <span class="detail-label"
-                          >{$_("admin_content.card.path")} :</span
-                        >
-                        <span class="detail-value">{item.subpath}</span>
-                      </div>
-                    {/if}
-                  </div>
-                </div>
-
-                <div class="card-actions">
-                  <div class="action-buttons">
-                    {#if item.resource_type === "folder"}
-                      <button
-                        onclick={(e) => {
-                          e.stopPropagation();
-                          handleItemClick(item);
-                        }}
-                        class="action-button open-button"
-                        title={$_("admin_content.actions.open")}
-                        aria-label={$_("admin_content.actions.open")}
-                      >
-                        <svg
-                          class="action-icon"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
-                          ></path>
-                        </svg>
-                      </button>
-                    {:else}
-                      <button
-                        onclick={(e) => {
-                          e.stopPropagation();
-                          handleItemClick(item);
-                        }}
-                        class="action-button view-button"
-                        title={$_("admin_content.actions.view")}
-                        aria-label={$_("admin_content.actions.view")}
-                      >
-                        <svg
-                          class="action-icon"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                          ></path>
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                          ></path>
-                        </svg>
-                      </button>
-                    {/if}
-
-                    <button
-                      onclick={(e) => handleDeleteItem(item, e)}
-                      class="action-button delete-button"
-                      title={$_("admin_content.actions.delete")}
-                      aria-label={$_("admin_content.actions.delete")}
-                    >
-                      <svg
-                        class="action-icon"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                        ></path>
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            {/each}
-          </div>
-
-          {#if hasMoreItemsDerived}
-            <div class="load-more-section">
-              <div class="load-more-info">
-                <span class="load-more-text">
-                  {$_("admin_content.infinite_scroll.showing_of", {
-                    values: {
-                      displayed: formatNumber(
-                        displayedContentsDerived.length,
-                        $locale
-                      ),
-                      total: formatNumber(totalItemsDerived, $locale),
-                    },
-                  })}
-                </span>
-              </div>
               <button
-                onclick={loadMoreItems}
-                disabled={$isLoadingMore}
-                class="load-more-button"
-                aria-label={$_("admin_content.infinite_scroll.load_more")}
+                onclick={toggleSortOrder}
+                class="p-2.5 bg-gray-50 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-colors"
+                title={$_("admin_content.filters.toggle_sort")}
               >
-                {#if $isLoadingMore}
-                  <div class="load-more-spinner">
-                    <Diamonds color="#ffffff" size="20" unit="px" />
-                  </div>
-                  {$_("admin_content.infinite_scroll.loading")}
-                {:else}
-                  <svg
-                    class="load-more-icon"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M19 14l-7 7m0 0l-7-7m7 7V3"
-                    ></path>
-                  </svg>
-                  {$_("admin_content.infinite_scroll.load_more")}
-                {/if}
-              </button>
-            </div>
-          {:else if displayedContentsDerived.length > 0}
-            <div class="end-of-results">
-              <div class="end-of-results-icon">
                 <svg
-                  class="w-8 h-8 text-gray-400"
+                  class="w-5 h-5 {sortOrder === 'desc'
+                    ? 'rotate-180'
+                    : ''} transition-transform duration-200"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -1365,53 +1121,271 @@
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     stroke-width="2"
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
                   ></path>
                 </svg>
-              </div>
-              <p class="end-of-results-text">
-                {$_("admin_content.infinite_scroll.end_of_results")}
-              </p>
-              <p class="end-of-results-count">
-                {$_("admin_content.infinite_scroll.total_items", {
-                  values: { count: totalItemsDerived },
-                })}
-              </p>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {#if displayedContentsDerived.length === 0}
+          <div class="text-center py-16">
+            <div
+              class="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-gray-400"
+            >
+              <svg
+                class="w-8 h-8"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                ></path>
+              </svg>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 mb-2">
+              {$_("admin_content.empty.title")}
+            </h3>
+            <p class="text-gray-500 mb-6">
+              {searchQuery || selectedType !== "all" || selectedStatus !== "all"
+                ? $_("admin_content.empty.no_matches")
+                : $_("admin_content.empty.description")}
+            </p>
+            {#if searchQuery || selectedType !== "all" || selectedStatus !== "all"}
+              <button
+                onclick={clearFilters}
+                class="text-indigo-600 hover:text-indigo-700 font-medium"
+              >
+                {$_("admin_content.filters.clear_all")}
+              </button>
+            {/if}
+          </div>
+        {:else}
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-gray-50/50 border-b border-gray-100">
+                  <th
+                    class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                    >Display Name</th
+                  >
+                  <th
+                    class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                    >Status</th
+                  >
+                  <th
+                    class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                    >Author</th
+                  >
+                  <th
+                    class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                    >Last Modified</th
+                  >
+                  <th
+                    class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                    >Actions</th
+                  >
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100 bg-white">
+                {#each displayedContentsDerived as item}
+                  <tr
+                    class="hover:bg-gray-50/50 transition-colors group cursor-pointer"
+                    onclick={() => handleItemClick(item)}
+                  >
+                    <td class="px-6 py-4">
+                      <div class="flex flex-col">
+                        <span
+                          class="inline-flex w-fit items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mb-1.5 {getResourceTypeColor(
+                            item.resource_type,
+                          )}"
+                        >
+                          {item.resource_type}
+                        </span>
+                        <div class="flex items-center gap-2">
+                          <span class="text-lg text-gray-400"
+                            >{getItemIcon(item)}</span
+                          >
+                          <span
+                            class="text-sm font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors truncate max-w-xs"
+                            >{getDisplayName(item)}</span
+                          >
+                        </div>
+                      </div>
+                    </td>
+                    <td class="px-6 py-4">
+                      <span
+                        class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium {item
+                          .attributes?.is_active
+                          ? 'bg-emerald-50 text-emerald-700'
+                          : 'bg-red-50 text-red-700'}"
+                      >
+                        <span
+                          class="w-1.5 h-1.5 rounded-full {item.attributes
+                            ?.is_active
+                            ? 'bg-emerald-500'
+                            : 'bg-red-500'} mr-1.5"
+                        ></span>
+                        {item.attributes?.is_active
+                          ? $_("admin_content.status.active")
+                          : $_("admin_content.status.inactive")}
+                      </span>
+                    </td>
+                    <td class="px-6 py-4">
+                      <div class="flex items-center gap-2">
+                        {#if item.attributes?.owner_shortname}
+                          {#await getAvatar(item.attributes?.owner_shortname) then avatar}
+                            {#if typeof avatar === "string" && avatar.trim() !== ""}
+                              <img
+                                src={avatar}
+                                alt={item.attributes?.owner_shortname}
+                                class="w-6 h-6 rounded-full object-cover"
+                              />
+                            {:else}
+                              <div
+                                class="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[10px] font-medium text-gray-600"
+                              >
+                                {item.attributes?.owner_shortname
+                                  .charAt(0)
+                                  .toUpperCase()}
+                              </div>
+                            {/if}
+                          {:catch}
+                            <div
+                              class="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[10px] font-medium text-gray-600"
+                            >
+                              {item.attributes?.owner_shortname
+                                .charAt(0)
+                                .toUpperCase()}
+                            </div>
+                          {/await}
+                          <span class="text-sm font-medium text-gray-700"
+                            >{item.attributes?.owner_shortname}</span
+                          >
+                        {:else}
+                          <div
+                            class="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-[10px] font-medium text-gray-400"
+                          >
+                            ?
+                          </div>
+                          <span class="text-sm text-gray-500"
+                            >{$_("common.unknown")}</span
+                          >
+                        {/if}
+                      </div>
+                    </td>
+                    <td class="px-6 py-4">
+                      <span class="text-sm text-gray-500 font-medium"
+                        >{formatDate(
+                          item.attributes?.updated_at ||
+                            item.attributes?.created_at,
+                        )}</span
+                      >
+                    </td>
+                    <td class="px-6 py-4">
+                      <div
+                        class="flex items-center justify-end gap-4 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        {#if item.resource_type === "folder"}
+                          <button
+                            onclick={(e) => {
+                              e.stopPropagation();
+                              handleItemClick(item);
+                            }}
+                            class="text-[12px] font-semibold text-indigo-500 hover:text-indigo-700 flex items-center gap-1.5"
+                          >
+                            <svg
+                              class="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                              ><path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+                              ></path></svg
+                            > Open
+                          </button>
+                        {:else}
+                          <button
+                            onclick={(e) => {
+                              e.stopPropagation();
+                              handleItemClick(item);
+                            }}
+                            class="text-[12px] font-semibold text-indigo-500 hover:text-indigo-700 flex items-center gap-1.5"
+                          >
+                            <svg
+                              class="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                              ><path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                              ></path><path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                              ></path></svg
+                            > View
+                          </button>
+                        {/if}
+                        <button
+                          onclick={(e) => handleDeleteItem(item, e)}
+                          class="text-[12px] font-semibold text-red-500 hover:text-red-700 flex items-center gap-1.5"
+                        >
+                          <svg
+                            class="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            ><path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            ></path></svg
+                          > Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          </div>
+
+          {#if hasMoreItemsDerived}
+            <div class="p-4 border-t border-gray-100 bg-gray-50/50">
+              <button
+                onclick={loadMoreItems}
+                disabled={$isLoadingMore}
+                class="w-full py-2.5 bg-white border border-gray-200 shadow-sm rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-indigo-600 hover:border-indigo-200 transition-all"
+              >
+                {$isLoadingMore
+                  ? $_("admin_content.infinite_scroll.loading")
+                  : $_("admin_content.infinite_scroll.load_more")}
+              </button>
+            </div>
+          {:else if displayedContentsDerived.length > 0}
+            <div
+              class="p-4 border-t border-gray-100 bg-gray-50 text-center text-sm font-medium text-gray-500"
+            >
+              {$_("admin_content.infinite_scroll.end_of_results")} ({totalItemsDerived}
+              total)
             </div>
           {/if}
-        </div>
-      {:else}
-        <div class="empty-state">
-          <div class="empty-icon">
-            <svg
-              class="w-12 h-12 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              ></path>
-            </svg>
-          </div>
-          <h3 class="empty-title">
-            {$_("admin_content.empty.title")}
-          </h3>
-          <p class="empty-message">
-            {searchQuery || selectedType !== "all" || selectedStatus !== "all"
-              ? $_("admin_content.empty.no_matches")
-              : $_("admin_content.empty.description")}
-          </p>
-          {#if searchQuery || selectedType !== "all" || selectedStatus !== "all"}
-            <button onclick={clearFilters} class="clear-filters-button">
-              {$_("admin_content.filters.clear_all")}
-            </button>
-          {/if}
-        </div>
-      {/if}
+        {/if}
+      </div>
     {/if}
   </div>
 </div>
@@ -1461,6 +1435,7 @@
             bind:formData={metaContent}
             bind:validateFn={validateMetaForm}
             isCreate={true}
+            fullWidth={true}
           />
         </div>
 
@@ -1558,16 +1533,15 @@
               bind:formData={metaContent}
               bind:validateFn={validateMetaForm}
               isCreate={true}
+              fullWidth={true}
             />
           </div>
 
           <div class="form-section">
             <div class="section-header" class:text-right={$isRTL}>
-              <h4 class="section-title">
-                {$_("admin_content.modal.basic_info.title")}
-              </h4>
+              <h4 class="section-title">Schema Definition</h4>
               <p class="section-description">
-                {$_("admin_content.modal.basic_info.description")}
+                Define the JSON schema structure for this resource.
               </p>
             </div>
             <SchemaForm bind:content={schemaContent} />
@@ -1652,6 +1626,7 @@
               bind:formData={metaContent}
               bind:validateFn={validateMetaForm}
               isCreate={true}
+              fullWidth={true}
             />
           </div>
 

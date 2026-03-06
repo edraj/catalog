@@ -1,6 +1,6 @@
 <script lang="ts">
   import MarkdownEditor from "@/components/editors/MarkdownEditor.svelte";
-  import { createTemplate } from "@/lib/dmart_services";
+  import { createTemplate } from "@/lib/dmart_services/dmart_services";
   import { _ } from "@/i18n";
   import { writable } from "svelte/store";
 
@@ -38,7 +38,7 @@
         currentSpace,
         currentSubpath,
         $templateName.trim(),
-        $content
+        $content,
       );
 
       if (response) {
@@ -292,12 +292,12 @@
   }
 
   .btn-primary {
-    background-color: #3b82f6;
+    background-color: #5850ec;
     color: white;
   }
 
   .btn-primary:hover:not(:disabled) {
-    background-color: #2563eb;
+    background-color: #4338ca;
   }
 
   .btn-primary:disabled {

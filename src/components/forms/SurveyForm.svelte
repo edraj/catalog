@@ -72,7 +72,7 @@
   function updateOptionText(
     questionIndex: number,
     optionIndex: number,
-    text: string
+    text: string,
   ) {
     const option = survey.questions[questionIndex].options[optionIndex];
     option.text = text;
@@ -107,226 +107,301 @@
   }
 </script>
 
-<div class="survey-editor">
-  <h2 class="survey-title">{$_("survey_form.survey_builder")}</h2>
+<div class="survey-form-wrapper">
+  <!-- Card 1: Survey Details -->
+  <div class="form-card">
+    <div class="card-header">
+      <div class="header-title-group">
+        <div class="icon-wrapper border-blue">
+          <svg
+            class="w-5 h-5 text-indigo-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            ></path>
+          </svg>
+        </div>
+        <h2 class="card-title">
+          {$_("survey_form.survey_details", { default: "Survey Details" })}
+        </h2>
+      </div>
+    </div>
 
-  <div class="survey-content">
-    <!-- Survey Metadata -->
-    <div class="metadata-section">
+    <div class="card-body">
       <div class="form-group">
-        <label for="survey-title">{$_("survey_form.survey_title")}</label>
+        <label for="survey-title"
+          >{$_("survey_form.survey_title", { default: "Survey Title" })}</label
+        >
         <input
           id="survey-title"
           type="text"
-          placeholder={$_("survey_form.survey_title_placeholder")}
+          class="form-input"
+          placeholder="e.g., Team Satisfaction Survey Q1 2026"
           bind:value={survey.title}
         />
       </div>
+
       <div class="form-group">
         <label for="survey-description"
-          >{$_("survey_form.survey_description")}</label
+          >{$_("survey_form.survey_description", {
+            default: "Description",
+          })}</label
         >
         <textarea
           id="survey-description"
-          placeholder={$_("survey_form.survey_description_placeholder")}
+          class="form-input"
+          placeholder="Describe the purpose of this survey..."
           bind:value={survey.description}
           rows="3"
         ></textarea>
       </div>
+
+      <div class="form-group">
+        <label for="survey-space"
+          >{$_("survey_form.space", { default: "Space" })}</label
+        >
+        <div class="select-wrapper">
+          <select id="survey-space" class="form-input select-input" disabled>
+            <option value=""
+              >{$_("survey_form.select_space", {
+                default: "Select a space...",
+              })}</option
+            >
+          </select>
+          <svg
+            class="select-chevron"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            ><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 9l-7 7-7-7"
+            ></path></svg
+          >
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 2: Questions -->
+  <div class="form-card">
+    <div class="card-header items-center justify-between">
+      <div class="header-title-group">
+        <div class="icon-wrapper border-purple">
+          <svg
+            class="w-5 h-5 text-purple-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 6h16M4 10h16M4 14h16M4 18h16"
+            ></path>
+          </svg>
+        </div>
+        <div>
+          <h2 class="card-title">
+            {$_("survey_form.questions", { default: "Questions" })}
+          </h2>
+          <p class="card-subtitle">
+            {survey.questions?.length || 0}
+            {$_("survey_form.question_count", { default: "question(s)" })}
+          </p>
+        </div>
+      </div>
+      <button
+        type="button"
+        class="btn-add-question"
+        onclick={() => addQuestion()}
+      >
+        <svg
+          class="w-4 h-4 mr-1"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          ><path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 4v16m8-8H4"
+          ></path></svg
+        >
+        {$_("survey_form.add_question_button", { default: "Add Question" })}
+      </button>
     </div>
 
-    <!-- Questions -->
-    <div class="questions-section">
-      <div class="section-header">
-        <h3>{$_("survey_form.questions")}</h3>
-        <button
-          type="button"
-          class="btn btn-primary btn-sm"
-          onclick={() => addQuestion()}
-        >
-          {$_("survey_form.add_question_button")}
-        </button>
-      </div>
-
+    <div class="card-body">
       {#if survey.questions && survey.questions.length > 0}
-        <div class="accordion">
+        <div class="questions-list">
           {#each survey.questions as question, questionIndex}
-            <div class="accordion-item">
-              <button
-                type="button"
-                class="accordion-header"
-                onclick={toggleAccordion}
-                aria-expanded="false"
-              >
-                <div class="question-info">
-                  <span class="question-text">
-                    {question.question ||
-                      $_("survey_form.new_question", {
-                        values: { number: questionIndex + 1 },
-                      })}
-                  </span>
-                  {#if question.type}
-                    <span class="badge badge-type">{question.type}</span>
-                  {/if}
-                  {#if question.required}
-                    <span class="badge badge-required"
-                      >{$_("survey_form.required_question")}</span
-                    >
-                  {/if}
+            <div class="question-item">
+              <div class="question-top-row">
+                <div class="drag-handle">
+                  <svg
+                    width="16"
+                    height="20"
+                    viewBox="0 0 16 20"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <circle cx="6" cy="4" r="1.5" fill="#D1D5DB" />
+                    <circle cx="6" cy="10" r="1.5" fill="#D1D5DB" />
+                    <circle cx="6" cy="16" r="1.5" fill="#D1D5DB" />
+                    <circle cx="10" cy="4" r="1.5" fill="#D1D5DB" />
+                    <circle cx="10" cy="10" r="1.5" fill="#D1D5DB" />
+                    <circle cx="10" cy="16" r="1.5" fill="#D1D5DB" />
+                  </svg>
                 </div>
-                <svg
-                  class="chevron"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 16 16"
-                  fill="currentColor"
+                <span class="question-number">{questionIndex + 1}</span>
+                <input
+                  type="text"
+                  class="question-input"
+                  placeholder="Enter your question..."
+                  bind:value={question.question}
+                />
+                <button
+                  type="button"
+                  class="btn-delete"
+                  onclick={() => removeQuestion(questionIndex)}
+                  aria-label="Delete question"
                 >
-                  <path
-                    d="M4.427 9.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 9H4.604a.25.25 0 00-.177.427z"
-                  />
-                </svg>
-              </button>
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    ><path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    ></path></svg
+                  >
+                </button>
+              </div>
 
-              <div class="accordion-content" style="display: none;">
-                <div class="question-form">
-                  <div class="form-grid">
-                    <div class="form-group">
-                      <label for="question-text-{questionIndex}"
-                        >{$_("survey_form.question_text_label")}</label
-                      >
-                      <input
-                        id="question-text-{questionIndex}"
-                        type="text"
-                        placeholder={$_(
-                          "survey_form.question_text_placeholder"
+              <!-- Question Options/Controls -->
+              <div class="question-bottom-row">
+                <div class="type-selector-wrapper">
+                  <div class="select-wrapper">
+                    <select
+                      class="form-input select-input type-select"
+                      bind:value={question.type}
+                      onchange={(e) =>
+                        onAnswerTypeChange(
+                          questionIndex,
+                          (e.target as HTMLSelectElement).value,
                         )}
-                        bind:value={question.question}
-                      />
-                    </div>
-
-                    <div class="form-group">
-                      <label for="answer-type-{questionIndex}"
-                        >{$_("survey_form.answer_type_label")}</label
-                      >
-                      <select
-                        id="answer-type-{questionIndex}"
-                        bind:value={question.type}
-                        onchange={(e) =>
-                          onAnswerTypeChange(
-                            questionIndex,
-                            (e.target as HTMLSelectElement).value
-                          )}
-                      >
-                        {#each answerTypes as type}
-                          <option value={type.value}>{type.name}</option>
-                        {/each}
-                      </select>
-                    </div>
+                    >
+                      {#each answerTypes as type}
+                        <option value={type.value}>{type.name}</option>
+                      {/each}
+                    </select>
+                    <svg
+                      class="select-chevron"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      ><path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19 9l-7 7-7-7"
+                      ></path></svg
+                    >
                   </div>
+                </div>
 
-                  <!-- Options for single, multi, and select types -->
-                  {#if ["single", "multi", "select"].includes(question.type)}
-                    <div class="options-section">
-                      <div class="options-header">
-                        <h4>{$_("survey_form.answer_options_title")}</h4>
+                <label class="required-toggle">
+                  <span class="toggle-label">Required</span>
+                  <div
+                    class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in"
+                  >
+                    <input
+                      type="checkbox"
+                      name="toggle"
+                      id="toggle-{questionIndex}"
+                      class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"
+                      bind:checked={question.required}
+                    />
+                    <label
+                      for="toggle-{questionIndex}"
+                      class="toggle-label-bg block overflow-hidden h-5 rounded-full bg-gray-300 cursor-pointer"
+                    ></label>
+                  </div>
+                </label>
+              </div>
+
+              <!-- Options for single/multi/select -->
+              {#if ["single", "multi", "select"].includes(question.type)}
+                <div class="options-container">
+                  {#if question.options && question.options.length > 0}
+                    {#each question.options as option, optionIndex}
+                      <div class="option-row">
+                        <div class="option-indicator circle"></div>
+                        <input
+                          type="text"
+                          class="option-input"
+                          placeholder="Option text..."
+                          value={option.text || option.label || ""}
+                          oninput={(e) =>
+                            updateOptionText(
+                              questionIndex,
+                              optionIndex,
+                              (e.target as HTMLInputElement).value,
+                            )}
+                        />
                         <button
                           type="button"
-                          class="btn btn-secondary btn-sm"
-                          onclick={() => addOption(questionIndex)}
+                          class="btn-delete-option"
+                          aria-label="Delete option"
+                          onclick={() =>
+                            removeOption(questionIndex, optionIndex)}
                         >
-                          {$_("survey_form.add_option_button")}
+                          <svg
+                            class="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            ><path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M6 18L18 6M6 6l12 12"
+                            ></path></svg
+                          >
                         </button>
                       </div>
-
-                      {#if question.options && question.options.length > 0}
-                        <div class="options-list">
-                          {#each question.options as option, optionIndex}
-                            <div class="option-item">
-                              <div class="option-form">
-                                <div class="form-group">
-                                  <label
-                                    for="option-text-{questionIndex}-{optionIndex}"
-                                    >{$_(
-                                      "survey_form.answer_option_label"
-                                    )}</label
-                                  >
-                                  <input
-                                    id="option-text-{questionIndex}-{optionIndex}"
-                                    type="text"
-                                    placeholder={$_(
-                                      "survey_form.answer_option_placeholder"
-                                    )}
-                                    value={option.text || option.label || ""}
-                                    oninput={(e) =>
-                                      updateOptionText(
-                                        questionIndex,
-                                        optionIndex,
-                                        (e.target as HTMLInputElement).value
-                                      )}
-                                  />
-                                  {#if option.value}
-                                    <small class="value-preview"
-                                      >{$_("survey_form.value_preview", {
-                                        values: { value: option.value },
-                                      })}</small
-                                    >
-                                  {/if}
-                                </div>
-                                <div class="option-actions">
-                                  <button
-                                    type="button"
-                                    class="btn btn-danger btn-sm"
-                                    onclick={() =>
-                                      removeOption(questionIndex, optionIndex)}
-                                  >
-                                    {$_("survey_form.remove_option")}
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          {/each}
-                        </div>
-                      {:else}
-                        <div class="empty-options">
-                          <p>
-                            {$_("survey_form.no_options")}
-                          </p>
-                        </div>
-                      {/if}
-                    </div>
+                    {/each}
                   {/if}
-
-                  <!-- Question Controls -->
-                  <div class="question-controls">
-                    <div class="checkbox-group">
-                      <input
-                        type="checkbox"
-                        id="required-{questionIndex}"
-                        bind:checked={question.required}
-                      />
-                      <label for="required-{questionIndex}"
-                        >{$_("survey_form.required_question")}</label
-                      >
-                    </div>
-
-                    <div class="question-actions">
-                      <button
-                        type="button"
-                        class="btn btn-danger btn-sm"
-                        onclick={() => removeQuestion(questionIndex)}
-                      >
-                        {$_("survey_form.delete_question")}
-                      </button>
-                    </div>
-                  </div>
+                  <button
+                    type="button"
+                    class="btn-add-option"
+                    onclick={() => addOption(questionIndex)}
+                  >
+                    + Add option
+                  </button>
                 </div>
-              </div>
+              {/if}
             </div>
           {/each}
         </div>
       {:else}
-        <div class="empty-state">
-          <p>{$_("survey_form.no_questions")}</p>
+        <div class="empty-questions">
+          <p class="text-gray-500 italic py-8 text-center">
+            No questions added yet. Click "Add Question" to start.
+          </p>
         </div>
       {/if}
     </div>
@@ -334,42 +409,88 @@
 </div>
 
 <style>
-  .survey-editor {
-    background: white;
+  .survey-form-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .form-card {
+    background: #ffffff;
     border-radius: 16px;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    border: 1px solid rgba(229, 231, 235, 0.8);
-    max-width: 100%;
+    border: 1px solid #e5e7eb;
     overflow: hidden;
   }
 
-  .survey-title {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #111827;
-    margin: 0 0 1.5rem 0;
-    padding: 1.5rem 2rem 0;
+  .card-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #f3f4f6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
 
-  .survey-content {
-    padding: 0 2rem 2rem;
+  .header-title-group {
     display: flex;
-    flex-direction: column;
-    gap: 2rem;
-  }
-
-  /* Metadata Section */
-  .metadata-section {
-    display: flex;
-    align-items: stretch;
-    flex-direction: column;
+    align-items: center;
     gap: 1rem;
   }
 
-  @media (max-width: 768px) {
-    .metadata-section {
-      grid-template-columns: 1fr;
-    }
+  .icon-wrapper {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8fafc;
+  }
+
+  .icon-wrapper.border-blue {
+    border: 1px solid #e0e7ff;
+    background-color: #f0fdf4;
+  }
+  .icon-wrapper.border-purple {
+    border: 1px solid #f3e8ff;
+    background-color: #fdf4ff;
+  }
+
+  .card-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+  }
+
+  .card-subtitle {
+    font-size: 0.8125rem;
+    color: #6b7280;
+    margin: 0;
+  }
+
+  .btn-add-question {
+    background-color: #eff6ff;
+    color: #3b82f6;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    transition: background-color 0.2s;
+  }
+
+  .btn-add-question:hover {
+    background-color: #dbeafe;
+  }
+
+  .card-body {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
   }
 
   /* Form Elements */
@@ -381,345 +502,276 @@
 
   .form-group label {
     font-size: 0.875rem;
-    font-weight: 500;
+    font-weight: 600;
     color: #374151;
-    margin: 0;
   }
 
-  .form-group input,
-  .form-group select,
-  .form-group textarea {
-    padding: 0.75rem;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
+  .form-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background-color: #f9fafb;
+    border: 1px solid transparent;
+    border-radius: 12px;
     font-size: 0.875rem;
-    transition:
-      border-color 0.2s ease,
-      box-shadow 0.2s ease;
-    background: white;
+    color: #1f2937;
+    transition: all 0.2s ease;
     font-family: inherit;
   }
 
-  .form-group input:focus,
-  .form-group select:focus,
-  .form-group textarea:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  .form-input::placeholder {
+    color: #9ca3af;
   }
 
-  .form-group textarea {
+  .form-input:focus {
+    outline: none;
+    border-color: #d1d5db;
+    background-color: #ffffff;
+    box-shadow: 0 0 0 3px rgba(243, 244, 246, 1);
+  }
+
+  .form-group textarea.form-input {
     resize: vertical;
     min-height: 80px;
   }
 
-  .form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+  .select-wrapper {
+    position: relative;
+    width: 100%;
+  }
+
+  .select-input {
+    appearance: none;
+    padding-right: 2.5rem;
+    cursor: pointer;
+  }
+
+  .select-input:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  .select-chevron {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1.25rem;
+    height: 1.25rem;
+    color: #9ca3af;
+    pointer-events: none;
+  }
+
+  /* Questions List */
+  .questions-list {
+    display: flex;
+    flex-direction: column;
     gap: 1rem;
   }
 
-  @media (max-width: 768px) {
-    .form-grid {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  /* Questions Section */
-  .questions-section {
-    border: 1px solid #e5e7eb;
+  .question-item {
+    border: 1px solid #f3f4f6;
     border-radius: 12px;
-    overflow: hidden;
-  }
-
-  .section-header {
+    padding: 1rem;
+    background-color: #ffffff;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.5rem;
-    background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
-    border-bottom: 1px solid #f3f4f6;
+    flex-direction: column;
+    gap: 1rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.02);
   }
 
-  .section-header h3 {
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: #111827;
-    margin: 0;
-  }
-
-  /* Buttons */
-  .btn {
-    padding: 0.5rem 1rem;
-    border: none;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .btn-sm {
-    padding: 0.375rem 0.75rem;
-    font-size: 0.8125rem;
-  }
-
-  .btn-primary {
-    background: #3b82f6;
-    color: white;
-  }
-
-  .btn-primary:hover {
-    background: #2563eb;
-    transform: translateY(-1px);
-  }
-
-  .btn-secondary {
-    background: #6b7280;
-    color: white;
-  }
-
-  .btn-secondary:hover {
-    background: #4b5563;
-  }
-
-  .btn-danger {
-    background: #ef4444;
-    color: white;
-  }
-
-  .btn-danger:hover {
-    background: #dc2626;
-  }
-
-  /* Accordion */
-  .accordion {
-    border-top: 1px solid #f3f4f6;
-  }
-
-  .accordion-item {
-    border-bottom: 1px solid #f3f4f6;
-  }
-
-  .accordion-header {
-    width: 100%;
-    padding: 1rem 1.5rem;
-    background: white;
-    border: none;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    font-size: inherit;
-    text-align: left;
-  }
-
-  .accordion-header:hover {
-    background: #f9fafb;
-  }
-
-  .question-info {
+  .question-top-row {
     display: flex;
     align-items: center;
     gap: 0.75rem;
   }
 
-  .question-text {
-    font-weight: 500;
-    color: #111827;
-  }
-
-  .badge {
-    font-size: 0.75rem;
-    padding: 0.25rem 0.5rem;
-    border-radius: 9999px;
-    font-weight: 500;
-  }
-
-  .badge-type {
-    background-color: #dbeafe;
-    color: #1e40af;
-  }
-
-  .badge-required {
-    background-color: #fee2e2;
-    color: #dc2626;
-  }
-
-  .chevron {
-    transition: transform 0.2s ease;
-    color: #6b7280;
-  }
-
-  .accordion-content {
-    background: #fafafa;
-    border-top: 1px solid #e5e7eb;
-  }
-
-  .question-form {
-    padding: 1.5rem;
+  .drag-handle {
+    cursor: grab;
     display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
+    align-items: center;
+    color: #d1d5db;
   }
 
-  /* Options Section */
-  .options-section {
+  .question-number {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6b7280;
+    min-width: 1rem;
+    text-align: center;
+  }
+
+  .question-input {
+    flex-grow: 1;
+    padding: 0.625rem 1rem;
+    background-color: #ffffff;
     border: 1px solid #e5e7eb;
     border-radius: 8px;
-    padding: 1rem;
-    background: white;
-  }
-
-  .options-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-  }
-
-  .options-header h4 {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #374151;
-    margin: 0;
-  }
-
-  .options-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .option-item {
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
-    padding: 1rem;
-    background: #fefefe;
-  }
-
-  .option-form {
-    display: grid;
-    grid-template-columns: 1fr 1fr auto;
-    gap: 1rem;
-    align-items: end;
-  }
-
-  @media (max-width: 768px) {
-    .option-form {
-      grid-template-columns: 1fr;
-      gap: 0.75rem;
-    }
-  }
-
-  .option-actions {
-    display: flex;
-    justify-content: flex-end;
-  }
-
-  .empty-options {
-    text-align: center;
-    padding: 2rem;
-    color: #6b7280;
-    font-style: italic;
-  }
-
-  /* Question Controls */
-  .question-controls {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-top: 1px solid #e5e7eb;
-    padding-top: 1rem;
-  }
-
-  .checkbox-group {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .checkbox-group input[type="checkbox"] {
-    margin: 0;
-  }
-
-  .checkbox-group label {
-    margin: 0;
     font-size: 0.875rem;
-    color: #374151;
+  }
+
+  .question-input:focus {
+    outline: none;
+    border-color: #9ca3af;
+  }
+
+  .btn-delete {
+    background: none;
+    border: none;
+    color: #d1d5db;
+    padding: 0.5rem;
+    cursor: pointer;
+    border-radius: 6px;
+    transition:
+      color 0.2s,
+      background-color 0.2s;
+  }
+
+  .btn-delete:hover {
+    color: #ef4444;
+    background-color: #fef2f2;
+  }
+
+  .question-bottom-row {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 1rem;
+    padding-left: 2.75rem; /* Indent to align with input */
+  }
+
+  .type-selector-wrapper {
+    width: 200px;
+  }
+
+  .type-select {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    border: 1px solid #e5e7eb;
+    background-color: white;
+  }
+
+  /* Toggle Switch */
+  .required-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-left: auto; /* Push to right side of its container if needed, or leave left */
     cursor: pointer;
   }
 
-  .question-actions {
+  .toggle-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #6b7280;
+  }
+
+  .toggle-checkbox:checked {
+    right: 0;
+    border-color: #3b82f6; /* Blue border for checked state if desired, or let bg show */
+  }
+
+  .toggle-checkbox:checked + .toggle-label-bg {
+    background-color: #3b82f6;
+  }
+
+  .toggle-checkbox {
+    right: 0;
+    z-index: 1;
+    border-color: #e5e7eb;
+    transition: all 0.3s;
+  }
+
+  .toggle-label-bg {
+    transition: all 0.3s;
+  }
+
+  /* Options Container for Multiple Choice */
+  .options-container {
+    padding-left: 2.75rem;
     display: flex;
+    flex-direction: column;
     gap: 0.5rem;
+    margin-top: 0.5rem;
   }
 
-  /* Empty State */
-  .empty-state {
-    text-align: center;
-    padding: 3rem 1.5rem;
-    color: #6b7280;
+  .option-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
   }
 
-  .empty-state p {
-    margin: 0;
-    font-style: italic;
+  .option-indicator {
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid #d1d5db;
   }
 
-  .option-form {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 1rem;
-    align-items: end;
+  .option-indicator.circle {
+    border-radius: 50%;
   }
 
-  @media (max-width: 768px) {
-    .option-form {
-      grid-template-columns: 1fr;
-      gap: 0.75rem;
-    }
+  .option-input {
+    flex-grow: 1;
+    max-width: 400px;
+    padding: 0.5rem;
+    border: 1px solid transparent;
+    border-bottom-color: #e5e7eb;
+    background: transparent;
+    font-size: 0.875rem;
   }
 
-  .value-preview {
-    display: block;
-    margin-top: 0.25rem;
-    font-size: 0.75rem;
-    color: #6b7280;
-    font-style: italic;
+  .option-input:focus {
+    outline: none;
+    border-bottom-color: #9ca3af;
   }
 
-  /* Mobile Responsive */
-  @media (max-width: 768px) {
-    .survey-content {
-      padding: 0 1rem 1rem;
-    }
+  .btn-delete-option {
+    background: none;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 0.25rem;
+  }
 
-    .section-header {
+  .btn-delete-option:hover {
+    color: #ef4444;
+  }
+
+  .btn-add-option {
+    background: none;
+    border: none;
+    color: #3b82f6;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    padding: 0.5rem 0;
+    align-self: flex-start;
+  }
+
+  .btn-add-option:hover {
+    text-decoration: underline;
+  }
+
+  @media (max-width: 640px) {
+    .card-header {
       flex-direction: column;
+      align-items: flex-start;
       gap: 1rem;
-      align-items: stretch;
     }
 
-    .question-controls {
+    .question-bottom-row {
       flex-direction: column;
-      gap: 1rem;
       align-items: stretch;
+      padding-left: 0;
     }
 
-    .question-info {
-      flex-wrap: wrap;
-      gap: 0.5rem;
+    .type-selector-wrapper {
+      width: 100%;
     }
 
-    .options-header {
-      flex-direction: column;
-      gap: 0.75rem;
-      align-items: stretch;
+    .options-container {
+      padding-left: 0;
     }
   }
 </style>

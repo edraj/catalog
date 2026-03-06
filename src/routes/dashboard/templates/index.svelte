@@ -5,7 +5,7 @@
     deleteTemplate,
     getTemplates,
     updateTemplates,
-  } from "@/lib/dmart_services";
+  } from "@/lib/dmart_services/dmart_services";
   import { onMount } from "svelte";
   import { _, locale } from "@/i18n";
   import { params } from "@roxi/routify";
@@ -22,7 +22,7 @@
 
   let templateName = $state("");
   let content = $state(
-    "# New Template\n\nStart writing your template content here..."
+    "# New Template\n\nStart writing your template content here...",
   );
   let isSaving = $state(false);
   let isDeleting = $state(false);
@@ -113,14 +113,14 @@
           editingTemplate.shortname,
           editingTemplate.attributes.space_name,
           editingTemplate.subpath,
-          data
+          data,
         );
       } else {
         success = await createTemplate(
           $params.space_name || "",
           "templates",
           templateName.trim(),
-          data
+          data,
         );
       }
 
@@ -155,7 +155,7 @@
       const success = await deleteTemplate(
         deletingTemplate.shortname,
         deletingTemplate.attributes.space_name,
-        deletingTemplate.subpath
+        deletingTemplate.subpath,
       );
 
       if (success) {
@@ -215,7 +215,7 @@
       <p>{$_("templates.subtitle")}</p>
     </div>
     <button class="btn btn-primary" onclick={openCreateModal}>
-      {$_("templates.create_button")}
+      + {$_("templates.create_button")}
     </button>
   </header>
 
@@ -243,10 +243,13 @@
         <h3>{$_("templates.empty_title")}</h3>
         <p>{$_("templates.empty_subtitle")}</p>
         <button class="btn btn-primary" onclick={openCreateModal}>
-          {$_("templates.empty_create_button")}
+          + {$_("templates.empty_create_button")}
         </button>
       </div>
     {:else}
+      <div class="table-controls">
+        <span class="badge">Total {templates.length}</span>
+      </div>
       <div class="table-container">
         <table class="templates-table">
           <thead>
@@ -514,7 +517,7 @@
           <p>
             {$_(
               "templates.delete_modal.confirm",
-              getTemplateTitle(deletingTemplate)
+              getTemplateTitle(deletingTemplate),
             )}
           </p>
           <p class="warning-text">{$_("templates.delete_modal.warning")}</p>
@@ -603,12 +606,13 @@
   }
 
   .btn-primary {
-    background-color: #3b82f6;
+    background-color: #5850ec;
     color: white;
   }
 
   .btn-primary:hover:not(:disabled) {
-    background-color: #2563eb;
+    background-color: #4338ca;
+    transform: translateY(-1px);
   }
 
   .btn-secondary {
@@ -632,12 +636,13 @@
   }
 
   .btn-danger {
-    background-color: #dc2626;
+    background-color: #ef4444;
     color: white;
   }
 
   .btn-danger:hover:not(:disabled) {
-    background-color: #b91c1c;
+    background-color: #dc2626;
+    transform: translateY(-1px);
   }
 
   .btn-sm {
@@ -725,12 +730,30 @@
   }
 
   /* Table Styles */
+  .table-controls {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 0.5rem;
+  }
+
+  .badge {
+    background-color: #f3f4f6;
+    color: #374151;
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    border: 1px solid #e5e7eb;
+  }
+
   .table-container {
     background: white;
-    border-radius: 0.5rem;
+    border-radius: 12px;
     overflow: hidden;
-    border: 1px solid #e5e7eb;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    border: none;
+    box-shadow:
+      0 4px 6px -1px rgba(0, 0, 0, 0.05),
+      0 2px 4px -1px rgba(0, 0, 0, 0.03);
   }
 
   .templates-table {
@@ -740,18 +763,22 @@
 
   .templates-table th {
     background-color: #f9fafb;
-    padding: 0.75rem 1rem;
+    padding: 1rem 1.5rem;
     text-align: left;
-    font-weight: 600;
-    color: #374151;
-    border-bottom: 1px solid #e5e7eb;
-    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6b7280;
+    border-bottom: 1px solid #f3f4f6;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
 
   .templates-table td {
-    padding: 1rem;
+    padding: 1rem 1.5rem;
     border-bottom: 1px solid #f3f4f6;
-    vertical-align: top;
+    vertical-align: middle;
+    color: #374151;
+    font-size: 0.875rem;
   }
 
   .templates-table tbody tr:hover {
@@ -774,12 +801,14 @@
   }
 
   .uuid code {
-    background-color: #f3f4f6;
-    padding: 0.125rem 0.25rem;
-    border-radius: 0.25rem;
+    background-color: #eff6ff;
+    padding: 0.25rem 0.6rem;
+    border-radius: 9999px;
     font-size: 0.75rem;
-    color: #374151;
-    font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+    font-weight: 500;
+    color: #2563eb;
+    font-family: inherit;
+    border: 1px solid #bfdbfe;
   }
 
   /* Modal Styles */

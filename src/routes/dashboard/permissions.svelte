@@ -1,24 +1,28 @@
 <script lang="ts">
-    import {run} from "svelte/legacy";
+  import { run } from "svelte/legacy";
+  import { Modal } from "flowbite-svelte";
 
-    import MetaPermissionForm from "@/components/forms/MetaPermissionForm.svelte";
-    import {errorToastMessage, successToastMessage,} from "@/lib/toasts_messages";
-    import {onMount} from "svelte";
-    import {
-        createPermission,
-        deleteEntity,
-        getEntity,
-        getSpaceContents,
-        getSpaces,
-        updatePermission,
-    } from "@/lib/dmart_services";
-    import {ResourceType} from "@edraj/tsdmart";
-    import {_, locale} from "@/i18n";
-    import {derived} from "svelte/store";
+  import MetaPermissionForm from "@/components/forms/MetaPermissionForm.svelte";
+  import {
+    errorToastMessage,
+    successToastMessage,
+  } from "@/lib/toasts_messages";
+  import { onMount } from "svelte";
+  import {
+    createPermission,
+    deleteEntity,
+    getEntity,
+    getSpaceContents,
+    getSpaces,
+    updatePermission,
+  } from "@/lib/dmart_services/dmart_services";
+  import { ResourceType } from "@edraj/tsdmart";
+  import { _, locale } from "@/i18n";
+  import { derived } from "svelte/store";
 
-    const isRTL = derived(
+  const isRTL = derived(
     locale,
-    ($locale) => $locale === "ar" || $locale === "ku"
+    ($locale) => $locale === "ar" || $locale === "ku",
   );
 
   let formData = $state({});
@@ -44,7 +48,7 @@
       const permissionsResponse = await getSpaceContents(
         "management",
         "permissions",
-        "managed"
+        "managed",
       );
       if (permissionsResponse.status === "success") {
         permissionTypes = permissionsResponse.records.map((permission) => ({
@@ -57,7 +61,7 @@
         }
 
         successToastMessage(
-          `Loaded ${permissionTypes.length} permission types`
+          `Loaded ${permissionTypes.length} permission types`,
         );
       } else {
         errorToastMessage($_("failed_to_load_permission_types"));
@@ -91,7 +95,7 @@
         ResourceType.permission,
         "managed",
         true,
-        false
+        false,
       );
 
       if (permissionEntity) {
@@ -113,7 +117,7 @@
         permissionExists = false;
         currentPermissionShortname = "";
         successToastMessage(
-          `No existing ${permissionType} permissions found. Using defaults.`
+          `No existing ${permissionType} permissions found. Using defaults.`,
         );
       }
     } catch (error) {
@@ -156,13 +160,13 @@
         ResourceType.permission,
         updatePayload,
         "",
-        ""
+        "",
       );
 
       if (result) {
         lastSaved = new Date().toLocaleTimeString();
         successToastMessage(
-          `${selectedPermissionType} permissions saved successfully`
+          `${selectedPermissionType} permissions saved successfully`,
         );
       } else {
         throw new Error("Failed to save permissions");
@@ -199,12 +203,12 @@
         "permissions",
         ResourceType.permission,
         "",
-        ""
+        "",
       );
 
       if (result) {
         successToastMessage(
-          `Permission "${newPermissionName}" created successfully`
+          `Permission "${newPermissionName}" created successfully`,
         );
         showAddModal = false;
         newPermissionName = "";
@@ -233,12 +237,12 @@
         currentPermissionShortname,
         "management",
         "permissions",
-        ResourceType.permission
+        ResourceType.permission,
       );
 
       if (result) {
         successToastMessage(
-          `Permission "${selectedPermissionType}" deleted successfully`
+          `Permission "${selectedPermissionType}" deleted successfully`,
         );
         showDeleteConfirm = false;
         await loadPermissionTypes();
@@ -275,20 +279,24 @@
 </script>
 
 <div class="container" class:rtl={$isRTL}>
-  <div class="page-header">
-    <h1 class="page-title">{$_("user_permissions_management")}</h1>
-    <p class="page-subtitle">
+  <div class="page-header text-center mb-8">
+    <h1 class="page-title text-3xl font-bold text-gray-900 mb-2">
+      {$_("user_permissions_management")}
+    </h1>
+    <p class="page-subtitle text-gray-500">
       {$_("configure_access_permissions")}
     </p>
   </div>
 
-  <div class="card">
-    <div class="card-header">
-      <h2 class="card-title">{$_("select_permission_type")}</h2>
-      <div class="header-actions">
+  <div class="card mb-6">
+    <div class="card-header flex justify-between items-center mb-4">
+      <h2 class="card-title text-xl font-semibold m-0">
+        {$_("select_permission_type")}
+      </h2>
+      <div class="header-actions flex gap-3">
         <button
           aria-label={`Add permission`}
-          class="btn btn-success"
+          class="btn btn-primary"
           onclick={() => (showAddModal = true)}
         >
           <span>+</span>
@@ -304,7 +312,18 @@
             {#if isDeleting}
               <div class="spinner-small"></div>
             {:else}
-              <span>🗑</span>
+              <svg
+                class="w-4 h-4 mr-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                ><path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                ></path></svg
+              >
             {/if}
             {$_("delete")}
           </button>
@@ -312,38 +331,106 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-2">
-      <div>
-        <select class="form-select" bind:value={selectedPermissionType}>
+    <div class="flex flex-col gap-2">
+      <div class="select-wrapper relative">
+        <select
+          class="form-select bg-gray-50 border-0 rounded-lg w-full"
+          bind:value={selectedPermissionType}
+        >
           {#each permissionTypes as type}
             <option value={type.value}>{type.name}</option>
           {/each}
         </select>
+        <svg
+          class="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          ><path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M19 9l-7 7-7-7"
+          ></path></svg
+        >
       </div>
-      <div style="display: flex; align-items: center; gap: 16px;">
-        {#if lastSaved}
-          <div class="status-indicator status-success">
-            <span>✓</span>
-            <span>Last saved: {lastSaved}</span>
-          </div>
-        {/if}
+
+      <div class="flex items-center gap-4 mt-2">
         {#if permissionExists}
-          <div class="status-indicator status-info">
-            <span>ℹ</span>
+          <div
+            class="status-indicator status-info flex items-center gap-1 text-sm text-blue-500"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              ><path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              ></path></svg
+            >
             <span>{$_("existing_configuration")}</span>
           </div>
         {:else}
-          <div class="status-indicator status-warning">
-            <span>⚠</span>
+          <div
+            class="status-indicator status-warning flex items-center gap-1 text-sm text-amber-500"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              ><path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              ></path></svg
+            >
             <span>{$_("new_configuration")}</span>
+          </div>
+        {/if}
+        {#if lastSaved}
+          <div
+            class="status-indicator status-success flex items-center gap-1 text-sm text-green-500 ml-auto"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              ><path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"
+              ></path></svg
+            >
+            <span>Last saved: {lastSaved}</span>
           </div>
         {/if}
       </div>
     </div>
   </div>
 
-  <div class="alert alert-info">
-    <div class="alert-icon">ℹ</div>
+  <div
+    class="alert alert-info bg-blue-50 text-blue-500 border-0 rounded-xl mb-6 flex items-start p-4 gap-3 w-full"
+  >
+    <svg
+      class="w-5 h-5 flex-shrink-0 mt-0.5"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      ><path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      ></path></svg
+    >
     <div>
       <strong>{$_("permission_info")}:</strong>
       {#if selectedPermissionType === "world"}
@@ -355,168 +442,132 @@
   </div>
 
   {#if isLoading}
-    <div class="card">
-      <div class="loading-card">
-        <div class="spinner"></div>
-        <span>{$_("loading_permission_data")}</span>
+    <div class="card bg-white rounded-xl shadow-sm border border-gray-100 mb-6">
+      <div class="loading-card flex items-center justify-center p-16">
+        <div class="spinner mr-3"></div>
+        <span class="text-gray-500">{$_("loading_permission_data")}</span>
       </div>
     </div>
   {:else}
-    <MetaPermissionForm bind:formData bind:validateFn />
+    <div
+      class="card bg-white rounded-xl shadow-sm border border-gray-100 mb-6 p-6"
+    >
+      <MetaPermissionForm bind:formData bind:validateFn />
+    </div>
 
-    <div class="card">
-      <div class="action-bar">
-        <div class="action-buttons">
-          <button
-            aria-label={`Save permissions`}
-            class="btn btn-primary"
-            onclick={savePermissions}
-            disabled={isSaving}
+    <!-- Actions (Bottom) -->
+    <div class="action-bar flex justify-between items-center mt-8">
+      <button
+        aria-label={`Save permissions`}
+        class="btn btn-primary bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl px-6 py-3"
+        onclick={savePermissions}
+        disabled={isSaving}
+      >
+        {#if isSaving}
+          <div class="spinner w-4 h-4 border-2 mr-2"></div>
+        {/if}
+        {permissionExists ? $_("update") : $_("create")}
+        {$_("permission")}
+      </button>
+
+      <div class="meta-info text-sm text-gray-400 text-right">
+        <div>
+          Permission Type: <span class="font-mono bg-transparent"
+            >{selectedPermissionType}</span
           >
-            {#if isSaving}
-              <div
-                class="spinner"
-                style="width: 16px; height: 16px; border-width: 2px; margin-right: 8px;"
-              ></div>
-              {$_("saving")}
-            {:else}
-              {permissionExists ? $_("update") : $_("create")}
-              {$_("permission")}
-            {/if}
-          </button>
         </div>
-
-        <div class="meta-info">
+        {#if currentPermissionShortname}
           <div>
-            <strong>{$_("permission_type")}:</strong>
-            {selectedPermissionType}
+            ID: <span class="font-mono bg-transparent"
+              >{currentPermissionShortname}</span
+            >
           </div>
-          {#if currentPermissionShortname}
-            <div>
-              <strong>ID:</strong>
-              <span class="meta-code">{currentPermissionShortname}</span>
-            </div>
-          {/if}
-        </div>
+        {/if}
       </div>
     </div>
   {/if}
 </div>
 
 <!-- Add Permission Modal -->
-{#if showAddModal}
-  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-  <div
-    class="modal-overlay"
-    role="dialog"
-    aria-modal="true"
-    onkeydown={(e) => {
-      if (e.key === "Escape") showAddModal = false;
-    }}
-  >
-    <div class="modal" role="document">
-      <div class="modal-header">
-        <h3>{$_("add_new_permission")}</h3>
-        <button
-          class="modal-close"
-          onclick={() => (showAddModal = false)}
-          aria-label={$_("close")}
-        >
-          ×
-        </button>
-      </div>
-      <div class="modal-body">
-        <label class="form-label" for="permissionName"
-          >{$_("permission_name")}</label
-        >
-        <input
-          type="text"
-          class="form-input"
-          bind:value={newPermissionName}
-          placeholder={$_("enter_permission_name")}
-          id="permissionName"
-        />
-      </div>
-      <div class="modal-footer">
-        <button
-          aria-label={`Cancel adding permission`}
-          class="btn btn-secondary"
-          onclick={() => (showAddModal = false)}
-        >
-          {$_("cancel")}
-        </button>
-        <button
-          aria-label={`Create new permission`}
-          class="btn btn-primary"
-          onclick={createNewPermission}
-          disabled={isCreating || !newPermissionName.trim()}
-        >
-          {#if isCreating}
-            <div class="spinner-small"></div>
-            {$_("creating")}
-          {:else}
-            {$_("create_permission")}
-          {/if}
-        </button>
-      </div>
-    </div>
-  </div>
-{/if}
+<Modal
+  title={$_("add_new_permission")}
+  bind:open={showAddModal}
+  size="lg"
+  class="bg-white dark:bg-white"
+  headerClass="text-gray-900 dark:text-gray-900"
+  placement="center"
+  autoclose={false}
+>
+  <label class="form-label" for="permissionName">{$_("permission_name")}</label>
+  <input
+    type="text"
+    class="form-input"
+    bind:value={newPermissionName}
+    placeholder={$_("enter_permission_name")}
+    id="permissionName"
+  />
+  {#snippet footer()}
+    <button
+      aria-label={`Cancel adding permission`}
+      class="btn btn-secondary"
+      onclick={() => (showAddModal = false)}
+    >
+      {$_("cancel")}
+    </button>
+    <button
+      aria-label={`Create new permission`}
+      class="btn btn-primary"
+      onclick={createNewPermission}
+      disabled={isCreating || !newPermissionName.trim()}
+    >
+      {#if isCreating}
+        <div class="spinner-small"></div>
+        {$_("creating")}
+      {:else}
+        {$_("create_permission")}
+      {/if}
+    </button>
+  {/snippet}
+</Modal>
 
 <!-- Delete Confirmation Modal -->
-{#if showDeleteConfirm}
-  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-  <div
-    class="modal-overlay"
-    role="dialog"
-    aria-modal="true"
-    onkeydown={(e) => {
-      if (e.key === "Escape") showDeleteConfirm = false;
-    }}
-  >
-    <div class="modal" role="document">
-      <div class="modal-header">
-        <h3>{$_("delete_permission")}</h3>
-        <button
-          class="modal-close"
-          onclick={() => (showDeleteConfirm = false)}
-          aria-label={$_("close")}
-        >
-          ×
-        </button>
-      </div>
-      <div class="modal-body">
-        <p>
-          {$_("are_you_sure_delete_permission")}
-          <strong>"{selectedPermissionType}"</strong>?
-        </p>
-        <p class="text-danger">{$_("action_cannot_be_undone")}</p>
-      </div>
-      <div class="modal-footer">
-        <button
-          aria-label={`Cancel deleting permission`}
-          class="btn btn-secondary"
-          onclick={() => (showDeleteConfirm = false)}
-        >
-          {$_("cancel")}
-        </button>
-        <button
-          aria-label={`Delete permission ${selectedPermissionType}`}
-          class="btn btn-danger"
-          onclick={deletePermission}
-          disabled={isDeleting}
-        >
-          {#if isDeleting}
-            <div class="spinner-small"></div>
-            {$_("deleting")}
-          {:else}
-            {$_("delete_permission")}
-          {/if}
-        </button>
-      </div>
-    </div>
-  </div>
-{/if}
+<Modal
+  title={$_("delete_permission")}
+  bind:open={showDeleteConfirm}
+  size="lg"
+  class="bg-white dark:bg-white"
+  headerClass="text-gray-900 dark:text-gray-900"
+  placement="center"
+  autoclose={false}
+>
+  <p>
+    {$_("are_you_sure_delete_permission")}
+    <strong>"{selectedPermissionType}"</strong>?
+  </p>
+  <p class="text-danger">{$_("action_cannot_be_undone")}</p>
+  {#snippet footer()}
+    <button
+      aria-label={`Cancel deleting permission`}
+      class="btn btn-secondary"
+      onclick={() => (showDeleteConfirm = false)}
+    >
+      {$_("cancel")}
+    </button>
+    <button
+      aria-label={`Delete permission ${selectedPermissionType}`}
+      class="btn btn-danger"
+      onclick={deletePermission}
+      disabled={isDeleting}
+    >
+      {#if isDeleting}
+        <div class="spinner-small"></div>
+        {$_("deleting")}
+      {:else}
+        {$_("delete_permission")}
+      {/if}
+    </button>
+  {/snippet}
+</Modal>
 
 <style>
   .rtl {
@@ -797,29 +848,7 @@
     margin-top: 4px;
   }
 
-  /* Modal Styles */
-  .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-  }
-
-  .modal {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-    max-width: 500px;
-    width: 90%;
-    max-height: 90vh;
-    overflow: hidden;
-  }
+  /* Modal Styles removed - now using flowbite Modal */
 
   .modal-header {
     display: flex;

@@ -1,11 +1,15 @@
 <script lang="ts">
-    import {RequestType, ResourceType} from "@edraj/tsdmart";
-    import {onMount} from "svelte";
-    import {_} from "svelte-i18n";
-    import {getChildren, getChildrenAndSubChildren, getSpaces,} from "@/lib/dmart_services";
-    import {errorToastMessage} from "@/lib/toasts_messages";
+  import { RequestType, ResourceType } from "@edraj/tsdmart";
+  import { onMount } from "svelte";
+  import { _ } from "svelte-i18n";
+  import {
+    getChildren,
+    getChildrenAndSubChildren,
+    getSpaces,
+  } from "@/lib/dmart_services/dmart_services";
+  import { errorToastMessage } from "@/lib/toasts_messages";
 
-    let {
+  let {
     formData = $bindable(),
     validateFn = $bindable(),
   }: {
@@ -43,10 +47,10 @@
     value: "query",
   });
 
-  let selectedResourceType = "";
-  let selectedAction = "";
-  let newCondition = "";
-  let newRestrictedField = "";
+  let selectedResourceType = $state("");
+  let selectedAction = $state("");
+  let newCondition = $state("");
+  let newRestrictedField = $state("");
 
   let spaces = $state([]);
   let subpaths = $state([]);
@@ -143,7 +147,7 @@
         subpathsResponse,
         spaceName,
         "",
-        childSubpaths
+        childSubpaths,
       );
       subpaths = subpathsResponse.map((record) => ({
         name: record,
@@ -184,7 +188,7 @@
 
   function removeSubpath(space, subpath) {
     formData.subpaths[space] = formData.subpaths[space].filter(
-      (p) => p !== subpath
+      (p) => p !== subpath,
     );
 
     if (formData.subpaths[space].length === 0) {
@@ -195,18 +199,18 @@
 
   function removeRestrictedField(item) {
     formData.restricted_fields = formData.restricted_fields.filter(
-      (i) => i !== item
+      (i) => i !== item,
     );
   }
 
-  let jsonEditorContent = "";
+  let jsonEditorContent = $state("");
 
   function updateJsonEditor() {
     try {
       jsonEditorContent = JSON.stringify(
         formData.allowed_fields_values,
         null,
-        2
+        2,
       );
     } catch (e) {
       jsonEditorContent = "{}";
@@ -257,16 +261,19 @@
 </script>
 
 <div class="permission-card">
-  <h2 class="form-title">{$_("permissions.title")}</h2>
+  <h2 class="form-title text-xl font-semibold text-gray-900 mb-6">
+    Permission Settings
+  </h2>
 
   <form bind:this={form}>
-    <div class="form-group">
-      <label class="form-label" for="resourceTypeSelect"
-        >{$_("permissions.resource_types")}</label
+    <div class="form-group mb-6">
+      <label
+        class="form-label text-sm font-medium text-gray-700 mb-2 block"
+        for="resourceTypeSelect">{$_("permissions.resource_types")}</label
       >
-      <div class="input-group">
+      <div class="input-group flex gap-3">
         <select
-          class="form-select"
+          class="form-select bg-gray-50 border-0 rounded-lg flex-1"
           bind:value={selectedResourceType}
           id="resourceTypeSelect"
         >
@@ -278,37 +285,38 @@
         <button
           aria-label={`Add resource type`}
           type="button"
-          class="btn btn-primary btn-small"
+          class="btn btn-primary bg-indigo-500 hover:bg-indigo-600 text-white rounded-full w-10 h-10 flex items-center justify-center p-0"
           onclick={addResourceType}>+</button
         >
       </div>
 
       {#if formData.resource_types.length > 0}
-        <div class="tag-container">
+        <div class="tag-container flex flex-wrap gap-2 mt-3">
           {#each formData.resource_types as item}
-            <div class="tag tag-blue">
+            <div
+              class="tag bg-blue-50 text-blue-500 px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-2"
+            >
               <span>{item}</span>
               <button
                 aria-label={`Remove resource type ${item}`}
                 type="button"
-                class="tag-remove"
+                class="tag-remove hover:text-blue-700"
                 onclick={() => removeResourceType(item)}>×</button
               >
             </div>
           {/each}
         </div>
-      {:else}
-        <div class="empty-state">{$_("empty_states.no_resource_types")}</div>
       {/if}
     </div>
 
-    <div class="form-group">
-      <label class="form-label" for="actionSelect"
-        >{$_("permissions.actions")}</label
+    <div class="form-group mb-8">
+      <label
+        class="form-label text-sm font-medium text-gray-700 mb-2 block"
+        for="actionSelect">{$_("permissions.actions")}</label
       >
-      <div class="input-group">
+      <div class="input-group flex gap-3">
         <select
-          class="form-select"
+          class="form-select bg-gray-50 border-0 rounded-lg flex-1"
           bind:value={selectedAction}
           id="actionSelect"
         >
@@ -320,34 +328,36 @@
         <button
           aria-label={`Add action`}
           type="button"
-          class="btn btn-primary btn-small"
+          class="btn btn-primary bg-indigo-500 hover:bg-indigo-600 text-white rounded-full w-10 h-10 flex items-center justify-center p-0"
           onclick={addAction}>+</button
         >
       </div>
 
       {#if formData.actions.length > 0}
-        <div class="tag-container">
+        <div class="tag-container flex flex-wrap gap-2 mt-3">
           {#each formData.actions as item}
-            <div class="tag tag-green">
+            <div
+              class="tag bg-orange-50 text-orange-500 px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-2"
+            >
               <span>{item}</span>
               <button
                 aria-label={`Remove action ${item}`}
                 type="button"
-                class="tag-remove"
+                class="tag-remove hover:text-orange-700"
                 onclick={() => removeAction(item)}>×</button
               >
             </div>
           {/each}
         </div>
-      {:else}
-        <div class="empty-state">{$_("empty_states.no_actions")}</div>
       {/if}
     </div>
 
-    <div class="accordion">
-      <div class="accordion-item">
+    <div
+      class="accordion border-0 border-t border-gray-100 rounded-none overflow-hidden mt-6 pt-2"
+    >
+      <div class="accordion-item border-b border-gray-100">
         <div
-          class="accordion-header"
+          class="accordion-header bg-transparent py-4 px-0 cursor-pointer flex justify-between items-center text-sm font-semibold text-gray-900"
           role="button"
           tabindex="0"
           onclick={() => toggleAccordion("subpaths")}
@@ -356,25 +366,38 @@
           }}
         >
           <span>{$_("sections.subpaths")}</span>
-          <span class="accordion-icon" class:open={accordionStates.subpaths}
-            >▼</span
+          <svg
+            class="w-4 h-4 text-gray-400 transition-transform duration-200"
+            class:rotate-180={accordionStates.subpaths}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            ><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 9l-7 7-7-7"
+            ></path></svg
           >
         </div>
         {#if accordionStates.subpaths}
-          <div class="accordion-content">
-            <div class="grid grid-cols-2">
-              <div class="form-group">
-                <label class="form-label" for="spaceSelect"
-                  >{$_("fields.space")}</label
+          <div class="accordion-content bg-transparent px-0 pb-4 pt-2">
+            <div class="grid grid-cols-2 gap-4">
+              <div class="form-group mb-0">
+                <label
+                  class="form-label text-xs font-medium text-gray-500 mb-1"
+                  for="spaceSelect">{$_("fields.space")}</label
                 >
                 {#if loadingSpaces}
-                  <div class="loading-container">
-                    <div class="spinner"></div>
+                  <div
+                    class="loading-container flex items-center gap-2 text-sm text-gray-500"
+                  >
+                    <div class="spinner w-4 h-4 border-2"></div>
                     <span>{$_("loading.spaces")}</span>
                   </div>
                 {:else}
                   <select
-                    class="form-select"
+                    class="form-select bg-gray-50 border-0 rounded-lg w-full"
                     bind:value={selectedSpace}
                     id="spaceSelect"
                   >
@@ -386,19 +409,22 @@
                 {/if}
               </div>
 
-              <div class="form-group">
-                <label class="form-label" for="subpathSelect"
-                  >{$_("fields.subpath")}</label
+              <div class="form-group mb-0">
+                <label
+                  class="form-label text-xs font-medium text-gray-500 mb-1"
+                  for="subpathSelect">{$_("fields.subpath")}</label
                 >
                 {#if loadingSubpaths}
-                  <div class="loading-container">
-                    <div class="spinner"></div>
+                  <div
+                    class="loading-container flex items-center gap-2 text-sm text-gray-500"
+                  >
+                    <div class="spinner w-4 h-4 border-2"></div>
                     <span>{$_("loading.subpaths")}</span>
                   </div>
                 {:else}
-                  <div class="input-group">
+                  <div class="input-group flex gap-3">
                     <select
-                      class="form-select"
+                      class="form-select bg-gray-50 border-0 rounded-lg flex-1"
                       bind:value={selectedSubpath}
                       disabled={!selectedSpace}
                       id="subpathSelect"
@@ -411,7 +437,7 @@
                     <button
                       aria-label={`Add subpath ${selectedSubpath} to space ${selectedSpace}`}
                       type="button"
-                      class="btn btn-primary btn-small"
+                      class="btn btn-primary bg-indigo-500 hover:bg-indigo-600 text-white rounded-full w-10 h-10 flex items-center justify-center p-0"
                       onclick={addSubpathToSpace}
                       disabled={!selectedSpace || !selectedSubpath}>+</button
                     >
@@ -421,18 +447,26 @@
             </div>
 
             {#if Object.keys(formData.subpaths).length > 0}
-              <div class="subpath-display">
+              <div
+                class="subpath-display bg-gray-50 border border-gray-100 rounded-lg p-4 mt-4"
+              >
                 {#each subpathEntries as [space, paths]}
-                  <div class="subpath-space">
-                    <div class="subpath-space-title">{space}</div>
-                    <div class="tag-container">
+                  <div class="subpath-space mb-4 last:mb-0">
+                    <div
+                      class="subpath-space-title text-sm font-semibold text-blue-500 mb-2"
+                    >
+                      {space}
+                    </div>
+                    <div class="tag-container flex flex-wrap gap-2">
                       {#each Array.isArray(paths) ? paths : [] as path}
-                        <div class="tag tag-purple">
+                        <div
+                          class="tag bg-white text-blue-600 border border-blue-100 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-2"
+                        >
                           <span>{path}</span>
                           <button
                             aria-label={`Remove subpath ${path} from space ${space}`}
                             type="button"
-                            class="tag-remove"
+                            class="tag-remove hover:text-blue-800"
                             onclick={() => removeSubpath(space, path)}>×</button
                           >
                         </div>
@@ -441,16 +475,14 @@
                   </div>
                 {/each}
               </div>
-            {:else}
-              <div class="empty-state">{$_("empty_states.no_subpaths")}</div>
             {/if}
           </div>
         {/if}
       </div>
 
-      <div class="accordion-item">
+      <div class="accordion-item border-b border-gray-100">
         <div
-          class="accordion-header"
+          class="accordion-header bg-transparent py-4 px-0 cursor-pointer flex justify-between items-center text-sm font-semibold text-gray-900"
           role="button"
           tabindex="0"
           onclick={() => toggleAccordion("conditions")}
@@ -459,14 +491,27 @@
           }}
         >
           <span>{$_("sections.conditions")}</span>
-          <span class="accordion-icon" class:open={accordionStates.conditions}
-            >▼</span
+          <svg
+            class="w-4 h-4 text-gray-400 transition-transform duration-200"
+            class:rotate-180={accordionStates.conditions}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            ><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 9l-7 7-7-7"
+            ></path></svg
           >
         </div>
         {#if accordionStates.conditions}
-          <div class="accordion-content">
-            <div class="input-group">
-              <select class="form-select" bind:value={newCondition}>
+          <div class="accordion-content bg-transparent px-0 pb-4 pt-2">
+            <div class="input-group flex gap-3">
+              <select
+                class="form-select bg-gray-50 border-0 rounded-lg flex-1"
+                bind:value={newCondition}
+              >
                 <option value="">{$_("options.select_condition")}</option>
                 <option value="own">{$_("conditions.own")}</option>
                 <option value="is_active">{$_("conditions.is_active")}</option>
@@ -474,35 +519,35 @@
               <button
                 aria-label={`Add condition ${newCondition}`}
                 type="button"
-                class="btn btn-primary btn-small"
+                class="btn btn-primary bg-indigo-500 hover:bg-indigo-600 text-white rounded-full w-10 h-10 flex items-center justify-center p-0"
                 onclick={addCondition}>+</button
               >
             </div>
 
             {#if formData.conditions.length > 0}
-              <div class="tag-container">
+              <div class="tag-container flex flex-wrap gap-2 mt-3">
                 {#each formData.conditions as item}
-                  <div class="tag tag-yellow">
+                  <div
+                    class="tag bg-amber-50 text-amber-600 px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-2"
+                  >
                     <span>{item}</span>
                     <button
                       aria-label={`Remove condition ${item}`}
                       type="button"
-                      class="tag-remove"
+                      class="tag-remove hover:text-amber-800"
                       onclick={() => removeCondition(item)}>×</button
                     >
                   </div>
                 {/each}
               </div>
-            {:else}
-              <div class="empty-state">{$_("empty_states.no_conditions")}</div>
             {/if}
           </div>
         {/if}
       </div>
 
-      <div class="accordion-item">
+      <div class="accordion-item border-b border-gray-100">
         <div
-          class="accordion-header"
+          class="accordion-header bg-transparent py-4 px-0 cursor-pointer flex justify-between items-center text-sm font-semibold text-gray-900"
           role="button"
           tabindex="0"
           onclick={() => toggleAccordion("restrictedFields")}
@@ -511,18 +556,28 @@
           }}
         >
           <span>{$_("sections.restricted_fields")}</span>
-          <span
-            class="accordion-icon"
-            class:open={accordionStates.restrictedFields}>▼</span
+          <svg
+            class="w-4 h-4 text-gray-400 transition-transform duration-200"
+            class:rotate-180={accordionStates.restrictedFields}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            ><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 9l-7 7-7-7"
+            ></path></svg
           >
         </div>
         {#if accordionStates.restrictedFields}
-          <div class="accordion-content">
-            <div class="input-group">
-              <label for="restrictedFieldInput"></label>
+          <div class="accordion-content bg-transparent px-0 pb-4 pt-2">
+            <div class="input-group flex gap-3">
+              <label for="restrictedFieldInput" class="hidden" tabindex="-1"
+              ></label>
               <input
                 type="text"
-                class="form-input"
+                class="form-input bg-gray-50 border-0 rounded-lg flex-1 px-4 py-2"
                 placeholder={$_("placeholders.restricted_field")}
                 bind:value={newRestrictedField}
                 id="restrictedFieldInput"
@@ -530,28 +585,26 @@
               <button
                 aria-label={`Add restricted field ${newRestrictedField}`}
                 type="button"
-                class="btn btn-primary btn-small"
+                class="btn btn-primary bg-indigo-500 hover:bg-indigo-600 text-white rounded-full w-10 h-10 flex items-center justify-center p-0"
                 onclick={addRestrictedField}>+</button
               >
             </div>
 
             {#if formData.restricted_fields.length > 0}
-              <div class="tag-container">
+              <div class="tag-container flex flex-wrap gap-2 mt-3">
                 {#each formData.restricted_fields as item}
-                  <div class="tag tag-red">
+                  <div
+                    class="tag bg-red-50 text-red-500 px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-2"
+                  >
                     <span>{item}</span>
                     <button
                       aria-label={`Remove restricted field ${item}`}
                       type="button"
-                      class="tag-remove"
+                      class="tag-remove hover:text-red-700"
                       onclick={() => removeRestrictedField(item)}>×</button
                     >
                   </div>
                 {/each}
-              </div>
-            {:else}
-              <div class="empty-state">
-                {$_("empty_states.no_restricted_fields")}
               </div>
             {/if}
           </div>
@@ -560,7 +613,7 @@
 
       <div class="accordion-item">
         <div
-          class="accordion-header"
+          class="accordion-header bg-transparent py-4 px-0 cursor-pointer flex justify-between items-center text-sm font-semibold text-gray-900"
           role="button"
           tabindex="0"
           onclick={() => toggleAccordion("allowedFields")}
@@ -569,29 +622,40 @@
           }}
         >
           <span>{$_("sections.allowed_fields_values")}</span>
-          <span
-            class="accordion-icon"
-            class:open={accordionStates.allowedFields}>▼</span
+          <svg
+            class="w-4 h-4 text-gray-400 transition-transform duration-200"
+            class:rotate-180={accordionStates.allowedFields}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            ><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 9l-7 7-7-7"
+            ></path></svg
           >
         </div>
         {#if accordionStates.allowedFields}
-          <div class="accordion-content">
-            <label class="form-label" for="jsonEditor"
-              >{$_("fields.json_editor")}</label
+          <div class="accordion-content bg-transparent px-0 pb-4 pt-2">
+            <label
+              class="form-label text-xs font-medium text-gray-500 mb-1 block"
+              for="jsonEditor"
+              tabindex="-1">{$_("fields.json_editor")}</label
             >
-            <div class="helper-text">{$_("help.json_editor")}</div>
+            <div class="helper-text text-xs text-gray-400 mb-2">
+              {$_("help.json_editor")}
+            </div>
             <textarea
-              class="textarea"
+              class="textarea w-full bg-gray-50 border-0 rounded-lg p-4 font-mono text-sm min-h-[200px]"
               bind:value={jsonEditorContent}
               id="jsonEditor"
             ></textarea>
-            <div
-              style="display: flex; justify-content: flex-end; margin-top: 12px;"
-            >
+            <div class="flex justify-end mt-3">
               <button
                 aria-label={`Apply changes to JSON editor`}
                 type="button"
-                class="btn btn-secondary"
+                class="btn btn-secondary bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg px-4 py-2"
                 onclick={saveJsonEditor}>{$_("buttons.apply_changes")}</button
               >
             </div>
@@ -603,232 +667,6 @@
 </div>
 
 <style>
-  .permission-card {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    border: 1px solid #e5e7eb;
-    padding: 24px;
-    margin: 16px 0;
-  }
-
-  .form-group {
-    margin-bottom: 24px;
-  }
-
-  .form-label {
-    display: block;
-    font-weight: 600;
-    color: #374151;
-    margin-bottom: 8px;
-    font-size: 14px;
-  }
-
-  .form-input {
-    width: 100%;
-    padding: 12px 16px;
-    border: 2px solid #e5e7eb;
-    border-radius: 8px;
-    font-size: 14px;
-    transition: all 0.2s ease;
-    background: white;
-  }
-
-  .form-input:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
-
-  .form-select {
-    width: 100%;
-    padding: 12px 16px;
-    border: 2px solid #e5e7eb;
-    border-radius: 8px;
-    font-size: 14px;
-    background: white;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .form-select:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
-
-  .btn {
-    padding: 12px 20px;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-  }
-
-  .btn-primary {
-    background: #3b82f6;
-    color: white;
-  }
-
-  .btn-primary:hover {
-    background: #2563eb;
-    transform: translateY(-1px);
-  }
-
-  .btn-secondary {
-    background: #f3f4f6;
-    color: #374151;
-    border: 1px solid #d1d5db;
-  }
-
-  .btn-secondary:hover {
-    background: #e5e7eb;
-  }
-
-  .btn-small {
-    padding: 8px 12px;
-    font-size: 12px;
-    min-width: 40px;
-    height: 40px;
-  }
-
-  .input-group {
-    display: flex;
-    gap: 12px;
-    align-items: flex-end;
-  }
-
-  .input-group .form-input,
-  .input-group .form-select {
-    flex: 1;
-  }
-
-  .tag-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 12px;
-  }
-
-  .tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 500;
-  }
-
-  .tag-blue {
-    background: #dbeafe;
-    color: #1e40af;
-  }
-
-  .tag-green {
-    background: #dcfce7;
-    color: #166534;
-  }
-
-  .tag-purple {
-    background: #f3e8ff;
-    color: #7c3aed;
-  }
-
-  .tag-yellow {
-    background: #fef3c7;
-    color: #92400e;
-  }
-
-  .tag-red {
-    background: #fee2e2;
-    color: #dc2626;
-  }
-
-  .tag-remove {
-    background: none;
-    border: none;
-    color: inherit;
-    cursor: pointer;
-    font-size: 16px;
-    line-height: 1;
-    padding: 0;
-    margin: 0;
-  }
-
-  .tag-remove:hover {
-    opacity: 0.7;
-  }
-
-  .empty-state {
-    padding: 24px;
-    border: 2px dashed #d1d5db;
-    border-radius: 8px;
-    text-align: center;
-    color: #6b7280;
-    font-size: 14px;
-    margin-top: 12px;
-  }
-
-  .accordion {
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    overflow: hidden;
-  }
-
-  .accordion-item {
-    border-bottom: 1px solid #e5e7eb;
-  }
-
-  .accordion-item:last-child {
-    border-bottom: none;
-  }
-
-  .accordion-header {
-    background: #f9fafb;
-    padding: 16px 20px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-weight: 600;
-    color: #374151;
-    transition: background-color 0.2s ease;
-  }
-
-  .accordion-header:hover {
-    background: #f3f4f6;
-  }
-
-  .accordion-icon {
-    transition: transform 0.2s ease;
-    font-size: 12px;
-  }
-
-  .accordion-icon.open {
-    transform: rotate(180deg);
-  }
-
-  .accordion-content {
-    padding: 20px;
-    background: white;
-  }
-
-  .grid {
-    display: grid;
-    gap: 16px;
-  }
-
-  .grid-cols-2 {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
   .spinner {
     width: 20px;
     height: 20px;
@@ -845,67 +683,5 @@
     100% {
       transform: rotate(360deg);
     }
-  }
-
-  .loading-container {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #6b7280;
-    font-size: 14px;
-  }
-
-  .subpath-display {
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    padding: 16px;
-    margin-top: 16px;
-  }
-
-  .subpath-space {
-    margin-bottom: 16px;
-  }
-
-  .subpath-space:last-child {
-    margin-bottom: 0;
-  }
-
-  .subpath-space-title {
-    font-weight: 600;
-    color: #374151;
-    margin-bottom: 8px;
-  }
-
-  .textarea {
-    width: 100%;
-    min-height: 200px;
-    padding: 12px 16px;
-    border: 2px solid #e5e7eb;
-    border-radius: 8px;
-    font-family: "uthmantn", "Monaco", "Menlo", "Ubuntu Mono", monospace;
-    font-size: 13px;
-    line-height: 1.5;
-    resize: vertical;
-    transition: all 0.2s ease;
-  }
-
-  .textarea:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
-
-  .helper-text {
-    font-size: 12px;
-    color: #6b7280;
-    margin-bottom: 8px;
-  }
-
-  .form-title {
-    font-size: 24px;
-    font-weight: 700;
-    color: #111827;
-    margin-bottom: 16px;
   }
 </style>

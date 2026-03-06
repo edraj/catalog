@@ -2,7 +2,7 @@
     import DashboardHeader from "@/components/DashboardHeader.svelte";
     import {signout} from "@/stores/user";
     import {onMount} from "svelte";
-    import {getProfile} from "@/lib/dmart_services";
+    import {getProfile} from "@/lib/dmart_services/dmart_services.ts";
     import {goto} from "@roxi/routify";
     import {Dmart} from "@edraj/tsdmart";
     import {website} from "@/config";

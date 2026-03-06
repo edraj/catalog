@@ -5,7 +5,7 @@
     getAvatar,
     getEntity,
     markNotification,
-  } from "@/lib/dmart_services";
+  } from "@/lib/dmart_services/dmart_services";
   import { user } from "@/stores/user";
   import { onMount, onDestroy } from "svelte";
   import { formatDate, truncateString } from "@/lib/helpers";

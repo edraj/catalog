@@ -10,7 +10,7 @@
     getAvatar,
     getEntity,
     getEntityAttachmentsCount,
-  } from "@/lib/dmart_services";
+  } from "@/lib/dmart_services/dmart_services";
   import { formatDate, formatNumberInText } from "@/lib/helpers";
   import Attachments from "@/components/Attachments.svelte";
   import { ResourceType } from "@edraj/tsdmart";
@@ -46,7 +46,7 @@
   marked.use(
     gfmHeadingId({
       prefix: "my-prefix-",
-    })
+    }),
   );
 
   $goto;
@@ -60,7 +60,7 @@
 
   const isRTL = derived(
     locale,
-    ($locale) => $locale === "ar" || $locale === "ku"
+    ($locale) => $locale === "ar" || $locale === "ku",
   );
 
   onMount(async () => {
@@ -88,7 +88,7 @@
         $params.space_name,
         $params.subpath,
         $params.shortname,
-        comment
+        comment,
       );
       if (response) {
         await refreshCounts();
@@ -107,7 +107,7 @@
       ResourceType.comment,
       `${$params.subpath}/${entity.shortname}`,
       shortname,
-      $params.space_name
+      $params.space_name,
     );
 
     if (response) {
@@ -125,7 +125,7 @@
         ResourceType.reaction,
         `${$params.subpath}/${entity.shortname}`,
         userReactionEntry,
-        $params.space_name
+        $params.space_name,
       );
       if (response) {
         userReactionEntry = null;
@@ -139,7 +139,7 @@
       const response = await createReaction(
         entity.shortname,
         $params.space_name,
-        $params.subpath
+        $params.subpath,
       );
       if (response) {
         await refreshCounts();
@@ -156,7 +156,7 @@
       !confirm(
         $_("admin_item_detail.confirm.delete_item", {
           values: { name: entity.shortname },
-        })
+        }),
       )
     ) {
       return;
@@ -167,7 +167,7 @@
         entity.shortname,
         $params.space_name,
         $params.subpath,
-        $params.resource_type
+        $params.resource_type,
       );
 
       if (success) {
@@ -184,7 +184,7 @@
       $params.space_name,
       $params.subpath,
       $params.resource_type,
-      "managed"
+      "managed",
     );
     if (entity) {
       counts = {
@@ -198,7 +198,7 @@
         $user.shortname,
         entity.shortname,
         $params.space_name,
-        $params.subpath
+        $params.subpath,
       );
     }
   }
@@ -280,10 +280,9 @@
     const body = entity.payload.body;
 
     if (contentType === "html") {
-      if (typeof body === "string" && body.includes("#")) {
-        return marked(body);
-      }
-      return body;
+      return typeof body === "string" ? body : String(body);
+    } else if (contentType === "markdown" || contentType === "md") {
+      return typeof body === "string" ? marked(body) : marked(String(body));
     } else if (contentType === "json") {
       if (typeof body === "object") {
         return Object.entries(body)
@@ -292,6 +291,15 @@
       } else {
         return body;
       }
+    } else {
+      // plain text or unknown type — render safely
+      return typeof body === "string"
+        ? body
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/\n/g, "<br>")
+        : String(body);
     }
   }
 </script>
@@ -374,39 +382,6 @@
           {getLocalizedDisplayName(entity)}
         </h1>
 
-        <!-- Meta Information -->
-        <div class="meta-info">
-          <div class="meta-item" class:flex-row-reverse={$isRTL}>
-            <UserCircleOutline class="w-5 h-5" />
-            <span class="meta-text">{entity.owner_shortname}</span>
-          </div>
-          <div class="meta-item" class:flex-row-reverse={$isRTL}>
-            <ClockOutline class="w-5 h-5" />
-            <span class="meta-text">
-              {$_("entry_detail.updated")}
-              {formatDate(entity.updated_at)}
-            </span>
-          </div>
-          <div
-            class="engagement-stats"
-            class:mr-auto={!$isRTL}
-            class:ml-auto={$isRTL}
-          >
-            <div class="stat-item likes" class:flex-row-reverse={$isRTL}>
-              <HeartSolid class="w-5 h-5" />
-              <span class="stat-count"
-                >{formatNumberInText(counts.reaction, $locale) || 0}</span
-              >
-            </div>
-            <div class="stat-item comments" class:flex-row-reverse={$isRTL}>
-              <MessagesSolid class="w-5 h-5" />
-              <span class="stat-count"
-                >{formatNumberInText(counts.reply, $locale) || 0}</span
-              >
-            </div>
-          </div>
-        </div>
-
         <!-- Tags -->
         {#if entity.tags && entity.tags.length > 0}
           <div class="tags-section">
@@ -451,7 +426,7 @@
         {/if}
 
         <!-- Content -->
-        <div class="entry-content" class:text-right={$isRTL}>
+        <div class="entry-content prose max-w-none" class:text-right={$isRTL}>
           {@html renderContent(entity)}
         </div>
 
@@ -485,7 +460,7 @@
               ? $_("entry_detail.actions.unlike")
               : $_("entry_detail.actions.like")} ({formatNumberInText(
               counts.reaction,
-              $locale
+              $locale,
             ) || 0})
           </button>
         </div>
@@ -497,7 +472,7 @@
           <MessagesSolid class="w-6 h-6" />
           {$_("entry_detail.comments.title")} ({formatNumberInText(
             counts.reply,
-            $locale
+            $locale,
           ) || 0})
         </h3>
 
@@ -597,7 +572,7 @@
                       >
                         <TrashBinSolid
                           aria-label={$_(
-                            "entry_detail.comments.delete_comment"
+                            "entry_detail.comments.delete_comment",
                           )}
                           class="w-3 h-3"
                         />

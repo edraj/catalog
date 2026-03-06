@@ -6,13 +6,14 @@
     getReportDetails,
     replyToReport,
     updateReportStatus,
-  } from "@/lib/dmart_services";
+  } from "@/lib/dmart_services/dmart_services";
   import {
     successToastMessage,
     errorToastMessage,
   } from "@/lib/toasts_messages";
   import { Diamonds } from "svelte-loading-spinners";
   import { formatDate } from "@/lib/helpers";
+  import { Modal } from "flowbite-svelte";
 
   let reports = $state([]);
   let isLoading = $state(true);
@@ -79,7 +80,7 @@
     try {
       isLoading = true;
       const response = await getReports(
-        selectedStatusFilter === "all" ? undefined : selectedStatusFilter
+        selectedStatusFilter === "all" ? undefined : selectedStatusFilter,
       );
       reports = response.records.map((report) => ({
         ...report,
@@ -88,7 +89,7 @@
     } catch (error) {
       console.error("Error loading reports:", error);
       errorToastMessage(
-        $_("reports.admin.error.loading_failed") || "Failed to load reports"
+        $_("reports.admin.error.loading_failed") || "Failed to load reports",
       );
     } finally {
       isLoading = false;
@@ -110,7 +111,7 @@
       console.error("Error loading report details:", error);
       errorToastMessage(
         $_("reports.admin.error.loading_details_failed") ||
-          "Failed to load report details"
+          "Failed to load report details",
       );
     }
   }
@@ -125,7 +126,7 @@
   async function submitReply() {
     if (!adminReply.trim()) {
       errorToastMessage(
-        $_("reports.admin.validation.reply_required") || "Please enter a reply"
+        $_("reports.admin.validation.reply_required") || "Please enter a reply",
       );
       return;
     }
@@ -137,24 +138,24 @@
         adminReply,
         selectedAction !== "no_action"
           ? (selectedAction as "warn_user" | "delete_entry")
-          : undefined
+          : undefined,
       );
 
       if (success) {
         successToastMessage(
-          $_("reports.admin.success.reply_sent") || "Reply sent successfully"
+          $_("reports.admin.success.reply_sent") || "Reply sent successfully",
         );
         closeReplyModal();
         await loadReports();
       } else {
         errorToastMessage(
-          $_("reports.admin.error.reply_failed") || "Failed to send reply"
+          $_("reports.admin.error.reply_failed") || "Failed to send reply",
         );
       }
     } catch (error) {
       console.error("Error submitting reply:", error);
       errorToastMessage(
-        $_("reports.admin.error.reply_failed") || "Failed to send reply"
+        $_("reports.admin.error.reply_failed") || "Failed to send reply",
       );
     } finally {
       isSubmittingReply = false;
@@ -167,20 +168,20 @@
       if (success) {
         successToastMessage(
           $_("reports.admin.success.status_updated") ||
-            "Status updated successfully"
+            "Status updated successfully",
         );
         await loadReports();
       } else {
         errorToastMessage(
           $_("reports.admin.error.status_update_failed") ||
-            "Failed to update status"
+            "Failed to update status",
         );
       }
     } catch (error) {
       console.error("Error updating status:", error);
       errorToastMessage(
         $_("reports.admin.error.status_update_failed") ||
-          "Failed to update status"
+          "Failed to update status",
       );
     }
   }
@@ -222,35 +223,36 @@
   });
 </script>
 
-<div class="admin-reports-page">
-  <div class="container mx-auto px-4 py-8 max-w-7xl">
+<div class="admin-reports-page bg-gray-50 min-h-screen">
+  <div class="container mx-auto px-4 py-8 pt-12 max-w-7xl">
     <!-- Header -->
-    <div class="page-header">
-      <div class="header-content">
-        <h1 class="page-title">
-          {$_("reports.admin.title") || "Reports Management"}
-        </h1>
-        <p class="page-description">
-          {$_("reports.admin.description") || "Review and manage user reports"}
-        </p>
-      </div>
+    <div class="page-header text-center mb-10">
+      <h1 class="page-title text-3xl font-bold text-gray-900 mb-2">
+        {$_("reports.admin.title") || "Reports Management"}
+      </h1>
+      <p class="page-description text-gray-500">
+        {$_("reports.admin.description") || "Review and manage user reports"}
+      </p>
+    </div>
 
-      <!-- Filters -->
-      <div class="filters-section">
-        <div class="filter-group">
-          <label for="status-filter" class="filter-label">
-            {$_("reports.admin.filter_by_status") || "Filter by Status"}
-          </label>
-          <select
-            id="status-filter"
-            bind:value={selectedStatusFilter}
-            class="filter-select"
-          >
-            {#each statusFilters as filter}
-              <option value={filter.value}>{filter.label}</option>
-            {/each}
-          </select>
-        </div>
+    <!-- Filters -->
+    <div class="filters-section flex justify-center mb-10">
+      <div class="filter-group flex flex-col items-center gap-2">
+        <label
+          for="status-filter"
+          class="filter-label text-xs font-medium text-gray-400"
+        >
+          {$_("reports.admin.filter_by_status") || "Filter by Status"}
+        </label>
+        <select
+          id="status-filter"
+          bind:value={selectedStatusFilter}
+          class="filter-select px-6 py-2 border-0 bg-white rounded-full shadow-sm text-sm font-medium text-gray-700 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-100"
+        >
+          {#each statusFilters as filter}
+            <option value={filter.value}>{filter.label}</option>
+          {/each}
+        </select>
       </div>
     </div>
 
@@ -277,121 +279,153 @@
         </p>
       </div>
     {:else}
-      <div class="reports-grid">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {#each reports as report}
-          <div class="report-card">
-            <div class="report-header">
-              <div class="report-type">
-                <span class="type-icon"
+          <!-- svelte-ignore a11y_click_events_have_key_events -->
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <div
+            class="bg-white rounded-2xl border border-gray-100 p-6 flex flex-col shadow-sm hover:shadow-md transition-shadow cursor-default"
+            tabindex="0"
+            role="button"
+            onkeypress={(e) => {
+              if (e.key === "Enter" && report.attributes.state === "Pending") {
+                openReplyModal(report);
+              }
+            }}
+            onclick={(e) => {
+              // Only open if clicking on the card itself, not the buttons
+              if (
+                e.target === e.currentTarget &&
+                report.attributes.state === "Pending"
+              )
+                openReplyModal(report);
+            }}
+          >
+            <div class="flex justify-between items-start mb-4">
+              <div class="flex items-center gap-2">
+                <span class="text-sm"
                   >{getTypeIcon(report.reportData.report_type)}</span
                 >
-                <span class="type-text"
+                <span
+                  class="type-text text-sm font-bold {report.reportData
+                    .report_type === 'copyright_violation'
+                    ? 'text-orange-500'
+                    : report.reportData.report_type === 'misinformation'
+                      ? 'text-red-500'
+                      : 'text-gray-500'} capitalize"
                   >{report.reportData.report_type?.replace("_", " ") ||
                     "General"}</span
                 >
               </div>
               <div class="report-status">
                 <span
-                  class="status-badge {getStatusColor(
-                    report.reportData.status
-                  )}"
+                  class="status-badge px-3 py-1 text-xs font-semibold rounded-full capitalize {report
+                    .reportData.status === 'Resolved'
+                    ? 'bg-green-50 text-green-600'
+                    : report.reportData.status === 'Pending'
+                      ? 'bg-orange-50 text-orange-500'
+                      : 'bg-gray-50 text-gray-500'}"
                 >
                   {report.reportData.status || "Pending"}
                 </span>
               </div>
             </div>
 
-            <div class="report-content">
-              <h3 class="report-title">{report.reportData.title}</h3>
-              <p class="report-description">{report.reportData.description}</p>
+            <div class="report-content flex-grow">
+              <h3 class="report-title text-lg font-bold text-gray-900 mb-1">
+                {report.reportData.title}
+              </h3>
+              <p
+                class="report-description text-gray-500 text-sm mb-4 line-clamp-3"
+              >
+                {report.reportData.description}
+              </p>
 
-              <div class="reported-entry-info">
-                <h4 class="reported-entry-title">
+              <div class="reported-entry-info bg-gray-50 rounded-xl p-4 mb-4">
+                <h4
+                  class="reported-entry-title text-xs font-medium text-gray-400 mb-2"
+                >
                   {$_("reports.admin.reported_entry") || "Reported Entry"}
                 </h4>
-                <div class="reported-entry-details">
-                  <span class="entry-title"
+                <div class="reported-entry-details flex flex-col gap-1">
+                  <span class="entry-title text-sm font-bold text-gray-900"
                     >{report.reportData.reported_entry_title}</span
                   >
-                  <span class="entry-id"
+                  <span class="entry-id text-xs text-gray-400"
                     >({report.reportData.reported_entry})</span
                   >
-                  <span class="entry-space"
+                  <span class="entry-space text-xs text-gray-400"
                     >in {report.reportData.reported_space}</span
                   >
                 </div>
               </div>
 
-              <div class="report-meta">
-                <span class="meta-item">
-                  <strong
-                    >{$_("reports.admin.reported_by") || "Reported by"}:</strong
+              <div class="report-meta flex flex-col gap-2 mb-4">
+                <div class="meta-item text-xs text-gray-400">
+                  {$_("reports.admin.reported_by") || "Reported by"}:
+                  <span class="font-bold text-gray-600 ml-1"
+                    >{report.attributes.owner_shortname}</span
                   >
-                  {report.attributes.owner_shortname}
-                </span>
-                <span class="meta-item">
-                  <strong
-                    >{$_("reports.admin.reported_at") || "Reported"}:</strong
+                </div>
+                <div class="meta-item text-xs text-gray-400">
+                  {$_("reports.admin.reported_at") || "Reported"}:
+                  <span class="font-medium text-gray-500 ml-1"
+                    >{formatRelativeTime(
+                      report.reportData.created_at ||
+                        report.attributes.created_at,
+                    )}</span
                   >
-                  {formatRelativeTime(
-                    report.reportData.created_at || report.attributes.created_at
-                  )}
-                </span>
+                </div>
               </div>
 
               {#if report.reportData.replies && report.reportData.replies.length > 0}
-                <div class="replies-section">
-                  <h4 class="replies-title">
+                <div class="replies-section mt-4 pt-4 border-t border-gray-100">
+                  <h4
+                    class="replies-title text-xs font-bold text-gray-800 mb-3"
+                  >
                     {$_("reports.admin.notes") || "Admin Notes"}
                   </h4>
                   {#each report.reportData.replies as reply}
-                    <div class="reply-item">
-                      <div class="reply-header">
-                        <span class="reply-admin">{reply.admin_shortname}</span>
-                        <span class="reply-time"
+                    <div class="reply-item bg-gray-50 rounded-xl p-3 mb-2">
+                      <div
+                        class="reply-header flex justify-between items-center mb-1"
+                      >
+                        <span
+                          class="reply-admin text-xs font-bold text-gray-700"
+                          >{reply.admin_shortname}</span
+                        >
+                        <span class="reply-time text-[10px] text-gray-400"
                           >{formatRelativeTime(reply.timestamp)}</span
                         >
                       </div>
-                      <p class="reply-content">{reply.reply}</p>
+                      <p class="reply-content text-xs text-gray-500 m-0">
+                        {reply.reply}
+                      </p>
                     </div>
                   {/each}
                 </div>
               {/if}
             </div>
 
-            <div class="report-actions">
+            <div
+              class="report-actions mt-auto pt-4 flex gap-2 flex-wrap text-sm font-semibold"
+            >
               {#if report.attributes.state === "Pending"}
                 <button
-                  class="action-btn reply-btn"
+                  class="action-btn text-blue-500 hover:text-blue-600 bg-transparent p-0 border-0"
                   onclick={() => openReplyModal(report)}
                 >
-                  {$_("reports.admin.actions.reply") || "Reply"}
-                </button>
-
-                <button
-                  class="action-btn solve-btn"
-                  onclick={() => updateStatus(report.shortname, "Resolved")}
-                >
-                  {$_("reports.admin.actions.mark_resolved") ||
-                    "Mark as Resolved"}
-                </button>
-
-                <button
-                  class="action-btn cancel-btn"
-                  onclick={() => updateStatus(report.shortname, "Canceled")}
-                >
-                  {$_("reports.admin.actions.mark_canceled") ||
-                    "Mark as Canceled"}
+                  {$_("reports.admin.actions.reply") || "Take action"}
                 </button>
               {:else if report.attributes.state === "Resolved"}
-                <span class="resolved-text">
+                <span class="resolved-text text-green-500 cursor-default">
                   {$_("reports.admin.status.resolved") ||
                     "This report has been resolved"}
                 </span>
               {:else if report.attributes.state === "Canceled"}
-                <span class="canceled-text">
+                <span class="canceled-text text-gray-400 cursor-default">
                   {$_("reports.admin.status.canceled") ||
-                    "This report has been Canceled"}
+                    "This report has been dismissed"}
                 </span>
               {/if}
             </div>
@@ -403,473 +437,102 @@
 </div>
 
 <!-- Reply Modal -->
-{#if showReplyModal && selectedReport}
-  <!-- svelte-ignore a11y-click-events-have-key-events -->
-  <!-- svelte-ignore a11y-no-static-element-interactions -->
-  <div
-    class="modal-backdrop"
-    onclick={(e) => {
-      if (e.target === e.currentTarget) closeReplyModal();
-    }}
-  >
-    <div class="modal-container">
-      <div class="modal-header">
-        <h2 class="modal-title">
-          {$_("reports.admin.reply_modal.title") || "Reply to Report"}
-        </h2>
-        <button type="button" class="close-button" onclick={closeReplyModal}>
-          ✕
-        </button>
-      </div>
-
-      <div class="modal-body">
-        <!-- Report Summary -->
-        <div class="report-summary">
-          <h3 class="summary-title">{selectedReport.reportData.title}</h3>
-          <p class="summary-description">
-            {selectedReport.reportData.description}
-          </p>
-          <div class="summary-meta">
-            <span
-              ><strong>Entry:</strong>
-              {selectedReport.reportData.reported_entry_title}</span
-            >
-            <span
-              ><strong>Type:</strong>
-              {selectedReport.reportData.report_type}</span
-            >
-          </div>
-        </div>
-
-        <!-- Reply Form -->
-        <form
-          onsubmit={(e) => {
-            e.preventDefault();
-            submitReply();
-          }}
-          class="reply-form"
+<Modal
+  title={$_("reports.admin.reply_modal.title") || "Reply to Report"}
+  bind:open={showReplyModal}
+  size="lg"
+  class="bg-white dark:bg-white"
+  headerClass="text-gray-900 dark:text-gray-900"
+  placement="center"
+  autoclose={false}
+>
+  {#if selectedReport}
+    <!-- Report Summary -->
+    <div class="report-summary">
+      <h3 class="summary-title">{selectedReport.reportData.title}</h3>
+      <p class="summary-description">
+        {selectedReport.reportData.description}
+      </p>
+      <div class="summary-meta">
+        <span
+          ><strong>Entry:</strong>
+          {selectedReport.reportData.reported_entry_title}</span
         >
-          <div class="form-group">
-            <label for="adminReply" class="form-label">
-              {$_("reports.admin.reply_modal.your_notes") || "Your Notes"} *
-            </label>
-            <textarea
-              id="adminReply"
-              bind:value={adminReply}
-              class="form-textarea"
-              placeholder={$_("reports.admin.reply_modal.notes_placeholder") ||
-                "Enter your notes to this report..."}
-              rows="4"
-              required
-            ></textarea>
-          </div>
-
-          <div class="form-group">
-            <label for="actionSelect" class="form-label">
-              {$_("reports.admin.reply_modal.action") || "Action to Take"}
-            </label>
-            <select
-              id="actionSelect"
-              bind:value={selectedAction}
-              class="form-select"
-            >
-              {#each actionOptions as action}
-                <option value={action.value}>{action.label}</option>
-              {/each}
-            </select>
-          </div>
-
-          <div class="modal-actions">
-            <button
-              type="button"
-              class="cancel-button"
-              onclick={closeReplyModal}
-              disabled={isSubmittingReply}
-            >
-              {$_("common.cancel") || "Cancel"}
-            </button>
-            <button
-              type="submit"
-              class="submit-button"
-              disabled={isSubmittingReply || !adminReply.trim()}
-            >
-              {#if isSubmittingReply}
-                <Diamonds color="#ffffff" size="16" unit="px" />
-                {$_("reports.admin.reply_modal.sending") || "Sending..."}
-              {:else}
-                {$_("reports.admin.reply_modal.send_reply") || "Send Reply"}
-              {/if}
-            </button>
-          </div>
-        </form>
+        <span
+          ><strong>Type:</strong>
+          {selectedReport.reportData.report_type}</span
+        >
       </div>
     </div>
-  </div>
-{/if}
+
+    <!-- Reply Form -->
+    <form
+      id="reply-form"
+      onsubmit={(e) => {
+        e.preventDefault();
+        submitReply();
+      }}
+      class="reply-form"
+    >
+      <div class="form-group">
+        <label for="adminReply" class="form-label">
+          {$_("reports.admin.reply_modal.your_notes") || "Your Notes"} *
+        </label>
+        <textarea
+          id="adminReply"
+          bind:value={adminReply}
+          class="form-textarea"
+          placeholder={$_("reports.admin.reply_modal.notes_placeholder") ||
+            "Enter your notes to this report..."}
+          rows="4"
+          required
+        ></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="actionSelect" class="form-label">
+          {$_("reports.admin.reply_modal.action") || "Action to Take"}
+        </label>
+        <select
+          id="actionSelect"
+          bind:value={selectedAction}
+          class="form-select"
+        >
+          {#each actionOptions as action}
+            <option value={action.value}>{action.label}</option>
+          {/each}
+        </select>
+      </div>
+    </form>
+  {/if}
+
+  {#snippet footer()}
+    <button
+      type="button"
+      class="cancel-button"
+      onclick={closeReplyModal}
+      disabled={isSubmittingReply}
+    >
+      {$_("common.cancel") || "Cancel"}
+    </button>
+    <button
+      type="submit"
+      form="reply-form"
+      class="submit-button"
+      disabled={isSubmittingReply || !adminReply.trim()}
+    >
+      {#if isSubmittingReply}
+        <Diamonds color="#ffffff" size="16" unit="px" />
+        {$_("reports.admin.reply_modal.sending") || "Sending..."}
+      {:else}
+        {$_("reports.admin.reply_modal.send_reply") || "Send Reply"}
+      {/if}
+    </button>
+  {/snippet}
+</Modal>
 
 <style>
-  .admin-reports-page {
-    min-height: 100vh;
-    background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 50%, #e0e7ff 100%);
-    padding: 2rem 0;
-  }
-
-  .page-header {
-    margin-bottom: 2rem;
-  }
-
-  .header-content {
-    text-align: center;
-    margin-bottom: 2rem;
-  }
-
-  .page-title {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: #1f2937;
-    margin-bottom: 0.5rem;
-  }
-
-  .page-description {
-    font-size: 1.125rem;
-    color: #6b7280;
-    margin: 0;
-  }
-
-  .filters-section {
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
-  }
-
-  .filter-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .filter-label {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #374151;
-  }
-
-  .filter-select {
-    padding: 0.5rem 1rem;
-    border: 1px solid #d1d5db;
-    border-radius: 0.375rem;
-    background-color: white;
-    min-width: 200px;
-  }
-
-  .loading-state,
-  .empty-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 4rem 2rem;
-    text-align: center;
-  }
-
-  .loading-text {
-    margin-top: 1rem;
-    color: #6b7280;
-    font-size: 1.125rem;
-  }
-
-  .empty-icon {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-  }
-
-  .empty-title {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #374151;
-    margin-bottom: 0.5rem;
-  }
-
-  .empty-message {
-    color: #6b7280;
-    max-width: 28rem;
-    margin: 0;
-  }
-
-  .reports-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-    gap: 1.5rem;
-  }
-
-  .report-card {
-    background: white;
-    border-radius: 0.75rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    padding: 1.5rem;
-    border: 1px solid #e5e7eb;
-  }
-
-  .report-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-  }
-
-  .report-type {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .type-icon {
-    font-size: 1.25rem;
-  }
-
-  .type-text {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #374151;
-    text-transform: capitalize;
-  }
-
-  .status-badge {
-    font-size: 0.75rem;
-    font-weight: 500;
-    padding: 0.25rem 0.75rem;
-    border-radius: 9999px;
-    text-transform: capitalize;
-  }
-
-  .report-content {
-    margin-bottom: 1.5rem;
-  }
-
-  .report-title {
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: #111827;
-    margin-bottom: 0.5rem;
-  }
-
-  .report-description {
-    color: #6b7280;
-    margin-bottom: 1rem;
-    line-height: 1.5;
-  }
-
-  .reported-entry-info {
-    background-color: #f9fafb;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.5rem;
-    padding: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  .reported-entry-title {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #374151;
-    margin-bottom: 0.5rem;
-  }
-
-  .reported-entry-details {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-
-  .entry-title {
-    font-weight: 500;
-    color: #111827;
-  }
-
-  .entry-id,
-  .entry-space {
-    font-size: 0.875rem;
-    color: #6b7280;
-  }
-
-  .report-meta {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    font-size: 0.875rem;
-    color: #6b7280;
-    margin-bottom: 1rem;
-  }
-
-  .replies-section {
-    border-top: 1px solid #e5e7eb;
-    padding-top: 1rem;
-    margin-top: 1rem;
-  }
-
-  .replies-title {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #374151;
-    margin-bottom: 0.75rem;
-  }
-
-  .reply-item {
-    background-color: #f3f4f6;
-    border-radius: 0.5rem;
-    padding: 0.75rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .reply-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.5rem;
-  }
-
-  .reply-admin {
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: #374151;
-  }
-
-  .reply-time {
-    font-size: 0.75rem;
-    color: #9ca3af;
-  }
-
-  .reply-content {
-    font-size: 0.875rem;
-    color: #6b7280;
-    margin: 0;
-  }
-
-  .report-actions {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-
-  .action-btn {
-    padding: 0.5rem 1rem;
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-    border: none;
-  }
-
-  .reply-btn {
-    background-color: #3b82f6;
-    color: white;
-  }
-
-  .reply-btn:hover {
-    background-color: #2563eb;
-  }
-
-  .review-btn {
-    background-color: #f59e0b;
-    color: white;
-  }
-
-  .review-btn:hover {
-    background-color: #d97706;
-  }
-
-  .solve-btn {
-    background-color: #10b981;
-    color: white;
-  }
-
-  .solve-btn:hover {
-    background-color: #059669;
-  }
-
-  .cancel-btn {
-    background-color: #dc2626;
-  }
-
-  .cancel-btn:hover {
-    background-color: #b91c1c;
-  }
-
-  .resolved-text {
-    font-size: 0.875rem;
-    color: #059669;
-    font-style: italic;
-  }
-
-  .canceled-text {
-    font-size: 0.875rem;
-    color: #dc2626;
-    font-style: italic;
-  }
-
-  .solved-text {
-    font-size: 0.875rem;
-    color: #6b7280;
-    font-style: italic;
-  }
-
-  /* Modal Styles */
-  .modal-backdrop {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.75);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    padding: 1rem;
-  }
-
-  .modal-container {
-    background: white;
-    border-radius: 0.75rem;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    max-width: 42rem;
-    width: 100%;
-    max-height: 90vh;
-    overflow-y: auto;
-  }
-
-  .modal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1.5rem 1.5rem 1rem 1.5rem;
-    border-bottom: 1px solid #e5e7eb;
-  }
-
-  .modal-title {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #111827;
-    margin: 0;
-  }
-
-  .close-button {
-    background: none;
-    border: none;
-    color: #6b7280;
-    cursor: pointer;
-    padding: 0.25rem;
-    font-size: 1.5rem;
-    line-height: 1;
-  }
-
-  .close-button:hover {
-    color: #374151;
-  }
-
-  .modal-body {
-    padding: 1.5rem;
-  }
+  /* Modal Styles removed - now using flowbite Modal */
 
   .report-summary {
     background-color: #f9fafb;
@@ -940,13 +603,6 @@
     min-height: 4rem;
   }
 
-  .modal-actions {
-    display: flex;
-    gap: 0.75rem;
-    justify-content: flex-end;
-    margin-top: 1.5rem;
-  }
-
   .cancel-button,
   .submit-button {
     padding: 0.75rem 1.5rem;
@@ -988,24 +644,6 @@
   }
 
   @media (max-width: 768px) {
-    .reports-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .modal-container {
-      margin: 0.5rem;
-      max-height: calc(100vh - 1rem);
-    }
-
-    .modal-header,
-    .modal-body {
-      padding: 1rem;
-    }
-
-    .modal-actions {
-      flex-direction: column;
-    }
-
     .cancel-button,
     .submit-button {
       width: 100%;

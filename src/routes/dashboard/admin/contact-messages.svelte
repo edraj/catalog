@@ -3,7 +3,7 @@
     import {_} from "../../../i18n";
     import {locale} from "@/i18n";
 
-    import {fetchContactMessages, markMessageAsReplied,} from "../../../lib/dmart_services";
+    import {fetchContactMessages, markMessageAsReplied,} from "../../../lib/dmart_services/dmart_services";
 
     let messages: any[] = $state([]);
   let loading = $state(true);

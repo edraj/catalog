@@ -1,174 +1,150 @@
 <script lang="ts">
   import { _ } from "@/i18n";
-  import { formatNumberInText } from "@/lib/helpers";
-  import {
-    getCommentText,
-    getReactionEmoji,
-    getReactionType,
-  } from "@/lib/utils/postUtils";
-  import NestedComments from "./NestedComments.svelte";
 
   interface Props {
-    reactions: any[];
-    comments: any[];
-    locale: string;
-    spaceName: string;
-    subpath: string;
-    itemShortname: string;
-    entryOwnerShortname: string;
-    onCommentAdded?: () => void;
+    reactionsCount: number;
+    commentsCount: number;
+    userReactionId: string | null;
+    isSubmittingReaction: boolean;
+    onToggleReaction: () => void;
   }
 
   let {
-    reactions,
-    comments,
-    locale,
-    spaceName,
-    subpath,
-    itemShortname,
-    entryOwnerShortname,
-    onCommentAdded = () => {},
+    reactionsCount,
+    commentsCount,
+    userReactionId,
+    isSubmittingReaction,
+    onToggleReaction,
   }: Props = $props();
 </script>
 
-{#if reactions.length > 0 || comments.length > 0}
-  <section class="interactions-section mx-6 my-4">
-    <h3 class="section-title-large">
-      <span class="title-accent"></span>
-      {$_("post_detail.sections.interactions")}
-    </h3>
+<div class="action-bar-container">
+  <div class="action-stats-left">
+    <div class="stat-item clickable">
+      <svg
+        class="icon-comment"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+        ></path>
+      </svg>
+      <span class="stat-count">{commentsCount}</span>
+    </div>
 
-    {#if reactions.length > 0}
-      <div class="reactions-summary">
-        <h4 class="simple-subtitle">
-          {$_("post_detail.reactions.title")}
-        </h4>
-        <div class="reactions-simple">
-          {#each Object.entries(reactions.reduce((acc, reaction) => {
-              const type = getReactionType(reaction);
-              acc[type] = (acc[type] || 0) + 1;
-              return acc;
-            }, {})) as [type, count]}
-            <span class="reaction-count">
-              {getReactionEmoji(type)}
-              {formatNumberInText(Number(count), locale)}
-            </span>
-          {/each}
-        </div>
-      </div>
-    {/if}
+    <button
+      class="stat-item clickable heart-btn {userReactionId ? 'liked' : ''}"
+      onclick={onToggleReaction}
+      disabled={isSubmittingReaction}
+    >
+      <svg
+        class="icon-heart"
+        fill={userReactionId ? "currentColor" : "none"}
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+        ></path>
+      </svg>
+      <span class="stat-count">{reactionsCount}</span>
+    </button>
+  </div>
 
-    {#if comments.length > 0}
-      <div class="comments-section">
-        <h4 class="simple-subtitle">
-          {$_("post_detail.comments.title", {
-            values: {
-              count: formatNumberInText(comments.length, locale),
-            },
-          })}
-        </h4>
-        <NestedComments
-          {comments}
-          {spaceName}
-          {subpath}
-          {itemShortname}
-          {entryOwnerShortname}
-          {onCommentAdded}
-        />
-      </div>
-    {/if}
-  </section>
-{/if}
+  <div class="action-stats-right">
+<!--    <div class="stat-item clickable share-btn">-->
+<!--      <svg-->
+<!--        class="icon-share"-->
+<!--        fill="none"-->
+<!--        stroke="currentColor"-->
+<!--        viewBox="0 0 24 24"-->
+<!--      >-->
+<!--        <path-->
+<!--          stroke-linecap="round"-->
+<!--          stroke-linejoin="round"-->
+<!--          stroke-width="2"-->
+<!--          d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"-->
+<!--        ></path>-->
+<!--      </svg>-->
+<!--    </div>-->
+  </div>
+</div>
 
 <style>
-  .interactions-section {
-    margin-bottom: 32px;
-    background: #ffffff;
-    border-radius: 12px;
-    padding: 24px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    border: 1px solid #e5e7eb;
+  .action-bar-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #f1f5f9;
+    padding-top: 24px;
+    margin-top: 32px;
   }
 
-  .section-title-large {
+  .action-stats-left {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+  }
+
+  .action-stats-right {
     display: flex;
     align-items: center;
-    gap: 12px;
-    font-size: 22px;
-    font-weight: 700;
-    color: #1f2937;
-    margin-bottom: 24px;
-    padding-bottom: 12px;
-    border-bottom: 2px solid #e5e7eb;
   }
 
-  .title-accent {
-    width: 4px;
-    height: 28px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 2px;
-  }
-
-  .reactions-summary {
-    margin-bottom: 24px;
-  }
-
-  .simple-subtitle {
-    font-size: 16px;
-    font-weight: 600;
-    color: #374151;
-    margin-bottom: 12px;
+  .stat-item {
     display: flex;
     align-items: center;
     gap: 8px;
-  }
-
-  .reactions-simple {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-
-  .reaction-count {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: #f3f4f6;
-    border: 1px solid #e5e7eb;
-    border-radius: 20px;
-    padding: 6px 12px;
+    color: #94a3b8;
+    background: none;
+    border: none;
+    padding: 0;
     font-size: 14px;
     font-weight: 500;
-    color: #374151;
-    transition: all 0.2s ease;
+    transition: color 0.2s ease;
   }
 
-  .reaction-count:hover {
-    background: #e5e7eb;
-    transform: translateY(-1px);
+  .stat-item.clickable {
+    cursor: pointer;
   }
 
-  .comments-section {
-    border-top: 1px solid #e5e7eb;
-    padding-top: 24px;
+  .stat-item:hover {
+    color: #475569;
   }
 
-  @media (max-width: 768px) {
-    .interactions-section {
-      padding: 16px;
-    }
+  .stat-count {
+    color: #64748b;
+  }
 
-    .section-title-large {
-      font-size: 18px;
-    }
+  .icon-comment,
+  .icon-heart,
+  .icon-bookmark,
+  .icon-share {
+    width: 20px;
+    height: 20px;
+  }
 
-    .reactions-simple {
-      gap: 8px;
-    }
+  .heart-btn:hover .icon-heart {
+    color: #ef4444;
+  }
 
-    .reaction-count {
-      font-size: 13px;
-      padding: 4px 8px;
-    }
+  .heart-btn.liked .icon-heart {
+    color: #ef4444;
+  }
+
+  .bookmark-btn:hover .icon-bookmark {
+    color: #0f172a;
+  }
+
+  .share-btn:hover .icon-share {
+    color: #0ea5e9;
   }
 </style>

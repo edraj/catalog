@@ -44,7 +44,7 @@
     "svelte": "^5.38.6"
   },
   "dependencies": {
-    "@edraj/tsdmart": "^2.8.0",
+    "@edraj/tsdmart": "^5.0.3",
     "@zerodevx/svelte-toast": "^0.9.6",
     "cl-editor": "edraj/cl-editor",
     "flowbite": "^3.1.2",

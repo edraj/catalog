@@ -1,13 +1,13 @@
 <script lang="ts">
-    import {marked} from "marked";
-    import {mangle} from "marked-mangle";
-    import {gfmHeadingId} from "marked-gfm-heading-id";
+  import { marked } from "marked";
+  import { mangle } from "marked-mangle";
+  import { gfmHeadingId } from "marked-gfm-heading-id";
 
-    marked.use(mangle());
+  marked.use(mangle());
   marked.use(
     gfmHeadingId({
       prefix: "my-prefix-",
-    })
+    }),
   );
 
   interface Props {
@@ -446,6 +446,14 @@
   .markdown-preview :global(ol) {
     margin: 0.75rem 0;
     padding-left: 1.5rem;
+  }
+
+  .markdown-preview :global(ul) {
+    list-style-type: disc;
+  }
+
+  .markdown-preview :global(ol) {
+    list-style-type: decimal;
   }
 
   .markdown-preview :global(li) {

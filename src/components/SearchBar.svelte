@@ -1,11 +1,11 @@
 <script>
-    import {getEntities, getEntityAttachmentsCount} from "@/lib/dmart_services";
-    import {formatDate, renderStateString} from "@/lib/helpers";
-    import {goto} from "@roxi/routify";
-    import {_} from "@/i18n";
-    import {SyncLoader} from "svelte-loading-spinners";
+  import { getEntities, getEntityAttachmentsCount } from "@/lib/dmart_services/dmart_services.ts";
+  import { formatDate, renderStateString } from "@/lib/helpers";
+  import { goto } from "@roxi/routify";
+  import { _ } from "@/i18n";
+  import { SyncLoader } from "svelte-loading-spinners";
 
-    $goto;
+  $goto;
   let isProjectBeingFetched = $state(false);
   let modalOpen = $state(false);
   let searchString = $state("");
@@ -43,7 +43,11 @@
 
         const _entities = [];
         for (const item of results) {
-          const counts = await getEntityAttachmentsCount(item.shortname, item.space_name, item.subpath);
+          const counts = await getEntityAttachmentsCount(
+            item.shortname,
+            item.space_name,
+            item.subpath,
+          );
 
           _entities.push({
             shortname: item.shortname,
@@ -76,11 +80,16 @@
 
 <button
   onclick={openModal}
-  class="nav-icon-btn mx-2"
+  class="flex items-center text-left bg-gray-50 hover:bg-gray-100 text-gray-400 border border-t-0 border-white/50 shadow-inner hover:shadow-sm transition-all rounded-full h-9 px-3 w-48 sm:w-72 md:w-80 lg:w-[400px] text-sm font-medium mr-2"
   aria-label="Search"
   title="Search"
 >
-  <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg
+    class="w-4 h-4 mr-2 opacity-70"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
     <path
       stroke-linecap="round"
       stroke-linejoin="round"
@@ -88,6 +97,7 @@
       d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
     ></path>
   </svg>
+  <span class="truncate">Search spaces, posts, people...</span>
 </button>
 
 {#if modalOpen}
@@ -262,63 +272,4 @@
 {/if}
 
 <style>
-  /* Navigation Icon Button - consistent with header */
-  .nav-icon-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 2.75rem;
-    height: 2.75rem;
-    border-radius: 0.75rem;
-    background: rgba(249, 250, 251, 0.8);
-    border: 1px solid rgba(229, 231, 235, 0.6);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    backdrop-filter: blur(8px);
-    cursor: pointer;
-    text-decoration: none;
-  }
-
-  .nav-icon-btn:hover {
-    background: rgba(243, 244, 246, 0.9);
-    border-color: rgba(209, 213, 219, 0.8);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  }
-
-  .nav-icon-btn:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-
-  .nav-icon {
-    width: 1.25rem;
-    height: 1.25rem;
-    color: #6b7280;
-    transition: color 0.2s ease;
-  }
-
-  .nav-icon-btn:hover .nav-icon {
-    color: #374151;
-  }
-
-  .nav-icon-btn:focus {
-    outline: none;
-    ring: 2px;
-    ring-color: rgba(59, 130, 246, 0.5);
-    ring-offset: 2px;
-  }
-
-  /* Responsive adjustments */
-  @media (max-width: 640px) {
-    .nav-icon-btn {
-      width: 2.5rem;
-      height: 2.5rem;
-    }
-
-    .nav-icon {
-      width: 1.125rem;
-      height: 1.125rem;
-    }
-  }
 </style>

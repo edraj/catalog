@@ -6,7 +6,7 @@
     submitSurveyResponse,
     hasUserRespondedToSurvey,
     getUserSurveyResponses,
-  } from "@/lib/dmart_services";
+  } from "@/lib/dmart_services/dmart_services";
   import { _, locale } from "@/i18n";
   import {
     errorToastMessage,

@@ -3,276 +3,201 @@
 
   export let newComment: string;
   export let isSubmittingComment: boolean;
-  export let isSubmittingReaction: boolean;
-  export let userReactionId: string | null;
   export let onAddComment: () => void;
-  export let onToggleReaction: () => void;
+
+  function handleKeydown(event: KeyboardEvent) {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      if (newComment.trim() && !isSubmittingComment) {
+        onAddComment();
+      }
+    }
+  }
 </script>
 
-<section class="interactive-section mx-6 my-4">
-  <h3 class="section-title-large">
-    <span class="title-accent-blue"></span>
-    {$_("post_detail.sections.interact")}
-  </h3>
+<div class="comment-composer">
+  <div class="composer-avatar">
+    <!-- Placeholder for current user avatar -->
+    <div class="avatar-circle">YO</div>
+  </div>
 
-  <div class="comment-form">
-    <h4 class="comment-form-title">
-      {$_("post_detail.comments.add_comment")}
-    </h4>
-    <div class="comment-input-group">
-      <textarea
-        bind:value={newComment}
-        placeholder={$_("post_detail.comments.placeholder")}
-        class="comment-textarea"
-        rows="3"
-        disabled={isSubmittingComment}
-      ></textarea>
-      <div class="comment-actions">
-        <button
-          aria-label="Submit comment"
-          onclick={onAddComment}
-          disabled={isSubmittingComment || !newComment.trim()}
-          class="submit-comment-button"
-        >
-          {#if isSubmittingComment}
-            <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-              <circle
-                class="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                stroke-width="4"
-              ></circle>
-              <path
-                class="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              ></path>
-            </svg>
-            {$_("post_detail.comments.submitting")}
-          {:else}
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-              ></path>
-            </svg>
-            {$_("post_detail.comments.submit")}
-          {/if}
-        </button>
-        <button
-          aria-label="Toggle reaction"
-          class="interaction-button reaction-button {userReactionId
-            ? 'active'
-            : ''}"
-          onclick={onToggleReaction}
-          disabled={isSubmittingReaction}
-        >
+  <div class="composer-body">
+    <textarea
+      bind:value={newComment}
+      placeholder={$_("Share your thoughts...") || "Share your thoughts..."}
+      class="composer-textarea"
+      rows="3"
+      disabled={isSubmittingComment}
+      onkeydown={handleKeydown}
+    ></textarea>
+
+    <div class="composer-footer">
+      <span class="composer-hint">Shift + Enter for new line</span>
+      <button
+        aria-label="Submit comment"
+        onclick={onAddComment}
+        disabled={isSubmittingComment || !newComment.trim()}
+        class="submit-btn"
+      >
+        {#if isSubmittingComment}
           <svg
-            class="interaction-icon"
-            fill={userReactionId ? "currentColor" : "none"}
-            stroke="currentColor"
+            class="animate-spin w-4 h-4 mr-2"
+            fill="none"
             viewBox="0 0 24 24"
           >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            ></circle>
             <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             ></path>
           </svg>
-          {#if isSubmittingReaction}
-            {$_("post_detail.reactions.processing")}
-          {:else if userReactionId}
-            {$_("post_detail.reactions.liked")}
-          {:else}
-            {$_("post_detail.reactions.like")}
-          {/if}
-        </button>
-      </div>
+        {/if}
+        <svg
+          class="send-icon"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+          />
+        </svg>
+        {$_("post_detail.comments.submit", { default: "Post Comment" })}
+      </button>
     </div>
   </div>
-</section>
+</div>
 
 <style>
-  .interactive-section {
-    background: #ffffff;
-    border-radius: 12px;
-    padding: 24px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    border: 1px solid #e5e7eb;
-    margin-bottom: 24px;
+  .comment-composer {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 32px;
   }
 
-  .section-title-large {
+  .composer-avatar {
+    flex-shrink: 0;
+  }
+
+  .avatar-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: #f1f5f9;
+    color: #475569;
     display: flex;
     align-items: center;
-    gap: 12px;
-    font-size: 22px;
+    justify-content: center;
+    font-size: 13px;
     font-weight: 700;
-    color: #1f2937;
-    margin-bottom: 24px;
-    padding-bottom: 12px;
-    border-bottom: 2px solid #e5e7eb;
   }
 
-  .title-accent-blue {
-    width: 4px;
-    height: 28px;
-    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-    border-radius: 2px;
-  }
-
-  .comment-form {
-    width: 100%;
-  }
-
-  .comment-form-title {
-    font-size: 18px;
-    font-weight: 600;
-    color: #1f2937;
-    margin-bottom: 16px;
-  }
-
-  .comment-input-group {
+  .composer-body {
+    flex: 1;
     display: flex;
     flex-direction: column;
     gap: 12px;
   }
 
-  .comment-textarea {
+  .composer-textarea {
     width: 100%;
-    border: 2px solid #e5e7eb;
-    border-radius: 8px;
-    padding: 12px 16px;
-    font-size: 14px;
-    line-height: 1.5;
-    color: #1f2937;
-    resize: vertical;
-    min-height: 80px;
+    background: #f8fafc;
+    border: none;
+    border-radius: 12px;
+    padding: 16px;
+    font-size: 15px;
     font-family: inherit;
-    transition: border-color 0.2s ease;
+    color: #0f172a;
+    resize: none;
+    line-height: 1.5;
   }
 
-  .comment-textarea:focus {
+  .composer-textarea:focus {
     outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 2px rgba(199, 210, 254, 0.5); /* light purple focus */
   }
 
-  .comment-textarea:disabled {
-    background-color: #f9fafb;
-    color: #9ca3af;
-    cursor: not-allowed;
+  .composer-textarea::placeholder {
+    color: #94a3b8;
   }
 
-  .comment-textarea::placeholder {
-    color: #9ca3af;
-  }
-
-  .comment-actions {
+  .composer-footer {
     display: flex;
-    gap: 12px;
-    justify-content: flex-start;
-    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
   }
 
-  .submit-comment-button {
+  .composer-hint {
+    font-size: 13px;
+    color: #cbd5e1;
+    font-family: monospace;
+  }
+
+  .submit-btn {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    background: #3b82f6;
+    gap: 6px;
+    background: #c7d2fe;
     color: white;
     border: none;
-    border-radius: 8px;
-    padding: 10px 20px;
+    border-radius: 9999px;
+    padding: 8px 16px;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
-    min-height: 40px;
+    transition: background-color 0.2s ease;
   }
 
-  .submit-comment-button:hover:not(:disabled) {
-    background: #2563eb;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+  .submit-btn:not(:disabled):hover {
+    background: #a5b4fc;
   }
 
-  .submit-comment-button:disabled {
-    background: #9ca3af;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-  }
-
-  .interaction-button {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: #f8fafc;
-    color: #475569;
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 10px 16px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    min-height: 40px;
-  }
-
-  .interaction-button:hover:not(:disabled) {
-    background: #f1f5f9;
-    border-color: #cbd5e1;
-    color: #334155;
-  }
-
-  .interaction-button:disabled {
+  .submit-btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
   }
 
-  .reaction-button.active {
-    background: #fef3f2;
-    border-color: #fca5a5;
-    color: #dc2626;
+  .send-icon {
+    width: 14px;
+    height: 14px;
+    transform: rotate(45deg);
   }
 
-  .reaction-button.active:hover:not(:disabled) {
-    background: #fee2e2;
-    border-color: #f87171;
+  .animate-spin {
+    animation: spin 1s linear infinite;
   }
-
-  .interaction-icon {
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  .opacity-25 {
+    opacity: 0.25;
+  }
+  .opacity-75 {
+    opacity: 0.75;
+  }
+  .w-4 {
     width: 16px;
+  }
+  .h-4 {
     height: 16px;
   }
-
-  @media (max-width: 768px) {
-    .interactive-section {
-      padding: 16px;
-    }
-
-    .section-title-large {
-      font-size: 18px;
-    }
-
-    .comment-actions {
-      flex-direction: column;
-    }
-
-    .submit-comment-button,
-    .interaction-button {
-      justify-content: center;
-    }
+  .mr-2 {
+    margin-right: 8px;
   }
 </style>

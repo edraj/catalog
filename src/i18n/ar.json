@@ -317,7 +317,6 @@
   "YourSubjectPlaceholder": "أدخل موضوعًا",
   "YourSubject": "موضوعك",
   "ChangePhoto": "تغيير الصورة",
-
   "ShareIdeas": "شارك أفكارك",
   "BuildCommunity": "بناء مجتمع",
   "HeroDescription": "كتالوج هو المكان الذي يشارك فيه المبدعون أفكارهم، ويتفاعلون مع الآخرين، ويبنـون علاقات ذات مغزى. انضم إلى مجتمع يقدر المحادثات الصادقة والمحتوى عالي الجودة.",
@@ -345,7 +344,6 @@
   "Community": "المجتمع",
   "Privacy": "الخصوصية",
   "Copyright": "© 2025 كتالوج. جميع الحقوق محفوظة.",
-
   "catalogs.explore_title": "استكشاف الكتالوجات",
   "catalogs.explore_description": "اكتشف جميع المساحات المتاحة ومحتواها. تصفح الكتالوجات المختلفة للعثور على ما يثير اهتمامك أكثر.",
   "catalogs.no_catalogs_title": "لا توجد كتالوجات متاحة",
@@ -685,7 +683,6 @@
       "not_found_message": "الإدخال الذي تحاول تحريره غير موجود أو تم حذفه."
     }
   },
-
   "post_detail": {
     "breadcrumb": {
       "label": "شريط التنقل",
@@ -788,9 +785,14 @@
       "message": "يرجى تسجيل الدخول للتفاعل مع هذا المحتوى. يمكنك الإعجاب، التعليق، والتفاعل مع المجتمع بمجرد تسجيل الدخول.",
       "login": "اذهب لتسجيل الدخول",
       "cancel": "إلغاء"
+    },
+    "login_required": {
+      "title": "يجب تسجيل الدخول",
+      "message": "يجب عليك تسجيل الدخول لترك تعليق.",
+      "login_button": "تسجيل الدخول",
+      "register_button": "إنشاء حساب"
     }
   },
-
   "catalog_contents": {
     "breadcrumb_label": "مسار التنقل",
     "browse_contents": "تصفح المحتcontents في",
@@ -915,7 +917,24 @@
       "no_contents_title": "لا توجد محتويات",
       "no_contents_description": "هذه المساحة فارغة حاليًا. تحقق مرة أخرى لاحقًا للحصول على محتوى جديد."
     },
-    "author_avatar_alt": "صورة المؤلف الرمزية"
+    "author_avatar_alt": "صورة المؤلف الرمزية",
+    "showing_tagged_content": "عرض المحتوى الموسوم بـ: {tags}",
+    "showing_all_content": "عرض كل المحتوى",
+    "search_results_count": "تم العثور على <strong>{count}</strong> نتائج لـ \"{query}\"",
+    "unknown_user": "مستخدم غير معروف",
+    "unknown_handle": "غير معروف",
+    "general": "عام",
+    "new_post": "منشور جديد",
+    "filter_by_tag_label": "تصفية حسب العلامة",
+    "search_posts_placeholder": "البحث في المنشورات...",
+    "showing_posts": "عرض {displayed} من {total} منشورات",
+    "hot": "شائع",
+    "end_of_results": "نهاية النتائج",
+    "stats": {
+      "posts": "منشورات",
+      "members": "أعضاء",
+      "tags": "علامات"
+    }
   },
   "resource_type": {
     "folder": "مجلد",
@@ -927,7 +946,6 @@
   },
   "catalogs": {
     "root_folder": "المجلد الرئيسي",
-
     "hero": {
       "title": "استكشف الكتالوجات",
       "description": "اكتشف مجموعة واسعة من الكتالوجات المنظمة من قبل مجتمعنا. ابحث عن المحتوى الذي يهمك وتواصل مع المبدعين."
@@ -1203,7 +1221,6 @@
   "failed_to_load_users": "فشل في تحميل المستخدمين",
   "failed_to_load_roles": "فشل في تحميل الأدوار",
   "failed_to_update_user_roles": "فشل في تحديث أدوار المستخدم",
-
   "user_permissions_management": "إدارة صلاحيات المستخدمين",
   "configure_access_permissions": "تكوين صلاحيات الوصول لأنواع المستخدمين المختلفة",
   "select_permission_type": "اختر نوع الصلاحية",
@@ -1231,7 +1248,6 @@
   "failed_to_create_permission": "فشل في إنشاء الصلاحية",
   "failed_to_delete_permission": "فشل في حذف الصلاحية",
   "no_permission_selected": "لم يتم اختيار صلاحية للحذف",
-
   "role_management": "إدارة الأدوار",
   "configure_roles_and_permissions": "تكوين الأدوار والصلاحيات المرتبطة بها",
   "select_role_type": "اختر نوع الدور",
@@ -1485,7 +1501,6 @@
       "create_folder": "إنشاء مجلد"
     }
   },
-
   "search_filters": {
     "search_label": "ابحث في المساحات",
     "search_placeholder": "ابحث بالاسم، الوصف، الاسم المختصر أو المالك...",
@@ -1700,7 +1715,6 @@
     "no_conditions": "لم يتم إضافة شروط",
     "no_restricted_fields": "لم يتم إضافة حقول مقيدة"
   },
-
   "fields": {
     "sort_by": "ترتيب حسب",
     "sort_order": "ترتيب الفرز",
@@ -1759,7 +1773,6 @@
   "MobileNumberPlaceholder": "أدخل رقم هاتفك المحمول",
   "SpacesDashboard": "لوحة معلومات المساحات",
   "AccountActive": "حسابك نشط ومؤكد",
-
   "failedToLoadAvailableRoles": "فشل في تحميل الأدوار المتاحة",
   "failedToLoadRoles": "فشل في تحميل الأدوار",
   "failedToLoadCurrentDefaultRole": "فشل في تحميل الدور الافتراضي الحالي",
@@ -1798,7 +1811,6 @@
   "noPermissionsAdded": "لم تتم إضافة أي صلاحيات",
   "or": "أو",
   "templates": "القوالب",
-
   "schema_editor.title": "محرر المخطط",
   "schema_editor.schema_title_label": "عنوان المخطط",
   "schema_editor.schema_title_placeholder": "عنوان المخطط",
@@ -1958,7 +1970,6 @@
   "messaging.refresh_users_tooltip": "تحديث المستخدمين",
   "messaging.refresh_groups_tooltip": "تحديث المجموعات",
   "messaging.create_group_tooltip": "إنشاء مجموعة جديدة",
-
   "RequiredInformation": "المعلومات المطلوبة",
   "SelectGender": "اختر الجنس",
   "Male": "ذكر",
@@ -2076,7 +2087,6 @@
   "create_survey.destination_space": "مجال الوجهة",
   "create_survey.survey_path": "مسار الاستبيان",
   "survey_manage.untitled_survey": "استبيان بدون عنوان",
-
   "surveys": "الاستبيانات",
   "surveys.title": "الاستبيانات",
   "surveys.description": "شارك في الاستبيانات وأدلي برأيك",
@@ -2106,7 +2116,6 @@
   "surveys.input_placeholder": "اكتب إجابتك...",
   "surveys.text_placeholder": "اكتب إجابتك...",
   "surveys.select_placeholder": "اختر خياراً...",
-
   "survey_form.title": "منشئ الاستبيان",
   "survey_form.survey_title_label": "عنوان الاستبيان",
   "survey_form.survey_title_placeholder": "أدخل عنوان الاستبيان...",
@@ -2134,7 +2143,6 @@
   "survey_form.no_questions": "لم تتم إضافة أي سؤال بعد. اضغط على \"إضافة سؤال\" للبدء.",
   "survey_form.no_options": "لم تتم إضافة أي خيار بعد. اضغط على \"إضافة خيار\" لإنشاء خيارات.",
   "survey_form.new_question": "السؤال {number}",
-
   "create_survey.title": "إنشاء استبيان جديد",
   "create_survey.description": "صمم استبيانك بإضافة أسئلة وتحديد أنواع الإجابات.",
   "create_survey.create_button": "إنشاء استبيان",
@@ -2147,7 +2155,6 @@
   "create_survey.success": "تم إنشاء الاستبيان بنجاح!",
   "create_survey.error": "فشل إنشاء الاستبيان. حاول مرة أخرى.",
   "create_survey.generic_error": "حدث خطأ أثناء إنشاء الاستبيان.",
-
   "survey_manage.title": "إدارة استبياناتي",
   "survey_manage.description": "اعرض واستعرض استبياناتك وإجاباتها",
   "survey_manage.back_to_surveys": "العودة إلى الاستبيانات",
@@ -2177,7 +2184,6 @@
   "survey_manage.submitted_on": "تم الإرسال بتاريخ",
   "survey_manage.your_answer": "إجابتك",
   "survey_manage.no_answer": "لم يتم تقديم إجابة",
-
   "surveys.no_surveys_moment": "لا توجد استبيانات للمشاركة حالياً.",
   "surveys.responded": "✓ تمت المشاركة",
   "surveys.close_modal": "إغلاق النافذة",

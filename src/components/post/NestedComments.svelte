@@ -7,7 +7,7 @@
     deleteComment,
     deleteMultipleComments,
     findAllChildComments,
-  } from "@/lib/dmart_services";
+  } from "@/lib/dmart_services/dmart_services";
   import {
     successToastMessage,
     errorToastMessage,
