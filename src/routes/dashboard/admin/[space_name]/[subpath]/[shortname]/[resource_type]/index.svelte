@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import { goto, params } from "@roxi/routify";
   import {
     deleteEntity,
@@ -7,6 +7,7 @@
     getMyEntities,
     replaceEntity,
   } from "@/lib/dmart_services/dmart_services";
+  import { ContentType, ResourceType } from "@edraj/tsdmart";
   import { Diamonds } from "svelte-loading-spinners";
   import { _, locale } from "@/i18n";
   import { derived, writable } from "svelte/store";
@@ -34,6 +35,7 @@
   const subpath = writable("");
   const itemShortname = writable("");
   const actualSubpath = writable("");
+  let unsubscribeParams: () => void;
   const breadcrumbs = writable([]);
   let spaceNameValue = $state("");
   let subpathValue = "";
@@ -119,12 +121,16 @@
     await initializeContent();
   });
 
+  onDestroy(() => {
+    if (unsubscribeParams) unsubscribeParams();
+  });
+
   function subscribeStore(store, callback) {
     return store.subscribe(callback);
   }
 
   async function initializeContent() {
-    subscribeStore(params, async (value) => {
+    unsubscribeParams = subscribeStore(params, async (value) => {
       spaceNameValue = value.space_name;
       subpathValue = value.subpath;
       itemShortnameValue = value.shortname;
@@ -132,6 +138,8 @@
       spaceName.set(spaceNameValue);
       subpath.set(subpathValue);
       itemShortname.set(itemShortnameValue);
+
+      if (!subpathValue) return;
 
       actualSubpathValue = subpathValue.replace(/-/g, "/");
       actualSubpath.set(actualSubpathValue);
@@ -190,9 +198,10 @@
         itemShortnameValue,
         spaceNameValue,
         actualSubpathValue,
-        $params.resource_type,
-        $params.workflow_shortname,
-        $params.schema_shortname,
+        $params.resource_type || ResourceType.content,
+        "managed", // Default scope for admin
+        true,
+        true,
       );
 
       if (response) {
@@ -200,9 +209,9 @@
         itemData.set(response);
 
         let title =
-          response.payload?.body?.title ||
-          response.payload?.title ||
-          response.title;
+          (response as any).payload?.body?.title ||
+          (response as any).payload?.title ||
+          (response as any).title;
 
         if (!title || title.trim() === "") {
           title = getDisplayName(response);
@@ -246,8 +255,8 @@
         }
 
         const ct = response.payload?.content_type;
-        htmlEditor = ct === "json" ? "" : content || "";
-        markdownContent = ct === "markdown" || ct === "md" ? content || "" : "";
+        htmlEditor = ct === ContentType.json ? "" : content || "";
+        markdownContent = ct === ContentType.markdown ? content || "" : "";
       } else {
         console.error("No valid response found for item:", itemShortnameValue);
         error.set($_("admin_item_detail.error.item_not_found"));
@@ -314,10 +323,8 @@
         itemShortnameValue,
         spaceNameValue,
         actualSubpathValue,
-        $params.resource_type,
+        $params.resource_type || ResourceType.content,
         entityData,
-        $params.workflow_shortname,
-        $params.schema_shortname,
       );
 
       if (response) {
@@ -1283,8 +1290,10 @@
                                       </p>
                                       <p class="text-xs text-gray-500">
                                         {new Date(
-                                          comment.attributes.created_at,
-                                        ).toLocaleDateString()}
+                                                comment.attributes.created_at,
+                                        ).toLocaleDateString()} at {new Date(
+                                              comment.attributes.created_at,
+                                      ).toLocaleTimeString()}
                                       </p>
                                     </div>
                                   </div>

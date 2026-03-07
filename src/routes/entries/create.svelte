@@ -534,14 +534,24 @@
         ...(isAdmin && shortname ? { shortname } : {}),
       };
 
+      const attributes: any = {
+        displayname: { en: entity.displayname || "" },
+        description: { en: "", ar: "", ku: "" },
+        is_active: entity.is_active !== false,
+        tags: entity.tags || [],
+        relationships: [],
+        payload: {
+          content_type: "json",
+          body: entity.body,
+        },
+      };
+
       const response = await createEntity(
-        entity,
         "poll",
         "polls",
         ResourceType.content,
-        "",
-        "",
-        "json",
+        attributes,
+        entity.shortname || "auto",
       );
 
       const msg = isPublish
@@ -650,14 +660,27 @@
       ...(shortname ? { shortname } : {}),
     };
 
+    const attributes: any = {
+      displayname: { en: entity.displayname || "" },
+      description: { en: "", ar: "", ku: "" },
+      is_active: entity.is_active !== false,
+      tags: entity.tags || [],
+      relationships: [],
+      payload: {
+        content_type: contentType || "json",
+        body: entity.body,
+      },
+    };
+    if (workflow_shortname) attributes.workflow_shortname = workflow_shortname;
+    if (schema_shortname)
+      attributes.payload.schema_shortname = schema_shortname;
+
     const response = await createEntity(
-      entity,
       selectedSpace,
       resolvedSubpath,
-      resource_type,
-      workflow_shortname,
-      schema_shortname,
-      contentType,
+      resource_type || ResourceType.content,
+      attributes,
+      entity.shortname || "auto",
     );
 
     const msg = isPublish

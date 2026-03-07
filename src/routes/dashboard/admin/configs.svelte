@@ -89,9 +89,15 @@
   async function autoFixConfiguration() {
     isAutoFixing = true;
     try {
-      const result = await createEntity(
-        {
-          shortname: "web_config",
+      const attributes: any = {
+        displayname: { en: "web_config" },
+        description: { en: "", ar: "", ku: "" },
+        is_active: true,
+        tags: [],
+        relationships: [],
+        payload: {
+          content_type: "json",
+          schema_shortname: "configuration",
           body: {
             items: [
               {
@@ -100,11 +106,14 @@
             ],
           },
         },
+      };
+
+      const result = await createEntity(
         "applications",
         "public",
         ResourceType.content,
-        "",
-        "configuration",
+        attributes,
+        "web_config",
       );
 
       if (result) {

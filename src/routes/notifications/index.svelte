@@ -59,7 +59,7 @@
         ws.send(
           JSON.stringify({
             type: "notification_subscription",
-            space_name: "Report",
+            space_name: "catalog",
             subpath: "/reports",
           })
         );
@@ -128,7 +128,7 @@
       if (
         (message.action_type === "create" ||
           message.action_type === "update") &&
-        (message.space === "Report" || message.space === "catalog")
+        (message.space === "catalog" || message.space === "catalog")
       ) {
         $newNotificationType = message.action_type;
         loadNotifications(true);

@@ -14,6 +14,7 @@
   import { Diamonds } from "svelte-loading-spinners";
   import { formatDate } from "@/lib/helpers";
   import { Modal } from "flowbite-svelte";
+  import { InboxOutline } from "flowbite-svelte-icons";
 
   let reports = $state([]);
   let isLoading = $state(true);
@@ -266,7 +267,9 @@
       </div>
     {:else if reports.length === 0}
       <div class="empty-state">
-        <div class="empty-icon">📋</div>
+        <div class="empty-icon-container">
+          <InboxOutline class="w-16 h-16 text-gray-300" />
+        </div>
         <h3 class="empty-title">
           {$_("reports.admin.empty.title") || "No Reports Found"}
         </h3>
@@ -277,6 +280,14 @@
             : $_("reports.admin.empty.no_reports_filter") ||
               `No ${selectedStatusFilter} reports found.`}
         </p>
+        {#if selectedStatusFilter !== "all"}
+          <button
+            class="clear-filters-btn mt-6"
+            onclick={() => (selectedStatusFilter = "all")}
+          >
+            {$_("reports.admin.actions.clear_filters") || "Clear All Filters"}
+          </button>
+        {/if}
       </div>
     {:else}
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -649,5 +660,60 @@
       width: 100%;
       justify-content: center;
     }
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 6rem 2rem;
+    border-radius: 2rem;
+    border: 1px dashed #e5e7eb;
+  }
+
+  .empty-icon-container {
+    width: 5rem;
+    height: 5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f9fafb;
+    border-radius: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .empty-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 0.5rem;
+  }
+
+  .empty-message {
+    font-size: 1rem;
+    color: #6b7280;
+    max-width: 24rem;
+    margin: 0 auto;
+  }
+
+  .clear-filters-btn {
+    padding: 0.625rem 1.25rem;
+    background-color: white;
+    color: #3b82f6;
+    border: 1px solid #e5e7eb;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+
+  .clear-filters-btn:hover {
+    background-color: #f9fafb;
+    border-color: #3b82f6;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   }
 </style>

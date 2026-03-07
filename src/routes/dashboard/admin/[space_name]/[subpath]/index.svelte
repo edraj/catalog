@@ -79,6 +79,7 @@
   async function initializeContent() {
     spaceName = $params.space_name;
     subpath = $params.subpath;
+    if (!subpath) return;
     $actualSubpath = subpath.replace(/-/g, "/");
 
     const pathParts = $actualSubpath
@@ -637,7 +638,7 @@
         folderContent: folderContent,
         is_active: true,
       };
-      const response = createFolder(spaceName, $actualSubpath, data);
+      const response = await createFolder(spaceName, $actualSubpath, data);
 
       if (response) {
         showCreateFolderModal = false;

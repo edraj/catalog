@@ -1,7 +1,10 @@
-<script>
+<script lang="ts">
   import { onMount } from "svelte";
   import { marked } from "marked";
-  import { createEntity, getTemplates } from "@/lib/dmart_services/dmart_services.ts";
+  import {
+    createEntity,
+    getTemplates,
+  } from "@/lib/dmart_services/dmart_services";
   import { ContentType, ResourceType } from "@edraj/tsdmart";
   import { goto, params } from "@roxi/routify";
 
@@ -117,7 +120,7 @@
     }
 
     const emptyFields = templateFields.filter(
-      (field) => !fieldValues[field.name]?.trim()
+      (field) => !fieldValues[field.name]?.trim(),
     );
     if (emptyFields.length > 0) {
       createMessage = `Please fill in all fields: ${emptyFields.map((f) => f.name).join(", ")}`;
@@ -142,14 +145,25 @@
         body: content,
       };
 
+      const attributes: any = {
+        displayname: { en: entityData.shortname || "auto" },
+        description: { en: "", ar: "", ku: "" },
+        is_active: true,
+        tags: entityTags || [],
+        relationships: [],
+        payload: {
+          content_type: ContentType.markdown || "md",
+          schema_shortname: "templates",
+          body: content,
+        },
+      };
+
       const result = await createEntity(
-        entityData,
         $params.space_name,
         $params.subpath,
         ResourceType.content,
-        null,
-        "templates",
-        ContentType.markdown
+        attributes,
+        entityData.shortname || "auto",
       );
 
       if (result) {

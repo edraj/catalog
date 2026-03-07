@@ -691,7 +691,7 @@
       "posted_by": "posted by",
       "read_more": "Read more...",
       "share": "Share",
-      "report": "Report"
+      "report": "catalog"
     },
     "share": {
       "copied_to_clipboard": "Link copied to clipboard!",
@@ -2262,6 +2262,7 @@
   "reports.admin.actions.no_action": "No Action Required",
   "reports.admin.actions.warn_user": "Warn User",
   "reports.admin.actions.delete_entry": "Delete Reported Entry",
+  "reports.admin.actions.clear_filters": "Clear All Filters",
   "reports.admin.status.resolved": "This report has been resolved",
   "reports.admin.status.canceled": "This report has been canceled",
   "reports.admin.empty.title": "No Reports Found",

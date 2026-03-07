@@ -80,14 +80,24 @@
         is_active: true,
       };
 
+      const attributes: any = {
+        displayname: { en: surveyData.displayname || "" },
+        description: { en: surveyData.description || "", ar: "", ku: "" },
+        is_active: surveyData.is_active !== false,
+        tags: [],
+        relationships: [],
+        payload: {
+          content_type: "json",
+          body: surveyData.body,
+        },
+      };
+
       const result = await createEntity(
-        surveyData,
         "surveys",
         "/surveys",
         ResourceType.content,
-        "",
-        "",
-        "json",
+        attributes,
+        shortname,
       );
 
       if (result) {

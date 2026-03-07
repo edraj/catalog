@@ -2286,5 +2286,6 @@
   "reports.notification.understood": "فهمت",
   "reports.notification.unknown": "غير معروف",
   "reports.notification.reporter.title": "شكراً لك على بلاغك",
-  "reports.notification.reporter.message": "شكراً لك لمساعدتنا في الحفاظ على مجتمع نظيف وآمن! لقد راجعنا بلاغك واتخذنا الإجراء المناسب. معاً، يمكننا الحفاظ على مجتمعنا مكاناً إيجابياً للجميع."
+  "reports.notification.reporter.message": "شكراً لك لمساعدتنا في الحفاظ على مجتمع نظيف وآمن! لقد راجعنا بلاغك واتخذنا الإجراء المناسب. معاً، يمكننا الحفاظ على مجتمعنا مكاناً إيجابياً للجميع.",
+  "reports.admin.actions.clear_filters": "مسح جميع الفلاتر"
 }
