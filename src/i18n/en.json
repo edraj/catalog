@@ -831,7 +831,8 @@
   "common": {
     "loading": "Loading...",
     "not_available": "Not available",
-    "unknown": "Unknown"
+    "unknown": "Unknown",
+    "save_changes": "Save Changes"
   },
   "post_detail": {
     "breadcrumb": {

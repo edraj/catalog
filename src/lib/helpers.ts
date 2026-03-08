@@ -128,3 +128,12 @@ export function formatNumberInText(number: number, locale: string): string {
   }
   return number.toString();
 }
+
+export function getParentPath(path: string): string {
+  if (path === "/") {
+    return path;
+  }
+  const parts = path.split("/");
+  parts.pop();
+  return parts.join("/") || "/";
+}

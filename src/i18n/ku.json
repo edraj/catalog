@@ -543,7 +543,8 @@
   "common": {
     "loading": "بارکردن...",
     "not_available": "بەردەست نییە",
-    "unknown": "نەزانراو"
+    "unknown": "نەزانراو",
+    "save_changes": "پاشەکەوتی گۆڕانکارییەکان"
   },
   "help": {
     "json_editor": "ڕاستەوخۆ کائینی JSON دەستکاری بکە",

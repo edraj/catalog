@@ -4,16 +4,17 @@
     createFolder,
     deleteEntity,
     getAvatar,
+    getEntity,
     getSpaceContents,
   } from "@/lib/dmart_services/dmart_services";
   import { Diamonds } from "svelte-loading-spinners";
   import { _, locale } from "@/i18n";
-  import { Dmart, RequestType, ResourceType } from "@edraj/tsdmart";
+  import { Dmart, RequestType, ResourceType, QueryType } from "@edraj/tsdmart";
   import { derived, writable } from "svelte/store";
   import MetaForm from "@/components/forms/MetaForm.svelte";
   import FolderForm from "@/components/forms/FolderForm.svelte";
   import Avatar from "@/components/Avatar.svelte";
-  import { formatNumber } from "@/lib/helpers";
+  import {formatNumber, getParentPath} from "@/lib/helpers";
   import SchemaForm from "@/components/forms/SchemaForm.svelte";
   import CreateTemplateModal from "@/components/CreateTemplateModal.svelte";
   import WorkflowForm from "@/components/forms/WorkflowForm.svelte";
@@ -24,6 +25,7 @@
   let isLoadingMore = writable(false);
   let allContents = writable([]);
   let displayedContents = $state([]);
+  let folderMetadata = $state(null);
   let error = $state(null);
   let spaceName = $state("");
   let subpath = "";
@@ -145,6 +147,25 @@
     error = null;
 
     try {
+      if (reset) {
+        // Fetch current folder metadata
+        const pathParts = $actualSubpath.split("/").filter((p) => p);
+        const folderShortname = pathParts.pop();
+        const parentPath = "/" + pathParts.join("/");
+
+        if (folderShortname) {
+          folderMetadata = await getEntity(
+            folderShortname,
+            spaceName,
+            parentPath,
+            ResourceType.folder,
+            "managed",
+          );
+        } else {
+          folderMetadata = null;
+        }
+      }
+
       const parent = await getSpaceContents(
         spaceName,
         "/",
@@ -661,6 +682,72 @@
   let workflowContent = $state({});
   let isCreatingWorkflow = $state(false);
 
+  // Column Settings
+  let showColumnSettingsModal = $state(false);
+  let editingIndexAttributes = $state([]);
+  let isSavingColumns = $state(false);
+
+  function handleOpenColumnSettings() {
+    editingIndexAttributes = JSON.parse(JSON.stringify(indexAttributes));
+    if (editingIndexAttributes.length === 0) {
+      editingIndexAttributes = [
+        { key: "displayname", name: "Display Name" },
+        { key: "status", name: "Status" },
+        { key: "author", name: "Author" },
+        { key: "updated_at", name: "Last Modified" },
+      ];
+    }
+    showColumnSettingsModal = true;
+  }
+
+  function addColumnSetting() {
+    editingIndexAttributes = [...editingIndexAttributes, { key: "", name: "" }];
+  }
+
+  function removeColumnSetting(index) {
+    editingIndexAttributes = editingIndexAttributes.filter((_, i) => i !== index);
+  }
+
+  async function handleUpdateColumns() {
+    isSavingColumns = true;
+    try {
+      const response = await Dmart.request({
+        space_name: spaceName,
+        request_type: RequestType.update,
+        records: [
+          {
+            resource_type: ResourceType.folder,
+            shortname: folderMetadata.shortname,
+            subpath: getParentPath(subpath),
+            attributes: {
+              payload: {
+                ...folderMetadata?.payload,
+                body: {
+                  ...folderMetadata?.payload?.body,
+                  index_attributes: editingIndexAttributes.filter(
+                    (a) => a.key.trim() && a.name.trim(),
+                  ),
+                },
+              },
+            },
+          },
+        ],
+      });
+
+      if (response && response.status === "success") {
+        showColumnSettingsModal = false;
+        await loadContents(true);
+      } else {
+        alert($_("admin_content.error.update_failed") || "Failed to update columns");
+      }
+    } catch (err) {
+      console.error("Error updating columns:", err);
+      alert(($_("admin_content.error.update_error") || "Error updating columns") + ": " + err.message);
+    } finally {
+      isSavingColumns = false;
+    }
+  }
+
   function handleCreateSchema() {
     schemaContent = {};
     showCreateSchemaModal = true;
@@ -761,6 +848,58 @@
     } finally {
       isCreatingWorkflow = false;
     }
+  }
+  const indexAttributes = $derived(
+    folderMetadata?.payload?.body?.index_attributes || [],
+  );
+
+  function getAttributeValue(item, key) {
+    if (!item) return "";
+    if (key === "displayname") return getDisplayName(item);
+    if (key === "status") {
+      return item.attributes?.is_active
+        ? $_("admin_content.status.active")
+        : $_("admin_content.status.inactive");
+    }
+    if (key === "author") return item.attributes?.owner_shortname || "Unknown";
+    if (key === "updated_at" || key === "created_at") {
+      return formatDate(item.attributes?.[key]);
+    }
+
+    const findValue = (obj, k) => {
+      if (!obj || typeof obj !== "object") return undefined;
+      if (obj[k] !== undefined) return obj[k];
+      const tk = k.toLowerCase();
+      const foundKey = Object.keys(obj).find((ok) => ok.toLowerCase() === tk);
+      return foundKey ? obj[foundKey] : undefined;
+    };
+
+    let value;
+    if (key.includes(".")) {
+      const parts = key.split(".");
+      let current = item;
+      for (const part of parts) {
+        current = findValue(current, part);
+        if (current === undefined || current === null) break;
+      }
+      value = current;
+    } else {
+      value =
+        findValue(item.attributes?.payload?.body, key) ??
+        findValue(item.attributes?.payload, key) ??
+        findValue(item.attributes, key) ??
+        findValue(item, key);
+    }
+
+    if (value === null || value === undefined) return "";
+
+    if (typeof value === "object" && !Array.isArray(value)) {
+      const localized = value[$locale] || value.en || value.ar || value.ku;
+      if (localized !== undefined) return String(localized);
+      return JSON.stringify(value);
+    }
+
+    return String(value);
   }
 </script>
 
@@ -1126,11 +1265,37 @@
                   ></path>
                 </svg>
               </button>
+
+              <button
+                onclick={handleOpenColumnSettings}
+                class="p-2.5 bg-gray-50 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all border border-transparent hover:border-indigo-100"
+                title="Column Settings"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                  ></path>
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  ></path>
+                </svg>
+              </button>
             </div>
           </div>
         </div>
 
-        {#if displayedContentsDerived.length === 0}
+        {#if displayedContents.length === 0}
           <div class="text-center py-16">
             <div
               class="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-gray-400"
@@ -1171,22 +1336,32 @@
             <table class="w-full text-left border-collapse">
               <thead>
                 <tr class="bg-gray-50/50 border-b border-gray-100">
-                  <th
-                    class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider"
-                    >Display Name</th
-                  >
-                  <th
-                    class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider"
-                    >Status</th
-                  >
-                  <th
-                    class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider"
-                    >Author</th
-                  >
-                  <th
-                    class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider"
-                    >Last Modified</th
-                  >
+                  {#if indexAttributes && indexAttributes.length > 0}
+                    {#each indexAttributes as attr}
+                      <th
+                        class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                      >
+                        {attr.name}
+                      </th>
+                    {/each}
+                  {:else}
+                    <th
+                      class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                      >Display Name</th
+                    >
+                    <th
+                      class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                      >Status</th
+                    >
+                    <th
+                      class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                      >Author</th
+                    >
+                    <th
+                      class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                      >Last Modified</th
+                    >
+                  {/if}
                   <th
                     class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider"
                     >Actions</th
@@ -1194,60 +1369,158 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-100 bg-white">
-                {#each displayedContentsDerived as item}
+                {#each displayedContents as item}
                   <tr
                     class="hover:bg-gray-50/50 transition-colors group cursor-pointer"
                     onclick={() => handleItemClick(item)}
                   >
-                    <td class="px-6 py-4">
-                      <div class="flex flex-col">
-                        <span
-                          class="inline-flex w-fit items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mb-1.5 {getResourceTypeColor(
-                            item.resource_type,
-                          )}"
-                        >
-                          {item.resource_type}
-                        </span>
-                        <div class="flex items-center gap-2">
-                          <span class="text-lg text-gray-400"
-                            >{getItemIcon(item)}</span
-                          >
+                    {#if indexAttributes && indexAttributes.length > 0}
+                      {#each indexAttributes as attr}
+                        <td class="px-6 py-4">
+                          {#if attr.key === "displayname"}
+                            <div class="flex flex-col">
+                              <span
+                                class="inline-flex w-fit items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mb-1.5 {getResourceTypeColor(
+                                  item.resource_type,
+                                )}"
+                              >
+                                {item.resource_type}
+                              </span>
+                              <div class="flex items-center gap-2">
+                                <span class="text-lg text-gray-400"
+                                  >{getItemIcon(item)}</span
+                                >
+                                <span
+                                  class="text-sm font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors truncate max-w-xs"
+                                  >{getDisplayName(item)}</span
+                                >
+                              </div>
+                            </div>
+                          {:else if attr.key === "status"}
+                            <span
+                              class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium {item
+                                .attributes?.is_active
+                                ? 'bg-emerald-50 text-emerald-700'
+                                : 'bg-red-50 text-red-700'}"
+                            >
+                              <span
+                                class="w-1.5 h-1.5 rounded-full {item.attributes
+                                  ?.is_active
+                                  ? 'bg-emerald-500'
+                                  : 'bg-red-500'} mr-1.5"
+                              ></span>
+                              {item.attributes?.is_active
+                                ? $_("admin_content.status.active")
+                                : $_("admin_content.status.inactive")}
+                            </span>
+                          {:else if attr.key === "author"}
+                            <div class="flex items-center gap-2">
+                              {#if item.attributes?.owner_shortname}
+                                {#await getAvatar(item.attributes?.owner_shortname) then avatar}
+                                  {#if typeof avatar === "string" && avatar.trim() !== ""}
+                                    <img
+                                      src={avatar}
+                                      alt={item.attributes?.owner_shortname}
+                                      class="w-6 h-6 rounded-full object-cover"
+                                    />
+                                  {:else}
+                                    <div
+                                      class="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[10px] font-medium text-gray-600"
+                                    >
+                                      {item.attributes?.owner_shortname
+                                        .charAt(0)
+                                        .toUpperCase()}
+                                    </div>
+                                  {/if}
+                                {:catch}
+                                  <div
+                                    class="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[10px] font-medium text-gray-600"
+                                  >
+                                    {item.attributes?.owner_shortname
+                                      .charAt(0)
+                                      .toUpperCase()}
+                                  </div>
+                                {/await}
+                                <span class="text-sm font-medium text-gray-700"
+                                  >{item.attributes?.owner_shortname}</span
+                                >
+                              {:else}
+                                <div
+                                  class="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-[10px] font-medium text-gray-400"
+                                >
+                                  ?
+                                </div>
+                                <span class="text-sm text-gray-500"
+                                  >{$_("common.unknown")}</span
+                                >
+                              {/if}
+                            </div>
+                          {:else}
+                            <span class="text-sm text-gray-500 font-medium"
+                              >{getAttributeValue(item, attr.key)}</span
+                            >
+                          {/if}
+                        </td>
+                      {/each}
+                    {:else}
+                      <td class="px-6 py-4">
+                        <div class="flex flex-col">
                           <span
-                            class="text-sm font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors truncate max-w-xs"
-                            >{getDisplayName(item)}</span
+                            class="inline-flex w-fit items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mb-1.5 {getResourceTypeColor(
+                              item.resource_type,
+                            )}"
                           >
+                            {item.resource_type}
+                          </span>
+                          <div class="flex items-center gap-2">
+                            <span class="text-lg text-gray-400"
+                              >{getItemIcon(item)}</span
+                            >
+                            <span
+                              class="text-sm font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors truncate max-w-xs"
+                              >{getDisplayName(item)}</span
+                            >
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td class="px-6 py-4">
-                      <span
-                        class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium {item
-                          .attributes?.is_active
-                          ? 'bg-emerald-50 text-emerald-700'
-                          : 'bg-red-50 text-red-700'}"
-                      >
+                      </td>
+                      <td class="px-6 py-4">
                         <span
-                          class="w-1.5 h-1.5 rounded-full {item.attributes
-                            ?.is_active
-                            ? 'bg-emerald-500'
-                            : 'bg-red-500'} mr-1.5"
-                        ></span>
-                        {item.attributes?.is_active
-                          ? $_("admin_content.status.active")
-                          : $_("admin_content.status.inactive")}
-                      </span>
-                    </td>
-                    <td class="px-6 py-4">
-                      <div class="flex items-center gap-2">
-                        {#if item.attributes?.owner_shortname}
-                          {#await getAvatar(item.attributes?.owner_shortname) then avatar}
-                            {#if typeof avatar === "string" && avatar.trim() !== ""}
-                              <img
-                                src={avatar}
-                                alt={item.attributes?.owner_shortname}
-                                class="w-6 h-6 rounded-full object-cover"
-                              />
-                            {:else}
+                          class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium {item
+                            .attributes?.is_active
+                            ? 'bg-emerald-50 text-emerald-700'
+                            : 'bg-red-50 text-red-700'}"
+                        >
+                          <span
+                            class="w-1.5 h-1.5 rounded-full {item.attributes
+                              ?.is_active
+                              ? 'bg-emerald-500'
+                              : 'bg-red-500'} mr-1.5"
+                          ></span>
+                          {item.attributes?.is_active
+                            ? $_("admin_content.status.active")
+                            : $_("admin_content.status.inactive")}
+                        </span>
+                      </td>
+                      <td class="px-6 py-4">
+                        <div class="flex items-center gap-2">
+                          {#if item.attributes?.owner_shortname}
+                            {#await getAvatar(item.attributes?.owner_shortname) then avatar}
+                              {#if typeof avatar === "string" && avatar.trim() !== ""}
+                                <img
+                                  src={avatar}
+                                  alt={item.attributes?.owner_shortname}
+                                  class="w-6 h-6 rounded-full object-cover"
+                                />
+                              {:else}
+                                <div
+                                  class="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[10px] font-medium text-gray-600"
+                                >
+                                  {item.attributes?.owner_shortname
+                                    .charAt(0)
+                                    .toUpperCase()}
+                                </div>
+                              {/if}
+                            {:catch}
                               <div
                                 class="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[10px] font-medium text-gray-600"
                               >
@@ -1255,39 +1528,31 @@
                                   .charAt(0)
                                   .toUpperCase()}
                               </div>
-                            {/if}
-                          {:catch}
-                            <div
-                              class="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[10px] font-medium text-gray-600"
+                            {/await}
+                            <span class="text-sm font-medium text-gray-700"
+                              >{item.attributes?.owner_shortname}</span
                             >
-                              {item.attributes?.owner_shortname
-                                .charAt(0)
-                                .toUpperCase()}
+                          {:else}
+                            <div
+                              class="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-[10px] font-medium text-gray-400"
+                            >
+                              ?
                             </div>
-                          {/await}
-                          <span class="text-sm font-medium text-gray-700"
-                            >{item.attributes?.owner_shortname}</span
-                          >
-                        {:else}
-                          <div
-                            class="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-[10px] font-medium text-gray-400"
-                          >
-                            ?
-                          </div>
-                          <span class="text-sm text-gray-500"
-                            >{$_("common.unknown")}</span
-                          >
-                        {/if}
-                      </div>
-                    </td>
-                    <td class="px-6 py-4">
-                      <span class="text-sm text-gray-500 font-medium"
-                        >{formatDate(
-                          item.attributes?.updated_at ||
-                            item.attributes?.created_at,
-                        )}</span
-                      >
-                    </td>
+                            <span class="text-sm text-gray-500"
+                              >{$_("common.unknown")}</span
+                            >
+                          {/if}
+                        </div>
+                      </td>
+                      <td class="px-6 py-4">
+                        <span class="text-sm text-gray-500 font-medium"
+                          >{formatDate(
+                            item.attributes?.updated_at ||
+                              item.attributes?.created_at,
+                          )}</span
+                        >
+                      </td>
+                    {/if}
                     <td class="px-6 py-4">
                       <div
                         class="flex items-center justify-end gap-4 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -1377,7 +1642,7 @@
                   : $_("admin_content.infinite_scroll.load_more")}
               </button>
             </div>
-          {:else if displayedContentsDerived.length > 0}
+          {:else if displayedContents.length > 0}
             <div
               class="p-4 border-t border-gray-100 bg-gray-50 text-center text-sm font-medium text-gray-500"
             >
@@ -1665,6 +1930,167 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+{/if}
+
+<!-- Column Settings Modal -->
+{#if showColumnSettingsModal}
+  <div
+    class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+  >
+    <div
+      class="bg-white rounded-[24px] shadow-2xl w-full max-w-lg overflow-hidden border border-gray-100 modal-container"
+    >
+      <div
+        class="p-6 border-b border-gray-100 flex items-center justify-between bg-white modal-header"
+      >
+        <div class="flex items-center gap-3">
+          <div
+            class="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600"
+          >
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+              ></path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              ></path>
+            </svg>
+          </div>
+          <h2 class="text-xl font-bold text-gray-900">Column Settings</h2>
+        </div>
+        <button
+          onclick={() => (showColumnSettingsModal = false)}
+          class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors modal-close-btn"
+        >
+          <svg
+            class="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            ></path>
+          </svg>
+        </button>
+      </div>
+
+      <div class="p-6 max-h-[60vh] overflow-y-auto bg-gray-50/30 modal-content">
+        <div class="space-y-4">
+          {#each editingIndexAttributes as attr, i}
+            <div
+              class="flex items-center gap-3 p-4 bg-white rounded-2xl border border-gray-100 shadow-sm"
+            >
+              <div class="flex-1 grid grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                  <label
+                    class="text-[10px] uppercase font-bold text-gray-400 tracking-wider px-1"
+                    >Label Name</label
+                  >
+                  <input
+                    type="text"
+                    bind:value={attr.name}
+                    placeholder="e.g. Server Name"
+                    class="w-full px-4 py-2 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <div class="space-y-1.5">
+                  <label
+                    class="text-[10px] uppercase font-bold text-gray-400 tracking-wider px-1"
+                    >Data Key</label
+                  >
+                  <input
+                    type="text"
+                    bind:value={attr.key}
+                    placeholder="e.g. server_name"
+                    class="w-full px-4 py-2 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 font-mono"
+                  />
+                </div>
+              </div>
+              <button
+                onclick={() => removeColumnSetting(i)}
+                class="mt-6 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                title="Remove Column"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  ></path>
+                </svg>
+              </button>
+            </div>
+          {/each}
+        </div>
+
+        <button
+          onclick={addColumnSetting}
+          class="w-full mt-6 py-3 border-2 border-dashed border-gray-200 rounded-2xl text-sm font-medium text-gray-500 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50/30 transition-all flex items-center justify-center gap-2"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4v16m8-8H4"
+            ></path>
+          </svg>
+          Add New Column
+        </button>
+      </div>
+
+      <div
+        class="p-6 border-t border-gray-100 flex items-center justify-end gap-3 bg-white modal-footer"
+      >
+        <button
+          onclick={() => (showColumnSettingsModal = false)}
+          class="px-6 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          {$_("common.cancel")}
+        </button>
+        <button
+          onclick={handleUpdateColumns}
+          disabled={isSavingColumns}
+          class="px-8 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 shadow-md shadow-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+        >
+          {#if isSavingColumns}
+            <div
+              class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
+            ></div>
+            {$_("common.saving") || "Saving..."}
+          {:else}
+            {$_("common.save_changes") || "Save Changes"}
+          {/if}
+        </button>
+      </div>
     </div>
   </div>
 {/if}
