@@ -20,6 +20,7 @@
   import JsonEditor from "@/components/editors/JsonEditor.svelte";
   import SchemaForm from "@/components/forms/SchemaForm.svelte";
   import SchemaViewer from "@/components/forms/SchemaViewer.svelte";
+import PostContent from "@/components/post/PostContent.svelte";
 
   $goto;
 
@@ -914,14 +915,13 @@
                       </div>
                     {:else if ct === "json"}
                       {#if isSchemaBasedItem}
-                        <SchemaViewer content={body} />
+                        <div class="p-6">
+                            <SchemaViewer content={body} />
+                        </div>
                       {:else}
-                        <pre
-                          class="bg-gray-50 rounded-xl p-4 text-xs overflow-x-auto text-gray-700 leading-relaxed">{JSON.stringify(
-                            body,
-                            null,
-                            2,
-                          )}</pre>
+                         <div class="admin-post-content-wrapper">
+                            <PostContent postData={itemDataValue} spaceName={spaceNameValue} />
+                         </div>
                       {/if}
                     {:else}
                       <!-- Default parse string as Markdown (covers "markdown", "md", or missing type) -->
@@ -2287,11 +2287,6 @@
     margin: 0;
   }
 
-  .modal-subtitle {
-    color: rgba(219, 234, 254, 0.9);
-    margin: 0.5rem 0 0 0;
-    font-size: 0.875rem;
-  }
 
   .close-button {
     background: rgba(255, 255, 255, 0.1);
@@ -2634,5 +2629,13 @@
   }
   .rtl {
     direction: rtl;
+  }
+
+  .admin-post-content-wrapper :global(.content-section) {
+    margin: 0 !important;
+  }
+
+  .admin-post-content-wrapper :global(.post-content) {
+    box-shadow: none !important;
   }
 </style>
