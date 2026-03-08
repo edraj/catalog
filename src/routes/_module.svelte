@@ -42,12 +42,12 @@
       if (error.code === "ERR_NETWORK") {
         console.warn("Network error: Check connection or server.");
       }
-      if (
-        error.response?.status === 401 &&
-        !isPublicRoute(window.location.pathname)
-      ) {
-        $goto("/login");
-      }
+      // if (
+      //   error.response?.status === 401 &&
+      //   !isPublicRoute(window.location.pathname)
+      // ) {
+      //   $goto("/login");
+      // }
       return Promise.reject(error);
     }
   );
@@ -76,7 +76,7 @@
         $goto("/login");
       } else {
         if (currentPath === "/" || currentPath === "/login") {
-          $goto("/dashboard");
+          $goto("/dashboard/admin");
         }
       }
     } catch (error) {

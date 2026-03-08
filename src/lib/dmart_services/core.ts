@@ -192,11 +192,10 @@ export async function updateEntity(
     subpath: string,
     resourceType: ResourceType,
     attributes: any,
-    isReplace: boolean = false
 ) {
     const actionRequest: ActionRequest = {
         space_name: spaceName,
-        request_type: isReplace ? RequestType.replace : RequestType.update,
+        request_type: RequestType.update,
         records: [
             {
                 resource_type: resourceType,
@@ -209,9 +208,7 @@ export async function updateEntity(
 
     try {
         const response = await Dmart.request(actionRequest);
-        return response.status === "success" && response.records.length > 0
-            ? response.records[0].shortname
-            : null;
+        return response.status === "success";
     } catch (error) {
         console.error(`Error updating entity ${shortname}:`, error);
         throw error;
@@ -399,4 +396,4 @@ export const replaceEntity = async (
     subpath: string,
     resourceType: ResourceType,
     attributes: any
-) => await updateEntity(shortname, spaceName, subpath, resourceType, attributes, true);
+) => await updateEntity(shortname, spaceName, subpath, resourceType, attributes);

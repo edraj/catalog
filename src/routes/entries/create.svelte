@@ -955,7 +955,6 @@
               >
             </span>
           </label>
-          <!-- Add poll option -->
           <label class="entry-type-option">
             <input
               type="radio"
@@ -966,6 +965,18 @@
             <span class="entry-type-label">
               <strong>{$_("create_entry.entry_type.poll_title")}</strong>
               <small>{$_("create_entry.entry_type.poll_description")}</small>
+            </span>
+          </label>
+          <label class="entry-type-option">
+            <input
+              type="radio"
+              bind:group={entryType}
+              value="json"
+              onchange={handleEntryTypeChange}
+            />
+            <span class="entry-type-label">
+              <strong>{$_("create_entry.entry_type.json_title")}</strong>
+              <small>{$_("create_entry.entry_type.json_description")}</small>
             </span>
           </label>
         </div>

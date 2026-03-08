@@ -5,6 +5,9 @@
   import { gfmHeadingId } from "marked-gfm-heading-id";
   import { getPostContent } from "@/lib/utils/postUtils";
 
+  import { getSpaceSchema } from "@/lib/dmart_services/dmart_services";
+  import DynamicSchemaBasedForms from "@/components/forms/DynamicSchemaBasedForms.svelte";
+
   marked.use(mangle());
   marked.use(
     gfmHeadingId({
@@ -12,7 +15,75 @@
     }),
   );
 
-  export let postData: any;
+  let { postData, spaceName = "" } = $props();
+
+  let schema: any = $state(null);
+  let isLoadingSchema = $state(false);
+
+  $effect(() => {
+    if (postData?.payload?.content_type === "json") {
+      if (postData?.payload?.schema_shortname && spaceName) {
+        loadSchema(postData.payload.schema_shortname);
+      } else if (typeof postData.payload.body === "object" && postData.payload.body !== null && !Array.isArray(postData.payload.body)) {
+        schema = generateSimpleSchema(postData.payload.body);
+      } else {
+        schema = null;
+      }
+    } else {
+      schema = null;
+    }
+  });
+
+  function generateSimpleSchema(data: any): any {
+    if (typeof data !== "object" || data === null || Array.isArray(data)) {
+      return null;
+    }
+
+    const properties: any = {};
+    for (const [key, value] of Object.entries(data)) {
+      let type = "string";
+      if (typeof value === "number") type = "number";
+      else if (typeof value === "boolean") type = "boolean";
+      else if (Array.isArray(value)) type = "array";
+      else if (typeof value === "object" && value !== null) type = "object";
+
+      properties[key] = {
+        type,
+        title: key
+          .split("_")
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(" "),
+      };
+    }
+
+    return {
+      type: "object",
+      properties,
+    };
+  }
+
+  async function loadSchema(schemaShortname: string) {
+    if (schema && schema.shortname === schemaShortname) return;
+    
+    isLoadingSchema = true;
+    try {
+      const response = await getSpaceSchema(spaceName, "", schemaShortname);
+      if (response?.status === "success" && response?.records && response.records.length > 0) {
+        const record = response.records.find((r: any) => r.shortname === schemaShortname) || response.records[0];
+        schema = record.attributes?.payload?.body;
+      } else if (typeof postData?.payload?.body === "object" && postData?.payload?.body !== null) {
+        // Fallback to auto-generated schema if fetch fails
+        schema = generateSimpleSchema(postData.payload.body);
+      }
+    } catch (err) {
+      console.error("Error loading schema for PostContent:", err);
+      if (typeof postData?.payload?.body === "object" && postData?.payload?.body !== null) {
+        schema = generateSimpleSchema(postData.payload.body);
+      }
+    } finally {
+      isLoadingSchema = false;
+    }
+  }
 
   function renderContent(postData: any): string {
     if (!postData?.payload?.body) {
@@ -43,15 +114,20 @@
 
 {#if getPostContent(postData)}
   <section class="content-section mx-6 my-4">
-    <h3 class="content-title">
-      <span class="title-accent"></span>
-      {$_("post_detail.sections.content")}
-    </h3>
+
     <div class="post-content">
       <div class="content-text">
         <div class="content-display bg-white p-6">
           <div class="markdown-preview">
-            {@html renderContent(postData)}
+            {#if postData?.payload?.content_type === "json" && schema}
+              <DynamicSchemaBasedForms content={postData.payload.body} {schema} readOnly={true} />
+            {:else if isLoadingSchema}
+               <div class="flex justify-center p-4">
+                 <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+               </div>
+            {:else}
+              {@html renderContent(postData)}
+            {/if}
           </div>
         </div>
       </div>

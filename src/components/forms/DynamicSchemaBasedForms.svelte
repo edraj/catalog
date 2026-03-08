@@ -14,9 +14,11 @@
   let {
     content = $bindable({}),
     schema,
+    readOnly = false,
   }: {
     content: Record<string, any>;
     schema: Schema;
+    readOnly?: boolean;
   } = $props();
 
   onMount(() => {
@@ -64,13 +66,6 @@
 
 <div class="form-container">
   {#if schema && schema.properties}
-    <div class="form-header">
-      <h2 class="form-title">{schema.title || $_("Form")}</h2>
-      {#if schema.description}
-        <p class="form-description">{schema.description}</p>
-      {/if}
-    </div>
-
     <div class="form-content">
       {#each Object.keys(schema.properties) as propName}
         {@const property = schema.properties[propName]}
@@ -93,6 +88,7 @@
                 type="date"
                 bind:value={content[propName]}
                 required={isRequired(propName)}
+                disabled={readOnly}
                 class="form-input"
               />
             {:else if property.format === "time"}
@@ -101,6 +97,7 @@
                 type="time"
                 bind:value={content[propName]}
                 required={isRequired(propName)}
+                disabled={readOnly}
                 class="form-input"
               />
             {:else if property.format === "email"}
@@ -109,6 +106,7 @@
                 type="email"
                 bind:value={content[propName]}
                 required={isRequired(propName)}
+                disabled={readOnly}
                 class="form-input"
               />
             {:else if property.format === "uri"}
@@ -117,6 +115,7 @@
                 type="url"
                 bind:value={content[propName]}
                 required={isRequired(propName)}
+                disabled={readOnly}
                 class="form-input"
               />
             {:else if property.enum}
@@ -124,6 +123,7 @@
                 id={propName}
                 bind:value={content[propName]}
                 required={isRequired(propName)}
+                disabled={readOnly}
                 class="form-select"
               >
                 <option value="">{$_("SelectAnOption")}</option>
@@ -137,6 +137,7 @@
                 rows="4"
                 bind:value={content[propName]}
                 required={isRequired(propName)}
+                disabled={readOnly}
                 class="form-textarea"
                 placeholder={$_("EnterYourTextHere")}
               ></textarea>
@@ -149,6 +150,7 @@
                 minlength={property.minLength}
                 maxlength={property.maxLength}
                 pattern={property.pattern}
+                disabled={readOnly}
                 class="form-input"
               />
             {/if}
@@ -163,6 +165,7 @@
               step={property.type === "integer"
                 ? 1
                 : property.multipleOf || "any"}
+              disabled={readOnly}
               class="form-input"
             />
           {:else if property.type === "boolean"}
@@ -171,6 +174,7 @@
                 id={propName}
                 type="checkbox"
                 bind:checked={content[propName]}
+                disabled={readOnly}
                 class="form-checkbox"
               />
               <span class="checkbox-label">
@@ -181,26 +185,28 @@
             <div class="array-container">
               <div class="array-header">
                 <h3 class="array-title">{property.title || propName}</h3>
-                <button
-                  type="button"
-                  class="btn btn-primary btn-small"
-                  onclick={() => addArrayItem(propName)}
-                >
-                  <svg
-                    class="btn-icon"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
+                {#if !readOnly}
+                  <button
+                    type="button"
+                    class="btn btn-primary btn-small"
+                    onclick={() => addArrayItem(propName)}
                   >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M12 4v16m8-8H4"
-                    />
-                  </svg>
-                  {$_("AddItem")}
-                </button>
+                    <svg
+                      class="btn-icon"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 4v16m8-8H4"
+                      />
+                    </svg>
+                    {$_("AddItem")}
+                  </button>
+                {/if}
               </div>
 
               {#if content[propName] && content[propName].length > 0}
@@ -225,6 +231,7 @@
                                   <input
                                     id={`${propName}-${index}-${itemPropName}`}
                                     bind:value={item[itemPropName]}
+                                    disabled={readOnly}
                                     class="form-input form-input-small"
                                   />
                                 {:else if itemProperty.type === "number" || itemProperty.type === "integer"}
@@ -232,6 +239,7 @@
                                     id={`${propName}-${index}-${itemPropName}`}
                                     type="number"
                                     bind:value={item[itemPropName]}
+                                    disabled={readOnly}
                                     class="form-input form-input-small"
                                   />
                                 {:else if itemProperty.type === "boolean"}
@@ -240,6 +248,7 @@
                                       id={`${propName}-${index}-${itemPropName}`}
                                       type="checkbox"
                                       bind:checked={item[itemPropName]}
+                                      disabled={readOnly}
                                       class="form-checkbox"
                                     />
                                   </div>
@@ -250,12 +259,14 @@
                         {:else if property.items.type === "string"}
                           <input
                             bind:value={content[propName][index]}
+                            disabled={readOnly}
                             class="form-input"
                           />
                         {:else if property.items.type === "number" || property.items.type === "integer"}
                           <input
                             type="number"
                             bind:value={content[propName][index]}
+                            disabled={readOnly}
                             class="form-input"
                           />
                         {:else if property.items.type === "boolean"}
@@ -263,34 +274,37 @@
                             <input
                               type="checkbox"
                               bind:checked={content[propName][index]}
+                              disabled={readOnly}
                               class="form-checkbox"
                             />
                           </div>
                         {/if}
                       </div>
 
-                      <div class="array-item-actions">
-                        <button
-                          type="button"
-                          class="btn btn-danger btn-small"
-                          onclick={() => removeArrayItem(propName, index)}
-                        >
-                          <svg
-                            class="btn-icon"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
+                      {#if !readOnly}
+                        <div class="array-item-actions">
+                          <button
+                            type="button"
+                            class="btn btn-danger btn-small"
+                            onclick={() => removeArrayItem(propName, index)}
                           >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            />
-                          </svg>
-                          {$_("Remove")}
-                        </button>
-                      </div>
+                            <svg
+                              class="btn-icon"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                            >
+                              <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                            {$_("Remove")}
+                          </button>
+                        </div>
+                      {/if}
                     </div>
                   {/each}
                 </div>
@@ -320,6 +334,7 @@
                       <input
                         id={`${propName}-${nestedPropName}`}
                         bind:value={content[propName][nestedPropName]}
+                        disabled={readOnly}
                         class="form-input form-input-small"
                       />
                     {:else if nestedProperty.type === "number" || nestedProperty.type === "integer"}
@@ -327,6 +342,7 @@
                         id={`${propName}-${nestedPropName}`}
                         type="number"
                         bind:value={content[propName][nestedPropName]}
+                        disabled={readOnly}
                         class="form-input form-input-small"
                       />
                     {:else if nestedProperty.type === "boolean"}
@@ -335,6 +351,7 @@
                           id={`${propName}-${nestedPropName}`}
                           type="checkbox"
                           bind:checked={content[propName][nestedPropName]}
+                          disabled={readOnly}
                           class="form-checkbox"
                         />
                       </div>

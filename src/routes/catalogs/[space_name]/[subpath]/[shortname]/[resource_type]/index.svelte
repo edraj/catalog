@@ -125,9 +125,11 @@
       );
 
       if (response?.records) {
-        relatedContent = response.records.filter(
-          (item) => item.shortname !== itemShortname,
-        );
+        //TODO fix
+        relatedContent = []
+        // relatedContent = response.records.filter(
+        //   (item) => item.shortname !== itemShortname,
+        // );
       }
     } catch (err) {
       console.error("Error loading related content:", err);
@@ -343,7 +345,7 @@
             <p class="description-text">{getDescription(postData)}</p>
           </div>
         {/if}
-        <PostContent {postData} />
+        <PostContent {postData} {spaceName} />
 
         <PostInteractions
           reactionsCount={reactions.length}

@@ -1078,50 +1078,6 @@
               <div class="post-body">
                 <h3 class="post-title">{item.title}</h3>
 
-                {#if item.attributes?.payload?.body}
-                  <div class="post-description">
-                    {#if item.attributes?.payload.content_type === "html"}
-                      {@const cleanText = item?.attributes?.payload?.body
-                        .replace(/<[^>]*>/g, "")
-                        .replace(/\s+/g, " ")
-                        .trim()}
-                      {cleanText.substring(
-                        0,
-                        250,
-                      )}{#if cleanText.length > 250}...{/if}
-                    {:else if item?.attributes?.payload?.content_type === "json"}
-                      {#if typeof item?.attributes?.payload?.body === "object"}
-                        {#if item?.attributes?.payload?.body?.content}
-                          {@const cleanContent =
-                            typeof item?.attributes?.payload?.body?.content ===
-                            "string"
-                              ? item?.attributes?.payload?.body?.content
-                                  .replace(/<[^>]*>/g, "")
-                                  .replace(/\s+/g, " ")
-                                  .trim()
-                              : JSON.stringify(
-                                  item?.attributes?.payload?.body?.content,
-                                )}
-                          {cleanContent.substring(
-                            0,
-                            250,
-                          )}{#if cleanContent.length > 250}...{/if}
-                        {/if}
-                      {:else}
-                        {@const jsonPreview = JSON.stringify(
-                          item?.attributes?.payload?.body,
-                          null,
-                          2,
-                        )}
-                        {jsonPreview.substring(
-                          0,
-                          250,
-                        )}{#if jsonPreview.length > 250}...{/if}
-                      {/if}
-                    {/if}
-                  </div>
-                {/if}
-
                 <!-- Post Tags -->
                 {#if item.attributes?.tags && item.attributes.tags.length > 0}
                   <div class="post-card-tags">

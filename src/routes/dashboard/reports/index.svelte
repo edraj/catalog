@@ -7,6 +7,7 @@
     replyToReport,
     updateReportStatus,
   } from "@/lib/dmart_services/dmart_services";
+  import { getWorkflow } from "@/lib/dmart_services/workflows";
   import {
     successToastMessage,
     errorToastMessage,
@@ -23,38 +24,11 @@
   let adminReply = $state("");
   let isSubmittingReply = $state(false);
   let selectedAction = $state("no_action");
-
-  const statusFilters = [
+  let workflow = $state(null);
+  let statusFilters = $state([
     { value: "all", label: $_("reports.admin.filters.all") || "All Reports" },
-    {
-      value: "Pending",
-      label: $_("reports.admin.filters.pending") || "Pending",
-    },
-    {
-      value: "Resolved",
-      label: $_("reports.admin.filters.resolved") || "Resolved",
-    },
-    {
-      value: "Canceled",
-      label: $_("reports.admin.filters.canceled") || "Canceled",
-    },
-  ];
-
-  const actionOptions = [
-    {
-      value: "no_action",
-      label: $_("reports.admin.actions.no_action") || "No Action Required",
-    },
-    {
-      value: "warn_user",
-      label: $_("reports.admin.actions.warn_user") || "Warn User",
-    },
-    {
-      value: "delete_entry",
-      label:
-        $_("reports.admin.actions.delete_entry") || "Delete Reported Entry",
-    },
-  ];
+  ]);
+  let availableTransitions = $state([]);
 
   let selectedStatusFilter = $state("all");
 
@@ -74,8 +48,76 @@
   }
 
   onMount(async () => {
-    await loadReports();
+    await Promise.all([loadReports(), loadWorkflow()]);
   });
+
+  async function loadWorkflow() {
+    try {
+      const response = await getWorkflow("report_workflow", "catalog");
+
+      if (response && response?.payload?.body) {
+        workflow = response.payload.body;
+        const dynamicFilters = [];
+
+        // Add initial states to filters
+        if (workflow.initial_state) {
+          workflow.initial_state.forEach((s) => {
+            dynamicFilters.push({
+              value: s.name,
+              label: s.name.charAt(0).toUpperCase() + s.name.slice(1),
+            });
+          });
+        }
+
+        // Add other states to filters
+        if (workflow.states) {
+          workflow.states.forEach((s) => {
+            if (!dynamicFilters.find((f) => f.value === s.state)) {
+              dynamicFilters.push({
+                value: s.state,
+                label: s.name || s.state,
+              });
+            }
+          });
+        }
+
+        statusFilters = [
+          {
+            value: "all",
+            label: $_("reports.admin.filters.all") || "All Reports",
+          },
+          ...dynamicFilters,
+        ];
+      }
+    } catch (error) {
+      console.error("Error loading workflow:", error);
+    }
+  }
+
+  function getRepliesFromAttachments(attachments) {
+    if (!attachments) return [];
+    let allAttachments = [];
+    if (Array.isArray(attachments)) {
+      allAttachments = attachments;
+    } else {
+      // Dmart often returns attachments as a dictionary
+      Object.values(attachments).forEach((val) => {
+        if (Array.isArray(val)) {
+          allAttachments.push(...val);
+        } else if (val && typeof val === "object") {
+          allAttachments.push(val);
+        }
+      });
+    }
+
+    return allAttachments
+      .filter((a) => a.resource_type === "comment")
+      .map((a) => ({
+        timestamp: a.attributes?.created_at || a.created_at,
+        admin_shortname: a.attributes?.owner_shortname || a.owner_shortname,
+        reply: a.attributes?.payload?.body?.body || a.payload?.body?.body || "No content",
+      }));
+  }
 
   async function loadReports() {
     try {
@@ -83,10 +125,28 @@
       const response = await getReports(
         selectedStatusFilter === "all" ? undefined : selectedStatusFilter,
       );
-      reports = response.records.map((report) => ({
-        ...report,
-        reportData: report.attributes?.payload?.body || {},
-      }));
+      reports = response.records.map((report) => {
+        const attributes = report.attributes || {};
+        const reportData = attributes.payload?.body || {};
+
+        const replies = getRepliesFromAttachments(report["attachments"]);
+
+        return {
+          ...report,
+          reportData: {
+            ...reportData,
+            replies: replies,
+            title: reportData.title || attributes.displayname?.en || "No Title",
+            description:
+              reportData.description ||
+              attributes.description?.en ||
+              "No Description",
+            reported_entry: reportData.entry || reportData.reported_entry,
+            reported_space: reportData.space_name || reportData.reported_space,
+            reported_subpath: reportData.subpath || reportData.reported_subpath,
+          },
+        };
+      });
     } catch (error) {
       console.error("Error loading reports:", error);
       errorToastMessage(
@@ -100,14 +160,42 @@
   async function openReplyModal(report) {
     try {
       const detailedReport = await getReportDetails(report.shortname);
+      const attributes = detailedReport?.attributes || report.attributes || {};
+      const reportData = attributes.payload?.body || report.reportData || {};
+
+      const replies = getRepliesFromAttachments(
+        detailedReport?.["attachments"] || report["attachments"],
+      );
+
       selectedReport = {
         ...report,
-        reportData:
-          detailedReport?.attributes?.payload?.body || report.reportData,
+        reportData: {
+          ...reportData,
+          replies: replies,
+          title: reportData.title || attributes.displayname?.en || "No Title",
+          description:
+            reportData.description ||
+            attributes.description?.en ||
+            "No Description",
+          reported_entry: reportData.entry || reportData.reported_entry,
+          reported_space: reportData.space_name || reportData.reported_space,
+          reported_subpath: reportData.subpath || reportData.reported_subpath,
+        },
       };
       showReplyModal = true;
       adminReply = "";
       selectedAction = "no_action";
+
+      // Get available transitions for the current state
+      if (workflow && workflow.states) {
+        console.log({ workflow})
+        const currentState = workflow.states.find(
+          (s) => s.state === (selectedReport.attributes.state || "Pending"),
+        );
+        availableTransitions = currentState?.next || [];
+      } else {
+        availableTransitions = [];
+      }
     } catch (error) {
       console.error("Error loading report details:", error);
       errorToastMessage(
@@ -137,9 +225,7 @@
       const success = await replyToReport(
         selectedReport.shortname,
         adminReply,
-        selectedAction !== "no_action"
-          ? (selectedAction as "warn_user" | "delete_entry")
-          : undefined,
+        selectedAction !== "no_action" ? selectedAction : undefined,
       );
 
       if (success) {
@@ -187,34 +273,67 @@
     }
   }
 
-  function getStatusColor(status) {
-    switch (status) {
-      case "Pending":
-        return "bg-yellow-100 text-yellow-800";
-      case "Resolved":
-        return "bg-green-100 text-green-800";
-      case "Canceled":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
+  function getReportStyle(report) {
+    const state =
+      report.attributes?.state || report.reportData?.status || "Pending";
+    const normalizedState = state.toLowerCase();
+
+    // Default style
+    let style = {
+      color: "bg-gray-50 text-gray-500",
+      icon: "🔍",
+      label: state,
+      isEndState: false,
+    };
+
+    if (workflow) {
+      // Check if it's an initial state
+      const isInitial = isInitialState(report);
+      if (isInitial) {
+        style = {
+          ...style,
+          color: "bg-gray-50 text-gray-500",
+          icon: "📥",
+          label: state,
+        };
+      } else {
+        const stateObj = workflow.states?.find(
+          (s) => s.state?.toLowerCase() === normalizedState,
+        );
+        if (stateObj) {
+          const isEnd = !stateObj.next || stateObj.next.length === 0;
+          if (isEnd) {
+            style = {
+              ...style,
+              color: "bg-red-50 text-red-600",
+              label: stateObj.name || state,
+              isEndState: true,
+            };
+          } else {
+            style = {
+              ...style,
+              color: "bg-green-50 text-green-600",
+              label: stateObj.name || state,
+            };
+          }
+        }
+      }
     }
+    return { ...style };
   }
 
-  function getTypeIcon(reportType) {
-    switch (reportType) {
-      case "inappropriate_content":
-        return "⚠️";
-      case "spam":
-        return "🚫";
-      case "misinformation":
-        return "❌";
-      case "copyright_violation":
-        return "©️";
-      case "harassment":
-        return "🛡️";
-      default:
-        return "🔍";
-    }
+  function isInitialState(report) {
+    if (!workflow || !workflow.initial_state)
+      return report.attributes.state === "Pending";
+    const normalizedState = (report.attributes.state || "Pending").toLowerCase();
+    const initialStates = Array.isArray(workflow.initial_state)
+      ? workflow.initial_state
+      : [workflow.initial_state];
+    return initialStates.some(
+      (s) =>
+        s.name?.toLowerCase() === normalizedState ||
+        s.state?.toLowerCase() === normalizedState,
+    );
   }
 
   $effect(() => {
@@ -292,6 +411,7 @@
     {:else}
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {#each reports as report}
+          {@const { color, icon, label, isEndState } = getReportStyle(report)}
           <!-- svelte-ignore a11y_click_events_have_key_events -->
           <!-- svelte-ignore a11y_no_static_element_interactions -->
           <div
@@ -299,48 +419,34 @@
             tabindex="0"
             role="button"
             onkeypress={(e) => {
-              if (e.key === "Enter" && report.attributes.state === "Pending") {
+              if (e.key === "Enter" && isInitialState(report)) {
                 openReplyModal(report);
               }
             }}
             onclick={(e) => {
               // Only open if clicking on the card itself, not the buttons
-              if (
-                e.target === e.currentTarget &&
-                report.attributes.state === "Pending"
-              )
+              if (e.target === e.currentTarget && isInitialState(report))
                 openReplyModal(report);
             }}
           >
             <div class="flex justify-between items-start mb-4">
-              <div class="flex items-center gap-2">
-                <span class="text-sm"
-                  >{getTypeIcon(report.reportData.report_type)}</span
-                >
-                <span
-                  class="type-text text-sm font-bold {report.reportData
-                    .report_type === 'copyright_violation'
-                    ? 'text-orange-500'
-                    : report.reportData.report_type === 'misinformation'
-                      ? 'text-red-500'
-                      : 'text-gray-500'} capitalize"
-                  >{report.reportData.report_type?.replace("_", " ") ||
-                    "General"}</span
-                >
+                <div class="flex items-center gap-2">
+                  <span
+                    class="type-text text-sm font-bold">{report.reportData.report_type?.replace("_", " ") ||
+                      "General"}</span
+                  >
+                </div>
+                {#if !isEndState}
+                  <div class="report-status">
+                    <span
+                      class="status-badge px-3 py-1 text-xs font-semibold rounded-full capitalize {color}"
+                    >
+                      {#if icon}<span class="mr-1">{icon}</span>{/if}
+                      {label}
+                    </span>
+                  </div>
+                {/if}
               </div>
-              <div class="report-status">
-                <span
-                  class="status-badge px-3 py-1 text-xs font-semibold rounded-full capitalize {report
-                    .reportData.status === 'Resolved'
-                    ? 'bg-green-50 text-green-600'
-                    : report.reportData.status === 'Pending'
-                      ? 'bg-orange-50 text-orange-500'
-                      : 'bg-gray-50 text-gray-500'}"
-                >
-                  {report.reportData.status || "Pending"}
-                </span>
-              </div>
-            </div>
 
             <div class="report-content flex-grow">
               <h3 class="report-title text-lg font-bold text-gray-900 mb-1">
@@ -421,23 +527,39 @@
             <div
               class="report-actions mt-auto pt-4 flex gap-2 flex-wrap text-sm font-semibold"
             >
-              {#if report.attributes.state === "Pending"}
+              {#if workflow}
+                {@const stateObj = workflow.states?.find(
+                  (s) =>
+                    s.state?.toLowerCase() ===
+                    (report.attributes.state || "Pending").toLowerCase(),
+                )}
+                 {@const isInitial = isInitialState(report)}
+                {@const isEndState =
+                  stateObj && (!stateObj.next || stateObj.next.length === 0)}
+
+                {#if isEndState}
+                  <span class="text-red-500 cursor-default">
+                    {stateObj.name || report.attributes.state}
+                  </span>
+                {:else if isInitial || stateObj}
+                  <button
+                    class="action-btn text-blue-500 hover:text-blue-600 bg-transparent p-0 border-0"
+                    onclick={() => openReplyModal(report)}
+                  >
+                    {$_("reports.admin.actions.reply") || "Take action"}
+                  </button>
+                {:else}
+                  <span class="text-gray-400 cursor-default">
+                    {report.attributes.state || "Pending"}
+                  </span>
+                {/if}
+              {:else}
                 <button
                   class="action-btn text-blue-500 hover:text-blue-600 bg-transparent p-0 border-0"
                   onclick={() => openReplyModal(report)}
                 >
                   {$_("reports.admin.actions.reply") || "Take action"}
                 </button>
-              {:else if report.attributes.state === "Resolved"}
-                <span class="resolved-text text-green-500 cursor-default">
-                  {$_("reports.admin.status.resolved") ||
-                    "This report has been resolved"}
-                </span>
-              {:else if report.attributes.state === "Canceled"}
-                <span class="canceled-text text-gray-400 cursor-default">
-                  {$_("reports.admin.status.canceled") ||
-                    "This report has been dismissed"}
-                </span>
               {/if}
             </div>
           </div>
@@ -509,8 +631,12 @@
           bind:value={selectedAction}
           class="form-select"
         >
-          {#each actionOptions as action}
-            <option value={action.value}>{action.label}</option>
+          <option value="no_action"
+            >{$_("reports.admin.actions.no_action") ||
+              "No Action Required"}</option
+          >
+          {#each availableTransitions as transition}
+            <option value={transition.action}>{transition.action}</option>
           {/each}
         </select>
       </div>
@@ -715,5 +841,21 @@
     border-color: #3b82f6;
     transform: translateY(-1px);
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+
+  .loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 6rem 2rem;
+    text-align: center;
+  }
+
+  .loading-text {
+    margin-top: 1rem;
+    font-size: 1rem;
+    color: #6b7280;
+    font-weight: 500;
   }
 </style>

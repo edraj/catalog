@@ -363,7 +363,7 @@
 <div class="editor-card">
   <div class="editor-content">
     <div
-      class="editor-container prose max-w-none"
+      class="editor-container"
       bind:this={maindiv}
       id="htmleditor-{uid}"
       tabindex="0"
@@ -472,7 +472,7 @@
     border-radius: 0.375rem;
     padding: 1rem;
     background-color: #ffffff;
-    color: #1f2937;
+    color: #374151;
     outline: none;
     transition:
       border-color 0.15s ease-in-out,
@@ -483,6 +483,112 @@
   .editor-container:focus-within {
     border-color: #3b82f6;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  .editor-container :global(h1) {
+    font-size: 1.875rem;
+    font-weight: 700;
+    margin: 1.5rem 0 1rem 0;
+    color: #1f2937;
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 0.5rem;
+  }
+
+  .editor-container :global(h2) {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 1.25rem 0 0.75rem 0;
+    color: #1f2937;
+  }
+
+  .editor-container :global(h3) {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 1rem 0 0.5rem 0;
+    color: #1f2937;
+  }
+
+  .editor-container :global(p) {
+    margin: 0.75rem 0;
+  }
+
+  .editor-container :global(ul),
+  .editor-container :global(ol) {
+    margin: 0.75rem 0;
+    padding-left: 1.5rem;
+  }
+
+  .editor-container :global(ul) {
+    list-style-type: disc;
+  }
+
+  .editor-container :global(ol) {
+    list-style-type: decimal;
+  }
+
+  .editor-container :global(li) {
+    margin: 0.25rem 0;
+  }
+
+  .editor-container :global(blockquote) {
+    margin: 1rem 0;
+    padding: 0.75rem 1rem;
+    background: #f9fafb;
+    border-left: 4px solid #d1d5db;
+    color: #6b7280;
+  }
+
+  .editor-container :global(code) {
+    background: #f3f4f6;
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+    font-family: "uthmantn", "Monaco", "Menlo", "Ubuntu Mono", monospace;
+    font-size: 0.875rem;
+  }
+
+  .editor-container :global(pre) {
+    background: #1f2937;
+    color: #f9fafb;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    margin: 1rem 0;
+  }
+
+  .editor-container :global(pre code) {
+    background: transparent;
+    padding: 0;
+    color: inherit;
+  }
+
+  .editor-container :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+  }
+
+  .editor-container :global(th),
+  .editor-container :global(td) {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #d1d5db;
+    text-align: left;
+  }
+
+  .editor-container :global(th) {
+    background: #f9fafb;
+    font-weight: 600;
+  }
+
+  .editor-container :global(strong) {
+    font-weight: 600;
+  }
+
+  .editor-container :global(em) {
+    font-style: italic;
+  }
+
+  .editor-container :global(del) {
+    text-decoration: line-through;
   }
 
   /* FIX: Custom scrollbar styling for better appearance */

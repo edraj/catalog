@@ -196,7 +196,6 @@ export async function setDefaultUserRole(
                         },
                     },
                 },
-                true
             );
 
             return result !== null;

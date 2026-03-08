@@ -909,7 +909,7 @@
 
                   <div class="p-6">
                     {#if ct === "html"}
-                      <div class="prose max-w-none" class:text-right={$isRTL}>
+                      <div class="html-preview" class:text-right={$isRTL}>
                         {@html body}
                       </div>
                     {:else if ct === "json"}
@@ -2033,7 +2033,8 @@
 {/if}
 
 <style>
-  .markdown-preview {
+  .markdown-preview,
+  .html-preview {
     height: 100%;
     padding: 1rem;
     overflow-y: auto;
@@ -2055,11 +2056,17 @@
 
   /* Headings */
   .markdown-preview :global(h1),
+  .html-preview :global(h1),
   .markdown-preview :global(h2),
+  .html-preview :global(h2),
   .markdown-preview :global(h3),
+  .html-preview :global(h3),
   .markdown-preview :global(h4),
+  .html-preview :global(h4),
   .markdown-preview :global(h5),
-  .markdown-preview :global(h6) {
+  .html-preview :global(h5),
+  .markdown-preview :global(h6),
+  .html-preview :global(h6) {
     margin-top: 1.5em;
     margin-bottom: 0.5em;
     font-weight: 600;
@@ -2067,68 +2074,84 @@
     color: #111827;
   }
 
-  .markdown-preview :global(h1) {
+  .markdown-preview :global(h1),
+  .html-preview :global(h1) {
     font-size: 2em;
     padding-bottom: 0.3em;
     border-bottom: 1px solid #e5e7eb;
   }
-  .markdown-preview :global(h2) {
+  .markdown-preview :global(h2),
+  .html-preview :global(h2) {
     font-size: 1.5em;
     padding-bottom: 0.3em;
     border-bottom: 1px solid #e5e7eb;
   }
-  .markdown-preview :global(h3) {
+  .markdown-preview :global(h3),
+  .html-preview :global(h3) {
     font-size: 1.25em;
   }
-  .markdown-preview :global(h4) {
+  .markdown-preview :global(h4),
+  .html-preview :global(h4) {
     font-size: 1em;
   }
-  .markdown-preview :global(h5) {
+  .markdown-preview :global(h5),
+  .html-preview :global(h5) {
     font-size: 0.875em;
   }
-  .markdown-preview :global(h6) {
+  .markdown-preview :global(h6),
+  .html-preview :global(h6) {
     font-size: 0.85em;
     color: #6b7280;
   }
 
   /* Paragraphs and Inline Text */
-  .markdown-preview :global(p) {
+  .markdown-preview :global(p),
+  .html-preview :global(p) {
     margin-top: 0;
     margin-bottom: 1rem;
   }
 
-  .markdown-preview :global(a) {
+  .markdown-preview :global(a),
+  .html-preview :global(a) {
     color: #2563eb;
     text-decoration: none;
   }
-  .markdown-preview :global(a:hover) {
+  .markdown-preview :global(a:hover),
+  .html-preview :global(a:hover) {
     text-decoration: underline;
   }
 
-  .markdown-preview :global(strong) {
+  .markdown-preview :global(strong),
+  .html-preview :global(strong) {
     font-weight: 600;
   }
 
   /* Lists */
   .markdown-preview :global(ul),
-  .markdown-preview :global(ol) {
+  .html-preview :global(ul),
+  .markdown-preview :global(ol),
+  .html-preview :global(ol) {
     margin-top: 0;
     margin-bottom: 1rem;
     padding-left: 2em;
   }
-  .markdown-preview :global(ul) {
+  .markdown-preview :global(ul),
+  .html-preview :global(ul) {
     list-style-type: disc;
   }
-  .markdown-preview :global(ol) {
+  .markdown-preview :global(ol),
+  .html-preview :global(ol) {
     list-style-type: decimal;
   }
 
-  .markdown-preview :global(li) {
+  .markdown-preview :global(li),
+  .html-preview :global(li) {
     margin-top: 0.25em;
   }
 
   /* Blockquotes */
-  .markdown-preview :global(blockquote) {
+  .markdown-preview :global(blockquote),
+  .html-preview :global(blockquote) {
     margin: 0 0 1rem;
     padding: 0 1em;
     color: #6b7280;
@@ -2136,7 +2159,8 @@
   }
 
   /* Code and Preformatted Text */
-  .markdown-preview :global(code) {
+  .markdown-preview :global(code),
+  .html-preview :global(code) {
     padding: 0.2em 0.4em;
     margin: 0;
     font-size: 85%;
@@ -2146,7 +2170,8 @@
     border-radius: 6px;
   }
 
-  .markdown-preview :global(pre) {
+  .markdown-preview :global(pre),
+  .html-preview :global(pre) {
     padding: 1rem;
     overflow: auto;
     font-size: 85%;
@@ -2155,14 +2180,16 @@
     border-radius: 6px;
     margin-bottom: 1rem;
   }
-  .markdown-preview :global(pre code) {
+  .markdown-preview :global(pre code),
+  .html-preview :global(pre code) {
     padding: 0;
     background-color: transparent;
     border-radius: 0;
   }
 
   /* Tables */
-  .markdown-preview :global(table) {
+  .markdown-preview :global(table),
+  .html-preview :global(table) {
     display: block;
     width: 100%;
     width: max-content;
@@ -2175,27 +2202,34 @@
   }
 
   .markdown-preview :global(table th),
-  .markdown-preview :global(table td) {
+  .html-preview :global(table th),
+  .markdown-preview :global(table td),
+  .html-preview :global(table td) {
     padding: 6px 13px;
     border: 1px solid #e5e7eb;
   }
 
-  .markdown-preview :global(table tr:nth-child(2n)) {
+  .markdown-preview :global(table tr:nth-child(2n)),
+  .html-preview :global(table tr:nth-child(2n)) {
     background-color: #f9fafb;
   }
 
   /* RTL Support */
-  .rtl .markdown-preview {
+  .rtl .markdown-preview,
+  .rtl .html-preview {
     text-align: right;
   }
 
   .rtl .markdown-preview :global(ul),
-  .rtl .markdown-preview :global(ol) {
+  .rtl .html-preview :global(ul),
+  .rtl .markdown-preview :global(ol),
+  .rtl .html-preview :global(ol) {
     padding-left: 0;
     padding-right: 2em;
   }
 
-  .rtl .markdown-preview :global(blockquote) {
+  .rtl .markdown-preview :global(blockquote),
+  .rtl .html-preview :global(blockquote) {
     border-left: none;
     border-right: 0.25em solid #e5e7eb;
   }

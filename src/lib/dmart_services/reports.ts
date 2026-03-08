@@ -10,6 +10,7 @@ import {
     SortyType,
 } from "@edraj/tsdmart";
 import { getEntity, updateEntity } from "./core";
+import { createComment } from "./comments_reactions";
 
 export async function createReport(
     reportData: {
@@ -38,8 +39,9 @@ export async function createReport(
                     is_active: true,
                     displayname: {
                         en: reportData.title,
-                        ar: reportData.title,
-                        ku: reportData.title,
+                    },
+                    description: {
+                        en: reportData.description,
                     },
                     tags: [reportData.report_type, reportData.status || "pending"],
                     workflow_shortname: workflow_shortname,
@@ -47,15 +49,10 @@ export async function createReport(
                         content_type: ContentType.json,
                         schema_shortname: schema_shortname,
                         body: {
-                            title: reportData.title,
-                            description: reportData.description,
-                            reported_entry: reportData.reported_entry,
-                            reported_entry_title: reportData.reported_entry_title,
-                            reported_space: reportData.space_name,
-                            reported_subpath: reportData.subpath,
+                            entry: reportData.reported_entry,
+                            space_name: reportData.space_name,
+                            subpath: reportData.subpath,
                             report_type: reportData.report_type,
-                            created_at: new Date().toISOString(),
-                            replies: [],
                         },
                     },
                 },
@@ -74,7 +71,7 @@ export async function getReports(
 ): Promise<ApiQueryResponse> {
     let searchQuery = "@resource_type:ticket";
     if (status) {
-        searchQuery += ` AND @tags:${status}`;
+        searchQuery += ` @state:${status}`;
     }
 
     const response = await Dmart.query(
@@ -118,7 +115,7 @@ export async function getReportDetails(
 
 export async function updateReportStatus(
     reportShortname: string,
-    newStatus: "Pending" | "Resolved" | "Canceled",
+    newStatus: string,
     adminReply?: string
 ) {
     try {
@@ -127,27 +124,19 @@ export async function updateReportStatus(
             return false;
         }
 
-        const currentBody = currentReport.payload.body;
-        const updatedReplies = [...(currentBody.replies || [])];
+        const currentBody = currentReport.payload?.body || {};
 
         if (adminReply) {
-            updatedReplies.push({
-                timestamp: new Date().toISOString(),
-                admin_shortname: "dmart",
-                reply: adminReply,
-                action:
-                    newStatus === "Resolved"
-                        ? "Resolved"
-                        : newStatus === "Canceled"
-                            ? "Canceled"
-                            : "Replied",
-            });
+            await createComment(
+                "catalog",
+                "reports",
+                reportShortname,
+                adminReply
+            );
         }
 
         const updatedBody = {
             ...currentBody,
-            replies: updatedReplies,
-            updated_at: new Date().toISOString(),
         };
 
         const workflowAction = newStatus;
@@ -177,7 +166,7 @@ export async function updateReportStatus(
         }
 
         const progressResponse = await Dmart.progressTicket({
-            space_name: "report",
+            space_name: "catalog",
             subpath: "reports",
             shortname: reportShortname,
             action: workflowAction
@@ -193,15 +182,15 @@ export async function updateReportStatus(
 export async function replyToReport(
     reportShortname: string,
     reply: string,
-    action?: "delete_entry" | "warn_user" | "no_action"
+    action?: string
 ) {
     try {
-        let newStatus: "Pending" | "Resolved" | "Canceled" = action
-            ? "Resolved"
+        let newStatus: string = action
+            ? action
             : "Pending";
 
         const reportDetails = await getReportDetails(reportShortname);
-        if (!reportDetails?.payload.body.reported_entry) {
+        if (!reportDetails?.payload.body.entry && !reportDetails?.payload.body.reported_entry) {
             console.warn("No reported entry found in report details");
             return await updateReportStatus(
                 reportShortname,
@@ -210,9 +199,9 @@ export async function replyToReport(
             );
         }
 
-        const entryShortname = reportDetails.payload.body.reported_entry;
-        const spaceName = reportDetails.payload.body.reported_space;
-        const subpath = reportDetails.payload.body.reported_subpath;
+        const entryShortname = reportDetails.payload.body.entry || reportDetails.payload.body.reported_entry;
+        const spaceName = reportDetails.payload.body.space_name || reportDetails.payload.body.reported_space;
+        const subpath = reportDetails.payload.body.subpath || reportDetails.payload.body.reported_subpath;
 
         let reportedEntity = null;
         let entryOwner = null;

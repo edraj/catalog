@@ -52,8 +52,7 @@ export async function userVote(
             "poll",
             `polls/${poll_shortname}`,
             ResourceType.json,
-            attributes,
-            true
+            attributes
         );
     } else {
         return await createEntity(
