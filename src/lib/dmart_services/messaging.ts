@@ -6,8 +6,77 @@ import {
 import {
     getEntity,
     createEntity,
-    searchEntities
+    searchEntities,
+    deleteEntity
 } from "./core";
+
+export async function createMessages(data: any) {
+    const attributes = {
+        is_active: true,
+        relationships: [],
+        tags: [],
+        payload: {
+            content_type: ContentType.json,
+            body: data,
+        },
+    };
+
+    return await createEntity(
+        "messages",
+        "messages",
+        ResourceType.content,
+        attributes,
+        'auto'
+    );
+}
+
+export async function getMessagesBetweenUsers(
+    currentUserShortname: string,
+    otherUserShortname: string,
+    limit: number = 10,
+    offset: number = 0
+) {
+    try {
+        const response = await searchEntities(
+            "messages",
+            "messages",
+            "",
+            limit,
+            offset,
+            "created_at",
+            SortyType.descending,
+            "public",
+            true,
+            true,
+            true
+        );
+
+        if (response && response.status === "success") {
+            const filteredRecords = response.records.filter((record) => {
+                const payload = record.attributes.payload?.body;
+                if (!payload) return false;
+
+                const isConversation =
+                    (payload.sender === currentUserShortname &&
+                        payload.receiver === otherUserShortname) ||
+                    (payload.sender === otherUserShortname &&
+                        payload.receiver === currentUserShortname);
+
+                return isConversation;
+            });
+
+            return {
+                status: "success",
+                records: filteredRecords,
+            };
+        } else {
+            throw new Error("Failed to fetch messages");
+        }
+    } catch (err) {
+        console.error("Error fetching messages between users:", err);
+        return { status: "error", records: [] };
+    }
+}
 
 export async function getMessageByShortname(shortname: string) {
     try {
@@ -183,7 +252,7 @@ export async function deleteItem(
     subpath: string,
     spaceName: string
 ) {
-    const result = await (await import("./core")).deleteEntity(
+    const result = await deleteEntity(
         shortname,
         spaceName,
         subpath || "/",
