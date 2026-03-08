@@ -20,19 +20,17 @@
   let schema: any = $state(null);
   let isLoadingSchema = $state(false);
 
-  $effect(() => {
-    if (postData?.payload?.content_type === "json") {
-      if (postData?.payload?.schema_shortname && spaceName) {
-        loadSchema(postData.payload.schema_shortname);
-      } else if (typeof postData.payload.body === "object" && postData.payload.body !== null && !Array.isArray(postData.payload.body)) {
-        schema = generateSimpleSchema(postData.payload.body);
-      } else {
-        schema = null;
-      }
+  if (postData?.payload?.content_type === "json") {
+    if (postData?.payload?.schema_shortname && spaceName) {
+      loadSchema(postData.payload.schema_shortname);
+    } else if (typeof postData.payload.body === "object" && postData.payload.body !== null && !Array.isArray(postData.payload.body)) {
+      schema = generateSimpleSchema(postData.payload.body);
     } else {
       schema = null;
     }
-  });
+  } else {
+    schema = null;
+  }
 
   function generateSimpleSchema(data: any): any {
     if (typeof data !== "object" || data === null || Array.isArray(data)) {
@@ -67,7 +65,7 @@
     
     isLoadingSchema = true;
     try {
-      const response = await getSpaceSchema(spaceName, "", schemaShortname);
+      const response = await getSpaceSchema(spaceName);
       if (response?.status === "success" && response?.records && response.records.length > 0) {
         const record = response.records.find((r: any) => r.shortname === schemaShortname) || response.records[0];
         schema = record.attributes?.payload?.body;

@@ -136,7 +136,6 @@ export async function getSpaceFolders(
 
 export async function getSpaceSchema(
     spaceName: string,
-    subpath: string,
     scope: string,
     limit = 100,
     offset = 0
@@ -145,7 +144,7 @@ export async function getSpaceSchema(
         {
             type: QueryType.search,
             space_name: spaceName,
-            subpath: subpath,
+            subpath: '/schema',
             search: "",
             limit: limit,
             sort_by: "shortname",
