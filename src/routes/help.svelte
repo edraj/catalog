@@ -115,7 +115,7 @@
         {#each faqs as faq, index}
           <div class="faq-item">
             <button
-              aria-label={`Toggle FAQ ${index}`}
+              aria-label={$_("route_labels.aria_toggle_faq") + " " + (index + 1)}
               class="faq-question"
               onclick={() => toggleFaq(index)}
               class:active={openFaq === index}

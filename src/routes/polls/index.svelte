@@ -308,15 +308,15 @@
     <div class="polls-stats flex gap-4 mb-10">
       <div class="stat-pill flex items-center gap-2 px-5 py-2 bg-white border border-gray-100 rounded-full text-sm shadow-sm ring-1 ring-black ring-opacity-5">
         <ChartOutline class="w-4 h-4 text-indigo-500" />
-        <span class="text-gray-500">Total</span> <span class="font-bold text-gray-900 ml-1">{polls.length}</span>
+        <span class="text-gray-500">{$_("route_labels.label_total")}</span> <span class="font-bold text-gray-900 ml-1">{polls.length}</span>
       </div>
       <div class="stat-pill flex items-center gap-2 px-5 py-2 bg-white border border-gray-100 rounded-full text-sm shadow-sm ring-1 ring-black ring-opacity-5">
         <ClockOutline class="w-4 h-4 text-green-500" />
-        <span class="text-gray-500">Active</span> <span class="font-bold text-gray-900 ml-1">{polls.filter(p => p.isActive).length}</span>
+        <span class="text-gray-500">{$_("route_labels.label_active")}</span> <span class="font-bold text-gray-900 ml-1">{polls.filter(p => p.isActive).length}</span>
       </div>
       <div class="stat-pill flex items-center gap-2 px-5 py-2 bg-white border border-gray-100 rounded-full text-sm shadow-sm ring-1 ring-black ring-opacity-5">
         <CheckCircleOutline class="w-4 h-4 text-gray-400" />
-        <span class="text-gray-500">Ended</span> <span class="font-bold text-gray-900 ml-1">{polls.filter(p => !p.isActive).length}</span>
+        <span class="text-gray-500">{$_("route_labels.label_ended")}</span> <span class="font-bold text-gray-900 ml-1">{polls.filter(p => !p.isActive).length}</span>
       </div>
     </div>
 

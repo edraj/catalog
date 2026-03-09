@@ -10,17 +10,48 @@
   let modalOpen = $state(false);
   let searchString = $state("");
   let entities = $state([]);
+  let isExpanded = $state(false);
+  let searchInput = $state(null);
 
   function toggleModal() {
     modalOpen = !modalOpen;
+    if (!modalOpen) {
+      // When closing modal, collapse search if empty
+      collapseSearch();
+    }
   }
   function openModal() {
     if (modalOpen) return;
     modalOpen = true;
+    // Trigger search if we have a search string
+    if (searchString.trim()) {
+      setTimeout(() => handleSearchChange(), 100);
+    }
+  }
+  
+  function expandSearch() {
+    isExpanded = true;
+    // Focus the input after expansion
+    setTimeout(() => {
+      if (searchInput) {
+        searchInput.focus();
+      }
+    }, 100);
+  }
+  
+  function collapseSearch() {
+    if (!searchString.trim()) {
+      isExpanded = false;
+    }
   }
 
   let timeout;
   async function handleSearchChange(event) {
+    // Open modal when user starts typing
+    if (!modalOpen && searchString.trim()) {
+      openModal();
+    }
+    
     if (!searchString.trim()) {
       return;
     }
@@ -78,14 +109,17 @@
   }
 </script>
 
-<button
-  onclick={openModal}
-  class="flex items-center text-left bg-gray-50 hover:bg-gray-100 text-gray-400 border border-t-0 border-white/50 shadow-inner hover:shadow-sm transition-all rounded-full h-9 px-3 w-48 sm:w-72 md:w-80 lg:w-[400px] text-sm font-medium mr-2"
-  aria-label="Search"
-  title="Search"
+<div
+  class="flex items-center bg-gray-50 hover:bg-gray-100 text-gray-400 border border-t-0 border-white/50 shadow-inner hover:shadow-sm transition-all duration-300 ease-in-out rounded-full h-9 px-3 overflow-hidden {isExpanded ? 'w-72 sm:w-96 md:w-[500px] lg:w-[600px]' : 'w-48 sm:w-72 md:w-80 lg:w-[400px]'} mr-2"
+  onclick={expandSearch}
+  role="button"
+  tabindex="0"
+  onkeydown={(e) => e.key === 'Enter' && expandSearch()}
+  aria-label={$_("route_labels.aria_search")}
+  title={$_("route_labels.aria_search")}
 >
   <svg
-    class="w-4 h-4 mr-2 opacity-70"
+    class="w-4 h-4 mr-2 opacity-70 flex-shrink-0"
     fill="none"
     stroke="currentColor"
     viewBox="0 0 24 24"
@@ -97,8 +131,20 @@
       d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
     ></path>
   </svg>
-  <span class="truncate">Search spaces, posts, people...</span>
-</button>
+  {#if isExpanded}
+    <input
+      bind:this={searchInput}
+      type="text"
+      placeholder={$_("route_labels.search_placeholder_short")}
+      bind:value={searchString}
+      onkeyup={handleSearchChange}
+      onblur={collapseSearch}
+      class="w-full bg-transparent border-none outline-none text-gray-900 placeholder-gray-400 text-sm"
+    />
+  {:else}
+    <span class="truncate text-sm font-medium">{$_("route_labels.search_placeholder_short")}</span>
+  {/if}
+</div>
 
 {#if modalOpen}
   <div class="fixed inset-0 z-50 flex items-start justify-center pt-16 px-4">
@@ -133,7 +179,7 @@
           <button
             onclick={toggleModal}
             class="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
-            aria-label="Close"
+            aria-label={$_("route_labels.aria_close")}
           >
             <svg
               class="w-5 h-5 text-gray-600"

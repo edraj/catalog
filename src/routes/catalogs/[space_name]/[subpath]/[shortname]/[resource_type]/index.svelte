@@ -548,7 +548,7 @@
               {$_("post_detail.login_required.title")}
             </h3>
             <button
-              aria-label={`Close login prompt`}
+              aria-label={$_("route_labels.aria_close_login_prompt")}
               onclick={closeLoginPrompt}
               class="modal-close-button"
             >

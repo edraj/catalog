@@ -808,7 +808,7 @@
         <h3 class="error-title">{$_("catalog_contents.error.title")}</h3>
         <p class="error-message">{error}</p>
         <button
-          aria-label={`Retry`}
+          aria-label={$_("route_labels.aria_retry")}
           onclick={() => loadContents(true)}
           class="retry-button"
         >

@@ -36,6 +36,18 @@
     timeout: 30000,
   });
 
+  // Add request interceptor to inject auth token
+  dmartAxios.interceptors.request.use(
+    (config) => {
+      const token = localStorage.getItem("authToken");
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    },
+    (error) => Promise.reject(error)
+  );
+
   dmartAxios.interceptors.response.use(
     (res) => res,
     (error) => {

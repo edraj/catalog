@@ -642,7 +642,7 @@
                 id="search-input"
                 type="text"
                 bind:value={searchQuery}
-                placeholder="Search by name, description, shortname, or owner..."
+                placeholder={$_("route_labels.placeholder_search_by_name_desc")}
                 class="block w-full pl-9 pr-10 py-2.5 text-sm border-none bg-gray-50 rounded-xl text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500"
               />
               {#if searchQuery}

@@ -122,7 +122,7 @@
 </script>
 
 <svelte:head>
-  <title>Create Survey</title>
+  <title>{$_("route_labels.create_survey_title")}</title>
 </svelte:head>
 
 <div class="create-survey-page">

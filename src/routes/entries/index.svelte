@@ -391,7 +391,7 @@
         <input
           type="text"
           bind:value={searchTerm}
-          placeholder="Search entries"
+          placeholder={$_("route_labels.placeholder_search_entries")}
           class="w-full pl-11 pr-4 py-2.5 bg-gray-50/50 border border-transparent rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-gray-700 placeholder-gray-400"
         />
       </div>

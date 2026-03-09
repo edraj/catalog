@@ -1942,7 +1942,7 @@
           {isRecording}
           {isAttachmentLoading}
           {recordingDuration}
-          placeholder="Type a message to the group..."
+          placeholder={$_("route_labels.placeholder_type_message_group")}
           onSend={sendGroupMessage}
           onFileSelect={handleFileSelect}
           onKeydown={handleKeydown}

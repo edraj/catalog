@@ -565,7 +565,7 @@
         </h3>
         <p class="error-message">{error}</p>
         <button
-          aria-label={`Retry loading content`}
+          aria-label={$_("route_labels.aria_retry_loading_content")}
           onclick={() => loadContents()}
           class="retry-button"
         >
@@ -581,7 +581,7 @@
             </h3>
             {#if availableTags.length > 10}
               <button
-                aria-label={`Show all tags`}
+                aria-label={$_("route_labels.aria_show_all_tags")}
                 onclick={() => (showAllTags = !showAllTags)}
                 class="show-all-tags-button"
               >
@@ -627,7 +627,7 @@
                   >{$_("catalog_contents.tags.selected_tags")}:</span
                 >
                 <button
-                  aria-label={`Clear all selected tags`}
+                  aria-label={$_("route_labels.aria_clear_all_selected_tags")}
                   onclick={() => {
                     selectedTags = [];
                     applyFilters();
@@ -697,7 +697,7 @@
           </p>
           {#if searchQuery || selectedTags.length > 0}
             <button
-              aria-label={`Clear all filters`}
+              aria-label={$_("route_labels.aria_clear_all_filters")}
               onclick={clearFilters}
               class="clear-filters-button"
             >
@@ -713,7 +713,7 @@
             </h2>
             {#if searchQuery || selectedTags.length > 0}
               <button
-                aria-label={`Clear all filters`}
+                aria-label={$_("route_labels.aria_clear_all_filters")}
                 onclick={clearFilters}
                 class="clear-all-filters-button"
               >

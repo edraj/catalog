@@ -187,7 +187,7 @@
   </p>
   {#snippet footer()}
     <button
-      aria-label={`Cancel fixing configuration`}
+      aria-label={$_("route_labels.aria_cancel_fixing_configuration")}
       class="btn btn-secondary"
       onclick={() => (showAutoFixModal = false)}
       disabled={isAutoFixing}
@@ -195,7 +195,7 @@
       {$_("cancel")}
     </button>
     <button
-      aria-label={`Create configuration entity`}
+      aria-label={$_("route_labels.aria_create_configuration_entity")}
       class="btn btn-primary"
       onclick={autoFixConfiguration}
       disabled={isAutoFixing}
@@ -287,7 +287,7 @@
 
         <div class="action-bar">
           <button
-            aria-label={`Save default role`}
+            aria-label={$_("route_labels.aria_save_default_role")}
             class="btn btn-primary"
             onclick={saveDefaultRole}
             disabled={isSaving ||
@@ -304,7 +304,7 @@
 
           {#if selectedDefaultRole !== currentDefaultRole && currentDefaultRole}
             <button
-              aria-label={`Reset to current default role`}
+              aria-label={$_("route_labels.aria_reset_current_default_role")}
               class="btn btn-secondary"
               onclick={() => (selectedDefaultRole = currentDefaultRole)}
               disabled={isSaving}

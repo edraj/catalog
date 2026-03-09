@@ -581,7 +581,7 @@
                     bind:value={$description}
                     rows="4"
                     class="w-full px-4 py-3 bg-gray-50/50 border border-transparent rounded-2xl text-sm resize-y focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
-                    placeholder="Tell us about yourself"
+                    placeholder={$_("route_labels.placeholder_tell_us_about_yourself")}
                     dir={$locale === "ar" || $locale === "ku" ? "rtl" : "ltr"}
                   ></textarea>
                 </div>

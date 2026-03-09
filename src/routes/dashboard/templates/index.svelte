@@ -205,7 +205,7 @@
 </script>
 
 <svelte:head>
-  <title>Templates</title>
+  <title>{$_("route_labels.templates_title")}</title>
 </svelte:head>
 
 <div class="page-container">

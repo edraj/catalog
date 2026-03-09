@@ -484,10 +484,9 @@
   <div class="bg-gray-50">
     <div class="container mx-auto px-4 py-8 max-w-5xl">
       <div class="text-center">
-        <h1 class="text-2xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">{$_("route_labels.admin_dashboard_title")}</h1>
         <p class="text-sm text-gray-500 max-w-3xl mx-auto">
-          Welcome Dmart Manager. Manage all spaces and their content with full
-          administrative access.
+          {$_("route_labels.admin_dashboard_welcome")}
         </p>
       </div>
     </div>
@@ -764,7 +763,7 @@
                   type="text"
                   bind:value={searchQuery}
                   oninput={() => debounce(handleSearchInput)}
-                  placeholder="Search by name, description, shortname, or owner..."
+                  placeholder={$_("route_labels.placeholder_search_by_name_desc")}
                   class="block w-full pl-9 pr-8 py-2 text-sm border-none bg-gray-50 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500"
                 />
                 {#if isSearching}

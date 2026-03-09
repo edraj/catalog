@@ -252,7 +252,7 @@
           id="entity-shortname"
           type="text"
           bind:value={entityShortname}
-          placeholder="Leave empty for 'auto'"
+          placeholder={$_("route_labels.placeholder_leave_empty_auto")}
         />
       </div>
 
@@ -272,7 +272,7 @@
             type="text"
             bind:value={newTag}
             on:keypress={handleTagKeypress}
-            placeholder="Add a tag..."
+            placeholder={$_("route_labels.placeholder_add_tag")}
           />
           <button
             class="add-tag-btn"

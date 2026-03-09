@@ -22,6 +22,20 @@ function switchLocale(_locale: string) {
   }
   if (typeof localStorage !== "undefined") {
     localStorage.setItem("preferred_locale", JSON.stringify(_locale));
+    
+    // Update the user locale in localStorage if user is logged in
+    const userData = localStorage.getItem("user");
+    if (userData) {
+      try {
+        const user = JSON.parse(userData);
+        if (user && typeof user === "object") {
+          user.locale = _locale;
+          localStorage.setItem("user", JSON.stringify(user));
+        }
+      } catch (e) {
+        // Ignore parse errors
+      }
+    }
   }
   locale.set(_locale);
   window.location.reload();

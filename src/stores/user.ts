@@ -211,6 +211,8 @@ export async function signout() {
     JSON.parse(localStorage.getItem(KEY))?.signedin
   ) {
     localStorage.removeItem("rowPerPage");
+    localStorage.removeItem("authToken");
+    authToken.set("");
     user.set(signedout);
     localStorage.removeItem(KEY);
     await Dmart.logout();
@@ -218,12 +220,13 @@ export async function signout() {
 }
 
 export function switchLocale(locale: Locale) {
-  user.update((user) => {
-    user.locale = locale;
-    signedout.locale = locale;
-    if (typeof localStorage !== "undefined")
-      localStorage.setItem(KEY, JSON.stringify(user));
-    return user;
+  user.update((currentUser) => {
+    // Create a new object to avoid mutating the original
+    const updatedUser = { ...currentUser, locale };
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem(KEY, JSON.stringify(updatedUser));
+    }
+    return updatedUser;
   });
 }
 

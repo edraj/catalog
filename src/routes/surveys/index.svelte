@@ -210,7 +210,7 @@
 </script>
 
 <svelte:head>
-  <title>Surveys</title>
+  <title>{$_("route_labels.surveys_title")}</title>
 </svelte:head>
 
 <div class="surveys-page">
