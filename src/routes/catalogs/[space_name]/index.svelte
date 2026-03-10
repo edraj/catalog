@@ -688,7 +688,7 @@
 <div class="z" class:rtl={$isRTL}>
   <!-- Hero Section -->
   <div class="space-hero">
-    <div class="hero-content container mx-auto px-4 max-w-7xl">
+    <div class="hero-content mx-auto px-4 max-w-7xl">
       <button
         aria-label={$_("navigation.go_back")}
         onclick={goBack}

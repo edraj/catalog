@@ -107,7 +107,7 @@
         "managed",
         100,
         0,
-        true
+        true,
       );
       if (response && response.records) {
         allContents = response.records;
@@ -504,7 +504,6 @@
               d="M10 19l-7-7m0 0l7-7m-7 7h18"
             ></path>
           </svg>
-          Back to Admin
         </button>
 
         <div
@@ -513,7 +512,7 @@
           class:text-right={$isRTL}
         >
           <h1 class="text-[26px] leading-[30px] font-bold text-gray-900 mb-1">
-            Admin: <span class="capitalize">{spaceName}</span> Space
+            <span class="capitalize">{spaceName}</span> Space
           </h1>
           <!--          <p class="text-[14px] font-medium text-indigo-400">-->
           <!--            Full administrative access to manage all content-->

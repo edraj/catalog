@@ -1,8 +1,11 @@
 <script>
-  import { getEntities, getEntityAttachmentsCount } from "@/lib/dmart_services/dmart_services.ts";
+  import {
+    getEntities,
+    getEntityAttachmentsCount,
+  } from "@/lib/dmart_services/dmart_services.ts";
   import { formatDate, renderStateString } from "@/lib/helpers";
   import { goto } from "@roxi/routify";
-  import { _ } from "@/i18n";
+  import { _, dir } from "@/i18n";
   import { SyncLoader } from "svelte-loading-spinners";
 
   $goto;
@@ -28,7 +31,7 @@
       setTimeout(() => handleSearchChange(), 100);
     }
   }
-  
+
   function expandSearch() {
     isExpanded = true;
     // Focus the input after expansion
@@ -38,7 +41,7 @@
       }
     }, 100);
   }
-  
+
   function collapseSearch() {
     if (!searchString.trim()) {
       isExpanded = false;
@@ -51,7 +54,7 @@
     if (!modalOpen && searchString.trim()) {
       openModal();
     }
-    
+
     if (!searchString.trim()) {
       return;
     }
@@ -110,11 +113,13 @@
 </script>
 
 <div
-  class="flex items-center bg-gray-50 hover:bg-gray-100 text-gray-400 border border-t-0 border-white/50 shadow-inner hover:shadow-sm transition-all duration-300 ease-in-out rounded-full h-9 px-3 overflow-hidden {isExpanded ? 'w-72 sm:w-96 md:w-[500px] lg:w-[600px]' : 'w-48 sm:w-72 md:w-80 lg:w-[400px]'} mr-2"
+  class="flex items-center bg-gray-50 hover:bg-gray-100 text-gray-400 border border-t-0 border-white/50 shadow-inner hover:shadow-sm transition-all duration-300 ease-in-out rounded-full h-9 px-3 overflow-hidden {isExpanded
+    ? 'w-72 sm:w-96 md:w-[500px] lg:w-[600px]'
+    : 'w-48 sm:w-72 md:w-80 lg:w-[400px]'} ms-auto me-2"
   onclick={expandSearch}
   role="button"
   tabindex="0"
-  onkeydown={(e) => e.key === 'Enter' && expandSearch()}
+  onkeydown={(e) => e.key === "Enter" && expandSearch()}
   aria-label={$_("route_labels.aria_search")}
   title={$_("route_labels.aria_search")}
 >
@@ -142,7 +147,9 @@
       class="w-full bg-transparent border-none outline-none text-gray-900 placeholder-gray-400 text-sm"
     />
   {:else}
-    <span class="truncate text-sm font-medium">{$_("route_labels.search_placeholder_short")}</span>
+    <span class="truncate text-sm font-medium"
+      >{$_("route_labels.search_placeholder_short")}</span
+    >
   {/if}
 </div>
 

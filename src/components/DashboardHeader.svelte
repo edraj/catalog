@@ -164,7 +164,7 @@
         class={`flex items-center ${$user.signedin ? "space-x-1 sm:space-x-2" : "space-x-3"}`}
       >
         {#if $user.signedin}
-          <div class="mr-2">
+          <div class="me-2">
             <SearchBar />
           </div>
 
