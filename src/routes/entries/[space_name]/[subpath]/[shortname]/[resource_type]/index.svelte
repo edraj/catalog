@@ -39,6 +39,7 @@
   import { _, locale } from "@/i18n";
   import { derived } from "svelte/store";
   import { marked } from "marked";
+  import PlantUMLViewer from "@/components/PlantUMLViewer.svelte";
   import { mangle } from "marked-mangle";
   import { gfmHeadingId } from "marked-gfm-heading-id";
 
@@ -284,13 +285,8 @@
     } else if (contentType === "markdown" || contentType === "md") {
       return typeof body === "string" ? marked(body) : marked(String(body));
     } else if (contentType === "json") {
-      if (typeof body === "object") {
-        return Object.entries(body)
-          .map(([key, value]) => `<strong>${key}:</strong> ${value}`)
-          .join("<br>");
-      } else {
-        return body;
-      }
+      // Return a placeholder for JSON - will be rendered by PlantUMLViewer
+      return "__JSON_CONTENT__";
     } else {
       // plain text or unknown type — render safely
       return typeof body === "string"
@@ -427,7 +423,15 @@
 
         <!-- Content -->
         <div class="entry-content prose max-w-none" class:text-right={$isRTL}>
-          {@html renderContent(entity)}
+          {#if entity?.payload?.content_type === "json"}
+            <PlantUMLViewer 
+              data={entity.payload.body} 
+              title={getLocalizedDisplayName(entity)}
+              type="json"
+            />
+          {:else}
+            {@html renderContent(entity)}
+          {/if}
         </div>
 
         <!-- Attachments -->

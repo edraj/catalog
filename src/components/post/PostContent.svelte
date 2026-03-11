@@ -7,6 +7,7 @@
 
   import { getSpaceSchema } from "@/lib/dmart_services/dmart_services";
   import DynamicSchemaBasedForms from "@/components/forms/DynamicSchemaBasedForms.svelte";
+  import PlantUMLViewer from "@/components/PlantUMLViewer.svelte";
 
   marked.use(mangle());
   marked.use(
@@ -15,7 +16,7 @@
     }),
   );
 
-  let { postData, spaceName = "" } = $props();
+  let { postData, spaceName = "", isAdmin = false } = $props();
 
   let schema: any = $state(null);
   let isLoadingSchema = $state(false);
@@ -117,12 +118,13 @@
       <div class="content-text">
         <div class="content-display bg-white p-6">
           <div class="markdown-preview">
-            {#if postData?.payload?.content_type === "json" && schema}
-              <DynamicSchemaBasedForms content={postData.payload.body} {schema} readOnly={true} />
-            {:else if isLoadingSchema}
-               <div class="flex justify-center p-4">
-                 <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-               </div>
+            {#if postData?.payload?.content_type === "json"}
+              <PlantUMLViewer 
+                data={postData.payload.body} 
+                title={postData?.displayname?.en || "JSON Content"}
+                type="json"
+                {isAdmin}
+              />
             {:else}
               {@html renderContent(postData)}
             {/if}

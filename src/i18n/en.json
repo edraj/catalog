@@ -313,7 +313,8 @@
       "title": "Attachments",
       "total_count": "{count} total attachments",
       "type_count": "{type} Attachments ({count})",
-      "zero_count": "0 attachments"
+      "zero_count": "0 attachments",
+      "upload": "Upload"
     },
     "author_entries": {
       "headers": {
@@ -376,7 +377,8 @@
     },
     "relationships": {
       "no_relationships": "No relationships defined",
-      "title": "Relationships"
+      "title": "Relationships",
+      "manage": "Manage Relationships"
     },
     "status": {
       "active": "Active",
@@ -569,9 +571,12 @@
   },
   "chat": "Chat",
   "common": {
+    "add": "Add",
     "cancel": "Cancel",
     "close": "Close",
+    "delete": "Delete",
     "deleting": "Deleting...",
+    "edit": "Edit",
     "error": "Error!",
     "got_it": "Got it",
     "loading": "Loading...",
@@ -581,7 +586,55 @@
     "saving": "Saving...",
     "success": "Success!",
     "unknown": "Unknown",
-    "updating": "Updating..."
+    "update": "Update",
+    "updating": "Updating...",
+    "uploading": "Uploading..."
+  },
+  "relationship_modal": {
+    "title": "Manage Relationships",
+    "new_title": "New Relationship",
+    "edit_title": "Edit Relationship",
+    "add_relationship": "Add Relationship",
+    "no_relationships": "No relationships defined yet.",
+    "save_success": "Relationships saved successfully!",
+    "save_error": "Failed to save relationships",
+    "confirm_delete": "Are you sure you want to delete this relationship?",
+    "fields": {
+      "space_name": "Space Name",
+      "subpath": "Subpath",
+      "shortname": "Shortname",
+      "resource_type": "Resource Type",
+      "schema_shortname": "Schema Shortname (optional)",
+      "attributes": "Attributes"
+    },
+    "select_space": "Select Space",
+    "select_entry": "Select Entry",
+    "loading_subpaths": "Loading subpaths...",
+    "loading_entries": "Loading entries...",
+    "schema_placeholder": "Optional schema shortname",
+    "json_format_hint": "Enter valid JSON format"
+  },
+  "attachment_modal": {
+    "title": "Upload Attachments",
+    "upload_title": "Upload Files",
+    "upload_description": "Upload files to attach to this item",
+    "click_to_upload": "Click to upload",
+    "or_drag_drop": " or drag and drop",
+    "supported_formats": "Any file type supported",
+    "selected_files": "{count} file(s) selected",
+    "no_files_selected": "No files selected",
+    "upload_button": "Upload",
+    "upload_success": "{count} file(s) uploaded successfully",
+    "upload_error": "{count} file(s) failed to upload",
+    "upload_failed": "Upload failed. Please try again.",
+    "all_upload_success": "All {count} file(s) uploaded successfully",
+    "partial_upload_success": "{success} succeeded, {failed} failed",
+    "all_upload_failed": "All {count} file(s) failed to upload",
+    "clear_all": "Clear all",
+    "remove_file": "Remove file",
+    "fields": {
+      "attachment_type": "Attachment Type"
+    }
   },
   "community": {
     "features": {

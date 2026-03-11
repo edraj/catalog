@@ -5,6 +5,7 @@
   import TemplateEditor from "@/components/editors/TemplateEditor.svelte";
   import JsonEditor from "@/components/editors/JsonEditor.svelte";
   import Attachments from "@/components/Attachments.svelte";
+  import PlantUMLViewer from "@/components/PlantUMLViewer.svelte";
   import {
     attachAttachmentsToEntity,
     getEntity,
@@ -523,11 +524,23 @@
                     handleTemplateContentChange(e.detail)}
                 />
               {:else if entity?.payload?.content_type === "json"}
-                <JsonEditor
-                  content={jsonEditorContent}
-                  isEditMode={true}
-                  on:contentChange={handleJsonContentChange}
-                />
+                <div class="json-edit-with-preview">
+                  <div class="json-editor-section">
+                    <JsonEditor
+                      content={jsonEditorContent}
+                      isEditMode={true}
+                      on:contentChange={handleJsonContentChange}
+                    />
+                  </div>
+                  <div class="preview-section">
+                    <h4 class="preview-heading">Preview</h4>
+                    <PlantUMLViewer 
+                      data={jsonEditorContent} 
+                      title="JSON Preview"
+                      type="json"
+                    />
+                  </div>
+                </div>
               {:else}
                 <HtmlEditor
                   bind:content={htmlEditor}
@@ -1446,6 +1459,45 @@
       flex-direction: column;
       text-align: center;
       gap: 1.5rem;
+    }
+  }
+
+  /* JSON Editor with PlantUML Preview */
+  .json-edit-with-preview {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    min-height: 500px;
+  }
+
+  .json-editor-section {
+    overflow: auto;
+  }
+
+  .preview-section {
+    border-left: 1px solid #e5e7eb;
+    padding-left: 24px;
+  }
+
+  .preview-heading {
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  @media (max-width: 1024px) {
+    .json-edit-with-preview {
+      grid-template-columns: 1fr;
+    }
+    
+    .preview-section {
+      border-left: none;
+      border-top: 1px solid #e5e7eb;
+      padding-left: 0;
+      padding-top: 24px;
     }
   }
 </style>

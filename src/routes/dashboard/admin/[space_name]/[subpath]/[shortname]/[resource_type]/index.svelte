@@ -21,6 +21,10 @@
   import SchemaForm from "@/components/forms/SchemaForm.svelte";
   import SchemaViewer from "@/components/forms/SchemaViewer.svelte";
 import PostContent from "@/components/post/PostContent.svelte";
+import PlantUMLViewer from "@/components/PlantUMLViewer.svelte";
+import RelationshipModal from "@/components/management/RelationshipModal.svelte";
+import AttachmentModal from "@/components/management/AttachmentModal.svelte";
+import { PlusOutline } from "flowbite-svelte-icons";
 
   $goto;
 
@@ -48,6 +52,8 @@ import PostContent from "@/components/post/PostContent.svelte";
   let itemDataValue = $state(null);
   const activeTab = writable("overview");
   const showEditModal = writable(false);
+  const showRelationshipModal = writable(false);
+  const showAttachmentModal = writable(false);
   let htmlEditor: string = $state("");
   let markdownContent: string = $state("");
   let isTemplateBasedItem = $state(false);
@@ -74,6 +80,7 @@ import PostContent from "@/components/post/PostContent.svelte";
   const jsonEditForm = writable({});
 
   let jsonEditFormValue = $state({});
+  let relationshipsValue = $state([]);
 
   function getItemContent(item) {
     if (!item?.payload) return "";
@@ -208,6 +215,7 @@ import PostContent from "@/components/post/PostContent.svelte";
       if (response) {
         itemDataValue = response;
         itemData.set(response);
+        relationshipsValue = response.relationships || [];
 
         let title =
           (response as any).payload?.body?.title ||
@@ -619,15 +627,6 @@ import PostContent from "@/components/post/PostContent.svelte";
             class:flex-row-reverse={$isRTL}
           >
             <button
-              onclick={() => setActiveTab("overview")}
-              class="py-4 px-4 font-medium text-sm whitespace-nowrap border-b-2 transition-colors {$activeTab ===
-              'overview'
-                ? 'border-indigo-500 text-indigo-600'
-                : 'border-transparent text-gray-500 hover:text-gray-900 hover:border-gray-300'}"
-            >
-              {$_("admin_item_detail.tabs.overview")}
-            </button>
-            <button
               onclick={() => setActiveTab("content")}
               class="py-4 px-4 font-medium text-sm whitespace-nowrap border-b-2 transition-colors {$activeTab ===
               'content'
@@ -635,6 +634,15 @@ import PostContent from "@/components/post/PostContent.svelte";
                 : 'border-transparent text-gray-500 hover:text-gray-900 hover:border-gray-300'}"
             >
               {$_("admin_item_detail.tabs.content")}
+            </button>
+            <button
+              onclick={() => setActiveTab("overview")}
+              class="py-4 px-4 font-medium text-sm whitespace-nowrap border-b-2 transition-colors {$activeTab ===
+              'overview'
+                ? 'border-indigo-500 text-indigo-600'
+                : 'border-transparent text-gray-500 hover:text-gray-900 hover:border-gray-300'}"
+            >
+              {$_("admin_item_detail.tabs.overview")}
             </button>
             <button
               onclick={() => setActiveTab("relationships")}
@@ -669,6 +677,94 @@ import PostContent from "@/components/post/PostContent.svelte";
         </div>
 
         <div class="p-8">
+          {#if $activeTab === "content"}
+            <div class="space-y-4">
+              <h3
+                class="text-lg font-semibold text-gray-900"
+                class:text-right={$isRTL}
+              >
+                {$_("admin_item_detail.content.title")}
+              </h3>
+
+              {#if itemDataValue.payload}
+                {@const ct = itemDataValue.payload.content_type}
+                {@const body = itemDataValue.payload.body}
+
+                <div class="rounded-2xl border border-gray-100 overflow-hidden">
+                  <!-- content-type badge -->
+                  <div
+                    class="bg-gray-50/60 px-5 py-3 border-b border-gray-100 flex items-center gap-2"
+                  >
+                    <span class="text-xs font-medium text-gray-500"
+                      >Content type:</span
+                    >
+                    <span
+                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                      >{ct}</span
+                    >
+                  </div>
+
+                  <div class="p-6">
+                    {#if ct === "html"}
+                      <div class="html-preview" class:text-right={$isRTL}>
+                        {@html body}
+                      </div>
+                    {:else if ct === "json"}
+                      {#if isSchemaBasedItem}
+                        <div class="p-6">
+                            <SchemaViewer content={body} />
+                        </div>
+                      {:else}
+                         <div class="p-6">
+                            <PlantUMLViewer 
+                              data={body} 
+                              title={itemDataValue?.displayname?.en || "JSON Content"}
+                              type="json"
+                              isAdmin={true}
+                            />
+                         </div>
+                      {/if}
+                    {:else}
+                      <!-- Default parse string as Markdown (covers "markdown", "md", or missing type) -->
+                      {#if typeof body === "string"}
+                        <div class="markdown-preview" class:text-right={$isRTL}>
+                          {@html marked(body)}
+                        </div>
+                      {:else}
+                        <!-- Fallback for unexpected non-string bodies without a known type -->
+                        <pre
+                          class="bg-gray-50 rounded-xl p-4 text-xs whitespace-pre-wrap text-gray-700">{JSON.stringify(
+                            body,
+                          )}</pre>
+                      {/if}
+                    {/if}
+                  </div>
+                </div>
+              {:else}
+                <div
+                  class="text-center py-8 text-gray-500"
+                  class:text-right={$isRTL}
+                >
+                  <svg
+                    class="mx-auto h-12 w-12 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  <p class="mt-2">
+                    {$_("admin_item_detail.content.no_content")}
+                  </p>
+                </div>
+              {/if}
+            </div>
+          {/if}
           {#if $activeTab === "overview"}
             <div class="space-y-6">
               <div>
@@ -881,98 +977,23 @@ import PostContent from "@/components/post/PostContent.svelte";
             </div>
           {/if}
 
-          {#if $activeTab === "content"}
-            <div class="space-y-4">
-              <h3
-                class="text-lg font-semibold text-gray-900"
-                class:text-right={$isRTL}
-              >
-                {$_("admin_item_detail.content.title")}
-              </h3>
-
-              {#if itemDataValue.payload}
-                {@const ct = itemDataValue.payload.content_type}
-                {@const body = itemDataValue.payload.body}
-
-                <div class="rounded-2xl border border-gray-100 overflow-hidden">
-                  <!-- content-type badge -->
-                  <div
-                    class="bg-gray-50/60 px-5 py-3 border-b border-gray-100 flex items-center gap-2"
-                  >
-                    <span class="text-xs font-medium text-gray-500"
-                      >Content type:</span
-                    >
-                    <span
-                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                      >{ct}</span
-                    >
-                  </div>
-
-                  <div class="p-6">
-                    {#if ct === "html"}
-                      <div class="html-preview" class:text-right={$isRTL}>
-                        {@html body}
-                      </div>
-                    {:else if ct === "json"}
-                      {#if isSchemaBasedItem}
-                        <div class="p-6">
-                            <SchemaViewer content={body} />
-                        </div>
-                      {:else}
-                         <div class="admin-post-content-wrapper">
-                            <PostContent postData={itemDataValue} spaceName={spaceNameValue} />
-                         </div>
-                      {/if}
-                    {:else}
-                      <!-- Default parse string as Markdown (covers "markdown", "md", or missing type) -->
-                      {#if typeof body === "string"}
-                        <div class="markdown-preview" class:text-right={$isRTL}>
-                          {@html marked(body)}
-                        </div>
-                      {:else}
-                        <!-- Fallback for unexpected non-string bodies without a known type -->
-                        <pre
-                          class="bg-gray-50 rounded-xl p-4 text-xs whitespace-pre-wrap text-gray-700">{JSON.stringify(
-                            body,
-                          )}</pre>
-                      {/if}
-                    {/if}
-                  </div>
-                </div>
-              {:else}
-                <div
-                  class="text-center py-8 text-gray-500"
-                  class:text-right={$isRTL}
-                >
-                  <svg
-                    class="mx-auto h-12 w-12 text-gray-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                    />
-                  </svg>
-                  <p class="mt-2">
-                    {$_("admin_item_detail.content.no_content")}
-                  </p>
-                </div>
-              {/if}
-            </div>
-          {/if}
-
           {#if $activeTab === "relationships"}
             <div class="space-y-6">
-              <h3
-                class="text-lg font-semibold text-gray-900"
-                class:text-right={$isRTL}
-              >
-                {$_("admin_item_detail.relationships.title")}
-              </h3>
+              <div class="flex items-center justify-between" class:flex-row-reverse={$isRTL}>
+                <h3
+                  class="text-lg font-semibold text-gray-900"
+                  class:text-right={$isRTL}
+                >
+                  {$_("admin_item_detail.relationships.title")}
+                </h3>
+                <button
+                  onclick={() => showRelationshipModal.set(true)}
+                  class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl font-medium transition-colors shadow-sm flex items-center gap-2"
+                >
+                  <PlusOutline class="w-4 h-4" />
+                  {$_("admin_item_detail.relationships.manage")}
+                </button>
+              </div>
 
               {#if itemDataValue.relationships && itemDataValue.relationships.length > 0}
                 <div
@@ -1111,28 +1132,14 @@ import PostContent from "@/components/post/PostContent.svelte";
                 >
                   {$_("admin_item_detail.attachments.title")}
                 </h3>
-                <div class="text-sm text-gray-500" class:text-right={$isRTL}>
-                  {#if itemDataValue.attachments}
-                    {$_("admin_item_detail.attachments.total_count", {
-                      values: {
-                        count: formatNumberInText(
-                          Number(
-                            Object.values(itemDataValue.attachments).reduce(
-                              (total, attachments) =>
-                                (typeof total === "number" ? total : 0) +
-                                (Array.isArray(attachments)
-                                  ? (attachments as any[]).length
-                                  : 0),
-                              0,
-                            ),
-                          ),
-                          $locale,
-                        ),
-                      },
-                    })}
-                  {:else}
-                    {$_("admin_item_detail.attachments.zero_count")}
-                  {/if}
+                <div class="flex items-center gap-3" class:flex-row-reverse={$isRTL}>
+                  <button
+                    onclick={() => showAttachmentModal.set(true)}
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl font-medium transition-colors shadow-sm flex items-center gap-2"
+                  >
+                    <PlusOutline class="w-4 h-4" />
+                    {$_("admin_item_detail.attachments.upload")}
+                  </button>
                 </div>
               </div>
 
@@ -1953,11 +1960,24 @@ import PostContent from "@/components/post/PostContent.svelte";
                   {:else if isSchemaBasedItem}
                     <SchemaForm bind:content={schemaEditorContent} />
                   {:else if itemDataValue?.payload?.content_type === "json"}
-                    <JsonEditor
-                      content={jsonEditorContent}
-                      isEditMode={true}
-                      on:contentChange={handleJsonContentChange}
-                    />
+                    <div class="json-editor-with-preview">
+                      <div class="json-editor-pane">
+                        <JsonEditor
+                          content={jsonEditorContent}
+                          isEditMode={true}
+                          on:contentChange={handleJsonContentChange}
+                        />
+                      </div>
+                      <div class="plantuml-preview-pane">
+                        <h4 class="preview-title">Preview</h4>
+                        <PlantUMLViewer 
+                          data={jsonEditFormValue} 
+                          title="JSON Preview"
+                          type="json"
+                          isAdmin={true}
+                        />
+                      </div>
+                    </div>
                   {:else if itemDataValue?.payload?.content_type === "markdown" || itemDataValue?.payload?.content_type === "md"}
                     <MarkdownEditor bind:content={markdownContent} />
                   {:else}
@@ -2030,6 +2050,30 @@ import PostContent from "@/components/post/PostContent.svelte";
       </div>
     </section>
   </div>
+{/if}
+
+<!-- Relationship Management Modal -->
+{#if $showRelationshipModal}
+  <RelationshipModal
+    bind:isOpen={$showRelationshipModal}
+    bind:relationships={relationshipsValue}
+    space_name={spaceNameValue}
+    subpath={actualSubpathValue}
+    resource_type={$params.resource_type}
+    parent_shortname={itemShortnameValue}
+  />
+{/if}
+
+<!-- Attachment Upload Modal -->
+{#if $showAttachmentModal}
+  <AttachmentModal
+    bind:isOpen={$showAttachmentModal}
+    space_name={spaceNameValue}
+    subpath={actualSubpathValue}
+    resource_type={$params.resource_type}
+    parent_shortname={itemShortnameValue}
+    onAttachmentCreated={loadItemData}
+  />
 {/if}
 
 <style>
@@ -2637,5 +2681,46 @@ import PostContent from "@/components/post/PostContent.svelte";
 
   .admin-post-content-wrapper :global(.post-content) {
     box-shadow: none !important;
+  }
+
+  /* JSON Editor with PlantUML Preview */
+  .json-editor-with-preview {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    height: 100%;
+    min-height: 500px;
+  }
+
+  .json-editor-pane {
+    overflow: auto;
+  }
+
+  .plantuml-preview-pane {
+    border-left: 1px solid #e5e7eb;
+    padding-left: 20px;
+    overflow: auto;
+  }
+
+  .preview-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  @media (max-width: 1024px) {
+    .json-editor-with-preview {
+      grid-template-columns: 1fr;
+    }
+    
+    .plantuml-preview-pane {
+      border-left: none;
+      border-top: 1px solid #e5e7eb;
+      padding-left: 0;
+      padding-top: 20px;
+    }
   }
 </style>

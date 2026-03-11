@@ -56,15 +56,14 @@
       const shortname = removeFileExtension(attachment.shortname);
       currentPreview = {
         ...attachment,
-        url: Dmart.get_attachment_url(
-          ResourceType[attachment.resource_type as keyof typeof ResourceType],
+        url: Dmart.getAttachmentUrl({
+          resource_type: attachment.resource_type as ResourceType,
           space_name,
           subpath,
           parent_shortname,
           shortname,
-          getFileExtension(filename),
-          "public"
-        ),
+          ext: getFileExtension(filename),
+        }),
         type,
         filename,
       };
@@ -79,15 +78,14 @@
 
   function downloadFile(attachment: Attachment) {
     const filename = attachment.attributes?.payload?.body;
-    const url = Dmart.get_attachment_url(
-      ResourceType[attachment.resource_type as keyof typeof ResourceType],
+    const url = Dmart.getAttachmentUrl({
+      resource_type: attachment.resource_type as ResourceType,
       space_name,
       subpath,
       parent_shortname,
-      attachment.shortname,
-      getFileExtension(filename),
-      "public"
-    );
+      shortname: attachment.shortname,
+      ext: getFileExtension(filename),
+    });
 
     const link = document.createElement("a");
     link.href = url;
@@ -131,15 +129,14 @@
 
   function getAttachmentUrl(attachment: Attachment) {
     const filename = attachment.attributes?.payload?.body;
-    return Dmart.get_attachment_url(
-      ResourceType[attachment.resource_type as keyof typeof ResourceType],
+    return Dmart.getAttachmentUrl({
+      resource_type: attachment.resource_type as ResourceType,
       space_name,
       subpath,
       parent_shortname,
-      attachment.shortname,
-      getFileExtension(filename),
-      "public"
-    );
+      shortname: attachment.shortname,
+      ext: getFileExtension(filename),
+    });
   }
 
   function formatFileSize(size: number) {
