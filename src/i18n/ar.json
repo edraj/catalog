@@ -1725,6 +1725,30 @@
   },
   "world_permissions_info": "صلاحيات العالم تنطبق على جميع الضيوف والمستخدمين غير المسجلين. هذه هي أكثر الصلاحيات تقييدًا.",
   "yourReply": "ردك",
+  "delete_confirmation": {
+    "title": "حذف {type}",
+    "confirm": "هل أنت متأكد؟",
+    "irreversible": "لا يمكن التراجع عن هذا الإجراء.",
+    "item_label": "العنصر",
+    "warning": "سيتم حذف هذا العنصر نهائيًا ولا يمكن استرداده."
+  },
+  "toast": {
+    "folder_created": "تم إنشاء المجلد بنجاح",
+    "folder_create_failed": "فشل في إنشاء المجلد",
+    "folder_updated": "تم تحديث المجلد بنجاح",
+    "folder_update_failed": "فشل في تحديث المجلد",
+    "schema_created": "تم إنشاء المخطط بنجاح",
+    "schema_create_failed": "فشل في إنشاء المخطط",
+    "workflow_created": "تم إنشاء سير العمل بنجاح",
+    "workflow_create_failed": "فشل في إنشاء سير العمل",
+    "item_deleted": "تم حذف العنصر بنجاح",
+    "item_delete_failed": "فشل في حذف العنصر",
+    "reply_required": "الرجاء إدخال رسالة الرد",
+    "reply_sent": "تم إرسال الرد بنجاح",
+    "reply_sent_marked": "تم إرسال الرد وتحديد الرسالة كمردود عليها",
+    "reply_sent_failed": "تم إرسال الرد لكن فشل في التحديد",
+    "reply_sent_error": "تم إرسال الرد لكن حدث خطأ"
+  },
   "route_labels": {
     "admin_dashboard_title": "لوحة تحكم المشرف",
     "admin_dashboard_welcome": "مرحباً بك مدير Dmart. أدر جميع المساحات ومحتوياتها بصلاحيات إدارية كاملة.",

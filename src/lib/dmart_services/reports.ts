@@ -28,7 +28,7 @@ export async function createReport(
     workflow_shortname: string = "report_workflow"
 ) {
     const actionRequest: ActionRequest = {
-        space_name: "catalog",
+        space_name: "applications",
         request_type: RequestType.create,
         records: [
             {
@@ -77,7 +77,7 @@ export async function getReports(
     const response = await Dmart.query(
         {
             type: QueryType.search,
-            space_name: "catalog",
+            space_name: "applications",
             subpath: "/reports",
             search: searchQuery,
             limit: limit,
@@ -99,7 +99,7 @@ export async function getReportDetails(
     try {
         const entity = await getEntity(
             reportShortname,
-            "catalog",
+            "applications",
             "/reports",
             ResourceType.ticket,
             "managed",
@@ -128,7 +128,7 @@ export async function updateReportStatus(
 
         if (adminReply) {
             await createComment(
-                "catalog",
+                "applications",
                 "reports",
                 reportShortname,
                 adminReply
@@ -141,7 +141,7 @@ export async function updateReportStatus(
 
         const workflowAction = newStatus;
         const updateRequest: ActionRequest = {
-            space_name: "catalog",
+            space_name: "applications",
             request_type: RequestType.update,
             records: [
                 {
@@ -166,7 +166,7 @@ export async function updateReportStatus(
         }
 
         const progressResponse = await Dmart.progressTicket({
-            space_name: "catalog",
+            space_name: "applications",
             subpath: "reports",
             shortname: reportShortname,
             action: workflowAction

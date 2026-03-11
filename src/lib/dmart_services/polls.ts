@@ -11,7 +11,7 @@ import {
 } from "./core";
 
 export async function getPolls(
-    space_name: string = "poll",
+    space_name: string = "applications",
     scope: string = "managed",
     limit = 100,
     offset = 0,
@@ -49,14 +49,14 @@ export async function userVote(
     if (isReplace) {
         return await updateEntity(
             candidate_shortname,
-            "poll",
+            "applications",
             `polls/${poll_shortname}`,
             ResourceType.json,
             attributes
         );
     } else {
         return await createEntity(
-            "poll",
+            "applications",
             `polls/${poll_shortname}`,
             ResourceType.json,
             attributes,

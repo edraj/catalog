@@ -1,12 +1,12 @@
 <script lang="ts">
   import { goto, params } from "@roxi/routify";
   import {
-    createFolder,
     deleteEntity,
     getAvatar,
     getEntity,
     getSpaceContents,
-  } from "@/lib/dmart_services/dmart_services";
+  } from "@/lib/dmart_services";
+  import { createFolder } from "@/lib/dmart_services/entries";
   import { Diamonds } from "svelte-loading-spinners";
   import { _, locale } from "@/i18n";
   import { Dmart, RequestType, ResourceType, QueryType } from "@edraj/tsdmart";
@@ -18,6 +18,11 @@
   import SchemaForm from "@/components/forms/SchemaForm.svelte";
   import CreateTemplateModal from "@/components/CreateTemplateModal.svelte";
   import WorkflowForm from "@/components/forms/WorkflowForm.svelte";
+  import {
+    errorToastMessage,
+    successToastMessage,
+  } from "@/lib/toasts_messages";
+  import DeleteConfirmationDialog from "@/components/DeleteConfirmationDialog.svelte";
 
   $goto;
 
@@ -379,31 +384,46 @@
     loadContents(true);
   }
 
-  async function handleDeleteItem(item, event) {
+  // Delete confirmation dialog state
+  let showDeleteDialog = $state(false);
+  let itemToDelete: any = $state(null);
+  let isDeletingItem = $state(false);
+
+  function openDeleteDialog(item, event) {
     event.stopPropagation();
+    itemToDelete = item;
+    showDeleteDialog = true;
+  }
 
-    if (
-      !confirm(
-        $_("admin_content.confirm.delete_item", {
-          values: { name: item.shortname },
-        }),
-      )
-    ) {
-      return;
-    }
+  function closeDeleteDialog() {
+    showDeleteDialog = false;
+    itemToDelete = null;
+    isDeletingItem = false;
+  }
 
+  async function handleConfirmDelete() {
+    if (!itemToDelete) return;
+
+    isDeletingItem = true;
     try {
       const success = await deleteEntity(
-        item.shortname,
+        itemToDelete.shortname,
         spaceName,
         `/${$actualSubpath}`,
-        item.resource_type,
+        itemToDelete.resource_type,
       );
       if (success) {
+        successToastMessage($_("toast.item_deleted"));
         await loadContents(true);
+        closeDeleteDialog();
+      } else {
+        errorToastMessage($_("toast.item_delete_failed"));
       }
     } catch (err) {
       console.error("Error deleting item:", err);
+      errorToastMessage($_("toast.item_delete_failed") + ": " + err.message);
+    } finally {
+      isDeletingItem = false;
     }
   }
 
@@ -663,13 +683,14 @@
 
       if (response) {
         showCreateFolderModal = false;
+        successToastMessage($_("toast.folder_created"));
         await loadContents(true);
       } else {
-        alert($_("admin_content.error.create_folder_failed"));
+        errorToastMessage($_("toast.folder_create_failed"));
       }
     } catch (err) {
       console.error("Error creating folder:", err);
-      alert($_("admin_content.error.create_folder_error") + ": " + err.message);
+      errorToastMessage($_("toast.folder_create_failed") + ": " + err.message);
     } finally {
       isCreatingFolder = false;
     }
@@ -736,13 +757,14 @@
 
       if (response && response.status === "success") {
         showColumnSettingsModal = false;
+        successToastMessage($_("toast.folder_updated"));
         await loadContents(true);
       } else {
-        alert($_("admin_content.error.update_failed") || "Failed to update columns");
+        errorToastMessage($_("toast.folder_update_failed"));
       }
     } catch (err) {
       console.error("Error updating columns:", err);
-      alert(($_("admin_content.error.update_error") || "Error updating columns") + ": " + err.message);
+      errorToastMessage($_("toast.folder_update_failed") + ": " + err.message);
     } finally {
       isSavingColumns = false;
     }
@@ -791,13 +813,14 @@
 
       if (response) {
         showCreateSchemaModal = false;
+        successToastMessage($_("toast.schema_created"));
         await loadContents(true);
       } else {
-        alert($_("admin_content.error.create_schema_failed"));
+        errorToastMessage($_("toast.schema_create_failed"));
       }
     } catch (err) {
       console.error("Error creating schema:", err);
-      alert($_("admin_content.error.create_schema_error") + ": " + err.message);
+      errorToastMessage($_("toast.schema_create_failed") + ": " + err.message);
     } finally {
       isCreatingSchema = false;
     }
@@ -836,15 +859,14 @@
 
       if (response) {
         showCreateWorkflowModal = false;
+        successToastMessage($_("toast.workflow_created"));
         await loadContents(true);
       } else {
-        alert($_("admin_content.error.create_workflow_failed"));
+        errorToastMessage($_("toast.workflow_create_failed"));
       }
     } catch (err) {
       console.error("Error creating workflow:", err);
-      alert(
-        $_("admin_content.error.create_workflow_error") + ": " + err.message,
-      );
+      errorToastMessage($_("toast.workflow_create_failed") + ": " + err.message);
     } finally {
       isCreatingWorkflow = false;
     }
@@ -1606,7 +1628,7 @@
                           </button>
                         {/if}
                         <button
-                          onclick={(e) => handleDeleteItem(item, e)}
+                          onclick={(e) => openDeleteDialog(item, e)}
                           class="text-[12px] font-semibold text-red-500 hover:text-red-700 flex items-center gap-1.5"
                         >
                           <svg
@@ -2094,6 +2116,16 @@
     </div>
   </div>
 {/if}
+
+<DeleteConfirmationDialog
+  bind:open={showDeleteDialog}
+  title={$_("delete")}
+  itemName={itemToDelete ? getDisplayName(itemToDelete) : ""}
+  itemType={itemToDelete?.resource_type || "item"}
+  isDeleting={isDeletingItem}
+  onConfirm={handleConfirmDelete}
+  onCancel={closeDeleteDialog}
+/>
 
 <style>
   .admin-contents-page {

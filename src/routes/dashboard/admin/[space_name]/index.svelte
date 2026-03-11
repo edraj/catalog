@@ -5,7 +5,7 @@
   import {
     deleteEntity,
     getSpaceContents,
-  } from "@/lib/dmart_services/dmart_services";
+  } from "@/lib/dmart_services";
   import { Diamonds } from "svelte-loading-spinners";
   import { _, locale } from "@/i18n";
   import { derived } from "svelte/store";
@@ -13,6 +13,11 @@
   import FolderForm from "@/components/forms/FolderForm.svelte";
   import MetaForm from "@/components/forms/MetaForm.svelte";
   import { formatNumberInText } from "@/lib/helpers";
+  import {
+    errorToastMessage,
+    successToastMessage,
+  } from "@/lib/toasts_messages";
+  import DeleteConfirmationDialog from "@/components/DeleteConfirmationDialog.svelte";
 
   $goto;
 
@@ -357,12 +362,17 @@
 
       if (response) {
         showCreateFolderModal = false;
+        if (isEditMode) {
+          successToastMessage($_("toast.folder_updated"));
+        } else {
+          successToastMessage($_("toast.folder_created"));
+        }
         await loadContents();
       } else {
         const errorMessage = isEditMode
-          ? $_("admin_space.error.update_folder_failed")
-          : $_("admin_space.error.create_folder_failed");
-        alert(errorMessage);
+          ? $_("toast.folder_update_failed")
+          : $_("toast.folder_create_failed");
+        errorToastMessage(errorMessage);
       }
     } catch (err) {
       console.error(
@@ -370,39 +380,54 @@
         err,
       );
       const errorMessage = isEditMode
-        ? $_("admin_space.error.update_folder_error")
-        : $_("admin_space.error.create_folder_error");
-      alert(errorMessage + ": " + err.message);
+        ? $_("toast.folder_update_failed")
+        : $_("toast.folder_create_failed");
+      errorToastMessage(errorMessage + ": " + err.message);
     } finally {
       isCreatingFolder = false;
     }
   }
 
-  async function handleDeleteItem(item: any, event: Event) {
+  // Delete confirmation dialog state
+  let showDeleteDialog = $state(false);
+  let itemToDelete: any = $state(null);
+  let isDeletingItem = $state(false);
+
+  function openDeleteDialog(item: any, event: Event) {
     event.stopPropagation();
+    itemToDelete = item;
+    showDeleteDialog = true;
+  }
 
-    if (
-      !confirm(
-        $_("admin_space.confirm.delete_item", {
-          values: { name: item.shortname },
-        }),
-      )
-    ) {
-      return;
-    }
+  function closeDeleteDialog() {
+    showDeleteDialog = false;
+    itemToDelete = null;
+    isDeletingItem = false;
+  }
 
+  async function handleConfirmDelete() {
+    if (!itemToDelete) return;
+
+    isDeletingItem = true;
     try {
       const success = await deleteEntity(
-        item.shortname,
+        itemToDelete.shortname,
         spaceName,
         actualSubpath,
-        item.resource_type,
+        itemToDelete.resource_type,
       );
       if (success) {
+        successToastMessage($_("toast.item_deleted"));
         await loadContents();
+        closeDeleteDialog();
+      } else {
+        errorToastMessage($_("toast.item_delete_failed"));
       }
     } catch (err) {
       console.error("Error deleting item:", err);
+      errorToastMessage($_("toast.item_delete_failed") + ": " + err.message);
+    } finally {
+      isDeletingItem = false;
     }
   }
 
@@ -544,7 +569,7 @@
 
   <div class="container mx-auto px-4 pb-12 max-w-5xl">
     {#if isLoading}
-      <div class="flex justify-center py-16">
+      <div class="flex items-center justify-center py-32">
         <Diamonds color="#3b82f6" size="60" unit="px" />
       </div>
     {:else if error}
@@ -864,7 +889,7 @@
                       </svg>
                     </button>
                     <button
-                      onclick={(e) => handleDeleteItem(item, e)}
+                      onclick={(e) => openDeleteDialog(item, e)}
                       class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors bg-gray-50 block opacity-0 group-hover:opacity-100 focus:opacity-100"
                       title="Delete folder"
                     >
@@ -996,6 +1021,16 @@
     </button>
   {/snippet}
 </Modal>
+
+<DeleteConfirmationDialog
+  bind:open={showDeleteDialog}
+  title={$_("delete")}
+  itemName={itemToDelete ? getDisplayName(itemToDelete) : ""}
+  itemType={itemToDelete?.resource_type || "item"}
+  isDeleting={isDeletingItem}
+  onConfirm={handleConfirmDelete}
+  onCancel={closeDeleteDialog}
+/>
 
 <style>
   .rtl {

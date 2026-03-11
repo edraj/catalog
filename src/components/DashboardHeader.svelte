@@ -300,7 +300,7 @@
                           />
                         </svg>
 
-                        <span>{$_("reports")}</span>
+                        <span>{$_("reports._val")}</span>
                       </button>
                       <button
                         aria-label={`Manage Permissions`}
@@ -414,7 +414,7 @@
                           />
                         </svg>
 
-                        <span>{$_("templates")}</span>
+                        <span>{$_("templates._val")}</span>
                       </button>
                     </div>
                     <div class="menu-divider"></div>
@@ -524,7 +524,7 @@
                         />
                       </svg>
 
-                      <span>{$_("polls")}</span>
+                      <span>{$_("polls._val")}</span>
                     </button>
                     <button
                       aria-label={`Surveys`}
@@ -557,7 +557,7 @@
                         <polyline points="6 16 7.5 17.5 10 15" />
                       </svg>
 
-                      <span>{$_("surveys")}</span>
+                      <span>{$_("surveys._val")}</span>
                     </button>
 
                     <button

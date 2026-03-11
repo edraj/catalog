@@ -6,6 +6,8 @@
     editSpace,
     getSpaces,
     searchInCatalog,
+    checkApplicationsFolders,
+    createApplicationsFolders,
   } from "@/lib/dmart_services/dmart_services";
   import { Diamonds } from "svelte-loading-spinners";
   import { goto } from "@roxi/routify";
@@ -74,11 +76,26 @@
     { value: "updated", label: $_("admin_dashboard.sort.updated") },
     { value: "owner", label: $_("admin_dashboard.sort.owner") },
   ];
+  // Applications folders check
+  let missingFolders = $state([]);
+  let missingWorkflow = $state(false);
+  let missingReportSchema = $state(false);
+  let missingWorkflowSchema = $state(false);
+  let checkingFolders = $state(true);
+  let fixingFolders = $state(false);
+  let foldersFixed = $state(false);
+  let workflowCreated = $state(false);
+  let reportSchemaCreated = $state(false);
+  let workflowSchemaCreated = $state(false);
+
   onMount(async () => {
     try {
       const response = await getSpaces(false, "managed");
       spaces = response.records || [];
       performSearch("");
+      
+      // Check if applications folders exist
+      await checkFolders();
     } catch (err) {
       console.error("Error fetching spaces:", err);
       error = "Failed to load spaces";
@@ -86,6 +103,68 @@
       isLoading = false;
     }
   });
+
+  async function checkFolders() {
+    checkingFolders = true;
+    console.log("Checking application folders...");
+    try {
+      const result = await checkApplicationsFolders("managed");
+      console.log("checkApplicationsFolders result:", result);
+      if (!result.exists && result.error !== "permission_denied") {
+        missingFolders = result.missing || [];
+        missingWorkflow = result.missingWorkflow || false;
+        missingReportSchema = result.missingReportSchema || false;
+        missingWorkflowSchema = result.missingWorkflowSchema || false;
+        console.log("Missing resources detected:", { missingFolders, missingWorkflow, missingReportSchema, missingWorkflowSchema });
+      } else {
+        missingFolders = [];
+        missingWorkflow = false;
+        missingReportSchema = false;
+        missingWorkflowSchema = false;
+        console.log("All resources exist or permission denied");
+      }
+    } catch (err) {
+      console.error("Error checking folders:", err);
+      missingFolders = [];
+      missingWorkflow = false;
+      missingReportSchema = false;
+      missingWorkflowSchema = false;
+    } finally {
+      checkingFolders = false;
+    }
+  }
+
+  async function handleFixFolders() {
+    fixingFolders = true;
+    console.log("Starting fix folders process...");
+    try {
+      const result = await createApplicationsFolders("managed");
+      console.log("createApplicationsFolders result:", result);
+      if (result.success) {
+        console.log("Fix successful, updating state...");
+        foldersFixed = true;
+        missingFolders = [];
+        missingWorkflow = false;
+        missingReportSchema = false;
+        missingWorkflowSchema = false;
+        workflowCreated = result.workflowCreated || false;
+        reportSchemaCreated = result.reportSchemaCreated || false;
+        workflowSchemaCreated = result.workflowSchemaCreated || false;
+        console.log("State updated after fix:", { foldersFixed, workflowCreated, reportSchemaCreated, workflowSchemaCreated });
+      } else {
+        // Some folders may have failed
+        console.log("Fix partially failed:", result);
+        missingFolders = result.failed || [];
+        missingWorkflow = result.workflowFailed || false;
+        missingReportSchema = result.reportSchemaFailed || false;
+        missingWorkflowSchema = result.workflowSchemaFailed || false;
+      }
+    } catch (err) {
+      console.error("Error creating folders:", err);
+    } finally {
+      fixingFolders = false;
+    }
+  }
 
   async function performSearch(query: string) {
     if (!query.trim()) {
@@ -493,6 +572,85 @@
   </div>
 
   <div class="container mx-auto px-4 pb-8 max-w-5xl">
+    <!-- Missing Folders Warning -->
+    {#if !checkingFolders && (missingFolders.length > 0 || missingWorkflow || missingReportSchema || missingWorkflowSchema) && !foldersFixed}
+      <div class="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4">
+        <div class="flex items-start gap-3">
+          <div class="flex-shrink-0 mt-0.5">
+            <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <div class="flex-1">
+            <h3 class="text-sm font-semibold text-amber-800 mb-1">
+              Missing Application Resources
+            </h3>
+            <p class="text-sm text-amber-700 mb-3">
+              {#if missingFolders.length > 0}
+                The following folders are missing in the <strong>applications</strong> space: 
+                <span class="font-medium">{missingFolders.join(", ")}</span>.
+              {/if}
+              {#if missingWorkflow}
+                {#if missingFolders.length > 0}<br />{/if}
+                The <strong>report_workflow</strong> is missing in the workflows folder.
+              {/if}
+              {#if missingReportSchema}
+                {#if missingFolders.length > 0 || missingWorkflow}<br />{/if}
+                The <strong>report</strong> schema is missing in the schema folder.
+              {/if}
+              {#if missingWorkflowSchema}
+                {#if missingFolders.length > 0 || missingWorkflow || missingReportSchema}<br />{/if}
+                The <strong>workflow</strong> schema is missing in the schema folder.
+              {/if}
+              <br />These are required for reports, polls, and surveys to function properly.
+            </p>
+            <button
+              onclick={handleFixFolders}
+              disabled={fixingFolders}
+              class="inline-flex items-center px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {#if fixingFolders}
+                <Diamonds color="#ffffff" size="16" unit="px" />
+                Creating...
+              {:else}
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Create Missing Resources
+              {/if}
+            </button>
+          </div>
+        </div>
+      </div>
+    {/if}
+
+    <!-- Folders Fixed Success Message -->
+    {#if foldersFixed}
+      <div class="mb-6 bg-green-50 border border-green-200 rounded-xl p-4">
+        <div class="flex items-start gap-3">
+          <div class="flex-shrink-0 mt-0.5">
+            <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <h3 class="text-sm font-semibold text-green-800">Resources Created Successfully</h3>
+            <p class="text-sm text-green-700">
+              All required folders, workflows, and schemas have been created in the applications space.
+              {#if workflowCreated}
+                <br /><span class="font-medium">report_workflow</span> has been set up with default states.
+              {/if}
+              {#if reportSchemaCreated}
+                <br /><span class="font-medium">report</span> schema has been created.
+              {/if}
+              {#if workflowSchemaCreated}
+                <br /><span class="font-medium">workflow</span> schema has been created.
+              {/if}
+            </p>
+          </div>
+        </div>
+      </div>
+    {/if}
     {#if isLoading}
       <div class="flex justify-center py-16">
         <Diamonds color="#8b5cf6" size="60" unit="px" />
@@ -630,64 +788,6 @@
                   $locale,
                 )}
               </p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Admin Access -->
-        <div
-          class="bg-white rounded-[20px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 p-4 w-60 py-6"
-        >
-          <div class="flex items-center gap-4">
-            <div
-              class="w-10 h-10 bg-sky-50 rounded-xl flex items-center justify-center flex-shrink-0 ml-2"
-            >
-              <svg
-                class="w-5 h-5 text-sky-500"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                />
-              </svg>
-            </div>
-            <div>
-              <p class="text-xs font-medium text-gray-400">Admin Access</p>
-              <p class="text-xl font-bold text-gray-900 mt-0.5">Full</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Role -->
-        <div
-          class="bg-white rounded-[20px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 p-4 w-60 py-6"
-        >
-          <div class="flex items-center gap-4">
-            <div
-              class="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center flex-shrink-0 ml-2"
-            >
-              <svg
-                class="w-5 h-5 text-amber-500"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            </div>
-            <div>
-              <p class="text-xs font-medium text-gray-400">Role</p>
-              <p class="text-xl font-bold text-gray-900 mt-0.5">Super Admin</p>
             </div>
           </div>
         </div>

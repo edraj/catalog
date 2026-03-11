@@ -1725,6 +1725,30 @@
   },
   "world_permissions_info": " World permissions apply to all guests and unauthenticated users. These are the most restrictive permissions.",
   "yourReply": "Your Reply",
+  "delete_confirmation": {
+    "title": "Delete {type}",
+    "confirm": "Are you sure?",
+    "irreversible": "This action cannot be undone.",
+    "item_label": "Item",
+    "warning": "This item will be permanently deleted and cannot be recovered."
+  },
+  "toast": {
+    "folder_created": "Folder created successfully",
+    "folder_create_failed": "Failed to create folder",
+    "folder_updated": "Folder updated successfully",
+    "folder_update_failed": "Failed to update folder",
+    "schema_created": "Schema created successfully",
+    "schema_create_failed": "Failed to create schema",
+    "workflow_created": "Workflow created successfully",
+    "workflow_create_failed": "Failed to create workflow",
+    "item_deleted": "Item deleted successfully",
+    "item_delete_failed": "Failed to delete item",
+    "reply_required": "Please enter a reply message",
+    "reply_sent": "Reply sent successfully",
+    "reply_sent_marked": "Reply sent and message marked as replied",
+    "reply_sent_failed": "Reply sent but failed to mark",
+    "reply_sent_error": "Reply sent but there was an error"
+  },
   "route_labels": {
     "admin_dashboard_title": "Admin Dashboard",
     "admin_dashboard_welcome": "Welcome to Dmart Admin. Manage all spaces and their content with full administrative privileges.",

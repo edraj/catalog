@@ -50,7 +50,7 @@
   async function loadPolls() {
     loading = true;
     try {
-      const response = await getPolls("poll", "managed");
+      const response = await getPolls("applications", "managed");
 
       if (response?.status === "success" && response?.records) {
         const processedPolls = response.records.map((poll) => {

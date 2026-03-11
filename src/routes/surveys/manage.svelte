@@ -63,7 +63,7 @@
         }
       }
 
-      const allSurveys = await getSurveys("surveys", "managed", 100, 0, false);
+      const allSurveys = await getSurveys("applications", "managed", 100, 0, false);
       respondedSurveys = [];
 
       if (allSurveys && allSurveys.records) {
@@ -74,7 +74,7 @@
 
           const surveyDetail = await getEntity(
             record.shortname,
-            "surveys",
+            "applications",
             "surveys",
             ResourceType.content,
             "managed",

@@ -33,7 +33,7 @@
       isLoading = true;
       error = "";
 
-      const result = await getSurveys("surveys", "managed", 100, 0, false);
+      const result = await getSurveys("applications", "managed", 100, 0, false);
 
       if (result && result.records) {
         surveys = result.records.map((record) => ({

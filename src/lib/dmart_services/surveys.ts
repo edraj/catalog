@@ -15,7 +15,7 @@ import {
 } from "./core";
 
 export async function getSurveys(
-    space_name: string = "surveys",
+    space_name: string = "applications",
     scope: string = "managed",
     limit = 100,
     offset = 0,
@@ -59,14 +59,14 @@ export async function submitSurveyResponse(
     if (existingResponse) {
         return await updateEntity(
             existingResponse.shortname,
-            "surveys",
+            "applications",
             `surveys/${survey_shortname}`,
             ResourceType.json,
             attributes
         );
     } else {
         return await createEntity(
-            "surveys",
+            "applications",
             `surveys/${survey_shortname}`,
             ResourceType.json,
             attributes,
@@ -86,7 +86,7 @@ export async function getUserSurveyResponseRecord(
     try {
         const survey = await getEntity(
             survey_shortname,
-            "surveys",
+            "applications",
             "surveys",
             ResourceType.content,
             "managed",
@@ -126,7 +126,7 @@ export async function getUserSurveyResponses(
 
 export async function getAllSurveyResponses() {
     const response = await searchEntities(
-        "surveys",
+        "applications",
         "/surveys",
         "@resource_type:json",
         1000,
@@ -144,7 +144,7 @@ export async function getUserSurveys() {
     }
 
     const response = await searchEntities(
-        "surveys",
+        "applications",
         "/surveys",
         `@owner_shortname:${currentUser.shortname}`,
         100,

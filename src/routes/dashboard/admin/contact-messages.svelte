@@ -91,7 +91,7 @@
     const ownerEmail = messageBody?.email || messageBody?.contact_email || "";
 
     if (!ownerEmail) {
-      alert($_("noEmailFoundForMessage"));
+      errorToastMessage($_("noEmailFoundForMessage"));
       return;
     }
 
@@ -109,7 +109,7 @@
 
   async function sendReply() {
     if (!selectedMessage || !replyContent.trim()) {
-      alert($_("pleaseEnterReplyMessage"));
+      errorToastMessage($_("toast.reply_required"));
       return;
     }
 
@@ -136,14 +136,14 @@
         selectedMessage.attributes.payload.replied = true;
         await loadMessages();
         closeModal();
-        alert($_("replySentAndMarked"));
+        successToastMessage($_("toast.reply_sent_marked"));
       } else {
-        alert($_("replySentButFailedToMark"));
+        errorToastMessage($_("toast.reply_sent_failed"));
         closeModal();
       }
     } catch (error) {
       console.error("Error marking message as replied:", error);
-      alert($_("replySentButSystemError"));
+      errorToastMessage($_("toast.reply_sent_error"));
       closeModal();
     } finally {
       sendingReply = false;
