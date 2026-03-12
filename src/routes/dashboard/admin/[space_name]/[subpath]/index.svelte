@@ -27,7 +27,6 @@
   $goto;
 
   let isLoading = writable(false);
-  let isLoadingMore = writable(false);
   let allContents = writable([]);
   let displayedContents = $state([]);
   let folderMetadata = $state(null);
@@ -37,15 +36,15 @@
   let actualSubpath = writable("");
   let breadcrumbs = $state([]);
 
-  let currentOffset = $state(0);
-  let itemsPerLoad = $state(20);
+  let currentPage = $state(1);
+  let itemsPerPage = $state(10);
   let totalItemsCount = $state(0);
-  let hasMoreItems = $state(true);
+  let totalPages = $state(1);
   let isInitialLoad = $state(true);
   let containTemplates = $state(false);
-  const itemsPerLoadOptions = [20, 50, 100];
+  const itemsPerPageOptions = [10, 25, 50, 100];
 
-  // let currentDisplayCount = $state(itemsPerLoad);
+  let paginatedContents = $state([]);
 
   let filteredContents = $state([]);
 
@@ -117,8 +116,7 @@
       });
     });
 
-    currentOffset = 0;
-    hasMoreItems = true;
+    currentPage = 1;
     await loadContents(true);
   }
 
@@ -141,40 +139,32 @@
   });
 
   async function loadContents(reset = false) {
-    if (reset && $isLoading) return;
-    if (!reset && ($isLoadingMore || !hasMoreItems)) return;
+    if ($isLoading) return;
 
     if (reset) {
       $isLoading = true;
-      currentOffset = 0;
-      $allContents = [];
-      filteredContents = [];
-      displayedContents = [];
+      currentPage = 1;
       isInitialLoad = true;
-    } else {
-      $isLoadingMore = true;
     }
 
     error = null;
 
     try {
-      if (reset) {
-        // Fetch current folder metadata
-        const pathParts = $actualSubpath.split("/").filter((p) => p);
-        const folderShortname = pathParts.pop();
-        const parentPath = "/" + pathParts.join("/");
+      // Fetch current folder metadata
+      const pathParts = $actualSubpath.split("/").filter((p) => p);
+      const folderShortname = pathParts.pop();
+      const parentPath = "/" + pathParts.join("/");
 
-        if (folderShortname) {
-          folderMetadata = await getEntity(
-            folderShortname,
-            spaceName,
-            parentPath,
-            ResourceType.folder,
-            "managed",
-          );
-        } else {
-          folderMetadata = null;
-        }
+      if (folderShortname) {
+        folderMetadata = await getEntity(
+          folderShortname,
+          spaceName,
+          parentPath,
+          ResourceType.folder,
+          "managed",
+        );
+      } else {
+        folderMetadata = null;
       }
 
       const parent = await getSpaceContents(
@@ -195,12 +185,14 @@
           containTemplates = true;
         }
       }
+
+      // Load all items for client-side filtering and pagination
       const response = await getSpaceContents(
         spaceName,
         `/${$actualSubpath}`,
         "managed",
-        itemsPerLoad,
-        currentOffset,
+        10000, // Load all items for client-side pagination
+        0,
         true,
       );
 
@@ -218,46 +210,30 @@
           }),
         );
 
-        if (reset) {
-          $allContents = enhancedItems;
-        } else {
-          $allContents = [...$allContents, ...enhancedItems];
-        }
-
-        currentOffset += itemsPerLoad;
-        hasMoreItems = enhancedItems.length === itemsPerLoad;
-
-        if (reset) {
-          totalItemsCount = enhancedItems.length;
-        }
+        $allContents = enhancedItems;
+        totalItemsCount = enhancedItems.length;
 
         applyFilters();
       } else {
-        if (reset) {
-          $allContents = [];
-          filteredContents = [];
-          displayedContents = [];
-          totalItemsCount = 0;
-          hasMoreItems = false;
-        }
+        $allContents = [];
+        filteredContents = [];
+        displayedContents = [];
+        paginatedContents = [];
+        totalItemsCount = 0;
+        totalPages = 1;
       }
     } catch (err) {
       console.error("Error fetching space contents:", err);
       error = $_("admin_content.error.failed_load_contents");
-      if (reset) {
-        $allContents = [];
-        filteredContents = [];
-        displayedContents = [];
-        totalItemsCount = 0;
-        hasMoreItems = false;
-      }
+      $allContents = [];
+      filteredContents = [];
+      displayedContents = [];
+      paginatedContents = [];
+      totalItemsCount = 0;
+      totalPages = 1;
     } finally {
-      if (reset) {
-        $isLoading = false;
-        isInitialLoad = false;
-      } else {
-        $isLoadingMore = false;
-      }
+      $isLoading = false;
+      isInitialLoad = false;
     }
   }
 
@@ -330,22 +306,52 @@
     });
 
     filteredContents = filtered;
-    // currentDisplayCount = itemsPerLoad;
-    updateDisplayedContents();
+    totalItemsCount = filtered.length;
+    totalPages = Math.ceil(totalItemsCount / itemsPerPage) || 1;
+    
+    // Reset to page 1 if current page is out of bounds
+    if (currentPage > totalPages) {
+      currentPage = 1;
+    }
+    
+    updatePaginatedContents();
   }
 
-  function updateDisplayedContents() {
-    displayedContents = filteredContents;
+  function updatePaginatedContents() {
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    paginatedContents = filteredContents.slice(start, end);
+    displayedContents = paginatedContents;
   }
 
-  function loadMoreItems() {
-    if ($isLoadingMore || !hasMoreItems) return;
-    loadContents(false);
+  function goToPage(page: number) {
+    if (page >= 1 && page <= totalPages) {
+      currentPage = page;
+      updatePaginatedContents();
+      // Scroll to top of table
+      const tableContainer = document.querySelector('.overflow-x-auto');
+      if (tableContainer) {
+        tableContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
   }
 
-  function handleItemsPerLoadChange(newItemsPerLoad) {
-    itemsPerLoad = newItemsPerLoad;
-    loadContents(true);
+  function nextPage() {
+    if (currentPage < totalPages) {
+      goToPage(currentPage + 1);
+    }
+  }
+
+  function previousPage() {
+    if (currentPage > 1) {
+      goToPage(currentPage - 1);
+    }
+  }
+
+  function handleItemsPerPageChange(newItemsPerPage: number) {
+    itemsPerPage = newItemsPerPage;
+    currentPage = 1;
+    applyFilters();
   }
 
   function handleItemClick(item) {
@@ -526,7 +532,7 @@
     selectedStatus = "all";
     sortBy = "name";
     sortOrder = "asc";
-    // currentDisplayCount = itemsPerLoad;
+    currentPage = 1;
     applyFilters();
   }
 
@@ -656,84 +662,17 @@
     event.stopPropagation();
   }
 
-  const filteredContentsDerived = $derived.by(() => {
-    let filtered = [...$allContents];
+  const filteredContentsDerived = $derived.by(() => filteredContents);
 
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter((item) => {
-        const displayName = getDisplayName(item).toLowerCase();
-        const shortname = item.shortname.toLowerCase();
-        const description = getDescription(item).toLowerCase();
-        const owner = (item.attributes?.owner_shortname || "").toLowerCase();
+  const displayedContentsDerived = $derived.by(() => paginatedContents);
 
-        return (
-          displayName.includes(query) ||
-          shortname.includes(query) ||
-          description.includes(query) ||
-          owner.includes(query)
-        );
-      });
-    }
+  const totalItemsDerived = $derived.by(() => totalItemsCount);
 
-    if (selectedType !== "all") {
-      filtered = filtered.filter((item) => item.resource_type === selectedType);
-    }
-
-    if (selectedStatus !== "all") {
-      filtered = filtered.filter((item) => {
-        const isActive = item.attributes?.is_active;
-        return selectedStatus === "active" ? isActive : !isActive;
-      });
-    }
-
-    filtered.sort((a, b) => {
-      let aValue, bValue;
-
-      switch (sortBy) {
-        case "name":
-          aValue = getDisplayName(a).toLowerCase();
-          bValue = getDisplayName(b).toLowerCase();
-          break;
-        case "type":
-          aValue = a.resource_type;
-          bValue = b.resource_type;
-          break;
-        case "owner":
-          aValue = (a.attributes?.owner_shortname || "").toLowerCase();
-          bValue = (b.attributes?.owner_shortname || "").toLowerCase();
-          break;
-        case "created":
-          aValue = new Date(a.attributes?.created_at || 0);
-          bValue = new Date(b.attributes?.created_at || 0);
-          break;
-        case "updated":
-          aValue = new Date(a.attributes?.updated_at || 0);
-          bValue = new Date(b.attributes?.updated_at || 0);
-          break;
-        default:
-          aValue = a.shortname.toLowerCase();
-          bValue = b.shortname.toLowerCase();
-      }
-
-      let result;
-      if (aValue > bValue) result = 1;
-      else if (aValue < bValue) result = -1;
-      else result = 0;
-
-      return sortOrder === "desc" ? -result : result;
-    });
-
-    return filtered;
+  const paginationInfoDerived = $derived.by(() => {
+    const start = totalItemsCount === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+    const end = Math.min(currentPage * itemsPerPage, totalItemsCount);
+    return { start, end, total: totalItemsCount, currentPage, totalPages };
   });
-
-  const displayedContentsDerived = $derived.by(() => {
-    return filteredContents;
-  });
-
-  const totalItemsDerived = $derived.by(() => filteredContents.length);
-
-  const hasMoreItemsDerived = $derived.by(() => hasMoreItems);
 
   let isCreatingFolder = $state(false);
   let metaContent: any = $state({});
@@ -1813,24 +1752,129 @@
             </table>
           </div>
 
-          {#if hasMoreItemsDerived}
+          {#if totalPages > 1}
             <div class="p-4 border-t border-gray-100 bg-gray-50/50">
-              <button
-                onclick={loadMoreItems}
-                disabled={$isLoadingMore}
-                class="w-full py-2.5 bg-white border border-gray-200 shadow-sm rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-indigo-600 hover:border-indigo-200 transition-all"
-              >
-                {$isLoadingMore
-                  ? $_("admin_content.infinite_scroll.loading")
-                  : $_("admin_content.infinite_scroll.load_more")}
-              </button>
+              <div class="flex items-center justify-between gap-4">
+                <!-- Items per page selector -->
+                <div class="flex items-center gap-2">
+                  <span class="text-sm text-gray-500">{$_("admin_content.pagination.items_per_page")}</span>
+                  <select
+                    bind:value={itemsPerPage}
+                    onchange={() => handleItemsPerPageChange(itemsPerPage)}
+                    class="bg-white border border-gray-200 text-sm font-medium text-gray-700 rounded-lg pl-3 pr-8 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer"
+                  >
+                    {#each itemsPerPageOptions as option}
+                      <option value={option}>{option}</option>
+                    {/each}
+                  </select>
+                </div>
+
+                <!-- Pagination info -->
+                <div class="text-sm text-gray-500 hidden sm:block">
+                  {$_("admin_content.pagination.showing", { 
+                    values: { 
+                      start: formatNumber(paginationInfoDerived.start, $locale),
+                      end: formatNumber(paginationInfoDerived.end, $locale),
+                      total: formatNumber(paginationInfoDerived.total, $locale)
+                    } 
+                  })}
+                </div>
+
+                <!-- Pagination controls -->
+                <div class="flex items-center gap-2">
+                  <button
+                    onclick={previousPage}
+                    disabled={currentPage === 1}
+                    class="p-2 bg-white border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-indigo-600 hover:border-indigo-200 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    aria-label={$_("admin_content.pagination.previous")}
+                  >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+
+                  <div class="flex items-center gap-1">
+                    {#if totalPages <= 7}
+                      {#each Array(totalPages) as _, index}
+                        <button
+                          class="w-8 h-8 rounded-lg text-sm font-medium transition-all {currentPage === index + 1 ? 'bg-indigo-500 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-indigo-600'}"
+                          onclick={() => goToPage(index + 1)}
+                        >
+                          {formatNumber(index + 1, $locale)}
+                        </button>
+                      {/each}
+                    {:else}
+                      <button
+                        class="w-8 h-8 rounded-lg text-sm font-medium transition-all {currentPage === 1 ? 'bg-indigo-500 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}"
+                        onclick={() => goToPage(1)}
+                      >
+                        {formatNumber(1, $locale)}
+                      </button>
+
+                      {#if currentPage > 3}
+                        <span class="px-1 text-gray-400">...</span>
+                      {/if}
+
+                      {#each Array(totalPages) as _, index}
+                        {#if index + 1 > 1 && index + 1 < totalPages && Math.abs(currentPage - (index + 1)) <= 1}
+                          <button
+                            class="w-8 h-8 rounded-lg text-sm font-medium transition-all {currentPage === index + 1 ? 'bg-indigo-500 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}"
+                            onclick={() => goToPage(index + 1)}
+                          >
+                            {formatNumber(index + 1, $locale)}
+                          </button>
+                        {/if}
+                      {/each}
+
+                      {#if currentPage < totalPages - 2}
+                        <span class="px-1 text-gray-400">...</span>
+                      {/if}
+
+                      <button
+                        class="w-8 h-8 rounded-lg text-sm font-medium transition-all {currentPage === totalPages ? 'bg-indigo-500 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}"
+                        onclick={() => goToPage(totalPages)}
+                      >
+                        {formatNumber(totalPages, $locale)}
+                      </button>
+                    {/if}
+                  </div>
+
+                  <button
+                    onclick={nextPage}
+                    disabled={currentPage === totalPages}
+                    class="p-2 bg-white border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-indigo-600 hover:border-indigo-200 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    aria-label={$_("admin_content.pagination.next")}
+                  >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
             </div>
           {:else if displayedContents.length > 0}
-            <div
-              class="p-4 border-t border-gray-100 bg-gray-50 text-center text-sm font-medium text-gray-500"
-            >
-              {$_("admin_content.infinite_scroll.end_of_results")} ({totalItemsDerived}
-              total)
+            <div class="p-4 border-t border-gray-100 bg-gray-50/50">
+              <div class="flex items-center justify-between gap-4">
+                <!-- Items per page selector (single page) -->
+                <div class="flex items-center gap-2">
+                  <span class="text-sm text-gray-500">{$_("admin_content.pagination.items_per_page")}</span>
+                  <select
+                    bind:value={itemsPerPage}
+                    onchange={() => handleItemsPerPageChange(itemsPerPage)}
+                    class="bg-white border border-gray-200 text-sm font-medium text-gray-700 rounded-lg pl-3 pr-8 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer"
+                  >
+                    {#each itemsPerPageOptions as option}
+                      <option value={option}>{option}</option>
+                    {/each}
+                  </select>
+                </div>
+
+                <div class="text-sm text-gray-500">
+                  {$_("admin_content.pagination.total_items", { 
+                    values: { total: formatNumber(totalItemsDerived, $locale) }
+                  })}
+                </div>
+              </div>
             </div>
           {/if}
         {/if}

@@ -244,7 +244,8 @@
       "loading": "جارٍ التحميل..."
     },
     "pagination": {
-      "showing": "عرض",
+      "showing": "عرض {start}-{end} من {total}",
+      "total_items": "{total} عنصر",
       "of": "من",
       "items": "عناصر",
       "items_per_page": "عناصر لكل صفحة",

@@ -1381,7 +1381,8 @@
       "total_items": "سەرجەمی شتەکان: {count}"
     },
     "pagination": {
-      "showing": "پیشاندان",
+      "showing": "پیشاندانی {start}-{end} لە {total}",
+      "total_items": "{total} بەرگە",
       "of": "لە",
       "items": "بەرگە",
       "items_per_page": "بەرگە بۆ هەر پەڕەیەک",
