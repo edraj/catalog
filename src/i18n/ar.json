@@ -190,6 +190,28 @@
       "create_schema": "إنشاء مخطط",
       "create_workflow": "إنشاء سير عمل"
     },
+    "bulk_actions": {
+      "select_all": "تحديد جميع العناصر",
+      "select_item": "تحديد {name}",
+      "items_selected": "عناصر محددة",
+      "clear_selection": "إلغاء التحديد",
+      "delete": "حذف المحدد",
+      "deleting": "جارٍ الحذف...",
+      "delete_success": "تم حذف {count} عناصر بنجاح",
+      "delete_failed": "فشل حذف {count} عناصر",
+      "delete_error": "حدث خطأ أثناء الحذف الجماعي",
+      "confirm_delete_title": "تأكيد الحذف الجماعي",
+      "confirm_delete_message": "هل أنت متأكد أنك تريد حذف {count} عناصر محددة؟",
+      "confirm_delete": "نعم، احذف",
+      "trash": "نقل المحدد إلى سلة المهملات",
+      "trashing": "جارٍ النقل إلى سلة المهملات...",
+      "trash_success": "تم نقل {count} عناصر إلى سلة المهملات",
+      "trash_failed": "فشل نقل {count} عناصر إلى سلة المهملات",
+      "trash_error": "حدث خطأ أثناء النقل إلى سلة المهملات",
+      "confirm_trash_title": "تأكيد النقل إلى سلة المهملات",
+      "confirm_trash_message": "هل أنت متأكد أنك تريد نقل {count} عناصر محددة إلى سلة المهملات؟",
+      "confirm_trash": "نعم، انقل إلى سلة المهملات"
+    },
     "breadcrumb": {
       "admin": "الإدارة"
     },
@@ -220,6 +242,17 @@
       "end_of_results": "لقد وصلت إلى النهاية",
       "load_more": "تحميل المزيد",
       "loading": "جارٍ التحميل..."
+    },
+    "pagination": {
+      "showing": "عرض",
+      "of": "من",
+      "items": "عناصر",
+      "items_per_page": "عناصر لكل صفحة",
+      "first_page": "الصفحة الأولى",
+      "last_page": "الصفحة الأخيرة",
+      "previous": "السابق",
+      "next": "التالي",
+      "page": "صفحة"
     },
     "modal": {
       "basic_info": {
@@ -346,6 +379,9 @@
         "displayname": "اسم العرض",
         "description": "الوصف"
       },
+      "placeholders": {
+        "tags": "أدخل العلامات مفصولة بفواصل"
+      },
       "title": "تعديل العنصر"
     },
     "empty": "فارغ",
@@ -378,7 +414,15 @@
     },
     "relationships": {
       "no_relationships": "لا توجد علاقات محددة",
-      "title": "العلاقات"
+      "title": "العلاقات",
+      "manage": "إدارة العلاقات",
+      "headers": {
+        "role": "الدور",
+        "related_to": "مرتبط بـ",
+        "type": "النوع",
+        "space": "المساحة",
+        "uuid": "المعرف الفريد"
+      }
     },
     "status": {
       "active": "نشط",

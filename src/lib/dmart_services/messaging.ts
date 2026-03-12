@@ -45,7 +45,7 @@ export async function getMessagesBetweenUsers(
             offset,
             "created_at",
             SortyType.descending,
-            "public",
+            "managed",
             true,
             true,
             true

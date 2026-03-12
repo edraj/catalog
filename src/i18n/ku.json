@@ -1343,6 +1343,28 @@
       "create_schema": "دروستکردنی شێوازی نوێ",
       "create_workflow": "دروستکردنی ڕێکاری"
     },
+    "bulk_actions": {
+      "select_all": "هەموو بەرگە دیاری بکە",
+      "select_item": "دیاری کردنی {name}",
+      "items_selected": "بەرگە دیاری کراو",
+      "clear_selection": "پاککردنەوە",
+      "delete": "سڕینەوەی دیاریکراو",
+      "deleting": "سڕینەوە...",
+      "delete_success": "{count} بەرگە بە سەرکەوتوویی سڕایەوە",
+      "delete_failed": "سڕینەوەی {count} بەرگە شکستی هێنا",
+      "delete_error": "هەڵەیەک ڕوویدا لە کاتی سڕینەوەی کۆمەڵەیی",
+      "confirm_delete_title": "دووپاتکردنەوەی سڕینەوەی کۆمەڵەیی",
+      "confirm_delete_message": "دڵنیای کە دەتەوێت {count} بەرگەی دیاری کراو بسڕیتەوە؟",
+      "confirm_delete": "بەڵێ، بسڕەوە",
+      "trash": "بڕۆ بۆ زبڵدان",
+      "trashing": "لە گواستنەوە بۆ زبڵدان...",
+      "trash_success": "{count} بەرگە گواسترایەوە بۆ زبڵدان",
+      "trash_failed": "گواستنەوەی {count} بەرگە بۆ زبڵدان شکستی هێنا",
+      "trash_error": "هەڵەیەک ڕوویدا لە کاتی گواستنەوەی کۆمەڵەیی بۆ زبڵدان",
+      "confirm_trash_title": "دووپاتکردنەوەی گواستنەوە بۆ زبڵدان",
+      "confirm_trash_message": "دڵنیای کە دەتەوێت {count} بەرگەی دیاری کراو بگوازییەوە بۆ زبڵدان؟",
+      "confirm_trash": "بەڵێ، بڕۆ بۆ زبڵدان"
+    },
     "filters": {
       "title": "پاڵاوتن",
       "clear_all": "ههموو پاڵاوتهكان پاك بكه‌رهوه",
@@ -1357,6 +1379,17 @@
       "loading": "باردهكرێت...",
       "end_of_results": "گهیشتیت بۆ كۆتایی",
       "total_items": "سەرجەمی شتەکان: {count}"
+    },
+    "pagination": {
+      "showing": "پیشاندان",
+      "of": "لە",
+      "items": "بەرگە",
+      "items_per_page": "بەرگە بۆ هەر پەڕەیەک",
+      "first_page": "پەڕەی یەکەم",
+      "last_page": "پەڕەی کۆتایی",
+      "previous": "پێشتر",
+      "next": "دواتر",
+      "page": "پەڕە"
     },
     "results": {
       "for_query": "بۆ '{query}'"
@@ -1446,6 +1479,7 @@
     },
     "relationships": {
       "title": "پەیوەندیەکان",
+      "manage": "بەڕێوەبردنی پەیوەندیەکان",
       "headers": {
         "role": "ڕۆڵ",
         "related_to": "پەیوەست بە",

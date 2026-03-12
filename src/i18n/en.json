@@ -190,6 +190,28 @@
       "create_schema": "Create Schema",
       "create_workflow": "Create Workflow"
     },
+    "bulk_actions": {
+      "select_all": "Select all items",
+      "select_item": "Select {name}",
+      "items_selected": "items selected",
+      "clear_selection": "Clear",
+      "delete": "Delete Selected",
+      "deleting": "Deleting...",
+      "delete_success": "{count} items deleted successfully",
+      "delete_failed": "Failed to delete {count} items",
+      "delete_error": "An error occurred during bulk delete",
+      "confirm_delete_title": "Confirm Bulk Delete",
+      "confirm_delete_message": "Are you sure you want to delete {count} selected items?",
+      "confirm_delete": "Yes, Delete",
+      "trash": "Trash Selected",
+      "trashing": "Moving to trash...",
+      "trash_success": "{count} items moved to trash",
+      "trash_failed": "Failed to move {count} items to trash",
+      "trash_error": "An error occurred during bulk trash",
+      "confirm_trash_title": "Confirm Move to Trash",
+      "confirm_trash_message": "Are you sure you want to move {count} selected items to trash?",
+      "confirm_trash": "Yes, Move to Trash"
+    },
     "breadcrumb": {
       "admin": "Admin"
     },
@@ -220,6 +242,17 @@
       "end_of_results": "You've reached the end",
       "load_more": "Load More",
       "loading": "Loading..."
+    },
+    "pagination": {
+      "showing": "Showing",
+      "of": "of",
+      "items": "items",
+      "items_per_page": "Items per page",
+      "first_page": "First page",
+      "last_page": "Last page",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page"
     },
     "modal": {
       "basic_info": {
@@ -347,6 +380,9 @@
         "displayname": "Display Name",
         "description": "Description"
       },
+      "placeholders": {
+        "tags": "Enter tags separated by commas"
+      },
       "title": "Edit Item"
     },
     "empty": "Empty",
@@ -380,7 +416,14 @@
     "relationships": {
       "no_relationships": "No relationships defined",
       "title": "Relationships",
-      "manage": "Manage Relationships"
+      "manage": "Manage Relationships",
+      "headers": {
+        "role": "Role",
+        "related_to": "Related To",
+        "type": "Type",
+        "space": "Space",
+        "uuid": "UUID"
+      }
     },
     "status": {
       "active": "Active",

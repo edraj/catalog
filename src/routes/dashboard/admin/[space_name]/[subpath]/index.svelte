@@ -49,6 +49,12 @@
 
   let filteredContents = $state([]);
 
+  // Bulk selection state
+  let selectedItems = $state(new Set<string>());
+  let isBulkDeleting = $state(false);
+  let showBulkDeleteConfirm = $state(false);
+  let showBulkTrashConfirm = $state(false);
+
   let searchQuery = $state("");
   let sortBy = $state("name");
   let sortOrder = $state("asc");
@@ -524,6 +530,123 @@
     applyFilters();
   }
 
+  // Bulk selection functions
+  function toggleItemSelection(shortname: string) {
+    if (selectedItems.has(shortname)) {
+      selectedItems.delete(shortname);
+    } else {
+      selectedItems.add(shortname);
+    }
+    selectedItems = new Set(selectedItems);
+  }
+
+  function toggleAllItems() {
+    if (selectedItems.size === displayedContents.length) {
+      selectedItems.clear();
+    } else {
+      selectedItems = new Set(displayedContents.map(item => item.shortname));
+    }
+    selectedItems = new Set(selectedItems);
+  }
+
+  function clearSelection() {
+    selectedItems.clear();
+    selectedItems = new Set();
+  }
+
+  async function handleBulkDelete() {
+    if (selectedItems.size === 0) return;
+
+    isBulkDeleting = true;
+    let successCount = 0;
+    let failCount = 0;
+
+    try {
+      for (const shortname of selectedItems) {
+        const item = displayedContents.find(i => i.shortname === shortname);
+        if (item) {
+          try {
+            const success = await deleteEntity(
+              item.shortname,
+              spaceName,
+              `/${$actualSubpath}`,
+              item.resource_type,
+            );
+            if (success) {
+              successCount++;
+            } else {
+              failCount++;
+            }
+          } catch {
+            failCount++;
+          }
+        }
+      }
+
+      if (successCount > 0) {
+        successToastMessage($_("admin_content.bulk_actions.delete_success", { count: successCount }));
+      }
+      if (failCount > 0) {
+        errorToastMessage($_("admin_content.bulk_actions.delete_failed", { count: failCount }));
+      }
+
+      clearSelection();
+      await loadContents(true);
+    } catch (err) {
+      console.error("Error in bulk delete:", err);
+      errorToastMessage($_("admin_content.bulk_actions.delete_error"));
+    } finally {
+      isBulkDeleting = false;
+    }
+  }
+
+  async function handleBulkTrash() {
+    if (selectedItems.size === 0) return;
+
+    isBulkDeleting = true;
+    let successCount = 0;
+    let failCount = 0;
+
+    try {
+      for (const shortname of selectedItems) {
+        const item = displayedContents.find(i => i.shortname === shortname);
+        if (item) {
+          try {
+            // TODO: Replace with actual trashEntity function when available
+            const success = await deleteEntity(
+              item.shortname,
+              spaceName,
+              `/${$actualSubpath}`,
+              item.resource_type,
+            );
+            if (success) {
+              successCount++;
+            } else {
+              failCount++;
+            }
+          } catch {
+            failCount++;
+          }
+        }
+      }
+
+      if (successCount > 0) {
+        successToastMessage($_("admin_content.bulk_actions.trash_success", { count: successCount }));
+      }
+      if (failCount > 0) {
+        errorToastMessage($_("admin_content.bulk_actions.trash_failed", { count: failCount }));
+      }
+
+      clearSelection();
+      await loadContents(true);
+    } catch (err) {
+      console.error("Error in bulk trash:", err);
+      errorToastMessage($_("admin_content.bulk_actions.trash_error"));
+    } finally {
+      isBulkDeleting = false;
+    }
+  }
+
   function toggleSortOrder() {
     sortOrder = sortOrder === "asc" ? "desc" : "asc";
     applyFilters();
@@ -877,6 +1000,7 @@
 
   function getAttributeValue(item, key) {
     if (!item) return "";
+    if (!key) return "";
     if (key === "displayname") return getDisplayName(item);
     if (key === "status") {
       return item.attributes?.is_active
@@ -1317,6 +1441,56 @@
           </div>
         </div>
 
+        <!-- Bulk Actions Topbar -->
+        {#if selectedItems.size > 0}
+          <div class="bulk-actions-bar" class:rtl={$isRTL}>
+            <div class="bulk-actions-content">
+              <div class="bulk-actions-info">
+                <span class="bulk-actions-count">
+                  {selectedItems.size} {$_("admin_content.bulk_actions.items_selected")}
+                </span>
+              </div>
+              <div class="bulk-actions-buttons">
+                <button
+                  onclick={clearSelection}
+                  class="bulk-btn bulk-btn-secondary"
+                  disabled={isBulkDeleting}
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  {$_("admin_content.bulk_actions.clear_selection")}
+                </button>
+                <button
+                  onclick={() => showBulkTrashConfirm = true}
+                  class="bulk-btn bulk-btn-warning"
+                  disabled={isBulkDeleting}
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  {$_("admin_content.bulk_actions.trash")}
+                </button>
+                <button
+                  onclick={() => showBulkDeleteConfirm = true}
+                  class="bulk-btn bulk-btn-danger"
+                  disabled={isBulkDeleting}
+                >
+                  {#if isBulkDeleting}
+                    <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    {$_("admin_content.bulk_actions.deleting")}
+                  {:else}
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    {$_("admin_content.bulk_actions.delete")}
+                  {/if}
+                </button>
+              </div>
+            </div>
+          </div>
+        {/if}
+
         {#if displayedContents.length === 0}
           <div class="text-center py-16">
             <div
@@ -1358,7 +1532,17 @@
             <table class="w-full text-left border-collapse">
               <thead>
                 <tr class="bg-gray-50/50 border-b border-gray-100">
-                  {#if indexAttributes && indexAttributes.length > 0}
+                  <th class="px-4 py-4 w-12">
+                    <input
+                      type="checkbox"
+                      checked={selectedItems.size > 0 && selectedItems.size === displayedContents.length}
+                      indeterminate={selectedItems.size > 0 && selectedItems.size < displayedContents.length}
+                      onchange={toggleAllItems}
+                      class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
+                      aria-label={$_("admin_content.bulk_actions.select_all")}
+                    />
+                  </th>
+                  {#if indexAttributes && indexAttributes.length > 0 && indexAttributes.some(attr => attr && Object.keys(attr).length > 0)}
                     {#each indexAttributes as attr}
                       <th
                         class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider"
@@ -1369,7 +1553,11 @@
                   {:else}
                     <th
                       class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider"
-                      >Display Name</th
+                      >Shortname</th
+                    >
+                    <th
+                      class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                      >Schema</th
                     >
                     <th
                       class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider"
@@ -1377,11 +1565,11 @@
                     >
                     <th
                       class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider"
-                      >Author</th
+                      >Created At</th
                     >
                     <th
                       class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider"
-                      >Last Modified</th
+                      >Updated At</th
                     >
                   {/if}
                   <th
@@ -1393,10 +1581,19 @@
               <tbody class="divide-y divide-gray-100 bg-white">
                 {#each displayedContents as item}
                   <tr
-                    class="hover:bg-gray-50/50 transition-colors group cursor-pointer"
+                    class="hover:bg-gray-50/50 transition-colors group cursor-pointer {selectedItems.has(item.shortname) ? 'bg-indigo-50/30' : ''}"
                     onclick={() => handleItemClick(item)}
                   >
-                    {#if indexAttributes && indexAttributes.length > 0}
+                    <td class="px-4 py-4" onclick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selectedItems.has(item.shortname)}
+                        onchange={() => toggleItemSelection(item.shortname)}
+                        class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
+                        aria-label={$_("admin_content.bulk_actions.select_item", { name: getDisplayName(item) })}
+                      />
+                    </td>
+                    {#if indexAttributes && indexAttributes.length > 0 && indexAttributes.some(attr => attr && Object.keys(attr).length > 0)}
                       {#each indexAttributes as attr}
                         <td class="px-6 py-4">
                           {#if attr.key === "displayname"}
@@ -1500,10 +1697,15 @@
                             >
                             <span
                               class="text-sm font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors truncate max-w-xs"
-                              >{getDisplayName(item)}</span
+                              >{item.shortname}</span
                             >
                           </div>
                         </div>
+                      </td>
+                      <td class="px-6 py-4">
+                        <span class="text-sm text-gray-500 font-medium"
+                          >{item.attributes?.schema_shortname || "-"}</span
+                        >
                       </td>
                       <td class="px-6 py-4">
                         <span
@@ -1524,54 +1726,13 @@
                         </span>
                       </td>
                       <td class="px-6 py-4">
-                        <div class="flex items-center gap-2">
-                          {#if item.attributes?.owner_shortname}
-                            {#await getAvatar(item.attributes?.owner_shortname) then avatar}
-                              {#if typeof avatar === "string" && avatar.trim() !== ""}
-                                <img
-                                  src={avatar}
-                                  alt={item.attributes?.owner_shortname}
-                                  class="w-6 h-6 rounded-full object-cover"
-                                />
-                              {:else}
-                                <div
-                                  class="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[10px] font-medium text-gray-600"
-                                >
-                                  {item.attributes?.owner_shortname
-                                    .charAt(0)
-                                    .toUpperCase()}
-                                </div>
-                              {/if}
-                            {:catch}
-                              <div
-                                class="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[10px] font-medium text-gray-600"
-                              >
-                                {item.attributes?.owner_shortname
-                                  .charAt(0)
-                                  .toUpperCase()}
-                              </div>
-                            {/await}
-                            <span class="text-sm font-medium text-gray-700"
-                              >{item.attributes?.owner_shortname}</span
-                            >
-                          {:else}
-                            <div
-                              class="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-[10px] font-medium text-gray-400"
-                            >
-                              ?
-                            </div>
-                            <span class="text-sm text-gray-500"
-                              >{$_("common.unknown")}</span
-                            >
-                          {/if}
-                        </div>
+                        <span class="text-sm text-gray-500 font-medium"
+                          >{formatDate(item.attributes?.created_at)}</span
+                        >
                       </td>
                       <td class="px-6 py-4">
                         <span class="text-sm text-gray-500 font-medium"
-                          >{formatDate(
-                            item.attributes?.updated_at ||
-                              item.attributes?.created_at,
-                          )}</span
+                          >{formatDate(item.attributes?.updated_at)}</span
                         >
                       </td>
                     {/if}
@@ -1677,6 +1838,106 @@
     {/if}
   </div>
 </div>
+
+<!-- Bulk Delete Confirmation Dialog -->
+{#if showBulkDeleteConfirm}
+  <div class="modal-overlay">
+    <div class="modal-container" class:rtl={$isRTL}>
+      <div class="modal-header">
+        <div class="modal-header-content" class:text-right={$isRTL}>
+          <h3 class="modal-title">{$_("admin_content.bulk_actions.confirm_delete_title")}</h3>
+          <p class="modal-subtitle">
+            {$_("admin_content.bulk_actions.confirm_delete_message", { count: selectedItems.size })}
+          </p>
+        </div>
+        <button
+          onclick={() => showBulkDeleteConfirm = false}
+          class="modal-close-btn"
+          aria-label={$_("admin_content.modal.close")}
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-footer">
+        <button
+          onclick={() => showBulkDeleteConfirm = false}
+          class="btn btn-secondary"
+          disabled={isBulkDeleting}
+        >
+          {$_("common.cancel")}
+        </button>
+        <button
+          onclick={async () => {
+            showBulkDeleteConfirm = false;
+            await handleBulkDelete();
+          }}
+          class="btn btn-danger"
+          disabled={isBulkDeleting}
+        >
+          {#if isBulkDeleting}
+            <div class="spinner"></div>
+            {$_("admin_content.bulk_actions.deleting")}
+          {:else}
+            {$_("admin_content.bulk_actions.confirm_delete")}
+          {/if}
+        </button>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- Bulk Trash Confirmation Dialog -->
+{#if showBulkTrashConfirm}
+  <div class="modal-overlay">
+    <div class="modal-container" class:rtl={$isRTL}>
+      <div class="modal-header">
+        <div class="modal-header-content" class:text-right={$isRTL}>
+          <h3 class="modal-title">{$_("admin_content.bulk_actions.confirm_trash_title")}</h3>
+          <p class="modal-subtitle">
+            {$_("admin_content.bulk_actions.confirm_trash_message", { count: selectedItems.size })}
+          </p>
+        </div>
+        <button
+          onclick={() => showBulkTrashConfirm = false}
+          class="modal-close-btn"
+          aria-label={$_("admin_content.modal.close")}
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-footer">
+        <button
+          onclick={() => showBulkTrashConfirm = false}
+          class="btn btn-secondary"
+          disabled={isBulkDeleting}
+        >
+          {$_("common.cancel")}
+        </button>
+        <button
+          onclick={async () => {
+            showBulkTrashConfirm = false;
+            await handleBulkTrash();
+          }}
+          class="btn btn-warning"
+          disabled={isBulkDeleting}
+        >
+          {#if isBulkDeleting}
+            <div class="spinner"></div>
+            {$_("admin_content.bulk_actions.trashing")}
+          {:else}
+            {$_("admin_content.bulk_actions.confirm_trash")}
+          {/if}
+        </button>
+      </div>
+    </div>
+  </div>
+{/if}
 
 {#if showCreateFolderModal}
   <div class="modal-overlay">
@@ -2128,179 +2389,12 @@
 />
 
 <style>
-  .admin-contents-page {
-    min-height: 100vh;
-    background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 50%, #e0e7ff 100%);
-  }
-
   .rtl {
     direction: rtl;
   }
 
-  /* Header Section */
-  .header-section {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  }
-
-  .header-content {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-  }
-
   .rtl .header-content {
     text-align: right;
-  }
-
-  .header-info {
-    flex: 1;
-  }
-
-  .page-title {
-    font-size: 1.875rem;
-    font-weight: 700;
-    color: #1f2937;
-    margin-bottom: 0.5rem;
-    line-height: 1.2;
-  }
-
-  .page-description {
-    color: #64748b;
-    font-size: 1.125rem;
-  }
-
-  /* Breadcrumb Styles */
-  .breadcrumb-separator {
-    width: 1rem;
-    height: 1rem;
-    color: #9ca3af;
-    margin: 0 0.5rem;
-  }
-
-  .rtl .breadcrumb-separator {
-    transform: rotate(180deg);
-  }
-
-  .breadcrumb-link {
-    color: #64748b;
-    font-size: 0.875rem;
-    font-weight: 500;
-    transition: all 0.2s ease;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.375rem;
-    border: none;
-    background: none;
-    cursor: pointer;
-  }
-
-  .breadcrumb-link:hover {
-    color: #2563eb;
-    background-color: rgba(59, 130, 246, 0.1);
-    text-decoration: underline;
-  }
-
-  .breadcrumb-current {
-    color: #1f2937;
-    font-weight: 600;
-    font-size: 0.875rem;
-    background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
-    padding: 0.5rem 0.75rem;
-    border-radius: 9999px;
-    border: 1px solid rgba(59, 130, 246, 0.2);
-  }
-
-  /* State Components */
-  .loading-state,
-  .error-state,
-  .empty-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 5rem 0;
-    text-align: center;
-  }
-
-  .loading-text {
-    margin-top: 1rem;
-    color: #64748b;
-    font-size: 1.125rem;
-    font-weight: 500;
-  }
-
-  .error-icon,
-  .empty-icon {
-    width: 6rem;
-    height: 6rem;
-    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 1.5rem;
-    border: 1px solid rgba(239, 68, 68, 0.2);
-  }
-
-  .empty-icon {
-    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-    border: 1px solid rgba(107, 114, 128, 0.2);
-  }
-
-  .error-title,
-  .empty-title {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #1f2937;
-    margin-bottom: 0.5rem;
-  }
-
-  .error-message,
-  .empty-message {
-    color: #64748b;
-    font-size: 1.125rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .retry-button,
-  .clear-filters-button {
-    padding: 0.75rem 1.5rem;
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-    color: white;
-    border-radius: 0.5rem;
-    font-weight: 500;
-    border: 1px solid rgba(37, 99, 235, 0.3);
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
-    cursor: pointer;
-  }
-
-  .retry-button:hover,
-  .clear-filters-button:hover {
-    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
-  }
-
-  .search-filter-section {
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(8px);
-    border-radius: 0.75rem;
-    border: 1px solid rgba(148, 163, 184, 0.2);
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  }
-
-  .search-filter-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1.5rem;
   }
 
   .section-title {
@@ -2309,60 +2403,9 @@
     color: #1f2937;
   }
 
-  .clear-all-filters-button {
-    font-size: 0.875rem;
-    color: #ef4444;
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-weight: 500;
-    transition: color 0.2s ease;
-  }
-
-  .clear-all-filters-button:hover {
-    color: #dc2626;
-    text-decoration: underline;
-  }
-
-  .search-filter-controls {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-  }
-
-  .search-input-group {
-    flex: 1;
-  }
-
-  .search-input-wrapper {
-    position: relative;
-    display: flex;
-    align-items: center;
-  }
-
-  .search-icon {
-    position: absolute;
-    width: 1.25rem;
-    height: 1.25rem;
-    color: #9ca3af;
-    z-index: 1;
-    left: 0.75rem;
-  }
-
   .rtl .search-icon {
     left: auto;
     right: 0.75rem;
-  }
-
-  .search-input {
-    width: 100%;
-    padding: 0.75rem 1rem 0.75rem 2.75rem;
-    border: 1px solid rgba(209, 213, 219, 0.8);
-    border-radius: 0.5rem;
-    background: rgba(255, 255, 255, 0.95);
-    font-size: 0.875rem;
-    transition: all 0.2s ease;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   }
 
   .rtl .search-input {
@@ -2376,18 +2419,6 @@
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
   }
 
-  .clear-search-button {
-    position: absolute;
-    color: #9ca3af;
-    transition: color 0.2s ease;
-    border: none;
-    background: none;
-    cursor: pointer;
-    padding: 0.25rem;
-    border-radius: 0.25rem;
-    right: 0.75rem;
-  }
-
   .rtl .clear-search-button {
     right: auto;
     left: 0.75rem;
@@ -2398,59 +2429,19 @@
     background-color: rgba(107, 114, 128, 0.1);
   }
 
-  /* Filter Controls */
-  .filter-controls {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    align-items: end;
-  }
-
   .rtl .filter-controls {
     flex-direction: row-reverse;
   }
 
-  .filter-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    min-width: 140px;
-  }
-
-  .filter-label {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #374151;
-  }
 
   .rtl .filter-label {
     text-align: right;
-  }
-
-  .filter-select {
-    padding: 0.75rem 1rem;
-    border: 1px solid rgba(209, 213, 219, 0.8);
-    border-radius: 0.5rem;
-    background: rgba(255, 255, 255, 0.95);
-    font-size: 0.875rem;
-    transition: all 0.2s ease;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   }
 
   .rtl .filter-select {
     text-align: right;
   }
 
-  .filter-select:focus {
-    outline: none;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-  }
-
-  .sort-controls {
-    display: flex;
-    gap: 0.5rem;
-  }
 
   .rtl .sort-controls {
     flex-direction: row-reverse;
@@ -2460,391 +2451,8 @@
     flex: 1;
   }
 
-  .sort-order-button {
-    padding: 0.75rem;
-    border: 1px solid rgba(209, 213, 219, 0.8);
-    border-radius: 0.5rem;
-    background: rgba(255, 255, 255, 0.95);
-    color: #6b7280;
-    transition: all 0.2s ease;
-    cursor: pointer;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  }
-
-  .sort-order-button:hover {
-    background: rgba(249, 250, 251, 0.95);
-    color: #374151;
-  }
-
-  .sort-order-button:focus {
-    outline: none;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-  }
-
-  /* Results Summary */
-  .results-summary {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-top: 1rem;
-    border-top: 1px solid rgba(148, 163, 184, 0.2);
-    margin-top: 1.5rem;
-  }
-
-  .results-info {
-    font-size: 0.875rem;
-    color: #64748b;
-  }
-
-  .card-list-container {
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(8px);
-    border-radius: 0.75rem;
-    border: 1px solid rgba(148, 163, 184, 0.2);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-    overflow: hidden;
-  }
-
-  .card-list {
-    divide-y: 1px solid rgba(148, 163, 184, 0.1);
-  }
-
-  .admin-content-card {
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
-    padding: 1.5rem;
-    transition: all 0.2s ease;
-    cursor: pointer;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.1);
-  }
-
-  .admin-content-card:last-child {
-    border-bottom: none;
-  }
-
-  .admin-content-card:hover {
-    background: rgba(59, 130, 246, 0.02);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  }
-
-  .card-avatar {
-    flex-shrink: 0;
-    position: relative;
-  }
-
-  .avatar-fallback {
-    width: 3rem;
-    height: 3rem;
-    background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
-    border-radius: 50%;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: 600;
-    font-size: 1.125rem;
-    border: 2px solid rgba(255, 255, 255, 0.8);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-
-  .avatar-unknown {
-    width: 3rem;
-    height: 3rem;
-    background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 2px solid rgba(255, 255, 255, 0.8);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-
-  /* Content Section */
-  .card-content {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .rtl .card-content {
-    text-align: right;
-  }
-
-  .card-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .card-title {
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: #1f2937;
-    line-height: 1.4;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    transition: color 0.2s ease;
-    flex: 1;
-  }
-
   .admin-content-card:hover .card-title {
     color: #2563eb;
-  }
-
-  .title-icon {
-    font-size: 1rem;
-    flex-shrink: 0;
-  }
-
-  .resource-type-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.25rem 0.75rem;
-    border-radius: 9999px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    flex-shrink: 0;
-  }
-
-  .card-meta {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.875rem;
-    color: #64748b;
-    margin-bottom: 0.75rem;
-    flex-wrap: wrap;
-  }
-
-  .meta-text {
-    color: #9ca3af;
-  }
-
-  .meta-author {
-    font-weight: 500;
-    color: #374151;
-  }
-
-  .meta-separator {
-    color: #d1d5db;
-  }
-
-  .meta-time {
-    color: #64748b;
-  }
-
-  .card-description {
-    margin-bottom: 0.75rem;
-  }
-
-  .description-text {
-    font-size: 0.875rem;
-    color: #64748b;
-    line-height: 1.5;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .card-details {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    margin-bottom: 0.75rem;
-  }
-
-  .detail-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.875rem;
-  }
-
-  .detail-label {
-    color: #6b7280;
-    font-weight: 500;
-  }
-
-  .detail-value {
-    color: #374151;
-    font-family: monospace;
-    background: #f1f5f9;
-    padding: 0.125rem 0.375rem;
-    border-radius: 0.25rem;
-    font-size: 0.75rem;
-  }
-
-  .status-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.125rem 0.5rem;
-    border-radius: 9999px;
-    font-size: 0.75rem;
-    font-weight: 500;
-  }
-
-  .status-active {
-    background: #dcfce7;
-    color: #166534;
-  }
-
-  .status-inactive {
-    background: #fee2e2;
-    color: #991b1b;
-  }
-
-  /* Actions Section */
-  .card-actions {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 0.75rem;
-    flex-shrink: 0;
-  }
-
-  .action-buttons {
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  .action-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 0.5rem;
-    border: 1px solid rgba(148, 163, 175, 0.3);
-    background: rgba(255, 255, 255, 0.8);
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .action-icon {
-    width: 1.125rem;
-    height: 1.125rem;
-  }
-
-  .open-button:hover,
-  .view-button:hover {
-    background: rgba(59, 130, 246, 0.1);
-    border-color: #3b82f6;
-    color: #3b82f6;
-  }
-
-  .delete-button:hover {
-    background: rgba(239, 68, 68, 0.1);
-    border-color: #ef4444;
-    color: #ef4444;
-  }
-
-  /* Load More Section */
-  .load-more-section {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-    padding: 2rem;
-    border-top: 1px solid rgba(148, 163, 184, 0.2);
-    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  }
-
-  .load-more-info {
-    text-align: center;
-  }
-
-  .load-more-text {
-    font-size: 0.875rem;
-    color: #64748b;
-    font-weight: 500;
-  }
-
-  .load-more-button {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.875rem 2rem;
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-    color: white;
-    border-radius: 0.5rem;
-    font-weight: 600;
-    font-size: 0.875rem;
-    border: 1px solid rgba(37, 99, 235, 0.3);
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
-    cursor: pointer;
-    min-width: 140px;
-    justify-content: center;
-  }
-
-  .load-more-button:hover:not(:disabled) {
-    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
-    transform: translateY(-1px);
-  }
-
-  .load-more-button:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  .load-more-spinner {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .load-more-icon {
-    width: 1.25rem;
-    height: 1.25rem;
-    transition: transform 0.2s ease;
-  }
-
-  .load-more-button:hover:not(:disabled) .load-more-icon {
-    transform: translateY(2px);
-  }
-
-  /* End of Results */
-  .end-of-results {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 2rem;
-    border-top: 1px solid rgba(148, 163, 184, 0.2);
-    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-    text-align: center;
-  }
-
-  .end-of-results-icon {
-    width: 4rem;
-    height: 4rem;
-    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid rgba(34, 197, 94, 0.2);
-  }
-
-  .end-of-results-text {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #374151;
-    margin: 0;
-  }
-
-  .end-of-results-count {
-    font-size: 0.875rem;
-    color: #64748b;
-    margin: 0;
   }
 
   /* Modal Styles */
@@ -3247,5 +2855,130 @@
 
   .modal-content::-webkit-scrollbar-thumb:hover {
     background: #94a3b8;
+  }
+
+  /* Bulk Actions Bar */
+  .bulk-actions-bar {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    padding: 0.875rem 1.25rem;
+    margin: 1rem 0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+
+  .bulk-actions-bar.rtl {
+    direction: rtl;
+  }
+
+  .bulk-actions-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .bulk-actions-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .bulk-actions-count {
+    color: #1f2937;
+    font-weight: 600;
+    font-size: 0.9375rem;
+  }
+
+  .bulk-actions-buttons {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .bulk-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    cursor: pointer;
+    border: none;
+  }
+
+  .bulk-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .bulk-btn-secondary {
+    background-color: #f3f4f6;
+    color: #374151;
+  }
+
+  .bulk-btn-secondary:hover:not(:disabled) {
+    background-color: #e5e7eb;
+  }
+
+  .bulk-btn-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    box-shadow: 0 2px 4px rgba(217, 119, 6, 0.2);
+  }
+
+  .bulk-btn-warning:hover:not(:disabled) {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(217, 119, 6, 0.3);
+  }
+
+  .bulk-btn-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
+  }
+
+  .bulk-btn-danger:hover:not(:disabled) {
+    background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
+  }
+
+  /* Row selection highlight */
+  tr.bg-indigo-50\/30 {
+    background-color: rgba(238, 242, 255, 0.5);
+  }
+
+  /* Button styles for modal */
+  .btn-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    box-shadow: 0 2px 4px rgba(217, 119, 6, 0.2);
+  }
+
+  .btn-warning:hover:not(:disabled) {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(217, 119, 6, 0.3);
+  }
+
+  @media (max-width: 640px) {
+    .bulk-actions-content {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .bulk-actions-buttons {
+      justify-content: stretch;
+    }
+
+    .bulk-btn {
+      flex: 1;
+      justify-content: center;
+    }
   }
 </style>
