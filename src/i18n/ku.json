@@ -319,6 +319,18 @@
   "admin": "بەڕێوەبەر",
   "dashboard": "داشبۆرد",
   "contact_messages": "نامەی پەیوەندیدان",
+  "json_editor": {
+    "new_field_prompt": "ناوی خانە بنووسە:",
+    "remove_field_confirm": "ئەم خانە بسڕدرێتەوە؟",
+    "add_field_title": "زیادکردنی خانەی نوێ",
+    "field_name_label": "ناوی خانە",
+    "field_name_placeholder": "ناوی خانە بنووسە",
+    "field_type_label": "جۆری خانە",
+    "field_value_label": "بەهای سەرەتا",
+    "add_field_button": "زیادکردنی خانە",
+    "field_name_required": "ناوی خانە پێویستە",
+    "field_exists": "ئەم خانە پێشتر هەیە"
+  },
   "entries": "تۆمارەکان",
   "notifications": "ئاگادارکردنەوەکان",
   "my_profile": "پرۆفایلی من",
@@ -517,7 +529,6 @@
     "save_changes": "پاشەکەوتی گۆڕانکارییەکان"
   },
   "help": {
-    "json_editor": "ڕاستەوخۆ کائینی JSON دەستکاری بکە",
     "shortname": "ناوێکی کورت (بەکارهێنانی 'خۆکار' بۆ ناوی کورتی خۆکارانە دروستکراو)",
     "active": "ئایا ئەم بڕگەیە لە ئێستادا چالاکە یان نا",
     "slug": "وەشانێکی گونجاو بۆ بەستەر لە ناوی کورت",
@@ -1480,8 +1491,10 @@
       "fields": {
         "title": "ناونیشان",
         "content": "ناوەڕۆک",
-        "tags": "تاگەکان (جیاکراوە بە کۆما)",
-        "active": "چالاک"
+        "tags": "تاگەکان",
+        "active": "چالاک",
+        "displayname": "ناوی پیشاندان",
+        "description": "وەسف"
       },
       "placeholders": {
         "title": "ناونیشان بنووسە",

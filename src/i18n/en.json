@@ -342,8 +342,10 @@
       "fields": {
         "active": "Active",
         "content": "Content",
-        "tags": "Tags (comma-separated)",
-        "title": "Title"
+        "tags": "Tags",
+        "title": "Title",
+        "displayname": "Display Name",
+        "description": "Description"
       },
       "title": "Edit Item"
     },
@@ -697,6 +699,18 @@
   "configure_roles_and_permissions": "Configure roles and their associated permissions",
   "contactMessages": "Contact Messages",
   "contact_messages": "Contact Messages",
+  "json_editor": {
+    "new_field_prompt": "Enter field name:",
+    "remove_field_confirm": "Remove this field?",
+    "add_field_title": "Add New Field",
+    "field_name_label": "Field Name",
+    "field_name_placeholder": "Enter field name",
+    "field_type_label": "Field Type",
+    "field_value_label": "Initial Value",
+    "add_field_button": "Add Field",
+    "field_name_required": "Field name is required",
+    "field_exists": "Field already exists"
+  },
   "create": "Create",
   "createRolesFirstMessage": "Please create roles first before configuring default user role.",
   "create_entry": {
@@ -1006,7 +1020,6 @@
       "description": "Find answers to common questions, learn how to use our platform, and get the support you need.",
       "title": "Help"
     },
-    "json_editor": "Edit the JSON object directly",
     "quick_help": {
       "community_support": {
         "button": "Join Community",

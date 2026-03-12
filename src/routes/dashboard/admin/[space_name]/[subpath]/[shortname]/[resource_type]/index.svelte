@@ -6,7 +6,20 @@
     getEntity,
     getMyEntities,
     replaceEntity,
+    getAvatar,
+    checkCurrentUserReactedIdea,
   } from "@/lib/dmart_services/dmart_services";
+  import {
+    createComment,
+    createReaction,
+    deleteReactionComment,
+  } from "@/lib/dmart_services/comments_reactions";
+  import Avatar from "@/components/Avatar.svelte";
+  import { user } from "@/stores/user";
+  import {
+    errorToastMessage,
+    successToastMessage,
+  } from "@/lib/toasts_messages";
   import { ContentType, ResourceType } from "@edraj/tsdmart";
   import { Diamonds } from "svelte-loading-spinners";
   import { _, locale } from "@/i18n";
@@ -24,7 +37,7 @@ import PostContent from "@/components/post/PostContent.svelte";
 import PlantUMLViewer from "@/components/PlantUMLViewer.svelte";
 import RelationshipModal from "@/components/management/RelationshipModal.svelte";
 import AttachmentModal from "@/components/management/AttachmentModal.svelte";
-import { PlusOutline } from "flowbite-svelte-icons";
+import { PlusOutline, HeartSolid, MessagesSolid, TrashBinSolid } from "flowbite-svelte-icons";
 
   $goto;
 
@@ -50,7 +63,7 @@ import { PlusOutline } from "flowbite-svelte-icons";
   const authorRelatedEntries = writable([]);
   let authorRelatedEntriesValue = $state([]);
   let itemDataValue = $state(null);
-  const activeTab = writable("overview");
+  const activeTab = writable("content");
   const showEditModal = writable(false);
   const showRelationshipModal = writable(false);
   const showAttachmentModal = writable(false);
@@ -62,18 +75,20 @@ import { PlusOutline } from "flowbite-svelte-icons";
   let isSchemaBasedItem = $state(false);
   let schemaEditorContent = $state("");
   const editForm = writable({
-    title: "",
+    displayname: { en: "", ar: "", ku: "" },
+    description: { en: "", ar: "", ku: "" },
     content: "",
     tags: [],
-    tagsString: "",
+    newTag: "",
     is_active: true,
   });
 
   let editFormValue = $state({
-    title: "",
+    displayname: { en: "", ar: "", ku: "" },
+    description: { en: "", ar: "", ku: "" },
     content: "",
     tags: [],
-    tagsString: "",
+    newTag: "",
     is_active: true,
   });
 
@@ -81,6 +96,14 @@ import { PlusOutline } from "flowbite-svelte-icons";
 
   let jsonEditFormValue = $state({});
   let relationshipsValue = $state([]);
+  
+  // Comments and reactions state
+  let comment = $state("");
+  let userReactionEntry = $state(null);
+  let counts = $state({
+    reaction: 0,
+    comment: 0,
+  });
 
   function getItemContent(item) {
     if (!item?.payload) return "";
@@ -216,16 +239,22 @@ import { PlusOutline } from "flowbite-svelte-icons";
         itemDataValue = response;
         itemData.set(response);
         relationshipsValue = response.relationships || [];
-
-        let title =
-          (response as any).payload?.body?.title ||
-          (response as any).payload?.title ||
-          (response as any).title;
-
-        if (!title || title.trim() === "") {
-          title = getDisplayName(response);
+        
+        // Load comments and reactions counts
+        counts = {
+          reaction: response.attachments?.reaction?.length || 0,
+          comment: response.attachments?.comment?.length || 0,
+        };
+        
+        // Check if current user has reacted
+        if ($user?.shortname) {
+          userReactionEntry = await checkCurrentUserReactedIdea(
+            $user.shortname,
+            itemShortnameValue,
+            spaceNameValue,
+            actualSubpathValue,
+          );
         }
-        const currentDisplayName = response.displayname?.[$locale] || "";
 
         const content = getItemContent(response);
 
@@ -238,20 +267,29 @@ import { PlusOutline } from "flowbite-svelte-icons";
             schemaEditorContent = content;
           } else {
             jsonEditorContent = content;
+            jsonEditFormValue = content;
           }
         }
 
         const tags = response.tags || [];
-        const tagsString = Array.from(tags).join(", ");
 
         editFormValue = {
-          title: currentDisplayName,
+          displayname: {
+            en: response.displayname?.en || "",
+            ar: response.displayname?.ar || "",
+            ku: response.displayname?.ku || "",
+          },
+          description: {
+            en: response.description?.en || "",
+            ar: response.description?.ar || "",
+            ku: response.description?.ku || "",
+          },
           content:
             response.payload?.content_type === "json"
               ? JSON.stringify(content)
               : content || getDescription(response),
-          tags: Array.isArray(tags) ? tags : Array.from(tags),
-          tagsString: tagsString,
+          tags: Array.isArray(tags) ? [...tags] : Array.from(tags),
+          newTag: "",
           is_active: response.is_active,
         };
         editForm.set(editFormValue);
@@ -307,25 +345,18 @@ import { PlusOutline } from "flowbite-svelte-icons";
         }
       }
 
-      const tagsArray = editFormValue.tagsString
-        .split(",")
-        .map((tag) => tag.trim())
-        .filter((tag) => tag.length > 0);
-
-      const updatedDisplayname = {
-        ...itemDataValue.displayname,
-        [$locale]: editFormValue.title,
-      };
-
       const contentType = itemDataValue?.payload?.content_type;
       let preparedContent = prepareContentForSave(htmlContent, contentType);
 
       const entityData = {
-        displayname: updatedDisplayname,
-        tags: tagsArray,
-        content: preparedContent,
+        displayname: editFormValue.displayname,
+        description: editFormValue.description,
+        tags: editFormValue.tags,
         is_active: editFormValue.is_active,
-        content_type: contentType,
+        payload: {
+          content_type: contentType,
+          body: preparedContent,
+        },
       };
 
       const response = await replaceEntity(
@@ -467,6 +498,86 @@ import { PlusOutline } from "flowbite-svelte-icons";
 
   function setActiveTab(tab) {
     activeTab.set(tab);
+  }
+
+  // Tags handlers
+  function addTag() {
+    if (editFormValue.newTag.trim() !== "") {
+      editFormValue.tags = [...editFormValue.tags, editFormValue.newTag.trim()];
+      editFormValue.newTag = "";
+    }
+  }
+
+  function removeTag(index: number) {
+    editFormValue.tags = editFormValue.tags.filter((_, i) => i !== index);
+  }
+
+  // Comments and reactions handlers
+  async function handleAddComment() {
+    if (!comment.trim()) return;
+    
+    const response = await createComment(
+      spaceNameValue,
+      actualSubpathValue,
+      itemShortnameValue,
+      comment,
+    );
+    
+    if (response) {
+      successToastMessage($_("entry_detail.comments.add_success"));
+      comment = "";
+      await loadItemData();
+    } else {
+      errorToastMessage($_("entry_detail.comments.add_error"));
+    }
+  }
+
+  async function handleDeleteComment(commentShortname: string) {
+    const response = await deleteReactionComment(
+      ResourceType.comment,
+      `${actualSubpathValue}/${itemShortnameValue}`,
+      commentShortname,
+      spaceNameValue,
+    );
+
+    if (response) {
+      successToastMessage($_("entry_detail.comments.delete_success"));
+      await loadItemData();
+    } else {
+      errorToastMessage($_("entry_detail.comments.delete_error"));
+    }
+  }
+
+  async function handleReaction() {
+    if (userReactionEntry) {
+      // Remove reaction
+      const response = await deleteReactionComment(
+        ResourceType.reaction,
+        `${actualSubpathValue}/${itemShortnameValue}`,
+        userReactionEntry,
+        spaceNameValue,
+      );
+      if (response) {
+        userReactionEntry = null;
+        successToastMessage($_("entry_detail.reactions.remove_success"));
+        await loadItemData();
+      } else {
+        errorToastMessage($_("entry_detail.reactions.remove_error"));
+      }
+    } else {
+      // Add reaction
+      const response = await createReaction(
+        itemShortnameValue,
+        spaceNameValue,
+        actualSubpathValue,
+      );
+      if (response) {
+        successToastMessage($_("entry_detail.reactions.add_success"));
+        await loadItemData();
+      } else {
+        errorToastMessage($_("entry_detail.reactions.add_error"));
+      }
+    }
   }
 </script>
 
@@ -763,6 +874,126 @@ import { PlusOutline } from "flowbite-svelte-icons";
                   </p>
                 </div>
               {/if}
+
+              <!-- Comments and Reactions Section -->
+              <div class="mt-10 pt-8 border-t border-gray-100">
+                <!-- Action Buttons -->
+                <div class="flex items-center gap-6 mb-6">
+                  <button
+                    onclick={handleReaction}
+                    class="flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-200 {userReactionEntry ? 'bg-red-50 text-red-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}"
+                  >
+                    <HeartSolid class="w-5 h-5 {userReactionEntry ? 'text-red-500' : ''}" />
+                    <span>{userReactionEntry ? $_('entry_detail.actions.unlike') : $_('entry_detail.actions.like')}</span>
+                    <span class="text-sm opacity-75">({formatNumberInText(counts.reaction, $locale) || 0})</span>
+                  </button>
+                  
+                  <div class="flex items-center gap-2 text-gray-600">
+                    <MessagesSolid class="w-5 h-5" />
+                    <span>{$_('entry_detail.comments.title')}</span>
+                    <span class="text-sm opacity-75">({formatNumberInText(counts.comment, $locale) || 0})</span>
+                  </div>
+                </div>
+
+                <!-- Add Comment -->
+                <div class="bg-gray-50/50 rounded-2xl p-6 mb-6">
+                  <h4 class="text-sm font-semibold text-gray-900 mb-4" class:text-right={$isRTL}>
+                    {$_('entry_detail.comments.title')}
+                  </h4>
+                  <div class="flex gap-3">
+                    <div class="flex-1">
+                      <input
+                        type="text"
+                        bind:value={comment}
+                        placeholder={$_('entry_detail.comments.placeholder')}
+                        class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all"
+                        class:text-right={$isRTL}
+                        onkeydown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleAddComment();
+                          }
+                        }}
+                      />
+                    </div>
+                    <button
+                      onclick={handleAddComment}
+                      disabled={!comment.trim()}
+                      class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-colors flex items-center gap-2"
+                    >
+                      <svg
+                        class="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Comments List -->
+                {#if itemDataValue?.attachments?.comment && itemDataValue.attachments.comment.length > 0}
+                  <div class="space-y-4">
+                    {#each itemDataValue.attachments.comment as reply}
+                      <div class="bg-white border border-gray-100 rounded-2xl p-5 hover:shadow-sm transition-shadow">
+                        <div class="flex gap-4">
+                          <div class="flex-shrink-0">
+                            {#await getAvatar(reply.attributes.owner_shortname) then avatar}
+                              <Avatar src={avatar} size="44" />
+                            {/await}
+                          </div>
+                          <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between gap-2 mb-2">
+                              <div class="flex items-center gap-2" class:flex-row-reverse={$isRTL}>
+                                <span class="font-semibold text-gray-900">
+                                  {reply.attributes?.displayname?.[$locale] ||
+                                    reply.attributes?.displayname?.en ||
+                                    reply.attributes?.displayname?.ar ||
+                                    reply.attributes?.owner_shortname}
+                                </span>
+                                <span class="text-xs text-gray-400">
+                                  {formatDate(reply.attributes.created_at)}
+                                </span>
+                              </div>
+                              {#if reply.attributes.owner_shortname === $user?.shortname}
+                                <button
+                                  onclick={() => handleDeleteComment(reply.shortname)}
+                                  class="text-gray-400 hover:text-red-500 transition-colors p-1"
+                                  aria-label={$_('entry_detail.comments.delete_comment')}
+                                >
+                                  <TrashBinSolid class="w-4 h-4" />
+                                </button>
+                              {/if}
+                            </div>
+                            <p class="text-gray-700 text-sm leading-relaxed" class:text-right={$isRTL}>
+                              {reply.attributes.payload?.body?.embedded ||
+                                reply.attributes.payload?.body?.body ||
+                                $_('entry_detail.no_content')}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    {/each}
+                  </div>
+                {:else}
+                  <div class="text-center py-10 bg-gray-50/50 rounded-2xl">
+                    <MessagesSolid class="w-12 h-12 mx-auto text-gray-300 mb-3" />
+                    <p class="text-gray-500 font-medium">
+                      {$_('entry_detail.comments.no_comments')}
+                    </p>
+                    <p class="text-sm text-gray-400 mt-1">
+                      {$_('entry_detail.comments.be_first')}
+                    </p>
+                  </div>
+                {/if}
+              </div>
             </div>
           {/if}
           {#if $activeTab === "overview"}
@@ -1792,140 +2023,166 @@ import { PlusOutline } from "flowbite-svelte-icons";
 
       <div class="modal-content">
         <form class="modal-form" onsubmit={handleUpdateItem}>
-          <div class="form-grid">
-            <div class="form-column">
-              <div class="form-group">
-                <label
-                  for="editTitle"
-                  class="form-label"
-                  class:text-right={$isRTL}
-                  class:rtl-label={$isRTL}
-                >
-                  <svg
-                    class="label-icon"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.99 1.99 0 013 12V7a4 4 0 014-4z"
-                    />
-                  </svg>
-                  {$_("admin_item_detail.edit_modal.fields.title")}
-                </label>
-                <input
-                  id="editTitle"
-                  type="text"
-                  bind:value={editFormValue.title}
-                  class="form-input"
-                  class:text-right={$isRTL}
-                  placeholder={$_(
-                    "admin_item_detail.edit_modal.placeholders.title",
-                  )}
-                />
-              </div>
-
-              <div class="form-group">
-                <label
-                  for="editTags"
-                  class="form-label"
-                  class:text-right={$isRTL}
-                  class:rtl-label={$isRTL}
-                >
-                  <svg
-                    class="label-icon"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.99 1.99 0 013 12V7a4 4 0 014-4z"
-                    />
-                  </svg>
-                  {$_("admin_item_detail.edit_modal.fields.tags")}
-                </label>
-                <input
-                  id="editTags"
-                  type="text"
-                  bind:value={editFormValue.tagsString}
-                  class="form-input"
-                  class:text-right={$isRTL}
-                  placeholder={$_(
-                    "admin_item_detail.edit_modal.placeholders.tags",
-                  )}
-                />
-                <p class="form-hint" class:text-right={$isRTL}>
-                  Separate tags with commas (e.g., tag1, tag2, tag3)
-                </p>
-              </div>
-
-              <div class="status-container">
-                <div class="status-toggle" class:rtl-toggle={$isRTL}>
-                  <div class="toggle-wrapper">
-                    <label for="editIsActive"></label>
-                    <input
-                      id="editIsActive"
-                      type="checkbox"
-                      bind:checked={editFormValue.is_active}
-                      class="toggle-input"
-                    />
-                    <button
-                      type="button"
-                      class="toggle-switch {editFormValue.is_active
-                        ? 'active'
-                        : ''}"
-                      onclick={() => {
-                        editFormValue.is_active = !editFormValue.is_active;
-                      }}
-                      onkeydown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          editFormValue.is_active = !editFormValue.is_active;
-                        }
-                      }}
-                      aria-pressed={editFormValue.is_active}
-                      aria-label="Toggle active status"
-                    >
-                      <div class="toggle-slider"></div>
-                    </button>
-                  </div>
-                  <div class="status-info" class:rtl-info={$isRTL}>
-                    <label
-                      for="editIsActive"
-                      class="status-label"
-                      class:rtl-status-label={$isRTL}
-                    >
-                      <svg
-                        class="label-icon"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M13 10V3L4 14h7v7l9-11h-7z"
-                        />
-                      </svg>
-                      {$_("admin_item_detail.edit_modal.fields.active")}
-                    </label>
-                    <p class="status-description" class:text-right={$isRTL}>
-                      {editFormValue.is_active
-                        ? "Item is currently active"
-                        : "Item is currently inactive"}
-                    </p>
-                  </div>
+          <div class="form-grid-vertical">
+            <!-- Display Name Section -->
+            <div class="form-section">
+              <label class="form-label section-label" class:text-right={$isRTL}>
+                <svg class="label-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.99 1.99 0 013 12V7a4 4 0 014-4z" />
+                </svg>
+                {$_("admin_item_detail.edit_modal.fields.displayname")}
+              </label>
+              <div class="localized-inputs">
+                <div class="localized-field">
+                  <span class="lang-badge">EN</span>
+                  <input
+                    type="text"
+                    bind:value={editFormValue.displayname.en}
+                    class="form-input"
+                    placeholder="English display name"
+                  />
+                </div>
+                <div class="localized-field">
+                  <span class="lang-badge">AR</span>
+                  <input
+                    type="text"
+                    bind:value={editFormValue.displayname.ar}
+                    class="form-input"
+                    placeholder="Arabic display name"
+                  />
+                </div>
+                <div class="localized-field">
+                  <span class="lang-badge">KU</span>
+                  <input
+                    type="text"
+                    bind:value={editFormValue.displayname.ku}
+                    class="form-input"
+                    placeholder="Kurdish display name"
+                  />
                 </div>
               </div>
             </div>
 
+            <!-- Description Section -->
+            <div class="form-section">
+              <label class="form-label section-label" class:text-right={$isRTL}>
+                <svg class="label-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
+                </svg>
+                {$_("admin_item_detail.edit_modal.fields.description")}
+              </label>
+              <div class="localized-inputs">
+                <div class="localized-field">
+                  <span class="lang-badge">EN</span>
+                  <textarea
+                    bind:value={editFormValue.description.en}
+                    class="form-input form-textarea"
+                    placeholder="English description"
+                    rows="2"
+                  ></textarea>
+                </div>
+                <div class="localized-field">
+                  <span class="lang-badge">AR</span>
+                  <textarea
+                    bind:value={editFormValue.description.ar}
+                    class="form-input form-textarea"
+                    placeholder="Arabic description"
+                    rows="2"
+                  ></textarea>
+                </div>
+                <div class="localized-field">
+                  <span class="lang-badge">KU</span>
+                  <textarea
+                    bind:value={editFormValue.description.ku}
+                    class="form-input form-textarea"
+                    placeholder="Kurdish description"
+                    rows="2"
+                  ></textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tags Section with Badge Behavior -->
+            <div class="form-section">
+              <label class="form-label section-label" class:text-right={$isRTL}>
+                <svg class="label-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.99 1.99 0 013 12V7a4 4 0 014-4z" />
+                </svg>
+                {$_("admin_item_detail.edit_modal.fields.tags")}
+              </label>
+              <div class="tag-input-wrapper">
+                <div class="tag-input-row">
+                  <input
+                    type="text"
+                    bind:value={editFormValue.newTag}
+                    class="form-input tag-input"
+                    placeholder={$_("admin_item_detail.edit_modal.placeholders.tags")}
+                    onkeydown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addTag();
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    class="add-tag-btn"
+                    onclick={addTag}
+                    disabled={!editFormValue.newTag.trim()}
+                  >
+                    <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Add
+                  </button>
+                </div>
+                {#if editFormValue.tags.length > 0}
+                  <div class="tags-badges-container">
+                    {#each editFormValue.tags as tag, index}
+                      <span class="tag-badge">
+                        {tag}
+                        <button
+                          type="button"
+                          class="tag-remove-btn"
+                          onclick={() => removeTag(index)}
+                          aria-label="Remove tag"
+                        >
+                          <svg class="remove-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </span>
+                    {/each}
+                  </div>
+                {/if}
+              </div>
+            </div>
+
+            <!-- Active Status -->
+            <div class="form-section status-section">
+              <div class="status-toggle-simple" class:rtl-toggle={$isRTL}>
+                <button
+                  type="button"
+                  class="toggle-switch {editFormValue.is_active ? 'active' : ''}"
+                  onclick={() => {
+                    editFormValue.is_active = !editFormValue.is_active;
+                  }}
+                  aria-pressed={editFormValue.is_active}
+                >
+                  <div class="toggle-slider"></div>
+                </button>
+                <div class="status-info">
+                  <span class="status-label">
+                    {$_("admin_item_detail.edit_modal.fields.active")}
+                  </span>
+                  <span class="status-value {editFormValue.is_active ? 'active' : 'inactive'}">
+                    {editFormValue.is_active ? "Active" : "Inactive"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Content Editor -->
             <div class="editor-column">
               <div class="editor-group">
                 <label
@@ -2722,5 +2979,200 @@ import { PlusOutline } from "flowbite-svelte-icons";
       padding-left: 0;
       padding-top: 20px;
     }
+  }
+
+  /* Vertical Form Layout Styles */
+  .form-grid-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .form-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .section-label {
+    font-weight: 600;
+    font-size: 14px;
+    color: #374151;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  .localized-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .localized-field {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .lang-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 28px;
+    padding: 0 8px;
+    background: #e5e7eb;
+    color: #374151;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 6px;
+    text-transform: uppercase;
+  }
+
+  .localized-field .form-input {
+    flex: 1;
+  }
+
+  .form-textarea {
+    resize: vertical;
+    min-height: 60px;
+    font-family: inherit;
+  }
+
+  /* Tags Input Styles */
+  .tag-input-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .tag-input-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .tag-input {
+    flex: 1;
+  }
+
+  .add-tag-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    white-space: nowrap;
+  }
+
+  .add-tag-btn:hover:not(:disabled) {
+    background: #2563eb;
+  }
+
+  .add-tag-btn:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+  }
+
+  .add-tag-btn .btn-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .tags-badges-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  .tag-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: #dbeafe;
+    color: #1e40af;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 20px;
+    transition: background-color 0.2s;
+  }
+
+  .tag-badge:hover {
+    background: #bfdbfe;
+  }
+
+  .tag-remove-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    color: #3b82f6;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: background-color 0.2s, color 0.2s;
+  }
+
+  .tag-remove-btn:hover {
+    background: #3b82f6;
+    color: white;
+  }
+
+  .tag-remove-btn .remove-icon {
+    width: 12px;
+    height: 12px;
+  }
+
+  /* Status Toggle Simple */
+  .status-section {
+    padding: 16px;
+    background: #f9fafb;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+  }
+
+  .status-toggle-simple {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .status-toggle-simple .status-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .status-toggle-simple .status-label {
+    font-weight: 600;
+    font-size: 14px;
+    color: #374151;
+  }
+
+  .status-toggle-simple .status-value {
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .status-toggle-simple .status-value.active {
+    color: #059669;
+  }
+
+  .status-toggle-simple .status-value.inactive {
+    color: #dc2626;
   }
 </style>

@@ -161,7 +161,7 @@ export async function deleteReactionComment(
     };
 
     const response: ActionResponse = await Dmart.request(data);
-    return response.status == "success" && response.records.length > 0;
+    return response.status == "success";
 }
 
 export async function checkCurrentUserReactedIdea(

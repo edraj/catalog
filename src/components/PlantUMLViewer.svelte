@@ -105,7 +105,6 @@
 
   .toolbar-btn {
     padding: 6px 12px;
-    background: #f1f5f9;
     border: 1px solid #cbd5e1;
     border-radius: 6px;
     color: #475569;
@@ -123,7 +122,7 @@
     display: flex;
     justify-content: center;
     padding: 20px;
-    background: #f8fafc;
+    background: transparent;
     min-height: 150px;
     overflow-x: auto;
   }
@@ -131,8 +130,6 @@
   .diagram-image {
     max-width: 100%;
     height: auto;
-    border-radius: 6px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 
   .loading-state {

@@ -341,8 +341,10 @@
       "fields": {
         "active": "نشط",
         "content": "المحتوى",
-        "tags": "العلامات (مفصولة بفواصل)",
-        "title": "العنوان"
+        "tags": "العلامات",
+        "title": "العنوان",
+        "displayname": "اسم العرض",
+        "description": "الوصف"
       },
       "title": "تعديل العنصر"
     },
@@ -644,6 +646,18 @@
   "configure_roles_and_permissions": "تكوين الأدوار والصلاحيات المرتبطة بها",
   "contactMessages": "رسائل الاتصال",
   "contact_messages": "رسائل التواصل",
+  "json_editor": {
+    "new_field_prompt": "أدخل اسم الحقل:",
+    "remove_field_confirm": "هل تريد إزالة هذا الحقل؟",
+    "add_field_title": "إضافة حقل جديد",
+    "field_name_label": "اسم الحقل",
+    "field_name_placeholder": "أدخل اسم الحقل",
+    "field_type_label": "نوع الحقل",
+    "field_value_label": "القيمة الابتدائية",
+    "add_field_button": "إضافة حقل",
+    "field_name_required": "اسم الحقل مطلوب",
+    "field_exists": "الحقل موجود بالفعل"
+  },
   "create": "إنشاء",
   "createRolesFirstMessage": "يرجى إنشاء الأدوار أولاً قبل تكوين دور المستخدم الافتراضي.",
   "create_entry": {
@@ -953,7 +967,6 @@
       "description": "اعثر على إجابات للأسئلة الشائعة، وتعلم كيفية استخدام منصتنا، واحصل على الدعم الذي تحتاجه.",
       "title": "مساعدة"
     },
-    "json_editor": "تحرير كائن JSON مباشرة",
     "quick_help": {
       "community_support": {
         "button": "انضم للمجتمع",

@@ -17,8 +17,8 @@
   function generateSchemaDiagram(schemaData: any, data: any, diagramTitle: string): string {
     const lines = [
       "@startuml",
-      "!theme plain",
       `title ${diagramTitle}`,
+      "skinparam backgroundColor transparent",
       "skinparam classAttributeIconSize 0",
       "skinparam class {",
       "  BackgroundColor<<required>> #FECACA",
@@ -215,7 +215,7 @@
     display: flex;
     justify-content: center;
     padding: 24px;
-    background: #f8fafc;
+    background: transparent;
     min-height: 200px;
     overflow-x: auto;
   }

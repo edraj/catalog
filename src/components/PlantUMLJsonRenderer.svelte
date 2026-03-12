@@ -28,7 +28,7 @@
   function generateJsonDiagram(data: any, title: string): string {
     const lines = [
       "@startjson",
-      `!theme plain`,
+      `skinparam backgroundColor transparent`,
       `"${title}": ${JSON.stringify(data, null, 2)}`,
       "@endjson"
     ];
@@ -38,8 +38,8 @@
   function generateClassDiagram(data: any, title: string): string {
     const lines = [
       "@startuml",
-      "!theme plain",
       `title ${title}`,
+      "skinparam backgroundColor transparent",
       "skinparam classAttributeIconSize 0",
       "skinparam class {",
       "  BackgroundColor<<primitive>> #E8F5E9",
@@ -58,8 +58,8 @@
   function generateComponentDiagram(data: any, title: string): string {
     const lines = [
       "@startuml",
-      "!theme plain",
       `title ${title}`,
+      "skinparam backgroundColor transparent",
       "skinparam componentStyle rectangle"
     ];
 
@@ -281,7 +281,7 @@
     display: flex;
     justify-content: center;
     padding: 24px;
-    background: #f8fafc;
+    background: transparent;
     min-height: 200px;
   }
 

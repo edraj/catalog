@@ -3,8 +3,15 @@ import plantumlEncoder from "plantuml-encoder";
 export function generateJsonDiagram(data: any, title: string = "JSON"): string {
   const jsonStr = JSON.stringify(data, null, 2);
   return `@startjson
-!theme plain
-title ${title}
+skinparam backgroundColor transparent
+<style>
+jsonDiagram {
+  node {
+    FontName Inter
+    
+  }
+}
+</style>
 ${jsonStr}
 @endjson`;
 }
@@ -12,14 +19,16 @@ ${jsonStr}
 export function generateClassDiagram(data: any, title: string = "Structure"): string {
   const lines = [
     "@startuml",
-    "!theme plain",
-    `title ${title}`,
-    "skinparam classAttributeIconSize 0",
-    "skinparam class {",
-    "  BackgroundColor<<primitive>> #E8F5E9",
-    "  BackgroundColor<<object>> #FFF3E0",
-    "  BackgroundColor<<array>> #E3F2FD",
-    "}"
+    `
+<style>
+jsonDiagram {
+  node {
+    FontName Inter
+  }
+}
+</style>
+    `,
+    "skinparam backgroundColor transparent",
   ];
 
   const visited = new Set();
