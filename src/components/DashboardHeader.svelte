@@ -929,7 +929,7 @@
   }
 
   header {
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    /* box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); */
   }
 
   @media (max-width: 640px) {

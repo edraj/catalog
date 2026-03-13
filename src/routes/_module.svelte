@@ -1,14 +1,14 @@
 <script>
-    import DashboardHeader from "@/components/DashboardHeader.svelte";
-    import {signout} from "@/stores/user";
-    import {onMount} from "svelte";
-    import {getProfile} from "@/lib/dmart_services/dmart_services.ts";
-    import {goto} from "@roxi/routify";
-    import {Dmart} from "@edraj/tsdmart";
-    import {website} from "@/config";
-    import axios from "axios";
+  import DashboardHeader from "@/components/DashboardHeader.svelte";
+  import { signout } from "@/stores/user";
+  import { onMount } from "svelte";
+  import { getProfile } from "@/lib/dmart_services/dmart_services.ts";
+  import { goto } from "@roxi/routify";
+  import { Dmart } from "@edraj/tsdmart";
+  import { website } from "@/config";
+  import axios from "axios";
 
-    $goto;
+  $goto;
 
   const publicRoutes = [
     "/register",
@@ -45,7 +45,7 @@
       }
       return config;
     },
-    (error) => Promise.reject(error)
+    (error) => Promise.reject(error),
   );
 
   dmartAxios.interceptors.response.use(
@@ -61,7 +61,7 @@
       //   $goto("/login");
       // }
       return Promise.reject(error);
-    }
+    },
   );
 
   Dmart.setAxiosInstance(dmartAxios);
@@ -107,5 +107,7 @@
   });
 </script>
 
-<DashboardHeader />
-<slot />
+<div class="bg-gray-50">
+  <DashboardHeader />
+  <slot />
+</div>
