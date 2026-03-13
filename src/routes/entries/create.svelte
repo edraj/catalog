@@ -124,7 +124,7 @@
 
     loadingPollSchema = true;
     try {
-      const response = await getSpaceSchema("management", "schema", "managed");
+      const response = await getSpaceSchema("management", "managed");
       if (response?.status === "success" && response?.records) {
         const pollSchemaRecord = response.records.find(
           (record) => record.shortname === "poll",
@@ -159,7 +159,6 @@
     try {
       const response = await getSpaceSchema(
         selectedSpace,
-        "templates",
         "managed",
       );
 
@@ -187,7 +186,7 @@
 
     loadingSchemas = true;
     try {
-      const response = await getSpaceSchema(selectedSpace, "schema", "managed");
+      const response = await getSpaceSchema(selectedSpace, "managed");
       if (response?.status === "success" && response?.records) {
         availableSchemas = response.records.map((record) => ({
           shortname: record.shortname,
