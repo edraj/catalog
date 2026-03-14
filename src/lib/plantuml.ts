@@ -5,12 +5,27 @@ export function generateJsonDiagram(data: any, title: string = "JSON"): string {
   return `@startjson
 skinparam backgroundColor transparent
 <style>
+root {
+  Shadowing: 0.5;
+  FontName SansSerif;
+  /*LineColor: darkgreen;
+  BackgroundColor transparent;*/
+}
+
+arrow {
+  LineColor darkgreen;
+}
+
 jsonDiagram {
   node {
-    FontName Inter
+    BackgroundColor Ivory;
+  }
+  highlight {
+    BackgroundColor #EEFFEE;
   }
 }
 </style>
+
 ${jsonStr}
 @endjson`;
 }
