@@ -4,7 +4,6 @@
   import { onMount } from "svelte";
   import {
     getAvatar,
-    getMyEntities,
     getProfile,
     getSpaceSchema,
     setAvatar,
@@ -29,17 +28,11 @@
   import DynamicSchemaBasedForms from "@/components/forms/DynamicSchemaBasedForms.svelte";
 
   $goto;
-  const ProfileSection = {
-    ME: "ME",
-    IDEAS: "IDEAS",
-  };
-  let profileSection = writable(ProfileSection.ME);
-
   let isLoading = writable(true);
   let isUploadingAvatar = writable(false);
   let user = writable(null);
   let avatar = writable(null);
-  let entities = writable([]);
+
   let displayname = writable("");
   let description = writable("");
   let email = writable("");
@@ -74,14 +67,13 @@
 
     await loadUserSchema();
 
-    await fetchEntities();
     isLoading.set(false);
   });
 
   async function loadUserSchema() {
     loadingSchema.set(true);
     try {
-      const response = await getSpaceSchema("management", "schema", "managed");
+      const response = await getSpaceSchema("management", "managed");
 
       if (response?.status === "success" && response?.records) {
         const userSchemaRecord = response.records.find(
@@ -102,46 +94,6 @@
       errorToastMessage("Failed to load profile schema");
     } finally {
       loadingSchema.set(false);
-    }
-  }
-
-  async function fetchEntities() {
-    isLoading.set(true);
-    try {
-      const rawEntities = await getMyEntities();
-
-      entities.set(
-        rawEntities.map((entity) => ({
-          shortname: entity.shortname,
-          title:
-            entity.attributes?.payload?.body?.title ||
-            entity.attributes?.displayname?.en ||
-            "Untitled",
-          content: entity.attributes?.payload?.body?.content || "",
-          tags: entity.attributes?.tags || [],
-          state: entity.attributes?.state || "unknown",
-          is_active: entity.attributes?.is_active || false,
-          created_at: entity.attributes?.created_at
-            ? formatDate(entity.attributes.created_at)
-            : "",
-          updated_at: entity.attributes?.updated_at
-            ? formatDate(entity.attributes.updated_at)
-            : "",
-          raw_created_at: entity.attributes?.created_at || "",
-          raw_updated_at: entity.attributes?.updated_at || "",
-          space_name: entity.attributes?.space_name || "",
-          subpath: entity?.subpath || "",
-          owner_shortname: entity.attributes?.owner_shortname || "",
-          comment: (entity as any).attachments?.comment?.length ?? 0,
-          reaction: (entity as any).attachments?.reaction?.length ?? 0,
-        })),
-      );
-    } catch (error) {
-      console.error("Error fetching entities:", error);
-      errorToastMessage("An error occurred while fetching your entries");
-      entities.set([]);
-    } finally {
-      isLoading.set(false);
     }
   }
 
@@ -242,13 +194,6 @@
     }
   }
 
-  function handleME() {
-    profileSection.set(ProfileSection.ME);
-  }
-  function handleEntities() {
-    profileSection.set(ProfileSection.IDEAS);
-  }
-
   function gotoEntityDetails(entity: any) {
     $goto("/entries/[shortname]", {
       shortname: entity.shortname,
@@ -315,51 +260,14 @@
 
 <div class="profile-page">
   <div class="container">
-    <!-- Header Navigation -->
-    <div class="navigation-header">
-      <nav class="nav-tabs">
-        <button
-          class="nav-tab {$profileSection === 'ME' ? 'active' : ''}"
-          onclick={handleME}
-        >
-          <div class="tab-content">
-            <svg class="tab-icon" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fill-rule="evenodd"
-                d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-                clip-rule="evenodd"
-              />
-            </svg>
-            {$_("MyProfile")}
-          </div>
-        </button>
-        <button
-          class="nav-tab {$profileSection === 'IDEAS' ? 'active' : ''}"
-          onclick={handleEntities}
-        >
-          <div class="tab-content">
-            <svg class="tab-icon" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 005.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"
-              />
-            </svg>
-            {$_("MyEntities")}
-            <span class="entity-count">
-              {formatNumberInText($entities.length, $locale)}
-            </span>
-          </div>
-        </button>
-      </nav>
-    </div>
-
-    {#if $isLoading}
+      {#if $isLoading}
       <div class="loading-container">
         <div class="loading-content">
           <Diamonds color="#2563eb" size="60" unit="px" />
           <p class="loading-text">Loading your profile...</p>
         </div>
       </div>
-    {:else if $profileSection === ProfileSection.ME}
+    {:else}
       <div class="max-w-3xl mx-auto space-y-6">
         <!-- Top Profile Card -->
         <div
@@ -424,16 +332,7 @@
           </div>
 
           <div class="flex items-center gap-6">
-            <div class="text-center">
-              <p
-                class="text-xs text-gray-400 font-medium tracking-wider uppercase mb-1"
-              >
-                Entries
-              </p>
-              <p class="text-xl font-bold text-indigo-600">
-                {$entities.length}
-              </p>
-            </div>
+
             <div class="text-center pt-1">
               <p
                 class="text-xs text-gray-400 font-medium tracking-wider uppercase mb-1"
@@ -451,7 +350,7 @@
         </div>
 
         <!-- Main Content -->
-        <div class="main-content">
+        <div class="space-y-6">
           <!-- Profile Info -->
           <div
             class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
@@ -838,126 +737,6 @@
           </div>
         </div>
       </div>
-    {:else if $entities.length === 0}
-      <div class="empty-state">
-        <div class="empty-content">
-          <div class="empty-icon">
-            <svg
-              class="empty-svg"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
-          </div>
-          <h3 class="empty-title">{$_("NoEntities")}</h3>
-          <p class="empty-description">{$_("CreateNewEntityMsg")}</p>
-          <button class="create-entity-btn">{$_("CreateFirstEntity")}</button>
-        </div>
-      </div>
-    {:else}
-      <div class="entities-grid">
-        {#each $entities as entity}
-          <div
-            class="entity-card"
-            role="button"
-            tabindex="0"
-            onclick={() => gotoEntityDetails(entity)}
-            onkeydown={(e) => {
-              if (e.key === "Enter") gotoEntityDetails(entity);
-            }}
-          >
-            <div class="entity-content">
-              <div class="entity-info">
-                <div class="entity-main">
-                  <h3 class="entity-title">{entity.title}</h3>
-                  <div class="entity-meta">
-                    <span class="entity-meta-item">
-                      <svg
-                        class="meta-icon"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                      {$_("Updated")}
-                      {entity.updated_at}
-                    </span>
-                    <span class="entity-status">
-                      {renderStateString(entity)}
-                    </span>
-                  </div>
-                </div>
-
-                <div class="entity-actions">
-                  <div class="entity-stats">
-                    <span class="stat-item reactions">
-                      <svg
-                        class="stat-icon"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                        />
-                      </svg>
-                      <span class="stat-count"
-                        >{formatNumberInText(entity.reaction, $locale) ??
-                          0}</span
-                      >
-                    </span>
-                    <span class="stat-item comments">
-                      <svg
-                        class="stat-icon"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"
-                        />
-                      </svg>
-                      <span class="stat-count"
-                        >{formatNumberInText(entity.comment, $locale) ??
-                          0}</span
-                      >
-                    </span>
-                  </div>
-
-                  <div class="entity-arrow">
-                    <svg
-                      class="arrow-icon {$locale === 'ar' || $locale === 'ku'
-                        ? 'rtl'
-                        : ''}"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        {/each}
-      </div>
     {/if}
   </div>
 </div>
@@ -975,62 +754,24 @@
     padding: 0 1rem;
   }
 
-  /* Navigation */
-  .navigation-header {
-    margin-bottom: 2rem;
-  }
-
-  .nav-tabs {
-    display: flex;
-    background: white;
-    border-radius: 1rem;
-    padding: 0.5rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    border: 1px solid #e5e7eb;
-  }
-
-  .nav-tab {
-    flex: 1;
-    padding: 0.75rem 1.5rem;
-    border: none;
-    background: none;
-    border-radius: 0.75rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    color: #6b7280;
-    font-weight: 600;
-    font-size: 0.875rem;
-  }
-
-  .nav-tab:hover {
-    color: #374151;
-    background-color: #f9fafb;
-  }
-
-  .nav-tab.active {
-    background-color: #2563eb;
-    color: white;
-    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
-  }
-
-  .tab-content {
+  /* Loading State */
+  .loading-container {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
+    min-height: 60vh;
   }
 
-  .tab-icon {
-    width: 1rem;
-    height: 1rem;
+  .loading-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
   }
 
-  .entity-count {
-    background: rgba(255, 255, 255, 0.2);
-    color: inherit;
-    padding: 0.125rem 0.5rem;
-    border-radius: 9999px;
-    font-size: 0.75rem;
+  .loading-text {
+    color: #6b7280;
+    font-size: 1rem;
     font-weight: 500;
   }
 
@@ -1090,156 +831,6 @@
     background-color: #1d4ed8;
     transform: translateY(-1px);
     box-shadow: 0 10px 25px rgba(37, 99, 235, 0.2);
-  }
-
-  /* Entities Grid */
-  .entities-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-  }
-
-  .entity-card {
-    background: white;
-    border-radius: 1rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    border: 1px solid #e5e7eb;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    overflow: hidden;
-  }
-
-  .entity-card:hover {
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-    transform: translateY(-2px);
-  }
-
-  .entity-content {
-    padding: 2rem;
-  }
-
-  .entity-info {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-  }
-
-  @media (min-width: 1024px) {
-    .entity-info {
-      flex-direction: row;
-      align-items: center;
-      justify-content: space-between;
-    }
-  }
-
-  .entity-main {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .entity-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #111827;
-    margin-bottom: 0.75rem;
-    line-height: 1.3;
-    transition: color 0.2s ease;
-  }
-
-  .entity-card:hover .entity-title {
-    color: #2563eb;
-  }
-
-  .entity-meta {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 1.5rem;
-    font-size: 0.875rem;
-    color: #6b7280;
-  }
-
-  .entity-meta-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background-color: #f3f4f6;
-    padding: 0.5rem 0.75rem;
-    border-radius: 9999px;
-  }
-
-  .meta-icon {
-    width: 1rem;
-    height: 1rem;
-  }
-
-  .entity-status {
-    background-color: #dbeafe;
-    color: #1e40af;
-    padding: 0.5rem 0.75rem;
-    border-radius: 9999px;
-    font-weight: 600;
-  }
-
-  .entity-actions {
-    display: flex;
-    align-items: center;
-    gap: 2rem;
-  }
-
-  .entity-stats {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-  }
-
-  .stat-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    border-radius: 0.75rem;
-  }
-
-  .stat-item.reactions {
-    background-color: #fef2f2;
-    color: #dc2626;
-  }
-
-  .stat-item.comments {
-    background-color: #eff6ff;
-    color: #2563eb;
-  }
-
-  .stat-icon {
-    width: 1.25rem;
-    height: 1.25rem;
-  }
-
-  .stat-count {
-    font-weight: 700;
-  }
-
-  .entity-arrow {
-    background-color: #2563eb;
-    padding: 0.75rem;
-    border-radius: 50%;
-    transition: transform 0.2s ease;
-  }
-
-  .entity-card:hover .entity-arrow {
-    transform: scale(1.1);
-  }
-
-  .arrow-icon {
-    width: 1.25rem;
-    height: 1.25rem;
-    color: white;
-    transition: transform 0.2s ease;
-  }
-
-  .arrow-icon.rtl {
-    transform: rotate(180deg);
   }
 
   /* Utilities */

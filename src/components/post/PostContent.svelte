@@ -66,7 +66,7 @@
     
     isLoadingSchema = true;
     try {
-      const response = await getSpaceSchema(spaceName);
+      const response = await getSpaceSchema(spaceName, 'public');
       if (response?.status === "success" && response?.records && response.records.length > 0) {
         const record = response.records.find((r: any) => r.shortname === schemaShortname) || response.records[0];
         schema = record.attributes?.payload?.body;

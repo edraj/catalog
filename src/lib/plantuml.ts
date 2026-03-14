@@ -8,7 +8,6 @@ skinparam backgroundColor transparent
 jsonDiagram {
   node {
     FontName Inter
-    
   }
 }
 </style>
