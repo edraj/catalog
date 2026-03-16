@@ -627,6 +627,7 @@
     "got_it": "Got it",
     "loading": "Loading...",
     "not_available": "Not available",
+    "optional": "Optional",
     "retry": "Retry",
     "save_changes": "Save Changes",
     "saving": "Saving...",
@@ -799,8 +800,10 @@
       "load_spaces_failed": "Failed to load spaces!",
       "load_subpaths_failed": "Failed to load subpaths!",
       "publish_failed": "Failed to publish entry!",
+      "required_fields_missing": "Please fill in the required fields: {fields}",
       "save_failed": "Failed to save entry!",
-      "select_space": "Please select a space!"
+      "select_space": "Please select a space!",
+      "select_template": "Please select a template!"
     },
     "navigation": {
       "back_to_entries": "Back to My Entries"
@@ -1175,6 +1178,10 @@
     "toast_group_creation_error": "Please provide group name and select participants",
     "toast_user_not_logged_in": "User not logged in",
     "toast_ws_error": "WebSocket error",
+    "webtransport_connect_failed": "Failed to connect to messaging server",
+    "webtransport_error": "Messaging connection error",
+    "webtransport_init_failed": "Failed to initialize WebTransport",
+    "webtransport_not_supported": "Your browser doesn't support WebTransport. Please use Chrome or Edge.",
     "type_a_message": "Type a message...",
     "update_group": "Update Group",
     "voice_message": "Voice Message"
@@ -1789,8 +1796,20 @@
     "form": {
       "name_label": "Template Name",
       "name_placeholder": "Enter template name...",
+      "shortname_label": "Shortname",
+      "shortname_placeholder": "Enter unique shortname...",
       "save_button": "Save Template",
-      "update_button": "Update Template"
+      "update_button": "Update Template",
+      "optional_fields_toggle": "Optional Settings",
+      "target_space_label": "Target Space",
+      "target_space_placeholder": "e.g., management, applications...",
+      "schema_label": "Schema",
+      "schema_placeholder": "e.g., user_profile, article...",
+      "select_space": "-- Select a space --",
+      "select_space_first": "-- Select a space first --",
+      "select_schema": "-- Select a schema --",
+      "schema_keys_title": "Available Fields",
+      "schema_keys_hint": "(drag & drop into editor)"
     },
     "info": {
       "content_type": "Content Type:",
@@ -1798,6 +1817,7 @@
       "resource_type": "Resource Type:",
       "space": "Space:",
       "subpath": "Subpath:",
+      "target_space": "Target",
       "title": "Template Information",
       "uuid": "UUID:"
     },

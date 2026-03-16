@@ -60,11 +60,16 @@
     type GroupData,
     type GroupMessageData,
   } from "@/lib/utils/messagingUtils";
+  import {
+    WebTransportService,
+    getWebTransportService,
+    resetWebTransportService,
+    type ConnectionStatus,
+  } from "@/lib/services/webtransport";
 
-  let socket = null;
+  let webTransport: WebTransportService | null = null;
   let isConnected = $state(false);
   let connectionStatus = $state("Disconnecting...");
-  const WS_URL = website.websocket;
   const TOKEN = localStorage.getItem("authToken") || "";
 
   let currentUser = $state(null);
@@ -111,7 +116,7 @@
   let editGroupParticipants = $state([]);
   let availableUsersForGroup = $state([]);
 
-  const MESSAGES_LIMIT = 10;
+  const MESSAGES_LIMIT = 100; // Increased limit since messages come from two sources
 
   onMount(async () => {
     isRTL =
@@ -127,8 +132,9 @@
   });
 
   onDestroy(() => {
-    if (socket) {
-      socket.close();
+    if (webTransport) {
+      webTransport.disconnect();
+      resetWebTransportService();
     }
     if (stream) {
       stream.getTracks().forEach((track) => track.stop());
@@ -150,53 +156,12 @@
   }
 
   async function loadOlderMessages() {
-    if (!selectedUser || isLoadingOlderMessages || !hasMoreMessages) return;
-
-    isLoadingOlderMessages = true;
-    const previousScrollHeight = chatContainer.scrollHeight;
-
-    try {
-      const response = await getMessagesBetweenUsers(
-        currentUser?.shortname,
-        selectedUser.shortname,
-        MESSAGES_LIMIT,
-        messagesOffset + MESSAGES_LIMIT
-      );
-
-      if (response && response.status === "success" && response.records) {
-        const olderMessages = sortMessagesByTimestamp(
-          response.records.map((record) =>
-            transformMessageRecord(record, currentUser?.shortname)
-          )
-        );
-
-        if (olderMessages.length < MESSAGES_LIMIT) {
-          hasMoreMessages = false;
-        }
-
-        if (olderMessages.length > 0) {
-          const existingIds = new Set(messages.map((msg) => msg.id));
-          const newMessages = olderMessages.filter(
-            (msg) => !existingIds.has(msg.id)
-          );
-
-          messages = [...newMessages, ...messages];
-          messagesOffset += MESSAGES_LIMIT;
-
-          setTimeout(() => {
-            const newScrollHeight = chatContainer.scrollHeight;
-            chatContainer.scrollTop = newScrollHeight - previousScrollHeight;
-          }, 0);
-        }
-      }
-    } catch (error) {
-      errorToastMessage(
-        $_("messaging.toast_failed_load_older_messages") ||
-          "Failed to load older messages"
-      );
-    } finally {
-      isLoadingOlderMessages = false;
-    }
+    // With the new personal space storage model, pagination is more complex
+    // as messages come from two sources. For now, we disable load-more functionality
+    // and fetch a larger initial batch.
+    // TODO: Implement proper cursor-based pagination for dual-source messages
+    hasMoreMessages = false;
+    return;
   }
 
   async function initializeChat() {
@@ -210,7 +175,7 @@
       }
       await Promise.all([loadUsers(), loadGroups()]);
 
-      connectWebSocket();
+      await connectWebTransport();
     } catch (error) {
       connectionStatus = $_("messaging.toast_failed_initialize");
     }
@@ -398,11 +363,16 @@
 
         if (hasAttachments && attachmentsToProcess.length > 0) {
           try {
+            // Attachments are stored in the recipient's personal space
+            // If A sends to B, message is in B's protected folder, attachments go there too
+            const attachmentSpace = "personal";
+            const attachmentSubpath = `people/${selectedUser.shortname}/protected`;
+
             for (const attachment of attachmentsToProcess) {
               const attachmentResult = await attachAttachmentsToEntity(
                 persistedMessageId,
-                "messages",
-                "messages",
+                attachmentSpace,
+                attachmentSubpath,
                 attachment
               );
 
@@ -485,17 +455,8 @@
           participants: selectedGroup.participants,
         };
 
-        if (socket && socket.readyState === WebSocket.OPEN) {
-          socket.send(JSON.stringify(wsMessage));
-        } else {
-          console.warn(
-            "⚠️ [Group Message] WebSocket not available for broadcasting:",
-            {
-              socketExists: !!socket,
-              readyState: socket?.readyState,
-              expectedState: WebSocket.OPEN,
-            }
-          );
+        if (webTransport) {
+          await webTransport.send(wsMessage);
         }
 
         setTimeout(() => scrollToBottom(chatContainer), 100);
@@ -648,63 +609,57 @@
     }
   }
 
-  function connectWebSocket() {
+  async function connectWebTransport() {
     try {
+      // Check if WebTransport is supported
+      if (!WebTransportService.isSupported()) {
+        connectionStatus = "Not Supported";
+        errorToastMessage($_("messaging.webtransport_not_supported") || 
+          "Your browser doesn't support WebTransport. Please use Chrome or Edge.");
+        return;
+      }
+
       connectionStatus = "Connecting...";
-      socket = new WebSocket(`${WS_URL}?token=${TOKEN}`);
+      
+      webTransport = getWebTransportService(TOKEN, {
+        onMessage: (data) => {
+          handleRealtimeMessage(data);
+        },
+        onStatusChange: (status: ConnectionStatus) => {
+          isConnected = status === "connected";
+          connectionStatus = status.charAt(0).toUpperCase() + status.slice(1);
+        },
+      });
 
-      socket.onopen = () => {
-        isConnected = true;
-        connectionStatus = "Connected";
+      if (!webTransport) {
+        connectionStatus = "Error";
+        errorToastMessage($_("messaging.webtransport_init_failed") || 
+          "Failed to initialize WebTransport");
+        return;
+      }
 
-        const subscriptionMessage = {
-          type: "notification_subscription",
-          space_name: "messages",
-          subpath: "/messages",
-        };
-        socket.send(JSON.stringify(subscriptionMessage));
-      };
-
-      socket.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          handleWebSocketMessage(data);
-        } catch (error) {
-          console.error(
-            "❌ [WebSocket] Failed to parse message:",
-            error,
-            event.data
-          );
-        }
-      };
-
-      socket.onclose = (event) => {
-        console.warn("🔌 [WebSocket] Connection closed:", {
-          code: event.code,
-          reason: event.reason,
-          wasClean: event.wasClean,
-        });
-        isConnected = false;
-        connectionStatus = "Disconnected";
-
-        setTimeout(() => {
-          if (!isConnected) {
-            connectWebSocket();
-          }
-        }, 3000);
-      };
-
-      socket.onerror = (error) => {
-        console.error("❌ [WebSocket] Connection error:", error);
-        connectionStatus = $_("messaging.toast_ws_error");
-      };
+      const connected = await webTransport.connect();
+      
+      if (connected && currentUser?.shortname) {
+        // Subscribe to notifications in the current user's protected folder
+        await webTransport.subscribe(
+          "personal",
+          `people/${currentUser.shortname}/protected`
+        );
+      } else if (!connected) {
+        connectionStatus = "Failed";
+        errorToastMessage($_("messaging.webtransport_connect_failed") || 
+          "Failed to connect to messaging server");
+      }
     } catch (error) {
-      console.error("❌ [WebSocket] Failed to create connection:", error);
-      connectionStatus = $_("messaging.toast_failed_connect_ws");
+      console.error("❌ [WebTransport] Failed to create connection:", error);
+      connectionStatus = "Error";
+      errorToastMessage($_("messaging.webtransport_error") || 
+        "Messaging connection error");
     }
   }
 
-  function handleWebSocketMessage(data) {
+  function handleRealtimeMessage(data) {
     if (data.type === "connection_response") {
       return;
     }
@@ -1064,9 +1019,13 @@
     }
   }
 
-  async function fetchMessageByShortname(messageShortname) {
+  async function fetchMessageByShortname(messageShortname, senderShortname?: string, receiverShortname?: string) {
     try {
-      const messageData = await getMessageByShortname(messageShortname);
+      // If sender/receiver not provided, try to determine from current context
+      const sender = senderShortname || (selectedUser?.shortname);
+      const receiver = receiverShortname || currentUser?.shortname;
+      
+      const messageData = await getMessageByShortname(messageShortname, sender, receiver);
 
       if (!messageData) {
         return;
@@ -1427,8 +1386,8 @@
           hasAttachments: hasAttachments,
         };
 
-        if (socket && socket.readyState === WebSocket.OPEN) {
-          socket.send(JSON.stringify(wsMessage));
+        if (webTransport) {
+          await webTransport.send(wsMessage);
         }
       } else {
         messages = messages.filter((msg) => msg.id !== tempId);
@@ -1716,11 +1675,20 @@
                   {/if}
 
                   {#if message?.attachments && message?.attachments?.length > 0}
+                    <!-- 
+                      Attachments are stored in the recipient's personal space:
+                      - If message.isOwn (I sent it), attachment is in receiver's space
+                      - If !message.isOwn (I received it), attachment is in my space
+                    -->
+                    {@const attachmentSpace = "personal"}
+                    {@const attachmentSubpath = message.isOwn 
+                      ? `people/${selectedUser.shortname}/protected`
+                      : `people/${currentUser?.shortname}/protected`}
                     <MessengerAttachments
                       attachments={message.attachments}
                       resource_type={ResourceType.media}
-                      space_name="messages"
-                      subpath="/messages"
+                      space_name={attachmentSpace}
+                      subpath={attachmentSubpath}
                       parent_shortname={message.id}
                       isOwner={message.isOwn}
                     />

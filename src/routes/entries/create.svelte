@@ -7,6 +7,7 @@
     getSpaceFolders,
     getSpaces,
     getSpaceSchema,
+    getTemplates,
   } from "@/lib/dmart_services/dmart_services";
   import {
     errorToastMessage,
@@ -106,7 +107,7 @@
     if (entryType === "json" && selectedSpace) {
       await loadSchemasForSpace();
     }
-    if (entryType === "template" && selectedSpace) {
+    if (entryType === "template") {
       await loadTemplatesForSpace();
     }
     if (entryType === "poll") {
@@ -153,14 +154,9 @@
   }
 
   async function loadTemplatesForSpace() {
-    if (!selectedSpace) return;
-
     loadingSchemas = true;
     try {
-      const response = await getSpaceSchema(
-        selectedSpace,
-        "managed",
-      );
+      const response = await getTemplates();
 
       if (response?.status === "success" && response?.records) {
         availableTemplates = response.records.map((record) => ({
@@ -620,12 +616,35 @@
         bodyContent = jsonFormData;
       }
     } else if (entryType === "template") {
-      const generatedContent = generateContentFromTemplate();
-      if (isContentEmpty(generatedContent, "html")) {
-        isEmpty = true;
+      if (!selectedTemplate) {
+        errorToastMessage($_("create_entry.error.select_template"));
+        isLoading = false;
+        return;
       }
-      bodyContent = isEmpty ? undefined : generatedContent;
-      contentType = "html";
+
+      // Validate required fields
+      const fields = parseTemplateFields(selectedTemplate.schema);
+      const requiredFields = fields.filter((f) => f.required);
+      const missingFields = requiredFields.filter(
+        (f) => !templateFormData[f.name]?.trim(),
+      );
+
+      if (missingFields.length > 0) {
+        errorToastMessage(
+          $_("create_entry.error.required_fields_missing", {
+            values: { fields: missingFields.map((f) => f.label).join(", ") },
+          }),
+        );
+        isLoading = false;
+        return;
+      }
+
+      // Save as JSON structure: { template: ..., data: {...} }
+      bodyContent = {
+        template: selectedTemplate.shortname,
+        data: { ...templateFormData },
+      };
+      contentType = "json";
       schema_shortname = "templates";
     } else {
       const content = getContent();
@@ -733,14 +752,24 @@
 
     let content = selectedTemplate.schema;
 
+    // Replace placeholders with values or empty string
     Object.keys(templateFormData).forEach((key) => {
       const placeholderPattern = new RegExp(
         `\\{\\{${key}(?::[^}]+)?\\}\\}`,
         "g",
       );
-      const value = templateFormData[key] || "";
-      content = content.replace(placeholderPattern, value);
+      let value = templateFormData[key];
+      
+      // Handle list/array type - join non-empty items
+      if (Array.isArray(value)) {
+        value = value.filter(item => item && item.trim()).join(", ");
+      }
+      
+      content = content.replace(placeholderPattern, value || "");
     });
+
+    // Remove any remaining placeholders that don't have values
+    content = content.replace(/\{\{[^}]+\}\}/g, "");
 
     return content;
   }
@@ -761,10 +790,20 @@
         seen.add(fieldName);
 
         let inputType = "text";
+        let placeholder = `Enter ${fieldName.replace(/_/g, " ")}`;
+
         switch (fieldType.toLowerCase()) {
-          case "number":
           case "int":
           case "integer":
+            inputType = "number";
+            placeholder = `Enter whole number for ${fieldName}`;
+            break;
+          case "float":
+          case "double":
+            inputType = "number";
+            placeholder = `Enter decimal number for ${fieldName}`;
+            break;
+          case "number":
             inputType = "number";
             break;
           case "email":
@@ -782,6 +821,24 @@
           case "password":
             inputType = "password";
             break;
+          case "bool":
+          case "boolean":
+            inputType = "checkbox";
+            placeholder = "";
+            break;
+          case "list":
+          case "array":
+            inputType = "textarea";
+            placeholder = `Enter comma-separated values for ${fieldName}`;
+            break;
+          case "object":
+            inputType = "textarea";
+            placeholder = `Enter JSON object for ${fieldName}`;
+            break;
+          case "list_object":
+            inputType = "textarea";
+            placeholder = `Enter JSON array of objects for ${fieldName}`;
+            break;
           case "textarea":
           case "text":
           case "string":
@@ -798,6 +855,7 @@
             .replace(/\b\w/g, (l) => l.toUpperCase()),
           type: inputType,
           originalType: fieldType,
+          placeholder,
           required: true,
         });
       }
@@ -1256,6 +1314,118 @@
                 </div>
               {/if}
             </div>
+
+            {#if selectedTemplate && selectedTemplate.schema}
+              <!-- Template Data Form Card -->
+              <div class="template-data-card">
+                <div class="template-data-card-header">
+                  <h3 class="template-data-title">
+                    {$_("create_entry.template.fill_data_title")}
+                  </h3>
+                </div>
+                <div class="template-data-card-body">
+                  <div class="template-form">
+                    {#each parseTemplateFields(selectedTemplate.schema) as field}
+                      <div class="form-field">
+                        <label for="template-{field.name}" class="field-label">
+                          {field.label}
+                          {#if field.required}
+                            <span class="required-indicator">*</span>
+                          {/if}
+                          <span class="field-type">({field.originalType})</span>
+                        </label>
+                        {#if field.originalType === "list"}
+                          <!-- List Input with Add/Delete -->
+                          <div class="list-input-container">
+                            {#if !templateFormData[field.name]}
+                              {templateFormData[field.name] = [''], ''}
+                            {/if}
+                            {#each templateFormData[field.name] as item, index (index)}
+                              <div class="list-input-row">
+                                <input
+                                  type="text"
+                                  bind:value={templateFormData[field.name][index]}
+                                  class="field-input list-input"
+                                  placeholder={`Item ${index + 1}`}
+                                />
+                                <button
+                                  type="button"
+                                  class="list-btn list-btn-remove"
+                                  onclick={() => {
+                                    templateFormData[field.name] = templateFormData[field.name].filter((_, i) => i !== index);
+                                  }}
+                                  title="Remove item"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            {/each}
+                            <button
+                              type="button"
+                              class="list-btn list-btn-add"
+                              onclick={() => {
+                                templateFormData[field.name] = [...templateFormData[field.name], ''];
+                              }}
+                            >
+                              + Add Item
+                            </button>
+                          </div>
+                        {:else if field.type === "textarea"}
+                          <textarea
+                            id="template-{field.name}"
+                            bind:value={templateFormData[field.name]}
+                            class="field-input field-textarea"
+                            placeholder={field.placeholder}
+                            required={field.required}
+                            rows={field.originalType === "object" || field.originalType === "list_object"
+                              ? 5
+                              : 3}
+                          ></textarea>
+                          {#if field.originalType === "object"}
+                            <small class="field-hint"
+                              >Enter valid JSON object</small
+                            >
+                          {:else if field.originalType === "list_object"}
+                            <small class="field-hint"
+                              >Enter valid JSON array of objects</small
+                            >
+                          {/if}
+                        {:else if field.type === "checkbox"}
+                          <div class="checkbox-wrapper">
+                            <input
+                              id="template-{field.name}"
+                              type="checkbox"
+                              bind:checked={templateFormData[field.name]}
+                              class="field-checkbox"
+                            />
+                            <span class="checkbox-label">Yes</span>
+                          </div>
+                        {:else}
+                          <input
+                            id="template-{field.name}"
+                            type={field.type}
+                            bind:value={templateFormData[field.name]}
+                            class="field-input field-text"
+                            placeholder={field.placeholder}
+                            required={field.required}
+                          />
+                        {/if}
+                      </div>
+                    {/each}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Template Preview -->
+              <div class="template-preview-section">
+                <h3 class="template-preview-title">
+                  {$_("create_entry.template.preview_title")}
+                </h3>
+                <div class="template-preview markdown-preview">
+                  {@html marked(generateContentFromTemplate())}
+                </div>
+              </div>
+            {/if}
           {:else}
             <div class="empty-state">
               <FileCheckSolid class="empty-icon" />
@@ -1264,77 +1434,6 @@
           {/if}
         </div>
       </div>
-
-      {#if selectedTemplate && selectedTemplate.schema}
-        <div class="section">
-          <div class="section-header">
-            <FileCheckSolid class="section-icon" />
-            <h2>{$_("create_entry.template.preview_title")}</h2>
-          </div>
-          <div class="section-content">
-            <div class="template-preview">
-              <pre class="template-content">{selectedTemplate.schema}</pre>
-            </div>
-          </div>
-        </div>
-
-        <div class="section">
-          <div class="section-header">
-            <FileCheckSolid class="section-icon" />
-            <h2>{$_("create_entry.template.fill_data_title")}</h2>
-          </div>
-          <div class="section-content">
-            <div class="template-form">
-              {#each parseTemplateFields(selectedTemplate.schema) as field}
-                <div class="form-field">
-                  <label for="template-{field.name}" class="field-label">
-                    {field.label}
-                    {#if field.required}
-                      <span class="required-indicator">*</span>
-                    {/if}
-                    <span class="field-type">({field.originalType})</span>
-                  </label>
-                  {#if field.type === "textarea"}
-                    <textarea
-                      id="template-{field.name}"
-                      bind:value={templateFormData[field.name]}
-                      class="field-input"
-                      placeholder="Enter {field.label.toLowerCase()}"
-                      required={field.required}
-                      rows="3"
-                    ></textarea>
-                  {:else}
-                    <input
-                      id="template-{field.name}"
-                      type={field.type}
-                      bind:value={templateFormData[field.name]}
-                      class="field-input"
-                      placeholder="Enter {field.label.toLowerCase()}"
-                      required={field.required}
-                    />
-                  {/if}
-                </div>
-              {/each}
-            </div>
-          </div>
-        </div>
-
-        {#if Object.keys(templateFormData).length > 0}
-          <div class="section">
-            <div class="section-header">
-              <FileCheckSolid class="section-icon" />
-              <h2>{$_("create_entry.template.generated_content_title")}</h2>
-            </div>
-            <div class="section-content">
-              <div class="content-preview">
-                <div class="generated-content">
-                  {@html marked(generateContentFromTemplate())}
-                </div>
-              </div>
-            </div>
-          </div>
-        {/if}
-      {/if}
     {:else if entryType === "poll"}
       <!-- Poll Entry Data Section -->
       <div class="section">
@@ -2344,18 +2443,281 @@
 
   .field-input {
     padding: 0.75rem;
-    border: 1px solid var(--color-border);
-    border-radius: 0.375rem;
-    background-color: var(--color-surface-primary);
-    color: var(--color-text-primary);
+    border: 2px solid #d1d5db;
+    border-radius: 0.5rem;
+    background-color: white;
+    color: #374151;
     font-size: 0.875rem;
-    transition: border-color 0.2s ease;
+    transition: all 0.2s ease;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .field-input:focus {
     outline: none;
-    border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px var(--color-primary-alpha);
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    background-color: white;
+  }
+
+  .field-input:hover {
+    border-color: #9ca3af;
+  }
+
+  .field-textarea {
+    resize: vertical;
+    min-height: 80px;
+    font-family: inherit;
+  }
+
+  .field-text {
+    height: 42px;
+  }
+
+  .field-checkbox {
+    transform: scale(1.3);
+    cursor: pointer;
+    width: 20px;
+    height: 20px;
+    accent-color: #3b82f6;
+  }
+
+  .checkbox-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+  }
+
+  .checkbox-label {
+    font-size: 0.875rem;
+    color: #374151;
+  }
+
+  .list-input-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .list-input-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .list-input {
+    flex: 1;
+  }
+
+  .list-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 0.75rem;
+    border: none;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .list-btn-remove {
+    background: #fee2e2;
+    color: #dc2626;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+  }
+
+  .list-btn-remove:hover {
+    background: #fecaca;
+  }
+
+  .list-btn-add {
+    background: #eff6ff;
+    color: #2563eb;
+    border: 2px dashed #bfdbfe;
+    margin-top: 0.25rem;
+    align-self: flex-start;
+  }
+
+  .list-btn-add:hover {
+    background: #dbeafe;
+    border-color: #93c5fd;
+  }
+
+  .field-hint {
+    display: block;
+    margin-top: 0.375rem;
+    color: #6b7280;
+    font-size: 0.75rem;
+    font-style: italic;
+  }
+
+  .template-data-section {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .template-data-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0 0 1rem 0;
+  }
+
+  .template-data-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    margin-top: 1.5rem;
+    overflow: hidden;
+  }
+
+  .template-data-card-header {
+    background: #f9fafb;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .template-data-card-header .template-data-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #374151;
+  }
+
+  .template-data-card-body {
+    padding: 1.25rem;
+  }
+
+  .template-preview-section {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .template-preview-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0 0 1rem 0;
+  }
+
+  .template-preview.markdown-preview {
+    background: white;
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    font-family:
+      "uthmantn",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
+      "Helvetica Neue",
+      Arial,
+      sans-serif;
+    line-height: 1.6;
+    color: #374151;
+  }
+
+  .template-preview.markdown-preview :global(h1) {
+    font-size: 1.875rem;
+    font-weight: 700;
+    margin: 1.5rem 0 1rem 0;
+    color: #1f2937;
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 0.5rem;
+  }
+
+  .template-preview.markdown-preview :global(h2) {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 1.25rem 0 0.75rem 0;
+    color: #1f2937;
+  }
+
+  .template-preview.markdown-preview :global(h3) {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 1rem 0 0.5rem 0;
+    color: #1f2937;
+  }
+
+  .template-preview.markdown-preview :global(p) {
+    margin: 0.75rem 0;
+  }
+
+  .template-preview.markdown-preview :global(ul),
+  .template-preview.markdown-preview :global(ol) {
+    margin: 0.75rem 0;
+    padding-left: 1.5rem;
+  }
+
+  .template-preview.markdown-preview :global(ul) {
+    list-style-type: disc;
+  }
+
+  .template-preview.markdown-preview :global(ol) {
+    list-style-type: decimal;
+  }
+
+  .template-preview.markdown-preview :global(li) {
+    margin: 0.25rem 0;
+  }
+
+  .template-preview.markdown-preview :global(blockquote) {
+    margin: 1rem 0;
+    padding: 0.75rem 1rem;
+    background: #f9fafb;
+    border-left: 4px solid #d1d5db;
+    color: #6b7280;
+  }
+
+  .template-preview.markdown-preview :global(code) {
+    background: #f3f4f6;
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+    font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+    font-size: 0.875rem;
+  }
+
+  .template-preview.markdown-preview :global(pre) {
+    background: #1f2937;
+    color: #f9fafb;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    margin: 1rem 0;
+  }
+
+  .template-preview.markdown-preview :global(pre code) {
+    background: transparent;
+    padding: 0;
+    color: inherit;
+  }
+
+  .template-preview.markdown-preview :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+  }
+
+  .template-preview.markdown-preview :global(th),
+  .template-preview.markdown-preview :global(td) {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #d1d5db;
+    text-align: left;
+  }
+
+  .template-preview.markdown-preview :global(th) {
+    background: #f9fafb;
+    font-weight: 600;
   }
 
   .content-preview {

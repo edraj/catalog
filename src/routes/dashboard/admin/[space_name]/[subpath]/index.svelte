@@ -5,6 +5,7 @@
     getAvatar,
     getEntity,
     getSpaceContents,
+    getSpaceTags,
   } from "@/lib/dmart_services";
   import { createFolder } from "@/lib/dmart_services/entries";
   import { Diamonds } from "svelte-loading-spinners";
@@ -36,8 +37,13 @@
   let actualSubpath = writable("");
   let breadcrumbs = $state([]);
 
+  const ITEMS_PER_PAGE_KEY = "itemsPerPage";
   let currentPage = $state(1);
-  let itemsPerPage = $state(10);
+  let itemsPerPage = $state(
+    typeof localStorage !== "undefined"
+      ? parseInt(localStorage.getItem(ITEMS_PER_PAGE_KEY) || "10", 10)
+      : 10
+  );
   let totalItemsCount = $state(0);
   let totalPages = $state(1);
   let isInitialLoad = $state(true);
@@ -59,6 +65,12 @@
   let sortOrder = $state("asc");
   let selectedType = $state("all");
   let selectedStatus = $state("all");
+  
+  // Tags filtering state
+  let availableTags = $state([]);
+  let selectedTags = $state([]);
+  let tagCounts = $state({});
+  let showAllTags = $state(false);
 
   const isRTL = derived(
     locale,
@@ -195,6 +207,9 @@
         0,
         true,
       );
+      
+      // Load space tags
+      await loadSpaceTags();
 
       if (response && response.records) {
         const enhancedItems = await Promise.all(
@@ -266,6 +281,15 @@
         const isActive = item.attributes?.is_active;
         return selectedStatus === "active" ? isActive : !isActive;
       });
+    }
+
+    // Filter by selected tags
+    if (selectedTags.length > 0) {
+      filtered = filtered.filter((item) =>
+        selectedTags.some((tag) =>
+          item.attributes?.tags?.includes(tag)
+        )
+      );
     }
 
     filtered.sort((a, b) => {
@@ -350,6 +374,9 @@
 
   function handleItemsPerPageChange(newItemsPerPage: number) {
     itemsPerPage = newItemsPerPage;
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem(ITEMS_PER_PAGE_KEY, String(newItemsPerPage));
+    }
     currentPage = 1;
     applyFilters();
   }
@@ -530,11 +557,45 @@
     searchQuery = "";
     selectedType = "all";
     selectedStatus = "all";
+    selectedTags = [];
     sortBy = "name";
     sortOrder = "asc";
     currentPage = 1;
     applyFilters();
   }
+  
+  async function loadSpaceTags() {
+    try {
+      const tagsResponse = await getSpaceTags(spaceName);
+      if (tagsResponse.records && tagsResponse.records[0]?.attributes) {
+        const tagsData = tagsResponse.records[0].attributes;
+        availableTags = tagsData.tags || [];
+        tagCounts = tagsData.tag_counts || {};
+      } else {
+        availableTags = [];
+        tagCounts = {};
+      }
+    } catch (err) {
+      console.warn("Error loading space tags:", err);
+      availableTags = [];
+      tagCounts = {};
+    }
+  }
+  
+  function toggleTag(tag: string) {
+    if (selectedTags.includes(tag)) {
+      selectedTags = selectedTags.filter((t) => t !== tag);
+    } else {
+      selectedTags = [...selectedTags, tag];
+    }
+    currentPage = 1;
+    applyFilters();
+  }
+  
+  const displayedTags = $derived.by(() => {
+    if (showAllTags) return availableTags;
+    return availableTags.slice(0, 12);
+  });
 
   // Bulk selection functions
   function toggleItemSelection(shortname: string) {
@@ -1239,6 +1300,56 @@
         </div>
       </div>
 
+      <!-- Tags Section -->
+      {#if availableTags.length > 0}
+        <div class="tags-section mb-6">
+          <div class="tags-label">
+            <svg
+              class="w-4 h-4 mr-1 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+              />
+            </svg>
+            {$_("space.filter_by_tag_label")}
+          </div>
+          <div class="tag-pills">
+            {#each displayedTags as tag}
+              <button
+                onclick={() => toggleTag(tag)}
+                class="tag-pill {selectedTags.includes(tag)
+                  ? 'tag-pill-active'
+                  : ''}"
+              >
+                <div
+                  class="bullet {selectedTags.includes(tag)
+                    ? 'bullet-active'
+                    : ''}"
+                ></div>
+                <span>{tag}</span>
+                <span class="tag-count">{tagCounts[tag] || 0}</span>
+              </button>
+            {/each}
+            {#if availableTags.length > 12}
+              <button
+                onclick={() => (showAllTags = !showAllTags)}
+                class="tag-pill tag-pill-more"
+              >
+                {showAllTags
+                  ? $_("space.show_less_tags")
+                  : $_("space.show_all_tags")}
+              </button>
+            {/if}
+          </div>
+        </div>
+      {/if}
+
       <!-- Main Content Container -->
       <div
         class="bg-white rounded-[24px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 overflow-hidden"
@@ -1453,11 +1564,11 @@
               {$_("admin_content.empty.title")}
             </h3>
             <p class="text-gray-500 mb-6">
-              {searchQuery || selectedType !== "all" || selectedStatus !== "all"
+              {searchQuery || selectedType !== "all" || selectedStatus !== "all" || selectedTags.length > 0
                 ? $_("admin_content.empty.no_matches")
                 : $_("admin_content.empty.description")}
             </p>
-            {#if searchQuery || selectedType !== "all" || selectedStatus !== "all"}
+            {#if searchQuery || selectedType !== "all" || selectedStatus !== "all" || selectedTags.length > 0}
               <button
                 onclick={clearFilters}
                 class="text-indigo-600 hover:text-indigo-700 font-medium"
@@ -3024,5 +3135,105 @@
       flex: 1;
       justify-content: center;
     }
+  }
+
+  /* --- Tag Filters --- */
+  .tags-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .tags-label {
+    display: flex;
+    align-items: center;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    color: #6b7280;
+  }
+
+  .tag-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .tag-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    color: #4b5563;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  .tag-pill:hover {
+    background: #f9fafb;
+    border-color: #d1d5db;
+  }
+
+  .tag-pill-active {
+    background: #eef2ff;
+    border-color: #c7d2fe;
+    color: #4338ca;
+  }
+
+  .tag-pill-active:hover {
+    background: #e0e7ff;
+    border-color: #a5b4fc;
+  }
+
+  .tag-pill-more {
+    color: #4f46e5;
+    background: #f5f3ff;
+    border-color: #ddd6fe;
+  }
+
+  .tag-pill-more:hover {
+    background: #ede9fe;
+    border-color: #c4b5fd;
+  }
+
+  .bullet {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #d1d5db;
+  }
+
+  .bullet-active {
+    background: #4f46e5;
+  }
+
+  .tag-count {
+    color: #9ca3af;
+    margin-left: 0.25rem;
+    font-size: 0.75rem;
+  }
+
+  .tag-pill-active .tag-count {
+    color: #6366f1;
+  }
+
+  .rtl .tags-section {
+    direction: rtl;
+  }
+
+  .rtl .tag-pill {
+    flex-direction: row-reverse;
+  }
+
+  .rtl .tag-count {
+    margin-left: 0;
+    margin-right: 0.25rem;
   }
 </style>

@@ -363,132 +363,17 @@ function isNotFoundError(error: any): boolean {
 }
 
 /**
- * Check if the messages space exists
- */
-export async function checkMessagesSpace(
-    scope: string = "managed"
-): Promise<{ exists: boolean; error?: string }> {
-    try {
-        await Dmart.retrieveEntry(
-            {
-                validate_schema: false,
-                resource_type: ResourceType.space,
-                space_name: "messages",
-                subpath: "/",
-                shortname: "messages",
-                retrieve_json_payload: false,
-                retrieve_attachments: false
-            },
-            scope
-        );
-        return { exists: true };
-    } catch (error: any) {
-        if (error?.status === 403 || error?.message?.includes("permission")) {
-            return { exists: true, error: "permission_denied" };
-        }
-        if (isNotFoundError(error)) {
-            return { exists: false };
-        }
-        return { exists: false, error: error?.message };
-    }
-}
-
-/**
- * Create the messages space with the messages folder
- */
-export async function createMessagesSpace(
-    scope: string = "managed"
-): Promise<{ success: boolean; error?: string }> {
-    try {
-        // Check if space already exists
-        try {
-            await Dmart.retrieveEntry(
-                {
-                    validate_schema: false,
-                    resource_type: ResourceType.space,
-                    space_name: "messages",
-                    subpath: "/",
-                    shortname: "messages",
-                    retrieve_json_payload: false,
-                    retrieve_attachments: false
-                },
-                scope
-            );
-            console.log("messages space already exists, skipping creation");
-            return { success: true };
-        } catch (error: any) {
-            if (!isNotFoundError(error)) {
-                console.error("Error checking messages space existence:", error);
-            }
-        }
-
-        // Create the messages space
-        const spaceResponse = await Dmart.request({
-            space_name: "messages",
-            request_type: RequestType.create,
-            records: [
-                {
-                    resource_type: ResourceType.space,
-                    shortname: "messages",
-                    subpath: "/",
-                    attributes: {
-                        is_active: true,
-                        displayname: { en: "Messages", ar: "الرسائل", ku: "" },
-                        description: { en: "Messaging space for users", ar: "مساحة الرسائل للمستخدمين", ku: "" },
-                    },
-                },
-            ],
-        });
-
-        if (spaceResponse.status !== "success") {
-            return { success: false, error: "Failed to create messages space" };
-        }
-
-        // Create the messages folder inside the space
-        const folderResponse = await Dmart.request({
-            space_name: "messages",
-            request_type: RequestType.create,
-            records: [
-                {
-                    resource_type: ResourceType.folder,
-                    shortname: "messages",
-                    subpath: "/",
-                    attributes: {
-                        is_active: true,
-                        displayname: { en: "Messages", ar: "الرسائل", ku: "" },
-                        description: { en: "Folder for storing user messages", ar: "مجلد لتخزين رسائل المستخدمين", ku: "" },
-                    },
-                },
-            ],
-        });
-
-        if (folderResponse.status !== "success") {
-            return { success: false, error: "Space created but failed to create messages folder" };
-        }
-
-        return { success: true };
-    } catch (error) {
-        console.error("Error creating messages space:", error);
-        return { success: false, error: String(error) };
-    }
-}
-
-/**
  * Check if required application folders exist in the applications space
  * Returns an object with missing folders
  */
 export async function checkApplicationsFolders(
     scope: string = "managed"
-): Promise<{ exists: boolean; missing: string[]; missingWorkflow?: boolean; missingReportSchema?: boolean; missingWorkflowSchema?: boolean; missingMessagesSpace?: boolean; error?: string }> {
+): Promise<{ exists: boolean; missing: string[]; missingWorkflow?: boolean; missingReportSchema?: boolean; missingWorkflowSchema?: boolean; error?: string }> {
     const requiredFolders = ["reports", "polls", "surveys", "workflows", "schema"];
     const missing: string[] = [];
     let missingWorkflow = false;
     let missingReportSchema = false;
     let missingWorkflowSchema = false;
-    
-    // Check if messages space exists
-    const messagesSpaceCheck = await checkMessagesSpace(scope);
-    const missingMessagesSpace = !messagesSpaceCheck.exists;
 
     try {
         for (const folder of requiredFolders) {
@@ -606,12 +491,11 @@ export async function checkApplicationsFolders(
         }
 
         const result = { 
-            exists: missing.length === 0 && !missingWorkflow && !missingReportSchema && !missingWorkflowSchema && !missingMessagesSpace, 
+            exists: missing.length === 0 && !missingWorkflow && !missingReportSchema && !missingWorkflowSchema, 
             missing, 
             missingWorkflow, 
             missingReportSchema,
-            missingWorkflowSchema,
-            missingMessagesSpace
+            missingWorkflowSchema
         };
         console.log("checkApplicationsFolders result:", result);
         return result;
@@ -620,7 +504,7 @@ export async function checkApplicationsFolders(
         if (error?.status === 403 || error?.message?.includes("permission")) {
             return { exists: true, missing: [], error: "permission_denied" };
         }
-        return { exists: false, missing: requiredFolders, missingWorkflow: true, missingReportSchema: true, missingWorkflowSchema: true, missingMessagesSpace: true, error: error?.message };
+        return { exists: false, missing: requiredFolders, missingWorkflow: true, missingReportSchema: true, missingWorkflowSchema: true, error: error?.message };
     }
 }
 
@@ -697,8 +581,6 @@ export async function createApplicationsFolders(
     reportSchemaFailed?: boolean;
     workflowSchemaCreated?: boolean;
     workflowSchemaFailed?: boolean;
-    messagesSpaceCreated?: boolean;
-    messagesSpaceFailed?: boolean;
 }> {
     const foldersToCreate = [
         {
@@ -730,24 +612,6 @@ export async function createApplicationsFolders(
 
     const created: string[] = [];
     const failed: string[] = [];
-
-    // First, create messages space if needed
-    let messagesSpaceCreated = false;
-    let messagesSpaceFailed = false;
-    const messagesSpaceCheck = await checkMessagesSpace(scope);
-    if (!messagesSpaceCheck.exists) {
-        console.log("Creating messages space...");
-        const result = await createMessagesSpace(scope);
-        if (result.success) {
-            messagesSpaceCreated = true;
-            console.log("messages space created successfully");
-        } else {
-            messagesSpaceFailed = true;
-            console.error("Failed to create messages space:", result.error);
-        }
-    } else {
-        messagesSpaceCreated = true; // Already exists
-    }
 
     for (const folder of foldersToCreate) {
         const success = await createFolder(
@@ -830,7 +694,7 @@ export async function createApplicationsFolders(
     }
 
     return { 
-        success: failed.length === 0 && !workflowFailed && !reportSchemaFailed && !workflowSchemaFailed && !messagesSpaceFailed, 
+        success: failed.length === 0 && !workflowFailed && !reportSchemaFailed && !workflowSchemaFailed, 
         created, 
         failed, 
         workflowCreated, 
@@ -838,9 +702,7 @@ export async function createApplicationsFolders(
         reportSchemaCreated, 
         reportSchemaFailed,
         workflowSchemaCreated,
-        workflowSchemaFailed,
-        messagesSpaceCreated,
-        messagesSpaceFailed
+        workflowSchemaFailed
     };
 }
 

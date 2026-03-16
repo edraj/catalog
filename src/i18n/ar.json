@@ -623,6 +623,7 @@
     "got_it": "حسناً",
     "loading": "جاري التحميل...",
     "not_available": "غير متاح",
+    "optional": "اختياري",
     "retry": "إعادة المحاولة",
     "save_changes": "حفظ التغييرات",
     "saving": "جارٍ الحفظ...",
@@ -747,8 +748,10 @@
       "load_spaces_failed": "فشل في تحميل المساحات!",
       "load_subpaths_failed": "فشل في تحميل المسارات الفرعية!",
       "publish_failed": "فشل في نشر المقال!",
+      "required_fields_missing": "يرجى ملء الحقول المطلوبة: {fields}",
       "save_failed": "فشل في حفظ المقال!",
-      "select_space": "يرجى اختيار مساحة!"
+      "select_space": "يرجى اختيار مساحة!",
+      "select_template": "يرجى اختيار قالب!"
     },
     "navigation": {
       "back_to_entries": "العودة إلى مقالاتي"
@@ -1123,6 +1126,10 @@
     "toast_group_creation_error": "يرجى تقديم اسم المجموعة واختيار المشاركين",
     "toast_user_not_logged_in": "المستخدم غير مسجل الدخول",
     "toast_ws_error": "خطأ في الويب سوكيت",
+    "webtransport_connect_failed": "فشل الاتصال بخادم المراسلة",
+    "webtransport_error": "خطأ في اتصال المراسلة",
+    "webtransport_init_failed": "فشل تهيئة WebTransport",
+    "webtransport_not_supported": "متصفحك لا يدعم WebTransport. يرجى استخدام Chrome أو Edge.",
     "type_a_message": "اكتب رسالة...",
     "update_group": "تحديث المجموعة",
     "voice_message": "رسالة صوتية"
@@ -1737,8 +1744,20 @@
     "form": {
       "name_label": "اسم القالب",
       "name_placeholder": "أدخل اسم القالب...",
+      "shortname_label": "الاسم المختصر",
+      "shortname_placeholder": "أدخل اسم مختصر فريد...",
       "save_button": "حفظ القالب",
-      "update_button": "تحديث القالب"
+      "update_button": "تحديث القالب",
+      "optional_fields_toggle": "إعدادات اختيارية",
+      "target_space_label": "المساحة المستهدفة",
+      "target_space_placeholder": "مثال: management، applications...",
+      "schema_label": "السكيما",
+      "schema_placeholder": "مثال: user_profile، article...",
+      "select_space": "-- اختر مساحة --",
+      "select_space_first": "-- اختر مساحة أولاً --",
+      "select_schema": "-- اختر سكيما --",
+      "schema_keys_title": "الحقول المتاحة",
+      "schema_keys_hint": "(اسحب وأفلت في المحرر)"
     },
     "info": {
       "content_type": "نوع المحتوى:",
@@ -1746,6 +1765,7 @@
       "resource_type": "نوع المورد:",
       "space": "المجال:",
       "subpath": "المسار الفرعي:",
+      "target_space": "الهدف",
       "title": "معلومات القالب",
       "uuid": "المعرف الفريد:"
     },

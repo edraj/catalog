@@ -10,26 +10,63 @@ import {
     deleteEntity
 } from "./core";
 
-export async function createMessages(data: any) {
+const PERSONAL_SPACE = "personal";
+const PROTECTED_SUBPATH_BASE = "people";
+
+/**
+ * Get the protected subpath for a user
+ * e.g., "people/username/protected"
+ */
+function getUserProtectedSubpath(userShortname: string): string {
+    return `${PROTECTED_SUBPATH_BASE}/${userShortname}/protected`;
+}
+
+/**
+ * Create a new direct message
+ * Messages are stored in the recipient's protected folder in the personal space
+ * If user A sends to user B, it's saved in /people/B/protected
+ */
+export async function createMessages(data: {
+    content: string;
+    sender: string;
+    receiver: string;
+    message_type?: string;
+    timestamp?: string;
+}) {
     const attributes = {
         is_active: true,
         relationships: [],
         tags: [],
         payload: {
             content_type: ContentType.json,
-            body: data,
+            body: {
+                content: data.content,
+                sender: data.sender,
+                receiver: data.receiver,
+                message_type: data.message_type || "text",
+                timestamp: data.timestamp || new Date().toISOString(),
+            },
         },
     };
 
+    // Store message in recipient's protected folder
+    // If A sends to B, store in /people/B/protected
+    const targetSubpath = getUserProtectedSubpath(data.receiver);
+
     return await createEntity(
-        "messages",
-        "messages",
+        PERSONAL_SPACE,
+        targetSubpath,
         ResourceType.content,
         attributes,
         'auto'
     );
 }
 
+/**
+ * Get messages between two users
+ * - Fetches messages sent BY currentUser TO otherUser from /people/otherUser/protected?filter_by_owner=currentUser
+ * - Fetches messages sent TO currentUser BY otherUser from /people/currentUser/protected?filter_by_owner=otherUser
+ */
 export async function getMessagesBetweenUsers(
     currentUserShortname: string,
     otherUserShortname: string,
@@ -37,10 +74,12 @@ export async function getMessagesBetweenUsers(
     offset: number = 0
 ) {
     try {
-        const response = await searchEntities(
-            "messages",
-            "messages",
-            "",
+        // 1. Fetch messages sent BY currentUser TO otherUser
+        // These are stored in /people/otherUser/protected with owner_shortname = currentUser
+        const sentByMeResponse = await searchEntities(
+            PERSONAL_SPACE,
+            getUserProtectedSubpath(otherUserShortname),
+            `@owner_shortname:${currentUserShortname}`,
             limit,
             offset,
             "created_at",
@@ -51,76 +90,107 @@ export async function getMessagesBetweenUsers(
             true
         );
 
-        if (response && response.status === "success") {
-            const filteredRecords = response.records.filter((record) => {
-                const payload = record.attributes.payload?.body;
-                if (!payload) return false;
+        // 2. Fetch messages sent BY otherUser TO currentUser
+        // These are stored in /people/currentUser/protected with owner_shortname = otherUser
+        const receivedFromOtherResponse = await searchEntities(
+            PERSONAL_SPACE,
+            getUserProtectedSubpath(currentUserShortname),
+            `@owner_shortname:${otherUserShortname}`,
+            limit,
+            offset,
+            "created_at",
+            SortyType.descending,
+            "managed",
+            true,
+            true,
+            true
+        );
 
-                const isConversation =
-                    (payload.sender === currentUserShortname &&
-                        payload.receiver === otherUserShortname) ||
-                    (payload.sender === otherUserShortname &&
-                        payload.receiver === currentUserShortname);
+        // Combine and sort messages
+        const sentByMe = sentByMeResponse?.status === "success" ? sentByMeResponse.records : [];
+        const receivedFromOther = receivedFromOtherResponse?.status === "success" ? receivedFromOtherResponse.records : [];
 
-                return isConversation;
-            });
+        const allMessages = [...sentByMe, ...receivedFromOther];
 
-            return {
-                status: "success",
-                records: filteredRecords,
-            };
-        } else {
-            throw new Error("Failed to fetch messages");
-        }
+        // Sort by created_at ascending (oldest first for conversation view)
+        allMessages.sort((a, b) => {
+            const dateA = new Date(a.attributes.created_at || 0).getTime();
+            const dateB = new Date(b.attributes.created_at || 0).getTime();
+            return dateA - dateB;
+        });
+
+        // Apply limit after combining
+        const limitedMessages = allMessages.slice(0, limit);
+
+        return {
+            status: "success",
+            records: limitedMessages,
+        };
     } catch (err) {
         console.error("Error fetching messages between users:", err);
         return { status: "error", records: [] };
     }
 }
 
-export async function getMessageByShortname(shortname: string) {
+/**
+ * Get a single message by its shortname
+ * Searches in both users' protected folders to find the message
+ */
+export async function getMessageByShortname(
+    shortname: string,
+    senderShortname?: string,
+    receiverShortname?: string
+) {
     try {
-        const record = await getEntity(
-            shortname,
-            "messages",
-            "messages",
-            ResourceType.content,
-            "public",
-            true,
-            true
-        );
+        // Try to find the message in either user's protected folder
+        const possibleLocations = [];
 
-        if (record) {
-            const payload = (record as any).payload;
-            const body = payload?.body;
+        if (senderShortname && receiverShortname) {
+            // If we know both sender and receiver, check both locations
+            possibleLocations.push({
+                space: PERSONAL_SPACE,
+                subpath: getUserProtectedSubpath(receiverShortname),
+            });
+            possibleLocations.push({
+                space: PERSONAL_SPACE,
+                subpath: getUserProtectedSubpath(senderShortname),
+            });
+        }
 
-            if (!body) {
-                console.error("No message body found in payload");
-                return null;
-            }
+        // Try each location
+        for (const location of possibleLocations) {
+            try {
+                const record = await getEntity(
+                    shortname,
+                    location.space,
+                    location.subpath,
+                    ResourceType.content,
+                    "managed",
+                    true,
+                    true
+                );
 
-            if (body.messageType === "group_message" && body.groupId) {
-                return {
-                    id: record.shortname,
-                    senderId: body.sender,
-                    groupId: body.groupId,
-                    content: body.content,
-                    timestamp: new Date((record as any).created_at || Date.now()),
-                    messageType: body.messageType || "group_message",
-                    isGroupMessage: true,
-                };
-            } else {
-                return {
-                    id: record.shortname,
-                    senderId: body.sender,
-                    receiverId: body.receiver,
-                    content: body.content,
-                    timestamp: new Date((record as any).created_at || Date.now()),
-                    messageType: body.message_type || "text",
-                    isGroupMessage: false,
-                };
+                if (record) {
+                    const payload = (record as any).payload;
+                    const body = payload?.body;
+
+                    if (body) {
+                        return {
+                            id: record.shortname,
+                            senderId: body.sender,
+                            receiverId: body.receiver,
+                            content: body.content,
+                            timestamp: new Date((record as any).created_at || Date.now()),
+                            messageType: body.message_type || "text",
+                            isGroupMessage: false,
+                        };
+                    }
+                }
+            } catch (e) {
+                // Continue to next location
             }
         }
+
         return null;
     } catch (error) {
         console.error("Failed to fetch message by shortname:", error);
@@ -128,49 +198,57 @@ export async function getMessageByShortname(shortname: string) {
     }
 }
 
+/**
+ * Get all conversation partners for a user
+ * Fetches from /people/currentUser/protected to find who sent messages to current user
+ * Also needs to check where current user sent messages (from other users' folders)
+ * 
+ * For now, we check the current user's protected folder to find senders
+ */
 export async function getConversationPartners(currentUserShortname: string) {
     try {
+        // Get messages in current user's protected folder
+        // These are messages sent TO currentUser BY others
         const response = await searchEntities(
-            "messages",
-            "messages",
+            PERSONAL_SPACE,
+            getUserProtectedSubpath(currentUserShortname),
             "",
             1000,
             0,
             "created_at",
             SortyType.descending,
-            "public",
+            "managed",
             true,
             true,
             true
         );
 
-        if (response && response.status === "success" && response.records) {
-            const partnerShortnames = new Set<string>();
+        const partnerShortnames = new Set<string>();
 
+        if (response && response.status === "success" && response.records) {
             response.records.forEach((record) => {
                 const payload = record.attributes.payload?.body;
                 if (!payload) return;
 
-                if (payload.sender === currentUserShortname && payload.receiver) {
-                    partnerShortnames.add(payload.receiver);
-                } else if (
-                    payload.receiver === currentUserShortname &&
-                    payload.sender
-                ) {
-                    partnerShortnames.add(payload.sender);
+                // The sender is the owner_shortname or in the payload.sender
+                const sender = payload.sender;
+                if (sender && sender !== currentUserShortname) {
+                    partnerShortnames.add(sender);
                 }
             });
-
-            return Array.from(partnerShortnames);
-        } else {
-            return [];
         }
+
+        return Array.from(partnerShortnames);
     } catch (error) {
         console.error("Error fetching conversation partners:", error);
         return [];
     }
 }
 
+/**
+ * Fetch contact messages (for admin contact page)
+ * Kept for backward compatibility - uses applications space
+ */
 export async function fetchContactMessages() {
     try {
         return await searchEntities(
@@ -191,6 +269,9 @@ export async function fetchContactMessages() {
     }
 }
 
+/**
+ * Mark a message as replied (for contact form)
+ */
 export async function markMessageAsReplied(
     spaceName: string,
     subpath: string,
@@ -219,6 +300,9 @@ export async function markMessageAsReplied(
     );
 }
 
+/**
+ * Create a generic item
+ */
 export async function createItem(
     itemName: string,
     itemType: string,
@@ -246,6 +330,9 @@ export async function createItem(
     );
 }
 
+/**
+ * Delete an item
+ */
 export async function deleteItem(
     shortname: string,
     resourceType: string,

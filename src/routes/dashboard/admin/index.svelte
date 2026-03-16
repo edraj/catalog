@@ -81,14 +81,12 @@
   let missingWorkflow = $state(false);
   let missingReportSchema = $state(false);
   let missingWorkflowSchema = $state(false);
-  let missingMessagesSpace = $state(false);
   let checkingFolders = $state(true);
   let fixingFolders = $state(false);
   let foldersFixed = $state(false);
   let workflowCreated = $state(false);
   let reportSchemaCreated = $state(false);
   let workflowSchemaCreated = $state(false);
-  let messagesSpaceCreated = $state(false);
 
   onMount(async () => {
     try {
@@ -117,14 +115,12 @@
         missingWorkflow = result.missingWorkflow || false;
         missingReportSchema = result.missingReportSchema || false;
         missingWorkflowSchema = result.missingWorkflowSchema || false;
-        missingMessagesSpace = result.missingMessagesSpace || false;
-        console.log("Missing resources detected:", { missingFolders, missingWorkflow, missingReportSchema, missingWorkflowSchema, missingMessagesSpace });
+        console.log("Missing resources detected:", { missingFolders, missingWorkflow, missingReportSchema, missingWorkflowSchema });
       } else {
         missingFolders = [];
         missingWorkflow = false;
         missingReportSchema = false;
         missingWorkflowSchema = false;
-        missingMessagesSpace = false;
         console.log("All resources exist or permission denied");
       }
     } catch (err) {
@@ -133,7 +129,6 @@
       missingWorkflow = false;
       missingReportSchema = false;
       missingWorkflowSchema = false;
-      missingMessagesSpace = false;
     } finally {
       checkingFolders = false;
     }
@@ -152,12 +147,10 @@
         missingWorkflow = false;
         missingReportSchema = false;
         missingWorkflowSchema = false;
-        missingMessagesSpace = false;
         workflowCreated = result.workflowCreated || false;
         reportSchemaCreated = result.reportSchemaCreated || false;
         workflowSchemaCreated = result.workflowSchemaCreated || false;
-        messagesSpaceCreated = result.messagesSpaceCreated || false;
-        console.log("State updated after fix:", { foldersFixed, workflowCreated, reportSchemaCreated, workflowSchemaCreated, messagesSpaceCreated });
+        console.log("State updated after fix:", { foldersFixed, workflowCreated, reportSchemaCreated, workflowSchemaCreated });
       } else {
         // Some folders may have failed
         console.log("Fix partially failed:", result);
@@ -165,7 +158,6 @@
         missingWorkflow = result.workflowFailed || false;
         missingReportSchema = result.reportSchemaFailed || false;
         missingWorkflowSchema = result.workflowSchemaFailed || false;
-        missingMessagesSpace = result.messagesSpaceFailed || false;
       }
     } catch (err) {
       console.error("Error creating folders:", err);
@@ -581,7 +573,7 @@
 
   <div class="container mx-auto px-4 pb-8 max-w-5xl">
     <!-- Missing Folders Warning -->
-    {#if !checkingFolders && (missingFolders.length > 0 || missingWorkflow || missingReportSchema || missingWorkflowSchema || missingMessagesSpace) && !foldersFixed}
+    {#if !checkingFolders && (missingFolders.length > 0 || missingWorkflow || missingReportSchema || missingWorkflowSchema) && !foldersFixed}
       <div class="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4">
         <div class="flex items-start gap-3">
           <div class="flex-shrink-0 mt-0.5">
@@ -610,11 +602,7 @@
                 {#if missingFolders.length > 0 || missingWorkflow || missingReportSchema}<br />{/if}
                 The <strong>workflow</strong> schema is missing in the schema folder.
               {/if}
-              {#if missingMessagesSpace}
-                {#if missingFolders.length > 0 || missingWorkflow || missingReportSchema || missingWorkflowSchema}<br />{/if}
-                The <strong>messages</strong> space is missing (required for messaging functionality).
-              {/if}
-              <br />These are required for reports, polls, surveys, and messaging to function properly.
+              <br />These are required for reports, polls, and surveys to function properly.
             </p>
             <button
               onclick={handleFixFolders}
@@ -657,9 +645,6 @@
               {/if}
               {#if workflowSchemaCreated}
                 <br /><span class="font-medium">workflow</span> schema has been created.
-              {/if}
-              {#if messagesSpaceCreated}
-                <br /><span class="font-medium">messages</span> space has been created with the messages folder.
               {/if}
             </p>
           </div>

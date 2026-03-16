@@ -21,6 +21,11 @@
   let isSaving = writable(false);
   let saveMessage = writable("");
   let saveError = writable("");
+  
+  // Optional fields
+  let targetSpaceName = writable("");
+  let schemaShortname = writable("");
+  let showOptionalFields = writable(false);
 
   function handleContentChange() {
     // Handle content changes if needed
@@ -34,11 +39,22 @@
       saveError.set("");
       saveMessage.set("");
 
+      const data: any = {
+        title: $content.title,
+        content: $content.content,
+      };
+      
+      // Add optional fields if provided
+      if ($targetSpaceName.trim()) {
+        data.space_name = $targetSpaceName.trim();
+      }
+      if ($schemaShortname.trim()) {
+        data.schema_shortname = $schemaShortname.trim();
+      }
+
       const response = await createTemplate(
-        currentSpace,
-        currentSubpath,
         $templateName.trim(),
-        $content,
+        data,
       );
 
       if (response) {
@@ -61,6 +77,10 @@
     if (!$isSaving) {
       onClose();
     }
+  }
+  
+  function toggleOptionalFields() {
+    showOptionalFields.update(v => !v);
   }
 </script>
 
@@ -114,6 +134,49 @@
         <div class="alert alert-error">
           <strong>{$_("common.error")}</strong>
           {$saveError}
+        </div>
+      {/if}
+
+      <!-- Optional Fields Toggle -->
+      <button
+        type="button"
+        class="optional-fields-toggle"
+        onclick={toggleOptionalFields}
+      >
+        <span class="toggle-icon">{$showOptionalFields ? "▼" : "▶"}</span>
+        {$_("templates.form.optional_fields_toggle")}
+      </button>
+      
+      {#if $showOptionalFields}
+        <div class="optional-fields">
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="template-target-space">
+                {$_("templates.form.target_space_label")}
+                <span class="optional-badge">{$_("common.optional")}</span>
+              </label>
+              <input
+                id="template-target-space"
+                type="text"
+                bind:value={$targetSpaceName}
+                placeholder={$_("templates.form.target_space_placeholder")}
+                disabled={$isSaving}
+              />
+            </div>
+            <div class="form-group flex-1">
+              <label for="template-schema">
+                {$_("templates.form.schema_label")}
+                <span class="optional-badge">{$_("common.optional")}</span>
+              </label>
+              <input
+                id="template-schema"
+                type="text"
+                bind:value={$schemaShortname}
+                placeholder={$_("templates.form.schema_placeholder")}
+                disabled={$isSaving}
+              />
+            </div>
+          </div>
         </div>
       {/if}
 
@@ -275,6 +338,58 @@
   .form-group input:disabled {
     background-color: #f9fafb;
     color: #6b7280;
+  }
+  
+  .form-row {
+    display: flex;
+    gap: 1rem;
+  }
+  
+  .form-row .form-group {
+    flex: 1;
+    margin-bottom: 0;
+  }
+
+  .optional-fields-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: none;
+    border: none;
+    color: #5850ec;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0.5rem 0;
+    margin-bottom: 1rem;
+  }
+
+  .optional-fields-toggle:hover {
+    color: #4338ca;
+  }
+
+  .toggle-icon {
+    font-size: 0.75rem;
+  }
+
+  .optional-fields {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .optional-badge {
+    display: inline-block;
+    font-size: 0.625rem;
+    font-weight: 500;
+    color: #6b7280;
+    background: #e5e7eb;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    margin-left: 0.5rem;
+    text-transform: uppercase;
   }
 
   /* Button Styles */

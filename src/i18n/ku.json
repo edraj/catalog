@@ -50,7 +50,10 @@
   "create_entry.error.cannot_create": "ناتوانی تۆمار لەم شوێنە دروست بکەیت.",
   "create_entry.error.attachment_failed": "شکستی بارکردنی فایلی {name}.",
   "create_entry.error.publish_failed": "شکستی بڵاوکردنەوەی تۆمار.",
+  "create_entry.error.required_fields_missing": "تکایە خانە پێویستەکان پڕ بکەوە: {fields}",
   "create_entry.error.save_failed": "شکستی پاشەکەوتکردنی تۆمار.",
+  "create_entry.error.select_template": "تکایە قاڵبێک هەڵبژێرە.",
+  "common.optional": "اختیاری",
   "create_entry.success.published": "تۆمار بە سەرکەوتوویی بڵاوکرایەوە!",
   "create_entry.success.saved": "تۆمار وەک ڕەشنووس پاشەکەوتکرا!",
   "create_entry.entry_type.title": "جۆری تۆمار",
@@ -1762,8 +1765,20 @@
     "form": {
       "name_label": "ناوی داڕێژە",
       "name_placeholder": "ناوی داڕێژە بنووسە...",
+      "shortname_label": "ناوی کورت",
+      "shortname_placeholder": "ناوی کورتی تایبەت بنووسە...",
       "save_button": "داڕێژە پاشەکەوت بکە",
-      "update_button": "داڕێژە نوێ بکە"
+      "update_button": "داڕێژە نوێ بکە",
+      "optional_fields_toggle": "ڕێکخستنی ئارەزوومەندانە",
+      "target_space_label": "بۆشاییەی ئامانج",
+      "target_space_placeholder": "وەک: management، applications...",
+      "schema_label": "سکیما",
+      "schema_placeholder": "وەک: user_profile، article...",
+      "select_space": "-- بۆشاییەک هەڵبژێرە --",
+      "select_space_first": "-- سەرەتا بۆشاییەک هەڵبژێرە --",
+      "select_schema": "-- سکیما هەڵبژێرە --",
+      "schema_keys_title": "خانە بەردەستەکان",
+      "schema_keys_hint": "(بکە بە دەرهێنان و دانان لە دەستکاریکەر)"
     },
     "info": {
       "title": "زانیاری داڕێژە",
@@ -1772,7 +1787,8 @@
       "content_type": "جۆری ناوەڕۆک:",
       "resource_type": "جۆری سەرچاوە:",
       "uuid": "ناسنامەی یەکتا:",
-      "owner": "خاوەن:"
+      "owner": "خاوەن:",
+      "target_space": "ئامانج"
     }
   },
   "schema_editor.title": "دەستکاری شێوە",
@@ -1866,6 +1882,10 @@
   "messaging.toast_failed_connect_ws": "شکستی پەیوەندیکردن بە وێب سوکێت",
   "messaging.toast_failed_parse_ws": "شکستی وەرگرتنی پەیامی وێب سوکێت",
   "messaging.toast_ws_error": "هەڵەی وێب سوکێت",
+  "messaging.webtransport_connect_failed": "پەیوەندی بە ڕاژەی نامە نەکراوە",
+  "messaging.webtransport_error": "هەڵەی پەیوەندی نامە",
+  "messaging.webtransport_init_failed": "دەستپێکردنی WebTransport شکستی هێنا",
+  "messaging.webtransport_not_supported": "وێبگەڕەکەت پشتگیری WebTransport ناکات. تکایە Chrome یان Edge بەکاربهێنە",
   "messaging.toast_ws_connected": "پەیوەندی وێب سوکێت پەسەندکرا",
   "messaging.toast_failed_fetch_by_shortname": "شکستی وەرگرتنی پەیام بە ناوی کورت",
   "messaging.toast_no_user_selected": "هیچ بەکارهێنەرێک هەڵبژێردراوە، ناتوانرێت گرنگی دیاری بکرێت",

@@ -158,16 +158,47 @@
     switch (type) {
       case "string":
         return "text";
+      case "int":
+      case "float":
+        return "number";
       case "number":
         return "number";
       case "date":
         return "date";
       case "text":
         return "textarea";
+      case "bool":
       case "checkbox":
         return "checkbox";
+      case "list":
+      case "object":
+      case "list_object":
+        return "textarea";
       default:
         return "text";
+    }
+  }
+
+  function getFieldPlaceholder(type, name) {
+    switch (type) {
+      case "string":
+        return `Enter ${name}...`;
+      case "int":
+        return `Enter whole number for ${name}...`;
+      case "float":
+        return `Enter decimal number for ${name}...`;
+      case "text":
+        return `Enter ${name} text...`;
+      case "bool":
+        return ``;
+      case "list":
+        return `Enter comma-separated values for ${name}...`;
+      case "object":
+        return `Enter JSON object for ${name}...`;
+      case "list_object":
+        return `Enter JSON array of objects for ${name}...`;
+      default:
+        return `Enter ${name}...`;
     }
   }
 
@@ -201,9 +232,16 @@
               value={fieldValues[field.name] || ""}
               on:input={(e) => handleFieldChange(field.name, e.target.value)}
               class="field-textarea"
-              placeholder={`Enter ${field.name}...`}
-              rows="3"
+              placeholder={getFieldPlaceholder(field.type, field.name)}
+              rows={field.type === "list" || field.type === "object" || field.type === "list_object" ? 5 : 3}
             ></textarea>
+            {#if field.type === "list"}
+              <small class="field-hint">Enter values separated by commas</small>
+            {:else if field.type === "object"}
+              <small class="field-hint">Enter valid JSON object</small>
+            {:else if field.type === "list_object"}
+              <small class="field-hint">Enter valid JSON array of objects</small>
+            {/if}
           {:else if getFieldType(field.type) === "checkbox"}
             <input
               id={field.name}
@@ -219,7 +257,7 @@
               value={fieldValues[field.name] || ""}
               on:input={(e) => handleFieldChange(field.name, e.target.value)}
               class="field-input"
-              placeholder={`Enter ${field.name}...`}
+              placeholder={getFieldPlaceholder(field.type, field.name)}
             />
           {/if}
         </div>
@@ -313,6 +351,14 @@
   .field-checkbox {
     transform: scale(1.2);
     margin: 8px 0;
+  }
+
+  .field-hint {
+    display: block;
+    margin-top: 6px;
+    font-size: 12px;
+    color: #6c757d;
+    font-style: italic;
   }
 
   .template-preview {

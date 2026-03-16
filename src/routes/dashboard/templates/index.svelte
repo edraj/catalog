@@ -3,12 +3,13 @@
   import {
     createTemplate,
     deleteTemplate,
-    getTemplates,
+    getAllTemplates,
     updateTemplates,
+    getSpaces,
+    getSpaceSchema,
   } from "@/lib/dmart_services/dmart_services";
   import { onMount } from "svelte";
   import { _, locale } from "@/i18n";
-  import { params } from "@roxi/routify";
 
   let templates = $state([]);
   let isLoading = $state(true);
@@ -21,6 +22,7 @@
   let deletingTemplate = $state(null);
 
   let templateName = $state("");
+  let templateShortname = $state("");
   let content = $state(
     "# New Template\n\nStart writing your template content here...",
   );
@@ -29,6 +31,19 @@
   let saveMessage = $state("");
   let saveError = $state("");
   let deleteError = $state("");
+  
+  // Optional fields
+  let targetSpaceName = $state("");
+  let schemaShortname = $state("");
+  let showOptionalFields = $state(false);
+  let availableSpaces = $state([]);
+  let availableSchemas = $state([]);
+  let loadingSpaces = $state(false);
+  let loadingSchemas = $state(false);
+  let schemaKeys = $state([]);
+  let draggedKey = $state(null);
+
+  let saveSpace = $derived(schemaShortname && targetSpaceName ? targetSpaceName : "applications");
 
   onMount(async () => {
     await loadTemplates();
@@ -38,7 +53,7 @@
     try {
       isLoading = true;
       loadError = "";
-      const response = await getTemplates();
+      const response = await getAllTemplates();
 
       if (response.status === "success") {
         templates = response.records || [];
@@ -53,11 +68,113 @@
     }
   }
 
+  async function loadSpaces() {
+    loadingSpaces = true;
+    try {
+      const response = await getSpaces(false, "managed", []);
+      if (response.status === "success") {
+        availableSpaces = response.records || [];
+      }
+    } catch (error) {
+      console.error("Error loading spaces:", error);
+    } finally {
+      loadingSpaces = false;
+    }
+  }
+
+  async function loadSchemasForSpace(spaceName: string) {
+    if (!spaceName) {
+      availableSchemas = [];
+      return;
+    }
+    loadingSchemas = true;
+    try {
+      const response = await getSpaceSchema(spaceName, "managed");
+      if (response.status === "success") {
+        availableSchemas = response.records || [];
+      }
+    } catch (error) {
+      console.error("Error loading schemas:", error);
+      availableSchemas = [];
+    } finally {
+      loadingSchemas = false;
+    }
+  }
+
+  function handleTargetSpaceChange(event: Event) {
+    const select = event.target as HTMLSelectElement;
+    targetSpaceName = select.value;
+    schemaShortname = ""; // Reset schema when space changes
+    schemaKeys = []; // Reset schema keys
+    if (targetSpaceName) {
+      loadSchemasForSpace(targetSpaceName);
+    } else {
+      availableSchemas = [];
+      schemaKeys = [];
+    }
+  }
+
+  function handleSchemaChange(event: Event) {
+    const select = event.target as HTMLSelectElement;
+    schemaShortname = select.value;
+    schemaKeys = []; // Reset keys
+    
+    if (schemaShortname && targetSpaceName) {
+      // Find the selected schema and extract keys
+      const selectedSchema = availableSchemas.find(s => s.shortname === schemaShortname);
+      if (selectedSchema?.attributes?.payload?.body) {
+        extractSchemaKeys(selectedSchema.attributes.payload.body);
+      }
+    }
+  }
+
+  function extractSchemaKeys(schemaBody: any) {
+    schemaKeys = [];
+    if (!schemaBody) return;
+    
+    // Handle JSON Schema format
+    if (schemaBody.properties) {
+      Object.keys(schemaBody.properties).forEach(key => {
+        const prop = schemaBody.properties[key];
+        schemaKeys.push({
+          name: key,
+          type: prop.type || 'string',
+          title: prop.title || key
+        });
+      });
+    } else if (typeof schemaBody === 'object') {
+      // Handle simple object format
+      Object.keys(schemaBody).forEach(key => {
+        schemaKeys.push({
+          name: key,
+          type: 'string',
+          title: key
+        });
+      });
+    }
+  }
+
+  function handleDragStart(key: any) {
+    draggedKey = key;
+  }
+
+  function handleDragEnd() {
+    draggedKey = null;
+  }
+
   function openCreateModal() {
     templateName = "";
+    templateShortname = "";
     content = "# New Template\n\nStart writing your template content here...";
     saveMessage = "";
     saveError = "";
+    targetSpaceName = "";
+    schemaShortname = "";
+    showOptionalFields = false;
+    availableSchemas = [];
+    schemaKeys = [];
+    draggedKey = null;
+    loadSpaces();
     showCreateModal = true;
   }
 
@@ -67,6 +184,17 @@
     content =
       template.attributes?.payload?.body?.content ||
       "# Template Content\n\nEdit your template content here...";
+    
+    // Populate target space and schema if they exist in the template body
+    const body = template.attributes?.payload?.body;
+    targetSpaceName = body?.space_name || "";
+    schemaShortname = body?.schema_shortname || "";
+    
+    // Load schemas for the target space if set
+    if (targetSpaceName) {
+      loadSchemasForSpace(targetSpaceName);
+    }
+    
     saveMessage = "";
     saveError = "";
     showEditModal = true;
@@ -92,18 +220,38 @@
       return;
     }
 
+    // Shortname is only required for new templates (not when editing)
+    if (!editingTemplate && !templateShortname.trim()) {
+      saveError = "Please enter a template shortname";
+      return;
+    }
+
     if (!content.trim()) {
       saveError = "Please enter some content";
+      return;
+    }
+
+    // If target space is set, schema is required
+    if (targetSpaceName.trim() && !schemaShortname.trim()) {
+      saveError = "Please select a schema for the target space";
       return;
     }
 
     isSaving = true;
     saveError = "";
     saveMessage = "";
-    let data = {
+    let data: any = {
       title: templateName.trim(),
       content: content.trim(),
     };
+    
+    // Add schema-based fields if selected
+    if (targetSpaceName.trim()) {
+      data.space_name = targetSpaceName.trim();
+    }
+    if (schemaShortname.trim()) {
+      data.schema_shortname = schemaShortname.trim();
+    }
 
     try {
       let success;
@@ -117,9 +265,7 @@
         );
       } else {
         success = await createTemplate(
-          $params.space_name || "",
-          "templates",
-          templateName.trim(),
+          templateShortname.trim(),
           data,
         );
       }
@@ -255,6 +401,8 @@
           <thead>
             <tr>
               <th>{$_("templates.table.template")}</th>
+              <th>Space</th>
+              <th>Schema</th>
               <th>{$_("templates.table.uuid")}</th>
               <th>{$_("templates.table.owner")}</th>
               <th>{$_("templates.table.created")}</th>
@@ -268,6 +416,20 @@
                 <td class="template-name">
                   <strong>{getTemplateTitle(template)}</strong>
                   <div class="subpath">{template.subpath}</div>
+                </td>
+                <td>
+                  <span class="space-badge">
+                    {template.attributes?.space_name || "applications"}
+                  </span>
+                </td>
+                <td>
+                  {#if template.attributes?.payload?.body?.schema_shortname}
+                    <span class="schema-badge">
+                      {template.attributes.payload.body.schema_shortname}
+                    </span>
+                  {:else}
+                    <span class="text-gray-400 text-sm">-</span>
+                  {/if}
                 </td>
                 <td class="uuid">
                   <code>{template.shortname}</code>
@@ -337,6 +499,132 @@
           />
         </div>
 
+        <div class="form-group">
+          <label for="create-template-shortname"
+            >{$_("templates.form.shortname_label")}</label
+          >
+          <div class="shortname-input-group">
+            <input
+              id="create-template-shortname"
+              type="text"
+              bind:value={templateShortname}
+              placeholder={$_("templates.form.shortname_placeholder")}
+              disabled={isSaving}
+              class="shortname-input"
+            />
+            <button
+              class="shortname-auto-btn"
+              onclick={() => (templateShortname = "auto")}
+              title="Use auto-generated shortname"
+              disabled={isSaving}
+              type="button"
+            >
+              Auto
+            </button>
+          </div>
+          <small class="shortname-help">{$_("create_entry.shortname.help_text")}</small>
+        </div>
+
+        <!-- Optional Fields Toggle -->
+        <button
+          type="button"
+          class="optional-fields-toggle"
+          onclick={() => showOptionalFields = !showOptionalFields}
+        >
+          <span class="toggle-icon">{showOptionalFields ? "▼" : "▶"}</span>
+          {$_("templates.form.optional_fields_toggle")}
+        </button>
+        
+        {#if showOptionalFields}
+          <div class="optional-fields">
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label for="template-target-space">
+                  {$_("templates.form.target_space_label")}
+                  <span class="optional-badge">{$_("common.optional")}</span>
+                </label>
+                <select
+                  id="template-target-space"
+                  value={targetSpaceName}
+                  onchange={handleTargetSpaceChange}
+                  disabled={isSaving || loadingSpaces}
+                  class="form-select"
+                >
+                  <option value="">{$_("templates.form.select_space")}</option>
+                  {#each availableSpaces as space}
+                    <option value={space.shortname}>
+                      {space.attributes?.displayname?.en || space.shortname}
+                    </option>
+                  {/each}
+                </select>
+                {#if loadingSpaces}
+                  <small class="field-hint">{$_("common.loading")}</small>
+                {/if}
+              </div>
+              <div class="form-group flex-1">
+                <label for="template-schema">
+                  {$_("templates.form.schema_label")}
+                  {#if targetSpaceName}
+                    <span class="required-badge">*</span>
+                  {:else}
+                    <span class="optional-badge">{$_("common.optional")}</span>
+                  {/if}
+                </label>
+                <select
+                  id="template-schema"
+                  value={schemaShortname}
+                  onchange={handleSchemaChange}
+                  disabled={isSaving || !targetSpaceName || loadingSchemas}
+                  class="form-select"
+                >
+                  <option value="">
+                    {#if loadingSchemas}
+                      {$_("common.loading")}
+                    {:else if !targetSpaceName}
+                      {$_("templates.form.select_space_first")}
+                    {:else}
+                      {$_("templates.form.select_schema")}
+                    {/if}
+                  </option>
+                  {#each availableSchemas as schema}
+                    <option value={schema.shortname}>
+                      {schema.attributes?.displayname?.en || schema.shortname}
+                    </option>
+                  {/each}
+                </select>
+              </div>
+            </div>
+            
+            <!-- Schema Keys - Draggable Badges -->
+            {#if schemaKeys.length > 0}
+              <div class="schema-keys-section">
+                <h4 class="schema-keys-title">
+                  {$_("templates.form.schema_keys_title")}
+                  <span class="schema-keys-hint">{$_("templates.form.schema_keys_hint")}</span>
+                </h4>
+                <div class="schema-keys-container">
+                  {#each schemaKeys as key}
+                    <div
+                      class="schema-key-badge"
+                      draggable={true}
+                      ondragstart={(e) => {
+                        handleDragStart(key);
+                        e.dataTransfer.setData("application/json", JSON.stringify(key));
+                        e.dataTransfer.effectAllowed = "copy";
+                      }}
+                      ondragend={handleDragEnd}
+                      title={`${key.title} (${key.type})`}
+                    >
+                      <span class="key-name">{key.name}</span>
+                      <span class="key-type">{key.type}</span>
+                    </div>
+                  {/each}
+                </div>
+              </div>
+            {/if}
+          </div>
+        {/if}
+
         {#if saveMessage}
           <div class="alert alert-success">
             <strong>{$_("common.success")}</strong>
@@ -352,18 +640,26 @@
         {/if}
 
         <div class="editor-container">
-          <MarkdownEditor bind:content handleSave={handleContentChange} />
+          <MarkdownEditor 
+            bind:content 
+            handleSave={handleContentChange} 
+            onDropKey={(key) => console.log("Dropped key:", key)}
+          />
         </div>
 
         <div class="template-info">
           <h3>{$_("templates.info.title")}</h3>
           <div class="info-grid">
             <div>
-              <strong>{$_("templates.info.space")}</strong> applications
+              <strong>{$_("templates.info.space")}</strong>
+              {saveSpace}
+              {#if schemaShortname}
+                <span class="space-badge target">{$_("templates.info.target_space")}</span>
+              {/if}
             </div>
             <div>
               <strong>{$_("templates.info.subpath")}</strong>
-              templates/{templateName || "[template-name]"}
+              templates/{templateShortname || "[shortname]"}
             </div>
             <div>
               <strong>{$_("templates.info.content_type")}</strong> Markdown
@@ -371,6 +667,18 @@
             <div>
               <strong>{$_("templates.info.resource_type")}</strong> Template
             </div>
+            {#if targetSpaceName}
+              <div>
+                <strong>{$_("templates.form.target_space_label")}:</strong>
+                {targetSpaceName}
+              </div>
+            {/if}
+            {#if schemaShortname}
+              <div>
+                <strong>{$_("templates.form.schema_label")}:</strong>
+                {schemaShortname}
+              </div>
+            {/if}
           </div>
         </div>
       </div>
@@ -379,7 +687,7 @@
         <button
           class="btn btn-primary"
           onclick={handleSave}
-          disabled={isSaving || !templateName.trim()}
+          disabled={isSaving || !templateName.trim() || !templateShortname.trim()}
         >
           {#if isSaving}
             <span class="spinner-sm"></span>
@@ -895,6 +1203,220 @@
     margin-bottom: 1.5rem;
   }
 
+  .shortname-input-group {
+    display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+
+  .shortname-input {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .shortname-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  .shortname-auto-btn {
+    padding: 0.5rem 1rem;
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    color: #374151;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+
+  .shortname-auto-btn:hover:not(:disabled) {
+    background: #e5e7eb;
+    border-color: #9ca3af;
+  }
+
+  .shortname-auto-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .shortname-help {
+    display: block;
+    margin-top: 0.375rem;
+    color: #6b7280;
+    font-size: 0.75rem;
+  }
+
+  .optional-fields-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: none;
+    border: none;
+    color: #5850ec;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0.5rem 0;
+    margin-bottom: 1rem;
+  }
+
+  .optional-fields-toggle:hover {
+    color: #4338ca;
+  }
+
+  .toggle-icon {
+    font-size: 0.75rem;
+  }
+
+  .optional-fields {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .optional-badge {
+    display: inline-block;
+    font-size: 0.625rem;
+    font-weight: 500;
+    color: #6b7280;
+    background: #e5e7eb;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    margin-left: 0.5rem;
+    text-transform: uppercase;
+  }
+
+  .required-badge {
+    display: inline-block;
+    font-size: 0.625rem;
+    font-weight: 500;
+    color: #dc2626;
+    background: #fee2e2;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    margin-left: 0.5rem;
+  }
+
+  .space-badge {
+    display: inline-block;
+    font-size: 0.625rem;
+    font-weight: 500;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    margin-left: 0.5rem;
+  }
+
+  .space-badge.target {
+    color: #059669;
+    background: #d1fae5;
+  }
+
+  .form-select {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    background-color: white;
+    color: #374151;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .form-select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  .form-select:disabled {
+    background-color: #f3f4f6;
+    color: #6b7280;
+    cursor: not-allowed;
+  }
+
+  .schema-keys-section {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px dashed #e5e7eb;
+  }
+
+  .schema-keys-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+    margin: 0 0 0.75rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .schema-keys-hint {
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: #6b7280;
+    font-style: italic;
+  }
+
+  .schema-keys-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .schema-key-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border: 2px solid #3b82f6;
+    border-radius: 0.5rem;
+    padding: 0.375rem 0.75rem;
+    cursor: grab;
+    transition: all 0.15s ease;
+    user-select: none;
+  }
+
+  .schema-key-badge:hover {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+  }
+
+  .schema-key-badge:active {
+    cursor: grabbing;
+  }
+
+  .schema-key-badge.dragging {
+    opacity: 0.6;
+  }
+
+  .key-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1e40af;
+  }
+
+  .key-type {
+    font-size: 0.625rem;
+    font-weight: 500;
+    color: #3b82f6;
+    background: rgba(255, 255, 255, 0.7);
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    text-transform: uppercase;
+  }
+
   .form-group label {
     display: block;
     font-size: 0.875rem;
@@ -980,6 +1502,31 @@
     margin: 0.5rem 0 0 0;
   }
 
+  .space-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    background: #eef2ff;
+    color: #4338ca;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+  }
+
+  .schema-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    background: #f0fdf4;
+    color: #15803d;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    border: 1px solid #bbf7d0;
+  }
+
   /* Responsive Design */
   @media (max-width: 768px) {
     .page-container {
@@ -990,6 +1537,10 @@
       flex-direction: column;
       align-items: flex-start;
       gap: 1rem;
+    }
+
+    .shortname-input-group {
+      flex-direction: column;
     }
 
     .templates-table {
@@ -1016,10 +1567,10 @@
   }
 
   @media (max-width: 640px) {
-    .templates-table th:nth-child(2),
-    .templates-table td:nth-child(2),
-    .templates-table th:nth-child(3),
-    .templates-table td:nth-child(3) {
+    .templates-table th:nth-child(4),
+    .templates-table td:nth-child(4),
+    .templates-table th:nth-child(5),
+    .templates-table td:nth-child(5) {
       display: none;
     }
   }
