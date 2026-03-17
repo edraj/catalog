@@ -49,6 +49,10 @@
   let isChangingPassword = writable(false);
   let showChangePassword = writable(false);
 
+  function getLangName(localeCode: string): string {
+    return $_(`profile.lang.${localeCode}`) || localeCode.toUpperCase();
+  }
+
   onMount(async () => {
     isLoading.set(true);
 
@@ -91,7 +95,7 @@
       }
     } catch (error) {
       console.error("Error loading user schema:", error);
-      errorToastMessage("Failed to load profile schema");
+      errorToastMessage($_("profile.error.schema_load_failed"));
     } finally {
       loadingSchema.set(false);
     }
@@ -101,19 +105,17 @@
     event.preventDefault();
 
     if ($newPassword !== $confirmPassword) {
-      errorToastMessage("New passwords do not match");
+      errorToastMessage($_("profile.error.passwords_no_match"));
       return;
     }
 
     if ($newPassword.length < 8) {
-      errorToastMessage("New password must be at least 8 characters long");
+      errorToastMessage($_("profile.error.password_too_short"));
       return;
     }
 
     if ($oldPassword === $newPassword) {
-      errorToastMessage(
-        "New password must be different from the current password",
-      );
+      errorToastMessage($_("profile.error.password_same_as_old"));
       return;
     }
 
@@ -128,17 +130,17 @@
       });
 
       if (response) {
-        successToastMessage("Password changed successfully");
+        successToastMessage($_("profile.success.password_changed"));
         oldPassword.set("");
         newPassword.set("");
         confirmPassword.set("");
         showChangePassword.set(false);
       } else {
-        errorToastMessage("Failed to change password");
+        errorToastMessage($_("profile.error.password_change_failed"));
       }
     } catch (error) {
       console.error("Error changing password:", error);
-      errorToastMessage("An error occurred while changing your password");
+      errorToastMessage($_("profile.error.password_change_error"));
     } finally {
       isChangingPassword.set(false);
     }
@@ -149,14 +151,20 @@
 
     if (!$displayname.trim()) {
       errorToastMessage(
-        `Display name is required for ${$locale === "ar" ? "Arabic" : $locale === "en" ? "English" : $locale.toUpperCase()}`,
+        $_("profile.error.display_name_required").replace(
+          "{lang}",
+          getLangName($locale),
+        ),
       );
       return;
     }
 
     if (!$description.trim()) {
       errorToastMessage(
-        `Description is required for ${$locale === "ar" ? "Arabic" : $locale === "en" ? "English" : $locale.toUpperCase()}`,
+        $_("profile.error.description_required").replace(
+          "{lang}",
+          getLangName($locale),
+        ),
       );
       return;
     }
@@ -167,7 +175,6 @@
     updatedDisplayname[$locale] = $displayname.trim();
     updatedDescription[$locale] = $description.trim();
 
-    // Include profile data in the update
     const response = await updateProfile({
       shortname: $user.shortname,
       displayname: updatedDisplayname,
@@ -181,16 +188,15 @@
     });
 
     if (response) {
-      successToastMessage("Profile updated successfully");
+      successToastMessage($_("profile.success.profile_updated"));
       $user.attributes.displayname = updatedDisplayname;
       $user.attributes.description = updatedDescription;
-      // Update user with new profile data
       if (!$user.attributes.payload) {
         $user.attributes.payload = {};
       }
       $user.attributes.payload.body = $profileData;
     } else {
-      errorToastMessage("Error updating profile");
+      errorToastMessage($_("profile.error.profile_update_failed"));
     }
   }
 
@@ -213,13 +219,13 @@
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      errorToastMessage("Please select a valid image file");
+      errorToastMessage($_("profile.error.avatar_invalid_type"));
       return;
     }
 
     const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
-      errorToastMessage("File size must be less than 5MB");
+      errorToastMessage($_("profile.error.avatar_too_large"));
       return;
     }
 
@@ -230,15 +236,13 @@
 
       if (success) {
         avatar.set(await getAvatar($user.shortname));
-        successToastMessage("Profile picture updated successfully");
+        successToastMessage($_("profile.success.avatar_updated"));
       } else {
-        errorToastMessage("Failed to update profile picture");
+        errorToastMessage($_("profile.error.avatar_update_failed"));
       }
     } catch (error) {
       console.error("Error updating avatar:", error);
-      errorToastMessage(
-        "An error occurred while updating your profile picture",
-      );
+      errorToastMessage($_("profile.error.avatar_update_error"));
     } finally {
       isUploadingAvatar.set(false);
       target.value = "";
@@ -260,11 +264,11 @@
 
 <div class="profile-page">
   <div class="container">
-      {#if $isLoading}
+    {#if $isLoading}
       <div class="loading-container">
         <div class="loading-content">
           <Diamonds color="#2563eb" size="60" unit="px" />
-          <p class="loading-text">Loading your profile...</p>
+          <p class="loading-text">{$_("profile.loading")}</p>
         </div>
       </div>
     {:else}
@@ -332,18 +336,17 @@
           </div>
 
           <div class="flex items-center gap-6">
-
             <div class="text-center pt-1">
               <p
                 class="text-xs text-gray-400 font-medium tracking-wider uppercase mb-1"
               >
-                Status
+                {$_("profile.status_label")}
               </p>
               <span
                 class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600"
               >
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                Active
+                {$_("profile.status_active")}
               </span>
             </div>
           </div>
@@ -369,7 +372,9 @@
                   d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                 />
               </svg>
-              <h3 class="text-lg font-semibold text-gray-900">Profile Info</h3>
+              <h3 class="text-lg font-semibold text-gray-900">
+                {$_("profile.profile_info_title")}
+              </h3>
             </div>
 
             <form
@@ -383,7 +388,8 @@
                     for="displayname"
                     class="block text-sm font-medium text-gray-700"
                   >
-                    Display Name <span class="text-red-500">*</span>
+                    {$_("profile.display_name_label")}
+                    <span class="text-red-500">*</span>
                   </label>
                   <input
                     id="displayname"
@@ -391,7 +397,7 @@
                     required
                     bind:value={$displayname}
                     class="w-full px-4 py-3 bg-gray-50/50 border border-transparent rounded-2xl text-sm focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
-                    placeholder={$_("DisplayNamePlaceholder")}
+                    placeholder={$_("profile.display_name_placeholder")}
                     dir={$locale === "ar" || $locale === "ku" ? "rtl" : "ltr"}
                   />
                 </div>
@@ -401,9 +407,8 @@
                     for="email"
                     class="block text-sm font-medium text-gray-700"
                   >
-                    Email
+                    {$_("profile.email_label")}
                   </label>
-                  <!-- Figma design uses an icon inside the input. I will use a simple wrapper. -->
                   <div class="relative">
                     <div
                       class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
@@ -427,7 +432,7 @@
                       type="email"
                       bind:value={$email}
                       class="w-full pl-10 pr-4 py-3 bg-gray-50/50 border border-transparent rounded-2xl text-sm focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
-                      placeholder={$_("EmailPlaceholder")}
+                      placeholder={$_("profile.email_placeholder")}
                     />
                   </div>
                 </div>
@@ -437,7 +442,7 @@
                     for="msisdn"
                     class="block text-sm font-medium text-gray-700"
                   >
-                    Mobile
+                    {$_("profile.mobile_label")}
                   </label>
                   <div class="relative">
                     <div
@@ -462,7 +467,7 @@
                       type="tel"
                       bind:value={$msisdn}
                       class="w-full pl-10 pr-4 py-3 bg-gray-50/50 border border-transparent rounded-2xl text-sm focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
-                      placeholder={$_("MobileNumberPlaceholder")}
+                      placeholder={$_("profile.mobile_placeholder")}
                     />
                   </div>
                 </div>
@@ -472,7 +477,8 @@
                     for="description"
                     class="block text-sm font-medium text-gray-700"
                   >
-                    Bio <span class="text-red-500">*</span>
+                    {$_("profile.bio_label")}
+                    <span class="text-red-500">*</span>
                   </label>
                   <textarea
                     id="description"
@@ -480,7 +486,9 @@
                     bind:value={$description}
                     rows="4"
                     class="w-full px-4 py-3 bg-gray-50/50 border border-transparent rounded-2xl text-sm resize-y focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
-                    placeholder={$_("route_labels.placeholder_tell_us_about_yourself")}
+                    placeholder={$_(
+                      "route_labels.placeholder_tell_us_about_yourself",
+                    )}
                     dir={$locale === "ar" || $locale === "ku" ? "rtl" : "ltr"}
                   ></textarea>
                 </div>
@@ -508,7 +516,7 @@
                   />
                 </svg>
                 <h3 class="text-lg font-semibold text-gray-900">
-                  Additional Details
+                  {$_("profile.additional_details_title")}
                 </h3>
               </div>
 
@@ -546,11 +554,13 @@
                     d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
                   />
                 </svg>
-                <h3 class="text-lg font-semibold text-gray-900">Account</h3>
+                <h3 class="text-lg font-semibold text-gray-900">
+                  {$_("profile.account_title")}
+                </h3>
               </div>
 
               <div class="space-y-6">
-                <!-- Status Row -->
+                <!-- Account Status Row -->
                 <div
                   class="flex items-center justify-between p-4 bg-gray-50/50 rounded-xl border border-gray-100"
                 >
@@ -570,10 +580,10 @@
                     </svg>
                     <div>
                       <h4 class="text-sm font-semibold text-gray-900">
-                        Account Status
+                        {$_("profile.account_status_title")}
                       </h4>
                       <p class="text-xs text-gray-500 mt-0.5">
-                        Active and verified
+                        {$_("profile.status_active_verified")}
                       </p>
                     </div>
                   </div>
@@ -582,7 +592,7 @@
                   >
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"
                     ></span>
-                    Active
+                    {$_("profile.status_active")}
                   </span>
                 </div>
 
@@ -606,9 +616,11 @@
                     </svg>
                     <div>
                       <h4 class="text-sm font-semibold text-gray-900">
-                        Password
+                        {$_("profile.password_title")}
                       </h4>
-                      <p class="text-xs text-gray-500 mt-0.5">Protected</p>
+                      <p class="text-xs text-gray-500 mt-0.5">
+                        {$_("profile.password_protected")}
+                      </p>
                     </div>
                   </div>
                   <button
@@ -616,7 +628,9 @@
                     class="px-4 py-2 text-sm font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
                     onclick={() => showChangePassword.set(!$showChangePassword)}
                   >
-                    {$showChangePassword ? "Cancel" : "Change"}
+                    {$showChangePassword
+                      ? $_("profile.cancel_change_password_btn")
+                      : $_("profile.change_password_btn")}
                   </button>
                 </div>
 
@@ -630,7 +644,7 @@
                         for="oldPassword"
                         class="block text-sm font-medium text-gray-700 mb-1"
                       >
-                        {$_("CurrentPassword")}
+                        {$_("profile.current_password")}
                       </label>
                       <input
                         id="oldPassword"
@@ -648,7 +662,7 @@
                           for="newPassword"
                           class="block text-sm font-medium text-gray-700 mb-1"
                         >
-                          {$_("NewPassword")}
+                          {$_("profile.new_password")}
                         </label>
                         <input
                           id="newPassword"
@@ -666,7 +680,7 @@
                           for="confirmPassword"
                           class="block text-sm font-medium text-gray-700 mb-1"
                         >
-                          {$_("ConfirmNewPassword")}
+                          {$_("profile.confirm_new_password")}
                         </label>
                         <input
                           id="confirmPassword"
@@ -687,9 +701,9 @@
                       >
                         {#if $isChangingPassword}
                           <Diamonds color="#ffffff" size="16" unit="px" />
-                          {$_("ChangingPassword")}
+                          {$_("profile.changing_password")}
                         {:else}
-                          {$_("ChangePassword")}
+                          {$_("profile.change_password")}
                         {/if}
                       </button>
                       <button
@@ -703,7 +717,7 @@
                         class="px-5 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-semibold rounded-xl transition-colors"
                         disabled={$isChangingPassword}
                       >
-                        {$_("Cancel")}
+                        {$_("profile.cancel")}
                       </button>
                     </div>
                   </form>
@@ -732,7 +746,7 @@
                   d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
                 />
               </svg>
-              Save Changes
+              {$_("profile.save_changes")}
             </button>
           </div>
         </div>
@@ -754,7 +768,6 @@
     padding: 0 1rem;
   }
 
-  /* Loading State */
   .loading-container {
     display: flex;
     align-items: center;
@@ -775,7 +788,6 @@
     font-weight: 500;
   }
 
-  /* Empty State */
   .empty-state {
     text-align: center;
     padding: 8rem 0;
@@ -833,7 +845,6 @@
     box-shadow: 0 10px 25px rgba(37, 99, 235, 0.2);
   }
 
-  /* Utilities */
   .hidden {
     display: none !important;
   }

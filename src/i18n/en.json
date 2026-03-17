@@ -1998,5 +1998,59 @@
     "label_total": "Total",
     "label_active": "Active",
     "label_ended": "Ended"
+  },
+  "profile": {
+    "loading": "Loading your profile...",
+    "status_label": "Status",
+    "status_active": "Active",
+    "status_active_verified": "Active and verified",
+    "profile_info_title": "Profile Info",
+    "additional_details_title": "Additional Details",
+    "account_title": "Account",
+    "account_status_title": "Account Status",
+    "password_title": "Password",
+    "password_protected": "Protected",
+    "display_name_label": "Display Name",
+    "email_label": "Email",
+    "mobile_label": "Mobile",
+    "bio_label": "Bio",
+    "save_changes": "Save Changes",
+    "change_password_btn": "Change",
+    "cancel_change_password_btn": "Cancel",
+    "display_name_placeholder": "Enter your display name",
+    "email_placeholder": "Enter your email",
+    "mobile_placeholder": "Enter your mobile number",
+    "bio_placeholder": "Tell us about yourself",
+    "current_password": "Current Password",
+    "new_password": "New Password",
+    "confirm_new_password": "Confirm New Password",
+    "change_password": "Change Password",
+    "changing_password": "Changing...",
+    "cancel": "Cancel",
+    "error": {
+      "display_name_required": "Display name is required for {lang}",
+      "description_required": "Description is required for {lang}",
+      "passwords_no_match": "New passwords do not match",
+      "password_too_short": "New password must be at least 8 characters long",
+      "password_same_as_old": "New password must be different from the current password",
+      "password_change_failed": "Failed to change password",
+      "password_change_error": "An error occurred while changing your password",
+      "profile_update_failed": "Error updating profile",
+      "avatar_invalid_type": "Please select a valid image file",
+      "avatar_too_large": "File size must be less than 5MB",
+      "avatar_update_failed": "Failed to update profile picture",
+      "avatar_update_error": "An error occurred while updating your profile picture",
+      "schema_load_failed": "Failed to load profile schema"
+    },
+    "success": {
+      "password_changed": "Password changed successfully",
+      "profile_updated": "Profile updated successfully",
+      "avatar_updated": "Profile picture updated successfully"
+    },
+    "lang": {
+      "ar": "Arabic",
+      "en": "English",
+      "ku": "Kurdish"
+    }
   }
 }

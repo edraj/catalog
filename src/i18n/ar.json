@@ -1141,7 +1141,7 @@
       "warning": "تغيير الاسم المختصر سينقل هذا المورد إلى موقع جديد. قد يؤثر هذا على المراجع الموجودة لهذا العنصر."
     }
   },
-    "my_entries": {
+  "my_entries": {
     "create_new": "إنشاء مدخل جديد",
     "title": "مدخلاتي",
     "subtitle": "إدارة ومتابعة محتوياتك المُقدَّمة",
@@ -1946,5 +1946,59 @@
     "label_total": "الإجمالي",
     "label_active": "نشط",
     "label_ended": "منتهي"
+  },
+  "profile": {
+    "loading": "جارٍ تحميل ملفك الشخصي...",
+    "status_label": "الحالة",
+    "status_active": "نشط",
+    "status_active_verified": "نشط وموثّق",
+    "profile_info_title": "معلومات الملف الشخصي",
+    "additional_details_title": "تفاصيل إضافية",
+    "account_title": "الحساب",
+    "account_status_title": "حالة الحساب",
+    "password_title": "كلمة المرور",
+    "password_protected": "محمية",
+    "display_name_label": "الاسم المعروض",
+    "email_label": "البريد الإلكتروني",
+    "mobile_label": "الهاتف المحمول",
+    "bio_label": "نبذة شخصية",
+    "save_changes": "حفظ التغييرات",
+    "change_password_btn": "تغيير",
+    "cancel_change_password_btn": "إلغاء",
+    "display_name_placeholder": "أدخل اسمك المعروض",
+    "email_placeholder": "أدخل بريدك الإلكتروني",
+    "mobile_placeholder": "أدخل رقم هاتفك المحمول",
+    "bio_placeholder": "أخبرنا عن نفسك",
+    "current_password": "كلمة المرور الحالية",
+    "new_password": "كلمة المرور الجديدة",
+    "confirm_new_password": "تأكيد كلمة المرور الجديدة",
+    "change_password": "تغيير كلمة المرور",
+    "changing_password": "جارٍ التغيير...",
+    "cancel": "إلغاء",
+    "error": {
+      "display_name_required": "الاسم المعروض مطلوب باللغة {lang}",
+      "description_required": "النبذة الشخصية مطلوبة باللغة {lang}",
+      "passwords_no_match": "كلمتا المرور الجديدتان غير متطابقتين",
+      "password_too_short": "يجب أن تتكون كلمة المرور الجديدة من 8 أحرف على الأقل",
+      "password_same_as_old": "يجب أن تختلف كلمة المرور الجديدة عن الحالية",
+      "password_change_failed": "فشل تغيير كلمة المرور",
+      "password_change_error": "حدث خطأ أثناء تغيير كلمة المرور",
+      "profile_update_failed": "خطأ في تحديث الملف الشخصي",
+      "avatar_invalid_type": "يرجى اختيار ملف صورة صالح",
+      "avatar_too_large": "يجب أن يكون حجم الملف أقل من 5 ميغابايت",
+      "avatar_update_failed": "فشل تحديث صورة الملف الشخصي",
+      "avatar_update_error": "حدث خطأ أثناء تحديث صورة الملف الشخصي",
+      "schema_load_failed": "فشل تحميل مخطط الملف الشخصي"
+    },
+    "success": {
+      "password_changed": "تم تغيير كلمة المرور بنجاح",
+      "profile_updated": "تم تحديث الملف الشخصي بنجاح",
+      "avatar_updated": "تم تحديث صورة الملف الشخصي بنجاح"
+    },
+    "lang": {
+      "ar": "العربية",
+      "en": "الإنجليزية",
+      "ku": "الكردية"
+    }
   }
 }

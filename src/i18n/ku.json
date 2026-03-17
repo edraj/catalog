@@ -812,7 +812,7 @@
       "register_button": "خۆتۆمارکردن"
     }
   },
-    "my_entries": {
+  "my_entries": {
     "create_new": "دروستکردنی تۆماری نوێ",
     "title": "تۆمارەکانم",
     "subtitle": "بەڕێوەبردن و شوێنکەوتنی نووسراوەکانت",
@@ -2387,5 +2387,59 @@
     "label_total": "کۆی گشتی",
     "label_active": "چالاک",
     "label_ended": "کۆتایی هاتوو"
+  },
+  "profile": {
+    "loading": "پرۆفایلەکەت بارەکەیە...",
+    "status_label": "دۆخ",
+    "status_active": "چالاک",
+    "status_active_verified": "چالاک و پشتڕاستکراوە",
+    "profile_info_title": "زانیاری پرۆفایل",
+    "additional_details_title": "زانیارییە زیادەکان",
+    "account_title": "ئەکاونت",
+    "account_status_title": "دۆخی ئەکاونت",
+    "password_title": "وشەی نهێنی",
+    "password_protected": "پارێزراوە",
+    "display_name_label": "ناوی نیشاندان",
+    "email_label": "ئیمەیڵ",
+    "mobile_label": "مۆبایل",
+    "bio_label": "دەربارەی خۆت",
+    "save_changes": "پاشەکەوتکردنی گۆڕانکاریەکان",
+    "change_password_btn": "گۆڕین",
+    "cancel_change_password_btn": "پاشگەزبوونەوە",
+    "display_name_placeholder": "ناوی نیشاندانت بنووسە",
+    "email_placeholder": "ئیمەیڵەکەت بنووسە",
+    "mobile_placeholder": "ژمارەی مۆبایلەکەت بنووسە",
+    "bio_placeholder": "دەربارەی خۆت بنووسە",
+    "current_password": "وشەی نهێنی ئێستا",
+    "new_password": "وشەی نهێنی نوێ",
+    "confirm_new_password": "دووپاتکردنەوەی وشەی نهێنی نوێ",
+    "change_password": "گۆڕینی وشەی نهێنی",
+    "changing_password": "گۆڕین...",
+    "cancel": "پاشگەزبوونەوە",
+    "error": {
+      "display_name_required": "ناوی نیشاندان پێویستە بۆ زمانی {lang}",
+      "description_required": "دەربارەی خۆت پێویستە بۆ زمانی {lang}",
+      "passwords_no_match": "وشەکانی نهێنی نوێ یەکسان نین",
+      "password_too_short": "وشەی نهێنی نوێ دەبێت لانیکەم ٨ پیت بێت",
+      "password_same_as_old": "وشەی نهێنی نوێ دەبێت جیاواز بێت لە ئێستاکە",
+      "password_change_failed": "شکستی هێنا لە گۆڕینی وشەی نهێنی",
+      "password_change_error": "هەڵەیەک ڕوویدا لە کاتی گۆڕینی وشەی نهێنی",
+      "profile_update_failed": "هەڵە لە نوێکردنەوەی پرۆفایل",
+      "avatar_invalid_type": "تکایە وێنەیەکی دروست هەڵبژێرە",
+      "avatar_too_large": "قەبارەی فایل دەبێت کەمتر بێت لە ٥ مێگابایت",
+      "avatar_update_failed": "شکستی هێنا لە نوێکردنەوەی وێنەی پرۆفایل",
+      "avatar_update_error": "هەڵەیەک ڕوویدا لە کاتی نوێکردنەوەی وێنەی پرۆفایل",
+      "schema_load_failed": "شکستی هێنا لە بارکردنی سکیمای پرۆفایل"
+    },
+    "success": {
+      "password_changed": "وشەی نهێنی بە سەرکەوتوویی گۆڕدرا",
+      "profile_updated": "پرۆفایل بە سەرکەوتوویی نوێکرایەوە",
+      "avatar_updated": "وێنەی پرۆفایل بە سەرکەوتوویی نوێکرایەوە"
+    },
+    "lang": {
+      "ar": "عەرەبی",
+      "en": "ئینگلیزی",
+      "ku": "کوردی"
+    }
   }
 }
