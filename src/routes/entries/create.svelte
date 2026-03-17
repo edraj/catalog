@@ -9,6 +9,8 @@
     getSpaceSchema,
     getTemplates,
   } from "@/lib/dmart_services/dmart_services";
+  import { ensureTemplatesSchemaInSpace } from "@/lib/dmart_services/spaces";
+  import { ensureTemplatesFolder } from "@/lib/dmart_services/templates";
   import {
     errorToastMessage,
     successToastMessage,
@@ -625,9 +627,14 @@
       // Validate required fields
       const fields = parseTemplateFields(selectedTemplate.schema);
       const requiredFields = fields.filter((f) => f.required);
-      const missingFields = requiredFields.filter(
-        (f) => !templateFormData[f.name]?.trim(),
-      );
+      const missingFields = requiredFields.filter((f) => {
+        const value = templateFormData[f.name];
+        if (value == null) return true;
+        if (typeof value === "string") return !value.trim();
+        if (Array.isArray(value)) return value.length === 0;
+        if (typeof value === "object") return Object.keys(value).length === 0;
+        return false;
+      });
 
       if (missingFields.length > 0) {
         errorToastMessage(
@@ -661,6 +668,32 @@
     }
 
     isLoading = true;
+
+    // For template entries, ensure templates folder and schema exist before creating
+    if (entryType === "template") {
+      try {
+        // Ensure templates folder exists in the selected space (check first, create if missing)
+        const folderExists = await ensureTemplatesFolder(selectedSpace);
+        if (!folderExists) {
+          errorToastMessage("Failed to create templates folder in the selected space");
+          isLoading = false;
+          return;
+        }
+      } catch (error) {
+        console.error("Failed to ensure templates folder:", error);
+        errorToastMessage("Failed to ensure templates folder exists");
+        isLoading = false;
+        return;
+      }
+
+      try {
+        // Ensure templates schema exists in the current space (not applications)
+        await ensureTemplatesSchemaInSpace(selectedSpace, "managed");
+      } catch (error) {
+        console.error("Failed to create templates schema:", error);
+        // Continue anyway - the schema might already exist
+      }
+    }
 
     // Resolve the subpath once — $params.subpath may be undefined when the
     // page is accessed via /entries/create (no [subpath] route segment).

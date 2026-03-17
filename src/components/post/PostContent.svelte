@@ -6,6 +6,7 @@
   import { getPostContent } from "@/lib/utils/postUtils";
 
   import { getSpaceSchema } from "@/lib/dmart_services/dmart_services";
+  import { getTemplate } from "@/lib/dmart_services/templates";
   import DynamicSchemaBasedForms from "@/components/forms/DynamicSchemaBasedForms.svelte";
   import PlantUMLViewer from "@/components/PlantUMLViewer.svelte";
 
@@ -20,6 +21,91 @@
 
   let schema: any = $state(null);
   let isLoadingSchema = $state(false);
+  
+  // Template rendering state
+  let templateContent: string = $state("");
+  let isLoadingTemplate: boolean = $state(false);
+  let templateError: string = $state("");
+  
+  // Check if this is a template-based entry
+  const isTemplateEntry = $derived(
+    postData?.payload?.schema_shortname === "templates" &&
+    postData?.payload?.body?.template &&
+    postData?.payload?.body?.data
+  );
+  
+  // Load template content when it's a template entry
+  $effect(() => {
+    if (isTemplateEntry && spaceName) {
+      loadTemplateContent();
+    }
+  });
+  
+  async function loadTemplateContent() {
+    if (!isTemplateEntry || !spaceName) return;
+    
+    isLoadingTemplate = true;
+    templateError = "";
+    templateContent = "";
+    
+    try {
+      const templateShortname = postData.payload.body.template;
+      const templateData = postData.payload.body.data;
+      
+      // Try to get template from current space first
+      let template = await getTemplate(spaceName, templateShortname, "public");
+      
+      // If not found in current space, try applications space
+      if (!template) {
+        template = await getTemplate("applications", templateShortname, "public");
+      }
+      
+      if (!template) {
+        templateError = `Template "${templateShortname}" not found`;
+        return;
+      }
+      
+      // Get the template content
+      let content = template.attributes?.payload?.body?.content || "";
+      
+      if (!content) {
+        templateError = "Template content is empty";
+        return;
+      }
+      
+      // Replace placeholders with data
+      const renderedContent = renderTemplateWithData(content, templateData);
+      
+      // Parse markdown to HTML
+      templateContent = await marked.parse(renderedContent) as string;
+    } catch (error) {
+      console.error("Error loading template:", error);
+      templateError = "Failed to load template content";
+    } finally {
+      isLoadingTemplate = false;
+    }
+  }
+  
+  function renderTemplateWithData(templateContent: string, data: Record<string, any>): string {
+    if (!templateContent || !data) return templateContent;
+    
+    let result = templateContent;
+    
+    // Replace {{fieldName:type}} patterns with actual data
+    const placeholderRegex = /\{\{(\w+)(?::(\w+))?\}\}/g;
+    
+    result = result.replace(placeholderRegex, (match, fieldName, fieldType) => {
+      const value = data[fieldName];
+      
+      if (value === undefined || value === null) {
+        return match; // Keep placeholder if data not found
+      }
+      
+      return String(value);
+    });
+    
+    return result;
+  }
 
   if (postData?.payload?.content_type === "json") {
     if (postData?.payload?.schema_shortname && spaceName) {
@@ -92,6 +178,11 @@
     const contentType = postData.payload.content_type;
     const body = postData.payload.body;
 
+    // Handle template-based entries
+    if (isTemplateEntry && templateContent) {
+      return templateContent; // Already parsed HTML
+    }
+
     if (contentType === "html") {
       return body;
     } else if (contentType === "json") {
@@ -111,14 +202,37 @@
   }
 </script>
 
-{#if getPostContent(postData)}
+{#if getPostContent(postData) || isTemplateEntry}
   <section class="content-section mx-6 my-4">
 
     <div class="post-content">
       <div class="content-text">
         <div class="content-display bg-white p-6">
           <div class="markdown-preview">
-            {#if postData?.payload?.content_type === "json"}
+            {#if isTemplateEntry}
+              {#if isLoadingTemplate}
+                <div class="template-loading">
+                  <div class="spinner"></div>
+                  <span>Loading template...</span>
+                </div>
+              {:else if templateError}
+                <div class="template-error">
+                  <p class="error-message">{templateError}</p>
+                  <div class="fallback-data">
+                    <h4>Template: {postData.payload.body.template}</h4>
+                    <dl>
+                      {#each Object.entries(postData.payload.body.data || {}) as [key, value]}
+                        <dt>{key}:</dt>
+                        <dd>{value}</dd>
+                      {/each}
+                    </dl>
+                  </div>
+                  <pre class="fallback-content">{JSON.stringify(postData.payload.body, null, 2)}</pre>
+                </div>
+              {:else}
+                {@html renderContent(postData)}
+              {/if}
+            {:else if postData?.payload?.content_type === "json"}
               <PlantUMLViewer 
                 data={postData.payload.body} 
                 title={postData?.displayname?.en || "JSON Content"}
@@ -320,5 +434,78 @@
 
   .markdown-preview :global(br) {
     margin-bottom: 0.5rem;
+  }
+
+  /* Template loading and error states */
+  .template-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 2rem;
+    color: #6b7280;
+  }
+
+  .template-loading .spinner {
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 2px solid #e5e7eb;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .template-error {
+    padding: 1rem;
+  }
+
+  .template-error .error-message {
+    color: #dc2626;
+    font-weight: 500;
+    margin-bottom: 1rem;
+  }
+
+  .template-error .fallback-data {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .template-error .fallback-data h4 {
+    margin: 0 0 0.75rem 0;
+    color: #374151;
+    font-size: 1rem;
+  }
+
+  .template-error .fallback-data dl {
+    margin: 0;
+  }
+
+  .template-error .fallback-data dt {
+    font-weight: 600;
+    color: #4b5563;
+    margin-top: 0.5rem;
+  }
+
+  .template-error .fallback-data dd {
+    margin-left: 0;
+    color: #6b7280;
+    margin-top: 0.25rem;
+  }
+
+  .template-error .fallback-content {
+    background: #f3f4f6;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    color: #6b7280;
   }
 </style>

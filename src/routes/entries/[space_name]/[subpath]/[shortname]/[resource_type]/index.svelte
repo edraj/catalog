@@ -42,6 +42,7 @@
   import PlantUMLViewer from "@/components/PlantUMLViewer.svelte";
   import { mangle } from "marked-mangle";
   import { gfmHeadingId } from "marked-gfm-heading-id";
+  import { getTemplate } from "@/lib/dmart_services/templates";
 
   marked.use(mangle());
   marked.use(
@@ -58,6 +59,18 @@
   let isOwner = $state(false);
   let userReactionEntry = $state(null);
   let counts: any = $state({});
+  
+  // Template rendering state
+  let templateRenderedContent = $state("");
+  let isLoadingTemplate = $state(false);
+  let templateError = $state("");
+  
+  // Check if this is a template-based entry
+  const isTemplateEntry = $derived(
+    entity?.payload?.schema_shortname === "templates" &&
+    entity?.payload?.body?.template &&
+    entity?.payload?.body?.data
+  );
 
   const isRTL = derived(
     locale,
@@ -201,6 +214,13 @@
         $params.space_name,
         $params.subpath,
       );
+      
+      // Load template content if this is a template-based entry
+      if (entity.payload?.schema_shortname === "templates" && 
+          entity.payload?.body?.template && 
+          entity.payload?.body?.data) {
+        await loadTemplateContent();
+      }
     }
   }
 
@@ -213,6 +233,68 @@
         media: entity.attachments?.media?.length || 0,
       };
     }
+  }
+
+  // Load and render template content
+  async function loadTemplateContent() {
+    if (!isTemplateEntry) return;
+    
+    isLoadingTemplate = true;
+    templateError = "";
+    
+    try {
+      const templateShortname = entity.payload.body.template;
+      const templateData = entity.payload.body.data;
+      
+      // Try to get template from current space first
+      let template = await getTemplate($params.space_name, templateShortname, "managed");
+      
+      // If not found in current space, try applications space
+      if (!template) {
+        template = await getTemplate("applications", templateShortname, "managed");
+      }
+      
+      if (!template) {
+        templateError = `Template "${templateShortname}" not found`;
+        templateRenderedContent = "";
+        return;
+      }
+      
+      // Get the template content
+      let content = template.attributes?.payload?.body?.content || "";
+      
+      // Replace placeholders with data
+      const renderedContent = renderTemplateWithData(content, templateData);
+      
+      // Parse markdown to HTML
+      templateRenderedContent = await marked.parse(renderedContent) as string;
+    } catch (error) {
+      console.error("Error loading template:", error);
+      templateError = "Failed to load template content";
+    } finally {
+      isLoadingTemplate = false;
+    }
+  }
+  
+  function renderTemplateWithData(templateContent: string, data: Record<string, any>): string {
+    if (!templateContent || !data) return templateContent;
+    
+    let result = templateContent;
+    
+    // Replace {{fieldName:type}} patterns with actual data
+    const placeholderRegex = /\{\{(\w+)(?::(\w+))?\}\}/g;
+    
+    result = result.replace(placeholderRegex, (match, fieldName, fieldType) => {
+      const value = data[fieldName];
+      
+      if (value === undefined || value === null) {
+        return match; // Keep placeholder if data not found
+      }
+      
+      return String(value);
+    });
+    
+    return result;
   }
 
   function getStatusInfo(entity: any) {
@@ -279,6 +361,11 @@
 
     const contentType = entity.payload.content_type;
     const body = entity.payload.body;
+
+    // Handle template-based entries
+    if (isTemplateEntry && templateRenderedContent) {
+      return templateRenderedContent; // Already parsed HTML
+    }
 
     if (contentType === "html") {
       return typeof body === "string" ? body : String(body);
@@ -423,7 +510,30 @@
 
         <!-- Content -->
         <div class="entry-content prose max-w-none" class:text-right={$isRTL}>
-          {#if entity?.payload?.content_type === "json"}
+          {#if isTemplateEntry}
+            {#if isLoadingTemplate}
+              <div class="template-loading">
+                <div class="spinner"></div>
+                <span>Loading template...</span>
+              </div>
+            {:else if templateError}
+              <div class="template-error">
+                <p class="error-message">{templateError}</p>
+                <div class="fallback-data">
+                  <h4>Template: {entity.payload.body.template}</h4>
+                  <dl>
+                    {#each Object.entries(entity.payload.body.data || {}) as [key, value]}
+                      <dt>{key}:</dt>
+                      <dd>{value}</dd>
+                    {/each}
+                  </dl>
+                </div>
+                <pre class="fallback-content">{JSON.stringify(entity.payload.body, null, 2)}</pre>
+              </div>
+            {:else}
+              {@html renderContent(entity)}
+            {/if}
+          {:else if entity?.payload?.content_type === "json"}
             <PlantUMLViewer 
               data={entity.payload.body} 
               title={getLocalizedDisplayName(entity)}
@@ -1353,5 +1463,78 @@
     .comment-avatar {
       align-self: center;
     }
+  }
+
+  /* Template loading and error states */
+  .template-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 2rem;
+    color: #6b7280;
+  }
+
+  .template-loading .spinner {
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 2px solid #e5e7eb;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .template-error {
+    padding: 1rem;
+  }
+
+  .template-error .error-message {
+    color: #dc2626;
+    font-weight: 500;
+    margin-bottom: 1rem;
+  }
+
+  .template-error .fallback-data {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .template-error .fallback-data h4 {
+    margin: 0 0 0.75rem 0;
+    color: #374151;
+    font-size: 1rem;
+  }
+
+  .template-error .fallback-data dl {
+    margin: 0;
+  }
+
+  .template-error .fallback-data dt {
+    font-weight: 600;
+    color: #4b5563;
+    margin-top: 0.5rem;
+  }
+
+  .template-error .fallback-data dd {
+    margin-left: 0;
+    color: #6b7280;
+    margin-top: 0.25rem;
+  }
+
+  .template-error .fallback-content {
+    background: #f3f4f6;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    color: #6b7280;
   }
 </style>

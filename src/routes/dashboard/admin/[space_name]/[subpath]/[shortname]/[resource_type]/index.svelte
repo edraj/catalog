@@ -33,11 +33,17 @@
   import JsonEditor from "@/components/editors/JsonEditor.svelte";
   import SchemaForm from "@/components/forms/SchemaForm.svelte";
   import SchemaViewer from "@/components/forms/SchemaViewer.svelte";
-import PostContent from "@/components/post/PostContent.svelte";
-import PlantUMLViewer from "@/components/PlantUMLViewer.svelte";
-import RelationshipModal from "@/components/management/RelationshipModal.svelte";
-import AttachmentModal from "@/components/management/AttachmentModal.svelte";
-import { PlusOutline, HeartSolid, MessagesSolid, TrashBinSolid } from "flowbite-svelte-icons";
+  import PostContent from "@/components/post/PostContent.svelte";
+  import PlantUMLViewer from "@/components/PlantUMLViewer.svelte";
+  import { getTemplate } from "@/lib/dmart_services/templates";
+  import RelationshipModal from "@/components/management/RelationshipModal.svelte";
+  import AttachmentModal from "@/components/management/AttachmentModal.svelte";
+  import {
+    PlusOutline,
+    HeartSolid,
+    MessagesSolid,
+    TrashBinSolid,
+  } from "flowbite-svelte-icons";
 
   $goto;
 
@@ -67,6 +73,8 @@ import { PlusOutline, HeartSolid, MessagesSolid, TrashBinSolid } from "flowbite-
   const showEditModal = writable(false);
   const showRelationshipModal = writable(false);
   const showAttachmentModal = writable(false);
+  const showDeleteModal = writable(false);
+  let isDeleting = writable(false);
   let htmlEditor: string = $state("");
   let markdownContent: string = $state("");
   let isTemplateBasedItem = $state(false);
@@ -96,7 +104,101 @@ import { PlusOutline, HeartSolid, MessagesSolid, TrashBinSolid } from "flowbite-
 
   let jsonEditFormValue = $state({});
   let relationshipsValue = $state([]);
-  
+
+  // Template rendering state
+  let templateRenderedContent = $state("");
+  let isLoadingTemplate = $state(false);
+  let templateError = $state("");
+
+  // Check if this is a template-based entry
+  const isTemplateEntry = $derived(
+    itemDataValue?.payload?.schema_shortname === "templates" &&
+      !!itemDataValue?.payload?.body?.template &&
+      !!itemDataValue?.payload?.body?.data,
+  );
+
+  $effect(() => {
+    console.log({ isTemplateEntry });
+  });
+
+  // Load and render template content
+  async function loadTemplateContent() {
+    if (!isTemplateEntry || !$spaceName) return;
+
+    isLoadingTemplate = true;
+    templateError = "";
+
+    try {
+      const templateShortname = itemDataValue.payload.body.template;
+      const templateData = itemDataValue.payload.body.data;
+
+      // Try to get template from current space first
+      let template = await getTemplate(
+        $spaceName,
+        templateShortname,
+        "managed",
+      );
+
+      // If not found in current space, try applications space
+      if (!template) {
+        template = await getTemplate(
+          "applications",
+          templateShortname,
+          "managed",
+        );
+      }
+
+      if (!template) {
+        templateError = `Template "${templateShortname}" not found`;
+        templateRenderedContent = "";
+        return;
+      }
+
+      // Get the template content
+      let content = template?.payload?.body?.content || "";
+
+      // Replace placeholders with data
+      const renderedContent = renderTemplateWithData(content, templateData);
+      console.log({
+        D: template,
+        content,
+        renderedContent,
+      });
+
+      // Parse markdown to HTML
+      templateRenderedContent = (await marked.parse(renderedContent)) as string;
+    } catch (error) {
+      console.error("Error loading template:", error);
+      templateError = "Failed to load template content";
+    } finally {
+      isLoadingTemplate = false;
+    }
+  }
+
+  function renderTemplateWithData(
+    templateContent: string,
+    data: Record<string, any>,
+  ): string {
+    if (!templateContent || !data) return templateContent;
+
+    let result = templateContent;
+
+    // Replace {{fieldName:type}} patterns with actual data
+    const placeholderRegex = /\{\{(\w+)(?::(\w+))?\}\}/g;
+
+    result = result.replace(placeholderRegex, (match, fieldName, fieldType) => {
+      const value = data[fieldName];
+
+      if (value === undefined || value === null) {
+        return match; // Keep placeholder if data not found
+      }
+
+      return String(value);
+    });
+
+    return result;
+  }
+
   // Comments and reactions state
   let comment = $state("");
   let userReactionEntry = $state(null);
@@ -239,13 +341,13 @@ import { PlusOutline, HeartSolid, MessagesSolid, TrashBinSolid } from "flowbite-
         itemDataValue = response;
         itemData.set(response);
         relationshipsValue = response.relationships || [];
-        
+
         // Load comments and reactions counts
         counts = {
           reaction: response.attachments?.reaction?.length || 0,
           comment: response.attachments?.comment?.length || 0,
         };
-        
+
         // Check if current user has reacted
         if ($user?.shortname) {
           userReactionEntry = await checkCurrentUserReactedIdea(
@@ -299,6 +401,8 @@ import { PlusOutline, HeartSolid, MessagesSolid, TrashBinSolid } from "flowbite-
 
         if (isTemplateBasedItem) {
           templateEditorContent = content || "";
+          // Load and render template content for display
+          await loadTemplateContent();
         }
 
         const ct = response.payload?.content_type;
@@ -382,17 +486,12 @@ import { PlusOutline, HeartSolid, MessagesSolid, TrashBinSolid } from "flowbite-
     }
   }
 
-  async function handleDeleteItem() {
-    if (
-      !confirm(
-        $_("admin_item_detail.confirm.delete_item", {
-          values: { name: itemShortnameValue },
-        }),
-      )
-    ) {
-      return;
-    }
+  function handleDeleteItem() {
+    showDeleteModal.set(true);
+  }
 
+  async function confirmDeleteItem() {
+    isDeleting.set(true);
     try {
       const success = await deleteEntity(
         itemShortnameValue,
@@ -402,6 +501,7 @@ import { PlusOutline, HeartSolid, MessagesSolid, TrashBinSolid } from "flowbite-
       );
 
       if (success) {
+        showDeleteModal.set(false);
         $goto("/dashboard/admin/[space_name]/", {
           space_name: spaceNameValue,
           subpath: actualSubpathValue,
@@ -409,6 +509,9 @@ import { PlusOutline, HeartSolid, MessagesSolid, TrashBinSolid } from "flowbite-
       }
     } catch (err) {
       console.error("Error deleting item:", err);
+      errorToastMessage($_("admin_item_detail.error.delete_failed"));
+    } finally {
+      isDeleting.set(false);
     }
   }
 
@@ -515,14 +618,14 @@ import { PlusOutline, HeartSolid, MessagesSolid, TrashBinSolid } from "flowbite-
   // Comments and reactions handlers
   async function handleAddComment() {
     if (!comment.trim()) return;
-    
+
     const response = await createComment(
       spaceNameValue,
       actualSubpathValue,
       itemShortnameValue,
       comment,
     );
-    
+
     if (response) {
       successToastMessage($_("entry_detail.comments.add_success"));
       comment = "";
@@ -816,24 +919,55 @@ import { PlusOutline, HeartSolid, MessagesSolid, TrashBinSolid } from "flowbite-
                   </div>
 
                   <div class="p-6">
-                    {#if ct === "html"}
+                    {#if isTemplateEntry}
+                      <!-- Template-based entry rendering -->
+                      {#if isLoadingTemplate}
+                        <div class="template-loading">
+                          <div class="spinner"></div>
+                          <span>Loading template...</span>
+                        </div>
+                      {:else if templateError}
+                        <div class="template-error">
+                          <p class="error-message">{templateError}</p>
+                          <div class="fallback-data">
+                            <h4>Template: {body.template}</h4>
+                            <dl>
+                              {#each Object.entries(body.data || {}) as [key, value]}
+                                <dt>{key}:</dt>
+                                <dd>{value}</dd>
+                              {/each}
+                            </dl>
+                          </div>
+                          <pre class="fallback-content">{JSON.stringify(
+                              body,
+                              null,
+                              2,
+                            )}</pre>
+                        </div>
+                      {:else}
+                        <div class="markdown-preview" class:text-right={$isRTL}>
+                          {@html templateRenderedContent}
+                        </div>
+                      {/if}
+                    {:else if ct === "html"}
                       <div class="html-preview" class:text-right={$isRTL}>
                         {@html body}
                       </div>
                     {:else if ct === "json"}
                       {#if isSchemaBasedItem}
                         <div class="p-6">
-                            <SchemaViewer content={body} />
+                          <SchemaViewer content={body} />
                         </div>
                       {:else}
-                         <div class="p-6">
-                            <PlantUMLViewer 
-                              data={body} 
-                              title={itemDataValue?.displayname?.en || "JSON Content"}
-                              type="json"
-                              isAdmin={true}
-                            />
-                         </div>
+                        <div class="p-6">
+                          <PlantUMLViewer
+                            data={body}
+                            title={itemDataValue?.displayname?.en ||
+                              "JSON Content"}
+                            type="json"
+                            isAdmin={true}
+                          />
+                        </div>
                       {/if}
                     {:else}
                       <!-- Default parse string as Markdown (covers "markdown", "md", or missing type) -->
@@ -881,35 +1015,52 @@ import { PlusOutline, HeartSolid, MessagesSolid, TrashBinSolid } from "flowbite-
                 <div class="flex items-center gap-6 mb-6">
                   <button
                     onclick={handleReaction}
-                    class="flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-200 {userReactionEntry ? 'bg-red-50 text-red-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}"
+                    class="flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-200 {userReactionEntry
+                      ? 'bg-red-50 text-red-600'
+                      : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}"
                   >
-                    <HeartSolid class="w-5 h-5 {userReactionEntry ? 'text-red-500' : ''}" />
-                    <span>{userReactionEntry ? $_('entry_detail.actions.unlike') : $_('entry_detail.actions.like')}</span>
-                    <span class="text-sm opacity-75">({formatNumberInText(counts.reaction, $locale) || 0})</span>
+                    <HeartSolid
+                      class="w-5 h-5 {userReactionEntry ? 'text-red-500' : ''}"
+                    />
+                    <span
+                      >{userReactionEntry
+                        ? $_("entry_detail.actions.unlike")
+                        : $_("entry_detail.actions.like")}</span
+                    >
+                    <span class="text-sm opacity-75"
+                      >({formatNumberInText(counts.reaction, $locale) ||
+                        0})</span
+                    >
                   </button>
-                  
+
                   <div class="flex items-center gap-2 text-gray-600">
                     <MessagesSolid class="w-5 h-5" />
-                    <span>{$_('entry_detail.comments.title')}</span>
-                    <span class="text-sm opacity-75">({formatNumberInText(counts.comment, $locale) || 0})</span>
+                    <span>{$_("entry_detail.comments.title")}</span>
+                    <span class="text-sm opacity-75"
+                      >({formatNumberInText(counts.comment, $locale) ||
+                        0})</span
+                    >
                   </div>
                 </div>
 
                 <!-- Add Comment -->
                 <div class="bg-gray-50/50 rounded-2xl p-6 mb-6">
-                  <h4 class="text-sm font-semibold text-gray-900 mb-4" class:text-right={$isRTL}>
-                    {$_('entry_detail.comments.title')}
+                  <h4
+                    class="text-sm font-semibold text-gray-900 mb-4"
+                    class:text-right={$isRTL}
+                  >
+                    {$_("entry_detail.comments.title")}
                   </h4>
                   <div class="flex gap-3">
                     <div class="flex-1">
                       <input
                         type="text"
                         bind:value={comment}
-                        placeholder={$_('entry_detail.comments.placeholder')}
+                        placeholder={$_("entry_detail.comments.placeholder")}
                         class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all"
                         class:text-right={$isRTL}
                         onkeydown={(e) => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
+                          if (e.key === "Enter" && !e.shiftKey) {
                             e.preventDefault();
                             handleAddComment();
                           }
@@ -942,7 +1093,9 @@ import { PlusOutline, HeartSolid, MessagesSolid, TrashBinSolid } from "flowbite-
                 {#if itemDataValue?.attachments?.comment && itemDataValue.attachments.comment.length > 0}
                   <div class="space-y-4">
                     {#each itemDataValue.attachments.comment as reply}
-                      <div class="bg-white border border-gray-100 rounded-2xl p-5 hover:shadow-sm transition-shadow">
+                      <div
+                        class="bg-white border border-gray-100 rounded-2xl p-5 hover:shadow-sm transition-shadow"
+                      >
                         <div class="flex gap-4">
                           <div class="flex-shrink-0">
                             {#await getAvatar(reply.attributes.owner_shortname) then avatar}
@@ -950,8 +1103,13 @@ import { PlusOutline, HeartSolid, MessagesSolid, TrashBinSolid } from "flowbite-
                             {/await}
                           </div>
                           <div class="flex-1 min-w-0">
-                            <div class="flex items-center justify-between gap-2 mb-2">
-                              <div class="flex items-center gap-2" class:flex-row-reverse={$isRTL}>
+                            <div
+                              class="flex items-center justify-between gap-2 mb-2"
+                            >
+                              <div
+                                class="flex items-center gap-2"
+                                class:flex-row-reverse={$isRTL}
+                              >
                                 <span class="font-semibold text-gray-900">
                                   {reply.attributes?.displayname?.[$locale] ||
                                     reply.attributes?.displayname?.en ||
@@ -964,18 +1122,24 @@ import { PlusOutline, HeartSolid, MessagesSolid, TrashBinSolid } from "flowbite-
                               </div>
                               {#if reply.attributes.owner_shortname === $user?.shortname}
                                 <button
-                                  onclick={() => handleDeleteComment(reply.shortname)}
+                                  onclick={() =>
+                                    handleDeleteComment(reply.shortname)}
                                   class="text-gray-400 hover:text-red-500 transition-colors p-1"
-                                  aria-label={$_('entry_detail.comments.delete_comment')}
+                                  aria-label={$_(
+                                    "entry_detail.comments.delete_comment",
+                                  )}
                                 >
                                   <TrashBinSolid class="w-4 h-4" />
                                 </button>
                               {/if}
                             </div>
-                            <p class="text-gray-700 text-sm leading-relaxed" class:text-right={$isRTL}>
+                            <p
+                              class="text-gray-700 text-sm leading-relaxed"
+                              class:text-right={$isRTL}
+                            >
                               {reply.attributes.payload?.body?.embedded ||
                                 reply.attributes.payload?.body?.body ||
-                                $_('entry_detail.no_content')}
+                                $_("entry_detail.no_content")}
                             </p>
                           </div>
                         </div>
@@ -984,12 +1148,14 @@ import { PlusOutline, HeartSolid, MessagesSolid, TrashBinSolid } from "flowbite-
                   </div>
                 {:else}
                   <div class="text-center py-10 bg-gray-50/50 rounded-2xl">
-                    <MessagesSolid class="w-12 h-12 mx-auto text-gray-300 mb-3" />
+                    <MessagesSolid
+                      class="w-12 h-12 mx-auto text-gray-300 mb-3"
+                    />
                     <p class="text-gray-500 font-medium">
-                      {$_('entry_detail.comments.no_comments')}
+                      {$_("entry_detail.comments.no_comments")}
                     </p>
                     <p class="text-sm text-gray-400 mt-1">
-                      {$_('entry_detail.comments.be_first')}
+                      {$_("entry_detail.comments.be_first")}
                     </p>
                   </div>
                 {/if}
@@ -1210,7 +1376,10 @@ import { PlusOutline, HeartSolid, MessagesSolid, TrashBinSolid } from "flowbite-
 
           {#if $activeTab === "relationships"}
             <div class="space-y-6">
-              <div class="flex items-center justify-between" class:flex-row-reverse={$isRTL}>
+              <div
+                class="flex items-center justify-between"
+                class:flex-row-reverse={$isRTL}
+              >
                 <h3
                   class="text-lg font-semibold text-gray-900"
                   class:text-right={$isRTL}
@@ -1363,7 +1532,10 @@ import { PlusOutline, HeartSolid, MessagesSolid, TrashBinSolid } from "flowbite-
                 >
                   {$_("admin_item_detail.attachments.title")}
                 </h3>
-                <div class="flex items-center gap-3" class:flex-row-reverse={$isRTL}>
+                <div
+                  class="flex items-center gap-3"
+                  class:flex-row-reverse={$isRTL}
+                >
                   <button
                     onclick={() => showAttachmentModal.set(true)}
                     class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl font-medium transition-colors shadow-sm flex items-center gap-2"
@@ -1528,10 +1700,10 @@ import { PlusOutline, HeartSolid, MessagesSolid, TrashBinSolid } from "flowbite-
                                       </p>
                                       <p class="text-xs text-gray-500">
                                         {new Date(
-                                                comment.attributes.created_at,
+                                          comment.attributes.created_at,
                                         ).toLocaleDateString()} at {new Date(
-                                              comment.attributes.created_at,
-                                      ).toLocaleTimeString()}
+                                          comment.attributes.created_at,
+                                        ).toLocaleTimeString()}
                                       </p>
                                     </div>
                                   </div>
@@ -2027,8 +2199,18 @@ import { PlusOutline, HeartSolid, MessagesSolid, TrashBinSolid } from "flowbite-
             <!-- Display Name Section -->
             <div class="form-section">
               <label class="form-label section-label" class:text-right={$isRTL}>
-                <svg class="label-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.99 1.99 0 013 12V7a4 4 0 014-4z" />
+                <svg
+                  class="label-icon"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.99 1.99 0 013 12V7a4 4 0 014-4z"
+                  />
                 </svg>
                 {$_("admin_item_detail.edit_modal.fields.displayname")}
               </label>
@@ -2066,8 +2248,18 @@ import { PlusOutline, HeartSolid, MessagesSolid, TrashBinSolid } from "flowbite-
             <!-- Description Section -->
             <div class="form-section">
               <label class="form-label section-label" class:text-right={$isRTL}>
-                <svg class="label-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
+                <svg
+                  class="label-icon"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 6h16M4 12h16M4 18h7"
+                  />
                 </svg>
                 {$_("admin_item_detail.edit_modal.fields.description")}
               </label>
@@ -2105,8 +2297,18 @@ import { PlusOutline, HeartSolid, MessagesSolid, TrashBinSolid } from "flowbite-
             <!-- Tags Section with Badge Behavior -->
             <div class="form-section">
               <label class="form-label section-label" class:text-right={$isRTL}>
-                <svg class="label-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.99 1.99 0 013 12V7a4 4 0 014-4z" />
+                <svg
+                  class="label-icon"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.99 1.99 0 013 12V7a4 4 0 014-4z"
+                  />
                 </svg>
                 {$_("admin_item_detail.edit_modal.fields.tags")}
               </label>
@@ -2116,7 +2318,9 @@ import { PlusOutline, HeartSolid, MessagesSolid, TrashBinSolid } from "flowbite-
                     type="text"
                     bind:value={editFormValue.newTag}
                     class="form-input tag-input"
-                    placeholder={$_("admin_item_detail.edit_modal.placeholders.tags")}
+                    placeholder={$_(
+                      "admin_item_detail.edit_modal.placeholders.tags",
+                    )}
                     onkeydown={(e) => {
                       if (e.key === "Enter") {
                         e.preventDefault();
@@ -2130,8 +2334,18 @@ import { PlusOutline, HeartSolid, MessagesSolid, TrashBinSolid } from "flowbite-
                     onclick={addTag}
                     disabled={!editFormValue.newTag.trim()}
                   >
-                    <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    <svg
+                      class="btn-icon"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 4v16m8-8H4"
+                      />
                     </svg>
                     Add
                   </button>
@@ -2147,8 +2361,18 @@ import { PlusOutline, HeartSolid, MessagesSolid, TrashBinSolid } from "flowbite-
                           onclick={() => removeTag(index)}
                           aria-label="Remove tag"
                         >
-                          <svg class="remove-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                          <svg
+                            class="remove-icon"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M6 18L18 6M6 6l12 12"
+                            />
                           </svg>
                         </button>
                       </span>
@@ -2163,7 +2387,9 @@ import { PlusOutline, HeartSolid, MessagesSolid, TrashBinSolid } from "flowbite-
               <div class="status-toggle-simple" class:rtl-toggle={$isRTL}>
                 <button
                   type="button"
-                  class="toggle-switch {editFormValue.is_active ? 'active' : ''}"
+                  class="toggle-switch {editFormValue.is_active
+                    ? 'active'
+                    : ''}"
                   onclick={() => {
                     editFormValue.is_active = !editFormValue.is_active;
                   }}
@@ -2175,7 +2401,11 @@ import { PlusOutline, HeartSolid, MessagesSolid, TrashBinSolid } from "flowbite-
                   <span class="status-label">
                     {$_("admin_item_detail.edit_modal.fields.active")}
                   </span>
-                  <span class="status-value {editFormValue.is_active ? 'active' : 'inactive'}">
+                  <span
+                    class="status-value {editFormValue.is_active
+                      ? 'active'
+                      : 'inactive'}"
+                  >
                     {editFormValue.is_active ? "Active" : "Inactive"}
                   </span>
                 </div>
@@ -2227,8 +2457,8 @@ import { PlusOutline, HeartSolid, MessagesSolid, TrashBinSolid } from "flowbite-
                       </div>
                       <div class="plantuml-preview-pane">
                         <h4 class="preview-title">Preview</h4>
-                        <PlantUMLViewer 
-                          data={jsonEditFormValue} 
+                        <PlantUMLViewer
+                          data={jsonEditFormValue}
                           title="JSON Preview"
                           type="json"
                           isAdmin={true}
@@ -2331,6 +2561,98 @@ import { PlusOutline, HeartSolid, MessagesSolid, TrashBinSolid } from "flowbite-
     parent_shortname={itemShortnameValue}
     onAttachmentCreated={loadItemData}
   />
+{/if}
+
+<!-- Delete Confirmation Modal -->
+{#if $showDeleteModal}
+  <div
+    class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+    onclick={(e) => {
+      if (e.target === e.currentTarget) showDeleteModal.set(false);
+    }}
+    onkeydown={(e) => {
+      if (e.key === 'Escape') showDeleteModal.set(false);
+    }}
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="delete-modal-title"
+    tabindex="-1"
+  >
+    <div
+      class="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all"
+      onclick={(e) => e.stopPropagation()}
+    >
+      <!-- Modal Header -->
+      <div class="bg-red-50 px-6 py-4 border-b border-red-100 rounded-t-2xl">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+            <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+              />
+            </svg>
+          </div>
+          <h3
+            id="delete-modal-title"
+            class="text-lg font-semibold text-gray-900"
+          >
+            {$_("admin_item_detail.delete_modal.title")}
+          </h3>
+        </div>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="px-6 py-5">
+        <p class="text-gray-600">
+          {$_("admin_item_detail.delete_modal.message", {
+            values: { name: itemShortnameValue },
+          })}
+        </p>
+        <div class="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+          <div class="flex items-start gap-2">
+            <svg class="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <p class="text-sm text-amber-700">
+              {$_("admin_item_detail.delete_modal.warning")}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-6 py-4 bg-gray-50 rounded-b-2xl flex justify-end gap-3">
+        <button
+          onclick={() => showDeleteModal.set(false)}
+          disabled={$isDeleting}
+          class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-xl font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+        >
+          {$_("common.cancel")}
+        </button>
+        <button
+          onclick={confirmDeleteItem}
+          disabled={$isDeleting}
+          class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50"
+        >
+          {#if $isDeleting}
+            <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            {$_("common.deleting")}
+          {:else}
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            {$_("common.delete")}
+          {/if}
+        </button>
+      </div>
+    </div>
+  </div>
 {/if}
 
 <style>
@@ -2587,7 +2909,6 @@ import { PlusOutline, HeartSolid, MessagesSolid, TrashBinSolid } from "flowbite-
     font-weight: 700;
     margin: 0;
   }
-
 
   .close-button {
     background: rgba(255, 255, 255, 0.1);
@@ -2972,7 +3293,7 @@ import { PlusOutline, HeartSolid, MessagesSolid, TrashBinSolid } from "flowbite-
     .json-editor-with-preview {
       grid-template-columns: 1fr;
     }
-    
+
     .plantuml-preview-pane {
       border-left: none;
       border-top: 1px solid #e5e7eb;
@@ -3124,7 +3445,9 @@ import { PlusOutline, HeartSolid, MessagesSolid, TrashBinSolid } from "flowbite-
     color: #3b82f6;
     cursor: pointer;
     border-radius: 50%;
-    transition: background-color 0.2s, color 0.2s;
+    transition:
+      background-color 0.2s,
+      color 0.2s;
   }
 
   .tag-remove-btn:hover {
@@ -3174,5 +3497,78 @@ import { PlusOutline, HeartSolid, MessagesSolid, TrashBinSolid } from "flowbite-
 
   .status-toggle-simple .status-value.inactive {
     color: #dc2626;
+  }
+
+  /* Template loading and error states */
+  .template-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 2rem;
+    color: #6b7280;
+  }
+
+  .template-loading .spinner {
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 2px solid #e5e7eb;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .template-error {
+    padding: 1rem;
+  }
+
+  .template-error .error-message {
+    color: #dc2626;
+    font-weight: 500;
+    margin-bottom: 1rem;
+  }
+
+  .template-error .fallback-data {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .template-error .fallback-data h4 {
+    margin: 0 0 0.75rem 0;
+    color: #374151;
+    font-size: 1rem;
+  }
+
+  .template-error .fallback-data dl {
+    margin: 0;
+  }
+
+  .template-error .fallback-data dt {
+    font-weight: 600;
+    color: #4b5563;
+    margin-top: 0.5rem;
+  }
+
+  .template-error .fallback-data dd {
+    margin-left: 0;
+    color: #6b7280;
+    margin-top: 0.25rem;
+  }
+
+  .template-error .fallback-content {
+    background: #f3f4f6;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    color: #6b7280;
   }
 </style>

@@ -368,12 +368,14 @@ function isNotFoundError(error: any): boolean {
  */
 export async function checkApplicationsFolders(
     scope: string = "managed"
-): Promise<{ exists: boolean; missing: string[]; missingWorkflow?: boolean; missingReportSchema?: boolean; missingWorkflowSchema?: boolean; error?: string }> {
+): Promise<{ exists: boolean; missing: string[]; missingWorkflow?: boolean; missingReportSchema?: boolean; missingWorkflowSchema?: boolean; missingMetaSchema?: boolean; missingTemplatesSchema?: boolean; error?: string }> {
     const requiredFolders = ["reports", "polls", "surveys", "workflows", "schema"];
     const missing: string[] = [];
     let missingWorkflow = false;
     let missingReportSchema = false;
     let missingWorkflowSchema = false;
+    let missingMetaSchema = false;
+    let missingTemplatesSchema = false;
 
     try {
         for (const folder of requiredFolders) {
@@ -484,18 +486,72 @@ export async function checkApplicationsFolders(
                 }
                 // Other errors don't mark as missing
             }
+
+            // Check meta_schema (the schema used for template entries)
+            try {
+                await Dmart.retrieveEntry(
+                    {
+                        validate_schema: false,
+                        resource_type: ResourceType.schema,
+                        space_name: "applications",
+                        subpath: "/schema",
+                        shortname: "meta_schema",
+                        retrieve_json_payload: false,
+                        retrieve_attachments: false,
+                    },
+                    scope
+                );
+                // Meta schema exists
+            } catch (error: any) {
+                // If permission error, ignore
+                if (error?.status === 403 || error?.message?.includes("permission")) {
+                    missingMetaSchema = false;
+                } else if (isNotFoundError(error)) {
+                    missingMetaSchema = true;
+                }
+                // Other errors don't mark as missing
+            }
+
+            // Check templates schema (the schema used for template definitions)
+            try {
+                await Dmart.retrieveEntry(
+                    {
+                        validate_schema: false,
+                        resource_type: ResourceType.schema,
+                        space_name: "applications",
+                        subpath: "/schema",
+                        shortname: "templates",
+                        retrieve_json_payload: false,
+                        retrieve_attachments: false,
+                    },
+                    scope
+                );
+                // Templates schema exists
+            } catch (error: any) {
+                // If permission error, ignore
+                if (error?.status === 403 || error?.message?.includes("permission")) {
+                    missingTemplatesSchema = false;
+                } else if (isNotFoundError(error)) {
+                    missingTemplatesSchema = true;
+                }
+                // Other errors don't mark as missing
+            }
         } else {
             // If schema folder is missing, schemas are also missing
             missingReportSchema = true;
             missingWorkflowSchema = true;
+            missingMetaSchema = true;
+            missingTemplatesSchema = true;
         }
 
         const result = { 
-            exists: missing.length === 0 && !missingWorkflow && !missingReportSchema && !missingWorkflowSchema, 
+            exists: missing.length === 0 && !missingWorkflow && !missingReportSchema && !missingWorkflowSchema && !missingMetaSchema && !missingTemplatesSchema, 
             missing, 
             missingWorkflow, 
             missingReportSchema,
-            missingWorkflowSchema
+            missingWorkflowSchema,
+            missingMetaSchema,
+            missingTemplatesSchema
         };
         console.log("checkApplicationsFolders result:", result);
         return result;
@@ -504,7 +560,7 @@ export async function checkApplicationsFolders(
         if (error?.status === 403 || error?.message?.includes("permission")) {
             return { exists: true, missing: [], error: "permission_denied" };
         }
-        return { exists: false, missing: requiredFolders, missingWorkflow: true, missingReportSchema: true, missingWorkflowSchema: true, error: error?.message };
+        return { exists: false, missing: requiredFolders, missingWorkflow: true, missingReportSchema: true, missingWorkflowSchema: true, missingMetaSchema: true, missingTemplatesSchema: true, error: error?.message };
     }
 }
 
@@ -581,6 +637,10 @@ export async function createApplicationsFolders(
     reportSchemaFailed?: boolean;
     workflowSchemaCreated?: boolean;
     workflowSchemaFailed?: boolean;
+    metaSchemaCreated?: boolean;
+    metaSchemaFailed?: boolean;
+    templatesSchemaCreated?: boolean;
+    templatesSchemaFailed?: boolean;
 }> {
     const foldersToCreate = [
         {
@@ -693,8 +753,50 @@ export async function createApplicationsFolders(
         console.log("Skipping workflow schema creation because schema folder failed");
     }
 
+    // Create meta_schema if schema folder was created or already exists
+    let metaSchemaCreated = false;
+    let metaSchemaFailed = false;
+    if (!failed.includes("schema")) {
+        console.log("Creating meta_schema...");
+        try {
+            const metaSchemaSuccess = await createMetaSchema(scope);
+            console.log("meta_schema creation result:", metaSchemaSuccess);
+            if (metaSchemaSuccess) {
+                metaSchemaCreated = true;
+            } else {
+                metaSchemaFailed = true;
+            }
+        } catch (error) {
+            console.error("Error creating meta_schema:", error);
+            metaSchemaFailed = true;
+        }
+    } else {
+        console.log("Skipping meta_schema creation because schema folder failed");
+    }
+
+    // Create templates schema if schema folder was created or already exists
+    let templatesSchemaCreated = false;
+    let templatesSchemaFailed = false;
+    if (!failed.includes("schema")) {
+        console.log("Creating templates schema...");
+        try {
+            const templatesSchemaSuccess = await createTemplatesSchema(scope);
+            console.log("templates schema creation result:", templatesSchemaSuccess);
+            if (templatesSchemaSuccess) {
+                templatesSchemaCreated = true;
+            } else {
+                templatesSchemaFailed = true;
+            }
+        } catch (error) {
+            console.error("Error creating templates schema:", error);
+            templatesSchemaFailed = true;
+        }
+    } else {
+        console.log("Skipping templates schema creation because schema folder failed");
+    }
+
     return { 
-        success: failed.length === 0 && !workflowFailed && !reportSchemaFailed && !workflowSchemaFailed, 
+        success: failed.length === 0 && !workflowFailed && !reportSchemaFailed && !workflowSchemaFailed && !metaSchemaFailed && !templatesSchemaFailed, 
         created, 
         failed, 
         workflowCreated, 
@@ -702,7 +804,11 @@ export async function createApplicationsFolders(
         reportSchemaCreated, 
         reportSchemaFailed,
         workflowSchemaCreated,
-        workflowSchemaFailed
+        workflowSchemaFailed,
+        metaSchemaCreated,
+        metaSchemaFailed,
+        templatesSchemaCreated,
+        templatesSchemaFailed
     };
 }
 
@@ -1086,6 +1192,233 @@ export async function createWorkflowSchema(scope: string = "managed"): Promise<b
         return response.status === "success";
     } catch (error) {
         console.error("Error creating workflow schema:", error);
+        return false;
+    }
+}
+
+/**
+ * Create the meta_schema in the schema folder
+ * This schema is used to validate template entry payloads
+ */
+export async function createMetaSchema(scope: string = "managed"): Promise<boolean> {
+    const metaSchemaPayload = {
+        "type": "object",
+        "required": ["data", "template"],
+        "properties": {
+            "data": {
+                "type": "object",
+                "additionalProperties": true
+            },
+            "template": {
+                "type": "string"
+            }
+        },
+        "additionalProperties": false
+    };
+
+    try {
+        // Check if meta_schema already exists
+        try {
+            await Dmart.retrieveEntry(
+                {
+                    resource_type: ResourceType.schema,
+                    space_name: "applications",
+                    subpath: "/schema",
+                    shortname: "meta_schema",
+                    retrieve_json_payload: false,
+                    retrieve_attachments: false,
+                    validate_schema: false,
+                },
+                scope
+            );
+            // Schema already exists
+            console.log("meta_schema already exists, skipping creation");
+            return true;
+        } catch (error: any) {
+            // Entry not found, proceed to create
+            if (!isNotFoundError(error)) {
+                console.error("Error checking meta_schema existence:", error);
+            }
+        }
+
+        // Create the meta_schema entry
+        const response = await Dmart.request({
+            space_name: "applications",
+            request_type: RequestType.create,
+            records: [
+                {
+                    resource_type: ResourceType.schema,
+                    shortname: "meta_schema",
+                    subpath: "schema",
+                    attributes: {
+                        is_active: true,
+                        displayname: { en: "Meta Schema", ar: "المخطط التعريفي", ku: "" },
+                        description: { en: "Schema for validating template entry payloads", ar: "المخطط للتحقق من بيانات إدخالات القوالب", ku: "" },
+                        payload: {
+                            content_type: ContentType.json,
+                            body: metaSchemaPayload,
+                        },
+                    },
+                },
+            ],
+        });
+        return response.status === "success";
+    } catch (error) {
+        console.error("Error creating meta_schema:", error);
+        return false;
+    }
+}
+
+/**
+ * Create the templates schema in the schema folder
+ * This schema is used to validate template definitions
+ */
+export async function createTemplatesSchema(scope: string = "managed"): Promise<boolean> {
+    const templatesSchemaPayload = {
+        "type": "object",
+        "required": ["title", "content"],
+        "properties": {
+            "title": {
+                "type": "string"
+            },
+            "content": {
+                "type": "string"
+            },
+            "space_name": {
+                "type": "string"
+            },
+            "schema_shortname": {
+                "type": "string"
+            }
+        },
+        "additionalProperties": false
+    };
+
+    try {
+        // Check if templates schema already exists
+        try {
+            await Dmart.retrieveEntry(
+                {
+                    resource_type: ResourceType.schema,
+                    space_name: "applications",
+                    subpath: "/schema",
+                    shortname: "templates",
+                    retrieve_json_payload: false,
+                    retrieve_attachments: false,
+                    validate_schema: false,
+                },
+                scope
+            );
+            // Schema already exists
+            console.log("templates schema already exists, skipping creation");
+            return true;
+        } catch (error: any) {
+            // Entry not found, proceed to create
+            if (!isNotFoundError(error)) {
+                console.error("Error checking templates schema existence:", error);
+            }
+        }
+
+        // Create the templates schema entry
+        const response = await Dmart.request({
+            space_name: "applications",
+            request_type: RequestType.create,
+            records: [
+                {
+                    resource_type: ResourceType.schema,
+                    shortname: "templates",
+                    subpath: "schema",
+                    attributes: {
+                        is_active: true,
+                        displayname: { en: "Templates Schema", ar: "مخطط القوالب", ku: "" },
+                        description: { en: "Schema for validating template definitions", ar: "المخطط للتحقق من تعريفات القوالب", ku: "" },
+                        payload: {
+                            content_type: ContentType.json,
+                            body: templatesSchemaPayload,
+                        },
+                    },
+                },
+            ],
+        });
+        return response.status === "success";
+    } catch (error) {
+        console.error("Error creating templates schema:", error);
+        return false;
+    }
+}
+
+/**
+ * Create the templates schema in a specific space's schema folder
+ * This schema is used for template-based entries
+ */
+export async function ensureTemplatesSchemaInSpace(
+    spaceName: string,
+    scope: string = "managed"
+): Promise<boolean> {
+    const templatesSchemaPayload = {
+        "type": "object",
+        "required": ["data", "template"],
+        "properties": {
+            "data": {
+                "type": "object",
+                "additionalProperties": true
+            },
+            "template": {
+                "type": "string"
+            }
+        },
+        "additionalProperties": false
+    };
+
+    try {
+        // Check if templates schema already exists in the space
+        try {
+            await Dmart.retrieveEntry(
+                {
+                    resource_type: ResourceType.schema,
+                    space_name: spaceName,
+                    subpath: "/schema",
+                    shortname: "templates",
+                    retrieve_json_payload: false,
+                    retrieve_attachments: false,
+                    validate_schema: false,
+                },
+                scope
+            );
+            // Schema already exists
+            console.log(`templates schema already exists in ${spaceName}, skipping creation`);
+            return true;
+        } catch (error: any) {
+            // Entry not found, proceed to create
+            if (!isNotFoundError(error)) {
+                console.error(`Error checking templates schema existence in ${spaceName}:`, error);
+            }
+        }
+
+        // Create the templates schema entry in the specified space
+        const response = await Dmart.request({
+            space_name: spaceName,
+            request_type: RequestType.create,
+            records: [
+                {
+                    resource_type: ResourceType.schema,
+                    shortname: "templates",
+                    subpath: "schema",
+                    attributes: {
+                        is_active: true,
+                        displayname: { en: "Templates Schema", ar: "مخطط القوالب", ku: "" },
+                        description: { en: "Schema for validating template entries", ar: "المخطط للتحقق من إدخالات القوالب", ku: "" },
+                        payload: {
+                            content_type: ContentType.json,
+                            body: templatesSchemaPayload,
+                        },
+                    },
+                },
+            ],
+        });
+        return response.status === "success";
+    } catch (error) {
+        console.error(`Error creating templates schema in ${spaceName}:`, error);
         return false;
     }
 }

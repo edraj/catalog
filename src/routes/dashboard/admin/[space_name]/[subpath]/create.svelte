@@ -151,7 +151,18 @@
     }
 
     const emptyFields = templateFields.filter(
-      (field) => !fieldValues[field.name]?.trim(),
+      (field) => {
+        const value = fieldValues[field.name];
+        // Handle different field types - only string fields should use trim()
+        if (value === undefined || value === null) return true;
+        if (typeof value === "string") return !value.trim();
+        // For arrays (like multi-select), check if array is empty
+        if (Array.isArray(value)) return value.length === 0;
+        // For objects, check if it has any keys
+        if (typeof value === "object") return Object.keys(value).length === 0;
+        // For non-string primitives (number, boolean), consider filled
+        return false;
+      },
     );
     if (emptyFields.length > 0) {
       createMessage = `Please fill in all fields: ${emptyFields.map((f) => f.name).join(", ")}`;

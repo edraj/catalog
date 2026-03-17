@@ -812,6 +812,7 @@
   >
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
+      class="modal modal-sm"
       onclick={(event) => event.stopPropagation()}
       onkeydown={(event) => event.stopPropagation()}
     >
@@ -823,10 +824,9 @@
       <div class="modal-body">
         {#if deletingTemplate}
           <p>
-            {$_(
-              "templates.delete_modal.confirm",
-              getTemplateTitle(deletingTemplate),
-            )}
+            {$_("templates.delete_modal.confirm", {
+              values: { name: getTemplateTitle(deletingTemplate) },
+            })}
           </p>
           <p class="warning-text">{$_("templates.delete_modal.warning")}</p>
         {/if}

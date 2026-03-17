@@ -364,6 +364,11 @@
     "confirm": {
       "delete_item": "Are you sure you want to delete \"{name}\"?"
     },
+    "delete_modal": {
+      "title": "Delete Item",
+      "message": "Are you sure you want to delete \"{name}\"? This action cannot be undone.",
+      "warning": "This action is irreversible. The item and all its associated data will be permanently removed."
+    },
     "content": {
       "no_content": "No content available",
       "title": "Content & Payload"

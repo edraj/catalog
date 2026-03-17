@@ -9,7 +9,7 @@ import {
     ResourceType,
     SortyType,
 } from "@edraj/tsdmart";
-import { getSpaces } from "./spaces";
+import { getSpaces, createTemplatesSchema } from "./spaces";
 
 export async function getTemplates(
     space_name: string = "applications",
@@ -35,6 +35,34 @@ export async function getTemplates(
         scope
     );
     return response;
+}
+
+/**
+ * Fetches a single template by shortname from a space
+ */
+export async function getTemplate(
+    space_name: string,
+    template_shortname: string,
+    scope: string = "managed"
+): Promise<any | null> {
+    try {
+        const response = await Dmart.retrieveEntry(
+            {
+                resource_type: ResourceType.content,
+                space_name: space_name,
+                subpath: "/templates",
+                shortname: template_shortname,
+                retrieve_json_payload: true,
+                retrieve_attachments: false,
+                validate_schema: false,
+            },
+            scope
+        );
+        return response || null;
+    } catch (error) {
+        console.error(`Failed to fetch template ${template_shortname} from ${space_name}:`, error);
+        return null;
+    }
 }
 
 /**
@@ -81,7 +109,7 @@ export async function getAllTemplates(): Promise<ApiQueryResponse> {
     } as ApiQueryResponse;
 }
 
-async function ensureTemplatesFolder(spaceName: string): Promise<boolean> {
+export async function ensureTemplatesFolder(spaceName: string): Promise<boolean> {
     try {
         // Check if /templates folder exists
         const checkResponse = await Dmart.query(
@@ -160,6 +188,14 @@ export async function createTemplate(
         return false;
     }
 
+    // Ensure templates schema exists in applications space (create if not exists)
+    try {
+        await createTemplatesSchema("managed");
+    } catch (error) {
+        console.error("Failed to create templates schema:", error);
+        // Continue anyway - the schema might already exist
+    }
+
     const request: ActionRequest = {
         space_name: targetSpace,
         request_type: RequestType.create,
@@ -170,6 +206,7 @@ export async function createTemplate(
                 subpath: "/templates",
                 attributes: {
                     is_active: true,
+                    schema_shortname: "templates",
                     payload: {
                         content_type: ContentType.json,
                         body,
