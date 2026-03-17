@@ -38,11 +38,36 @@
   let breadcrumbs = $state([]);
 
   const ITEMS_PER_PAGE_KEY = "itemsPerPage";
+  const SORT_BY_KEY = "admin_sortBy";
+  const SORT_ORDER_KEY = "admin_sortOrder";
+  const SELECTED_TYPE_KEY = "admin_selectedType";
+  const SELECTED_STATUS_KEY = "admin_selectedStatus";
+  
   let currentPage = $state(1);
   let itemsPerPage = $state(
     typeof localStorage !== "undefined"
       ? parseInt(localStorage.getItem(ITEMS_PER_PAGE_KEY) || "10", 10)
       : 10
+  );
+  let sortBy = $state(
+    typeof localStorage !== "undefined"
+      ? localStorage.getItem(SORT_BY_KEY) || "name"
+      : "name"
+  );
+  let sortOrder = $state(
+    typeof localStorage !== "undefined"
+      ? localStorage.getItem(SORT_ORDER_KEY) || "asc"
+      : "asc"
+  );
+  let selectedType = $state(
+    typeof localStorage !== "undefined"
+      ? localStorage.getItem(SELECTED_TYPE_KEY) || "all"
+      : "all"
+  );
+  let selectedStatus = $state(
+    typeof localStorage !== "undefined"
+      ? localStorage.getItem(SELECTED_STATUS_KEY) || "all"
+      : "all"
   );
   let totalItemsCount = $state(0);
   let totalPages = $state(1);
@@ -61,10 +86,6 @@
   let showBulkTrashConfirm = $state(false);
 
   let searchQuery = $state("");
-  let sortBy = $state("name");
-  let sortOrder = $state("asc");
-  let selectedType = $state("all");
-  let selectedStatus = $state("all");
   
   // Tags filtering state
   let availableTags = $state([]);
@@ -561,6 +582,15 @@
     sortBy = "name";
     sortOrder = "asc";
     currentPage = 1;
+    
+    // Clear localStorage for filters
+    if (typeof localStorage !== "undefined") {
+      localStorage.removeItem(SELECTED_TYPE_KEY);
+      localStorage.removeItem(SELECTED_STATUS_KEY);
+      localStorage.removeItem(SORT_BY_KEY);
+      localStorage.removeItem(SORT_ORDER_KEY);
+    }
+    
     applyFilters();
   }
   
@@ -716,6 +746,9 @@
 
   function toggleSortOrder() {
     sortOrder = sortOrder === "asc" ? "desc" : "asc";
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem(SORT_ORDER_KEY, sortOrder);
+    }
     applyFilters();
   }
 
@@ -1412,7 +1445,12 @@
             <div class="flex flex-wrap items-center gap-3">
               <select
                 bind:value={selectedType}
-                onchange={() => applyFilters()}
+                onchange={(e) => {
+                  if (typeof localStorage !== "undefined") {
+                    localStorage.setItem(SELECTED_TYPE_KEY, e.target.value);
+                  }
+                  applyFilters();
+                }}
                 class="bg-gray-50 border-none text-sm font-medium text-gray-700 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 cursor-pointer"
               >
                 {#each typeOptions as option}
@@ -1422,7 +1460,12 @@
 
               <select
                 bind:value={selectedStatus}
-                onchange={() => applyFilters()}
+                onchange={(e) => {
+                  if (typeof localStorage !== "undefined") {
+                    localStorage.setItem(SELECTED_STATUS_KEY, e.target.value);
+                  }
+                  applyFilters();
+                }}
                 class="bg-gray-50 border-none text-sm font-medium text-gray-700 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 cursor-pointer"
               >
                 {#each statusOptions as option}
@@ -1432,7 +1475,12 @@
 
               <select
                 bind:value={sortBy}
-                onchange={() => applyFilters()}
+                onchange={(e) => {
+                  if (typeof localStorage !== "undefined") {
+                    localStorage.setItem(SORT_BY_KEY, e.target.value);
+                  }
+                  applyFilters();
+                }}
                 class="bg-gray-50 border-none text-sm font-medium text-gray-700 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 cursor-pointer"
               >
                 {#each sortOptions as option}
