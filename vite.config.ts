@@ -10,22 +10,31 @@ import { viteStaticCopy } from "vite-plugin-static-copy";
 import * as path from "path";
 import plantuml from "@akebifiky/remark-simple-plantuml";
 import svelteMd from "vite-plugin-svelte-md";
+import { fileURLToPath } from "url";
 
 const production = process.env.NODE_ENV === "production";
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   // base: "/sysadmin",  // "/"
   clearScreen: false,
+
   resolve: {
     alias: {
       "@": process.cwd() + "/src",
       "~": process.cwd() + "/node_modules",
+      "flowbite-icons-direct": path.resolve(
+        __dirname,
+        "node_modules/flowbite-svelte-icons/dist",
+      ),
     },
   },
+
   optimizeDeps: {
     include: ["flowbite", "@roxi/routify"],
-    exclude: ["@vite/client", "@vite/env"],
+    exclude: ["@vite/client", "@vite/env", "flowbite-svelte-icons"],
   },
+
   plugins: [
     tailwindcss(),
     svelteMd(),
@@ -62,69 +71,84 @@ export default defineConfig({
         }),
       ],
       onwarn: (warning, defaultHandler) => {
-        // Ignore a11y_click_events_have_key_events warning from sveltestrap
         if (
-          warning.code?.startsWith("a11y") || // warning.filename?.startsWith("/node_modules/svelte-jsoneditor")
+          warning.code?.startsWith("a11y") ||
           warning.filename?.startsWith("/node_modules")
-        )
+        ) {
           return;
-        if (typeof defaultHandler != "undefined") defaultHandler(warning);
+        }
+
+        if (typeof defaultHandler !== "undefined") {
+          defaultHandler(warning);
+        }
       },
     }),
   ],
+
   build: {
     cssCodeSplit: true,
     cssMinify: "lightningcss",
     chunkSizeWarningLimit: 512,
-    minify: "esbuild", // Use esbuild instead of terser (faster and built-in)
+    minify: "esbuild",
     target: "esnext",
+
     rollupOptions: {
       output: {
         assetFileNames: (assetInfo) => {
           const name = assetInfo.name || "asset";
+
           if (name.endsWith(".css")) {
             return "assets/css/[name]-[hash][extname]";
           }
+
           if (name.match(/\.(woff2?|eot|ttf|otf)$/)) {
             return "assets/fonts/[name]-[hash][extname]";
           }
+
           return "assets/[name]-[hash][extname]";
         },
+
         chunkFileNames: "assets/js/[name]-[hash].js",
         entryFileNames: "assets/js/[name]-[hash].js",
+
         manualChunks(id) {
-          // Vendor chunks
           if (id.includes("node_modules")) {
-            // Split flowbite into its own chunk
+            if (id.includes("flowbite-svelte-icons")) {
+              return "vendor-flowbite-icons";
+            }
+
             if (id.includes("flowbite")) {
               return "vendor-flowbite";
             }
-            // Split tailwind into its own chunk
+
             if (id.includes("tailwind")) {
               return "vendor-tailwind";
             }
-            // Split svelte into its own chunk
-            if (id.includes("svelte")) {
-              return "vendor-svelte";
-            }
-            // Other large libraries
+
             if (id.includes("@roxi/routify")) {
               return "vendor-routify";
             }
-            // Everything else in vendor
+
+            if (id.includes("svelte")) {
+              return "vendor-svelte";
+            }
+
             return "vendor";
           }
         },
       },
     },
   },
+
   esbuild: {
     drop: production ? ["console", "debugger"] : [],
   },
+
   css: {
     lightningcss: {
-      // minify: true, // This is handled by cssMinify above
+      // minify is handled by cssMinify above
     },
   },
+
   server: { port: 1337 },
 });

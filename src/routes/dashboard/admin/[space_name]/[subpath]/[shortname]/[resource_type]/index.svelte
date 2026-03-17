@@ -33,7 +33,6 @@
   import JsonEditor from "@/components/editors/JsonEditor.svelte";
   import SchemaForm from "@/components/forms/SchemaForm.svelte";
   import SchemaViewer from "@/components/forms/SchemaViewer.svelte";
-  import PostContent from "@/components/post/PostContent.svelte";
   import PlantUMLViewer from "@/components/PlantUMLViewer.svelte";
   import { getTemplate } from "@/lib/dmart_services/templates";
   import RelationshipModal from "@/components/management/RelationshipModal.svelte";
