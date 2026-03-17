@@ -32,6 +32,9 @@
   let showReportModal = $state(false);
   let selectedReportNotification = $state(null);
 
+  // Prevents creating error notification toasts when component is destroyed
+  let destroyed = false;
+
   onMount(async () => {
     $newNotificationType = "";
     await loadNotifications();
@@ -39,15 +42,23 @@
   });
 
   onDestroy(() => {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.close();
+    destroyed = true;
+    if (ws) {
+      // Null handlers first so they don't fire during close
+      ws.onopen = null;
+      ws.onmessage = null;
+      ws.onclose = null;
+      ws.onerror = null;
+      if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+        ws.close();
+      }
+      ws = null;
     }
   });
 
   function connectWebSocket() {
-    if (!$user.signedin || !website.websocket) {
-      return;
-    }
+    if (destroyed) return;
+    if (!$user.signedin || !website.websocket) return;
 
     try {
       connectionStatus = "Connecting...";
@@ -55,6 +66,7 @@
       ws = new WebSocket(`${website.websocket}?token=${authToken}`);
 
       ws.onopen = () => {
+        if (destroyed) return;
         connectionStatus = "Connected";
         ws.send(
           JSON.stringify({
@@ -63,7 +75,6 @@
             subpath: "/reports",
           })
         );
-
         ws.send(
           JSON.stringify({
             type: "notification_subscription",
@@ -74,30 +85,35 @@
       };
 
       ws.onmessage = (event) => {
+        if (destroyed) return;
         try {
           const data = JSON.parse(event.data);
           handleWebSocketMessage(data);
         } catch (error) {
-          errorToastMessage("Failed to parse notification");
+          if (!destroyed) errorToastMessage("Failed to parse notification");
         }
       };
 
       ws.onclose = () => {
+        if (destroyed) return;
         connectionStatus = "Disconnected";
         setTimeout(() => {
-          if (connectionStatus === "Disconnected") {
+          if (!destroyed && connectionStatus === "Disconnected") {
             connectWebSocket();
           }
         }, 3000);
       };
 
-      ws.onerror = (error) => {
+      ws.onerror = () => {
+        if (destroyed) return;
         connectionStatus = "Error";
         errorToastMessage("WebSocket connection error");
       };
     } catch (error) {
-      connectionStatus = "Error";
-      errorToastMessage("Failed to connect to notifications");
+      if (!destroyed) {
+        connectionStatus = "Error";
+        errorToastMessage("Failed to connect to notifications");
+      }
     }
   }
 
@@ -138,11 +154,13 @@
   }
 
   async function loadNotifications(force: boolean = false) {
+    if (destroyed) return;
     isNotificationsLoading = true;
     notificationError = null;
 
     try {
       let _notifications = await fetchMyNotifications($user.shortname);
+      if (destroyed) return;
 
       const __notifications = await Promise.all(
         _notifications.map(async (n) => {
@@ -247,6 +265,8 @@
         })
       );
 
+      if (destroyed) return;
+
       if (notifications.length === 0 || force) {
         notifications = __notifications;
       } else {
@@ -274,10 +294,10 @@
         notifications = [...newNotifications, ...notifications];
       }
     } catch (error) {
-      errorToastMessage("Failed to load notifications");
+      if (!destroyed) errorToastMessage("Failed to load notifications");
     }
 
-    isNotificationsLoading = false;
+    if (!destroyed) isNotificationsLoading = false;
   }
 
   async function handleNotificationClick(notification) {
