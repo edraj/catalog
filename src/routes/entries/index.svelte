@@ -362,20 +362,19 @@
     >
       <div>
         <h1 class="text-3xl font-bold text-gray-900 mb-2 tracking-tight">
-          {$_("my_entries.title") || "My Entries"}
+          {$_("my_entries.title")}
         </h1>
         <p class="text-gray-500 text-[15px]">
-          {$_("my_entries.subtitle") ||
-            "Manage and track your content submissions"}
+          {$_("my_entries.subtitle")}
         </p>
       </div>
       <button
-        aria-label={$_("my_entries.create_new") || "Create New Entry"}
+        aria-label={$_("my_entries.create_new")}
         onclick={createNewEntry}
         class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-full font-semibold flex items-center justify-center gap-2 transition-all shadow-sm shadow-indigo-200 text-sm"
       >
         <PlusOutline class="w-4 h-4" />
-        {$_("my_entries.create_new") || "Create New Entry"}
+        {$_("my_entries.create_new")}
       </button>
     </div>
 
@@ -403,10 +402,13 @@
           onchange={handleFilterChange}
           class="w-full appearance-none px-4 py-2.5 bg-gray-50/50 border border-transparent rounded-xl text-sm font-semibold text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all cursor-pointer"
         >
-          <option value="all">All Types</option>
-          <option value="content">Content</option>
-          <option value="media">Media</option>
-          <option value="folder">Folder</option>
+          <option value="all">{$_("my_entries.filter.all_types")}</option>
+          <option value="content"
+            >{$_("my_entries.resource_type.content")}</option
+          >
+          <option value="media">{$_("my_entries.resource_type.media")}</option>
+          <option value="folder">{$_("my_entries.resource_type.folder")}</option
+          >
         </select>
         <div
           class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-gray-400"
@@ -437,7 +439,7 @@
           onchange={handleFilterChange}
           class="w-full appearance-none pl-11 pr-10 py-2.5 bg-gray-50/50 border border-transparent rounded-xl text-sm font-semibold text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all cursor-pointer"
         >
-          <option value="all">All Spaces</option>
+          <option value="all">{$_("my_entries.filter.all_spaces")}</option>
           {#each availableSpaces as space}
             <option value={space.shortname}>
               {getLocalizedSpaceName(space)} ({space.entryCount})
@@ -470,11 +472,15 @@
           onchange={handleSortChange}
           class="w-full appearance-none px-4 py-2.5 bg-gray-50/50 border border-transparent rounded-xl text-sm font-semibold text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all cursor-pointer"
         >
-          <option value="updated_at">Last Updated</option>
-          <option value="created_at">Date Created</option>
-          <option value="title">Title</option>
-          <option value="reactions">Reactions</option>
-          <option value="comments">Comments</option>
+          <option value="updated_at"
+            >{$_("my_entries.sort.last_updated")}</option
+          >
+          <option value="created_at"
+            >{$_("my_entries.sort.date_created")}</option
+          >
+          <option value="title">{$_("my_entries.sort.title")}</option>
+          <option value="reactions">{$_("my_entries.sort.reactions")}</option>
+          <option value="comments">{$_("my_entries.sort.comments")}</option>
         </select>
         <div
           class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-gray-400"
@@ -499,19 +505,19 @@
     <!-- Active Filters Display -->
     {#if spaceFilter !== "all" || statusFilter !== "all" || resourceTypeFilter !== "all" || searchTerm.trim()}
       <div class="mb-6 flex flex-wrap gap-2 items-center">
-        <!-- Render tags cleanly -->
         {#if searchTerm.trim()}
           <span
             class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-200"
           >
-            Search: {searchTerm}
+            {$_("my_entries.filter.search")}: {searchTerm}
             <button
               onclick={() => {
                 searchTerm = "";
                 handleSearch();
               }}
               class="ml-1.5 hover:text-gray-900"
-              ><svg
+            >
+              <svg
                 class="w-3.5 h-3.5"
                 fill="none"
                 stroke="currentColor"
@@ -522,25 +528,24 @@
                   stroke-linejoin="round"
                   stroke-width="2"
                   d="M6 18L18 6M6 6l12 12"
-                >
-                </path>
-              </svg></button
-            >
+                ></path>
+              </svg>
+            </button>
           </span>
         {/if}
         {#if resourceTypeFilter !== "all"}
           <span
             class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-200"
           >
-            Type: {resourceTypeFilter}
+            {$_("my_entries.filter.type")}: {resourceTypeFilter}
             <button
               onclick={() => {
                 resourceTypeFilter = "all";
                 handleFilterChange();
               }}
-              class="ml-1.5
-                    hover:text-gray-900"
-              ><svg
+              class="ml-1.5 hover:text-gray-900"
+            >
+              <svg
                 class="w-3.5 h-3.5"
                 fill="none"
                 stroke="currentColor"
@@ -551,25 +556,24 @@
                   stroke-linejoin="round"
                   stroke-width="2"
                   d="M6 18L18 6M6 6l12 12"
-                >
-                </path>
-              </svg></button
-            >
+                ></path>
+              </svg>
+            </button>
           </span>
         {/if}
         {#if spaceFilter !== "all"}
           <span
             class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-200"
           >
-            Space: {spaceFilter}
+            {$_("my_entries.filter.space")}: {spaceFilter}
             <button
               onclick={() => {
                 spaceFilter = "all";
                 handleFilterChange();
               }}
-              class="ml-1.5
-                    hover:text-gray-900"
-              ><svg
+              class="ml-1.5 hover:text-gray-900"
+            >
+              <svg
                 class="w-3.5 h-3.5"
                 fill="none"
                 stroke="currentColor"
@@ -580,17 +584,17 @@
                   stroke-linejoin="round"
                   stroke-width="2"
                   d="M6 18L18 6M6 6l12 12"
-                >
-                </path>
-              </svg></button
-            >
+                ></path>
+              </svg>
+            </button>
           </span>
         {/if}
         <button
           onclick={clearAllFilters}
           class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 ml-2"
-          >Clear all</button
         >
+          {$_("my_entries.clear_all")}
+        </button>
       </div>
     {/if}
 
@@ -610,7 +614,7 @@
             <p
               class="text-[13px] font-bold text-gray-400 uppercase tracking-wide mb-1"
             >
-              Total Entries
+              {$_("my_entries.total_entries")}
             </p>
             <p class="text-4xl font-extrabold text-gray-900">
               {formatNumberInText(entities.length, $locale)}
@@ -630,8 +634,7 @@
                 stroke-linejoin="round"
                 stroke-width="2"
                 d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              >
-              </path>
+              ></path>
             </svg>
           </div>
         </div>
@@ -643,7 +646,7 @@
             <p
               class="text-[13px] font-bold text-gray-400 uppercase tracking-wide mb-1"
             >
-              Spaces Used
+              {$_("my_entries.spaces_used")}
             </p>
             <p class="text-4xl font-extrabold text-[#00d084]">
               {formatNumberInText(
@@ -666,8 +669,7 @@
                 stroke-linejoin="round"
                 stroke-width="2"
                 d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
-              >
-              </path>
+              ></path>
             </svg>
           </div>
         </div>
@@ -688,23 +690,25 @@
               stroke-linejoin="round"
               stroke-width="2"
               d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-            >
-            </path>
+            ></path>
           </svg>
           <h3 class="text-xl font-bold text-gray-900">
-            {entities.length === 0 ? "No entries found" : "No matching entries"}
+            {entities.length === 0
+              ? $_("my_entries.no_entries_found")
+              : $_("my_entries.no_matching_entries")}
           </h3>
           <p class="text-gray-500 mt-2">
             {entities.length === 0
-              ? "Create your first entry to get started."
-              : "Try adjusting your search or filters."}
+              ? $_("my_entries.create_first_description")
+              : $_("my_entries.adjust_filters_description")}
           </p>
           {#if entities.length === 0}
             <button
               onclick={createNewEntry}
               class="mt-6 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-full font-semibold transition-colors shadow-sm text-sm inline-flex items-center gap-2"
             >
-              <PlusOutline class="w-4 h-4" /> Create First Entry
+              <PlusOutline class="w-4 h-4" />
+              {$_("my_entries.create_first_entry")}
             </button>
           {/if}
         </div>
@@ -720,38 +724,38 @@
                   <th
                     class="px-8 py-5 text-[11px] font-bold text-gray-400 uppercase tracking-widest bg-white"
                   >
-                    ENTRY</th
-                  >
+                    {$_("my_entries.table.entry")}
+                  </th>
                   <th
                     class="px-6 py-5 text-[11px] font-bold text-gray-400 uppercase tracking-widest bg-white"
                   >
-                    TYPE</th
-                  >
+                    {$_("my_entries.table.type")}
+                  </th>
                   <th
                     class="px-6 py-5 text-[11px] font-bold text-gray-400 uppercase tracking-widest bg-white"
                   >
-                    SPACE</th
-                  >
+                    {$_("my_entries.table.space")}
+                  </th>
                   <th
                     class="px-6 py-5 text-[11px] font-bold text-gray-400 uppercase tracking-widest bg-white"
                   >
-                    STATUS</th
-                  >
+                    {$_("my_entries.table.status")}
+                  </th>
                   <th
                     class="px-6 py-5 text-[11px] font-bold text-gray-400 uppercase tracking-widest bg-white"
                   >
-                    ENGAGEMENT</th
-                  >
+                    {$_("my_entries.table.engagement")}
+                  </th>
                   <th
                     class="px-6 py-5 text-[11px] font-bold text-gray-400 uppercase tracking-widest bg-white"
                   >
-                    UPDATED</th
-                  >
+                    {$_("my_entries.table.updated")}
+                  </th>
                   <th
                     class="px-8 py-5 text-[11px] font-bold text-gray-400 uppercase tracking-widest text-right bg-white"
                   >
-                    ACTIONS</th
-                  >
+                    {$_("my_entries.table.actions")}
+                  </th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-50">
@@ -773,20 +777,20 @@
                             stroke-linejoin="round"
                             stroke-width="2"
                             d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                          >
-                          </path>
+                          ></path>
                         </svg>
                       </div>
                       <div class="min-w-0 max-w-[280px]">
                         <h3
                           class="text-[14px] font-bold text-gray-900 truncate tracking-tight"
                         >
-                          {entity.title || "Untitled"}
+                          {entity.title || $_("my_entries.untitled")}
                         </h3>
                         <p
                           class="text-[12px] text-gray-400 truncate mt-0.5 font-medium"
                         >
-                          #{entity.tags?.join(" #") || "general"}
+                          #{entity.tags?.join(" #") ||
+                            $_("my_entries.tags.general")}
                         </p>
                       </div>
                     </td>
@@ -796,33 +800,40 @@
                       {#if entity.resource_type === "media"}
                         <span
                           class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-purple-50 text-purple-600"
-                          >media</span
                         >
+                          {$_("my_entries.resource_type.media")}
+                        </span>
                       {:else if entity.resource_type === "content"}
                         <span
                           class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-cyan-50 text-cyan-600"
-                          >content</span
                         >
+                          {$_("my_entries.resource_type.content")}
+                        </span>
                       {:else if entity.resource_type === "json"}
                         <span
                           class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-green-50 text-green-600"
-                          >json</span
                         >
+                          {$_("my_entries.resource_type.json")}
+                        </span>
                       {:else if entity.resource_type === "poll"}
                         <span
                           class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-pink-50 text-pink-600"
-                          >poll</span
                         >
+                          {$_("my_entries.resource_type.poll")}
+                        </span>
                       {:else if entity.resource_type === "template"}
                         <span
                           class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-orange-50 text-orange-600"
-                          >template</span
                         >
+                          {$_("my_entries.resource_type.template")}
+                        </span>
                       {:else}
                         <span
                           class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-gray-100 text-gray-600"
-                          >{entity.resource_type || "unknown"}</span
                         >
+                          {entity.resource_type ||
+                            $_("my_entries.resource_type.unknown")}
+                        </span>
                       {/if}
                     </td>
 
@@ -844,7 +855,7 @@
                           <div
                             class="w-1.5 h-1.5 rounded-full bg-[#00d084]"
                           ></div>
-                           Active
+                          {$_("my_entries.status.active")}
                         </div>
                       {:else}
                         <div
@@ -853,7 +864,7 @@
                           <div
                             class="w-1.5 h-1.5 rounded-full bg-orange-400"
                           ></div>
-                           Draft
+                          {$_("my_entries.status.draft")}
                         </div>
                       {/if}
                     </td>
@@ -875,8 +886,7 @@
                               stroke-linejoin="round"
                               stroke-width="2"
                               d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                            >
-                            </path>
+                            ></path>
                           </svg>
                           {formatNumberInText(entity.reaction, $locale) || 0}
                         </div>
@@ -892,8 +902,7 @@
                               stroke-linejoin="round"
                               stroke-width="2"
                               d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                            >
-                            </path>
+                            ></path>
                           </svg>
                           {formatNumberInText(entity.comment, $locale) || 0}
                         </div>
@@ -912,17 +921,17 @@
                       >
                         <button
                           onclick={() => viewEntity(entity)}
-                          class="flex items-center gap-1 text-[12px]
-                                        font-bold text-gray-400 hover:text-indigo-600 transition-colors"
+                          class="flex items-center gap-1 text-[12px] font-bold text-gray-400 hover:text-indigo-600 transition-colors"
                         >
-                          <EyeOutline class="w-4 h-4" /> View
+                          <EyeOutline class="w-4 h-4" />
+                          {$_("my_entries.actions.view")}
                         </button>
                         <button
                           onclick={() => editEntity(entity)}
-                          class="flex items-center gap-1 text-[12px]
-                                        font-bold text-gray-400 hover:text-indigo-600 transition-colors"
+                          class="flex items-center gap-1 text-[12px] font-bold text-gray-400 hover:text-indigo-600 transition-colors"
                         >
-                          <EditOutline class="w-4 h-4" /> Edit
+                          <EditOutline class="w-4 h-4" />
+                          {$_("my_entries.actions.edit")}
                         </button>
                       </div>
                     </td>
@@ -934,7 +943,11 @@
           <div
             class="py-4 border-t border-gray-50 text-center text-xs font-semibold text-indigo-400 bg-white"
           >
-            Showing {filteredEntities.length} of {entities.length} entries
+            {$_("my_entries.showing")}
+            {filteredEntities.length}
+            {$_("my_entries.of")}
+            {entities.length}
+            {$_("my_entries.entries")}
           </div>
         </div>
       {/if}

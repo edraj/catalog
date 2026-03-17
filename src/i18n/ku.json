@@ -812,70 +812,73 @@
       "register_button": "خۆتۆمارکردن"
     }
   },
-  "my_entries": {
+    "my_entries": {
+    "create_new": "دروستکردنی تۆماری نوێ",
     "title": "تۆمارەکانم",
-    "subtitle": "بەڕێوەبردن و شوێنکەوتنی بەشدارییەکانی ناوەڕۆکت",
-    "create_new": "تۆماری نوێ دروست بکە",
-    "untitled": "بێناونیشان",
-    "loading": "بارکردنی تۆمارەکانت...",
-    "search": {
-      "placeholder": "لە تۆمارەکاندا بگەڕێ..."
-    },
+    "subtitle": "بەڕێوەبردن و شوێنکەوتنی نووسراوەکانت",
+    "untitled": "بێ ناونیشان",
+    "total_entries": "کۆی تۆمارەکان",
+    "spaces_used": "جێگاکانی بەکارهاتوو",
+    "showing": "پیشاندان",
+    "of": "لە",
+    "entries": "تۆمار",
+    "no_entries_found": "هیچ تۆمارێک نەدۆزرایەوە",
+    "no_matching_entries": "هیچ تۆمارێکی گونجاو نەدۆزرایەوە",
+    "create_first_description": "یەکەم تۆمارت دروست بکە بۆ دەستپێکردن.",
+    "adjust_filters_description": "هەوڵبدە گەڕان یان فلتەرەکان بگۆڕیت.",
+    "create_first_entry": "دروستکردنی یەکەم تۆمار",
+    "clear_all": "سڕینەوەی هەمووی",
     "filter": {
-      "all_status": "هەموو دۆخەکان",
-      "published": "بڵاوکراوەتەوە",
-      "draft": "ڕەشنووس",
-      "pending": "لە چاوەڕوانیدا",
-      "approved": "پەسەندکراو"
+      "all_types": "هەموو جۆرەکان",
+      "all_spaces": "هەموو جێگاکان",
+      "type": "جۆر",
+      "space": "جێگا",
+      "search": "گەڕان"
     },
     "sort": {
-      "last_updated": "دوایین نوێکردنەوە",
+      "last_updated": "کۆتا نوێکردنەوە",
       "date_created": "بەرواری دروستکردن",
       "title": "ناونیشان",
-      "reactions": "کارلێکەکان",
-      "comments": "لێدوانەکان",
-      "newest_first": "نوێترین یەکەم",
-      "oldest_first": "کۆنترین یەکەم"
-    },
-    "empty": {
-      "no_entries": "هێشتا هیچ تۆمارێک نییە",
-      "no_matches": "هیچ تۆمارێکی هاوتا نییە",
-      "no_entries_description": "دەست بە دروستکردنی یەکەم تۆمارت بکە بۆ بەشکردنی بیرۆکە و ناوەڕۆکەکانت لەگەڵ جیهان.",
-      "no_matches_description": "هەوڵبدە پێوەرەکانی گەڕان یان فلتەرکردنت بگۆڕیت بۆ دۆزینەوەی ئەوەی بەدوایدا دەگەڕێیت."
-    },
-    "create_first": "یەکەم تۆمارت دروست بکە",
-    "stats": {
-      "total_entries": "کۆی تۆمارەکان",
-      "published": "بڵاوکراوەتەوە",
-      "total_reactions": "کۆی کارلێکەکان",
-      "total_comments": "کۆی لێدوانەکان"
+      "reactions": "وەڵامەکان",
+      "comments": "لێدوانەکان"
     },
     "table": {
       "entry": "تۆمار",
+      "type": "جۆر",
+      "space": "جێگا",
       "status": "دۆخ",
-      "engagement": "بەشداری",
+      "engagement": "بەشداریکردن",
       "updated": "نوێکراوەتەوە",
       "actions": "کردارەکان"
     },
-    "status": {
-      "draft": "ڕەشنووس",
-      "pending": "لە چاوەڕوانیدا",
-      "published": "بڵاوکراوەتەوە",
-      "rejected": "ڕەتکراوەتەوە",
-      "active": "چالاک"
+    "resource_type": {
+      "content": "ناوەڕۆک",
+      "media": "میدیا",
+      "folder": "فولدەر",
+      "json": "جەیسۆن",
+      "poll": "دەنگدان",
+      "template": "داریشتە",
+      "unknown": "نەناسراو"
     },
-    "tags": {
-      "more": "+{count} زیاتر"
+    "status": {
+      "active": "چالاک",
+      "draft": "پێشنووس",
+      "pending": "چاوەڕوانە",
+      "published": "بڵاوکراوەتەوە",
+      "rejected": "ڕەتکراوەتەوە"
     },
     "actions": {
       "view": "بینین",
-      "edit": "دەستکاری"
+      "edit": "دەستکاریکردن"
     },
-    "results": {
-      "showing": "نیشاندانی {filtered} لە {total} تۆمار"
+    "tags": {
+      "general": "گشتی"
+    },
+    "route_labels": {
+      "placeholder_search_entries": "گەڕان لە تۆمارەکان..."
     },
     "error": {
-      "fetch_failed": "هەڵەیەک ڕوویدا لە کاتی وەرگرتنی تۆمارەکانت"
+      "fetch_failed": "هەڵەیەک ڕوویدا لە کاتی کێشانی تۆمارەکانت"
     }
   },
   "create_entry": {

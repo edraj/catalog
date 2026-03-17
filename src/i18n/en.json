@@ -1195,8 +1195,51 @@
   },
   "my_entries": {
     "create_new": "Create New Entry",
-    "error": {
-      "fetch_failed": "An error occurred while fetching your entries"
+    "title": "My Entries",
+    "subtitle": "Manage and track your content submissions",
+    "untitled": "Untitled",
+    "total_entries": "Total Entries",
+    "spaces_used": "Spaces Used",
+    "showing": "Showing",
+    "of": "of",
+    "entries": "entries",
+    "no_entries_found": "No entries found",
+    "no_matching_entries": "No matching entries",
+    "create_first_description": "Create your first entry to get started.",
+    "adjust_filters_description": "Try adjusting your search or filters.",
+    "create_first_entry": "Create First Entry",
+    "clear_all": "Clear all",
+    "filter": {
+      "all_types": "All Types",
+      "all_spaces": "All Spaces",
+      "type": "Type",
+      "space": "Space",
+      "search": "Search"
+    },
+    "sort": {
+      "last_updated": "Last Updated",
+      "date_created": "Date Created",
+      "title": "Title",
+      "reactions": "Reactions",
+      "comments": "Comments"
+    },
+    "table": {
+      "entry": "Entry",
+      "type": "Type",
+      "space": "Space",
+      "status": "Status",
+      "engagement": "Engagement",
+      "updated": "Updated",
+      "actions": "Actions"
+    },
+    "resource_type": {
+      "content": "content",
+      "media": "media",
+      "folder": "folder",
+      "json": "json",
+      "poll": "poll",
+      "template": "template",
+      "unknown": "unknown"
     },
     "status": {
       "active": "Active",
@@ -1205,9 +1248,19 @@
       "published": "Published",
       "rejected": "Rejected"
     },
-    "subtitle": "Manage and track your content submissions",
-    "title": "My Entries",
-    "untitled": "Untitled"
+    "actions": {
+      "view": "View",
+      "edit": "Edit"
+    },
+    "tags": {
+      "general": "general"
+    },
+    "route_labels": {
+      "placeholder_search_entries": "Search entries..."
+    },
+    "error": {
+      "fetch_failed": "An error occurred while fetching your entries"
+    }
   },
   "my_profile": "My Profile",
   "name": "Name",

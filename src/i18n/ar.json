@@ -1141,21 +1141,74 @@
       "warning": "تغيير الاسم المختصر سينقل هذا المورد إلى موقع جديد. قد يؤثر هذا على المراجع الموجودة لهذا العنصر."
     }
   },
-  "my_entries": {
-    "create_new": "إنشاء مقال جديد",
-    "error": {
-      "fetch_failed": "حدث خطأ أثناء جلب مقالاتك"
+    "my_entries": {
+    "create_new": "إنشاء مدخل جديد",
+    "title": "مدخلاتي",
+    "subtitle": "إدارة ومتابعة محتوياتك المُقدَّمة",
+    "untitled": "بدون عنوان",
+    "total_entries": "إجمالي المدخلات",
+    "spaces_used": "الفضاءات المستخدمة",
+    "showing": "عرض",
+    "of": "من",
+    "entries": "مدخلات",
+    "no_entries_found": "لا توجد مدخلات",
+    "no_matching_entries": "لا توجد مدخلات مطابقة",
+    "create_first_description": "أنشئ مدخلك الأول للبدء.",
+    "adjust_filters_description": "حاول تعديل البحث أو الفلاتر.",
+    "create_first_entry": "إنشاء أول مدخل",
+    "clear_all": "مسح الكل",
+    "filter": {
+      "all_types": "جميع الأنواع",
+      "all_spaces": "جميع الفضاءات",
+      "type": "النوع",
+      "space": "الفضاء",
+      "search": "بحث"
+    },
+    "sort": {
+      "last_updated": "آخر تحديث",
+      "date_created": "تاريخ الإنشاء",
+      "title": "العنوان",
+      "reactions": "التفاعلات",
+      "comments": "التعليقات"
+    },
+    "table": {
+      "entry": "المدخل",
+      "type": "النوع",
+      "space": "الفضاء",
+      "status": "الحالة",
+      "engagement": "التفاعل",
+      "updated": "تاريخ التحديث",
+      "actions": "إجراءات"
+    },
+    "resource_type": {
+      "content": "محتوى",
+      "media": "وسائط",
+      "folder": "مجلد",
+      "json": "جيسون",
+      "poll": "استطلاع",
+      "template": "قالب",
+      "unknown": "غير معروف"
     },
     "status": {
       "active": "نشط",
       "draft": "مسودة",
-      "pending": "في الانتظار",
+      "pending": "قيد الانتظار",
       "published": "منشور",
       "rejected": "مرفوض"
     },
-    "subtitle": "إدارة وتتبع مساهماتك في المحتوى",
-    "title": "مقالاتي",
-    "untitled": "بدون عنوان"
+    "actions": {
+      "view": "عرض",
+      "edit": "تعديل"
+    },
+    "tags": {
+      "general": "عام"
+    },
+    "route_labels": {
+      "placeholder_search_entries": "ابحث في المدخلات..."
+    },
+    "error": {
+      "fetch_failed": "حدث خطأ أثناء جلب مدخلاتك"
+    }
   },
   "my_profile": "ملفي الشخصي",
   "name": "الاسم",
