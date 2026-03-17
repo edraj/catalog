@@ -368,6 +368,7 @@
           successToastMessage($_("toast.folder_created"));
         }
         await loadContents();
+        metaContent = {};
       } else {
         const errorMessage = isEditMode
           ? $_("toast.folder_update_failed")

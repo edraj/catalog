@@ -808,6 +808,7 @@
         showCreateFolderModal = false;
         successToastMessage($_("toast.folder_created"));
         await loadContents(true);
+        this.metaContent = {};
       } else {
         errorToastMessage($_("toast.folder_create_failed"));
       }
@@ -938,6 +939,7 @@
         showCreateSchemaModal = false;
         successToastMessage($_("toast.schema_created"));
         await loadContents(true);
+        this.metaContent = {};
       } else {
         errorToastMessage($_("toast.schema_create_failed"));
       }
@@ -984,6 +986,7 @@
         showCreateWorkflowModal = false;
         successToastMessage($_("toast.workflow_created"));
         await loadContents(true);
+        this.metaContent = {};
       } else {
         errorToastMessage($_("toast.workflow_create_failed"));
       }
