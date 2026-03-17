@@ -412,8 +412,7 @@
         </select>
         <div
           class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-gray-400"
-        >
-        </div>
+        ></div>
       </div>
 
       <!-- Space Filter -->
@@ -435,8 +434,7 @@
         </select>
         <div
           class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-gray-400"
-        >
-        </div>
+        ></div>
       </div>
 
       <!-- Sort By -->
@@ -458,8 +456,7 @@
         </select>
         <div
           class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-gray-400"
-        >
-        </div>
+        ></div>
       </div>
     </div>
 
@@ -877,19 +874,17 @@
 
                     <!-- ACTIONS -->
                     <td class="px-8 py-5 text-right">
-                      <div
-                        class="flex items-center justify-end gap-3"
-                      >
+                      <div class="flex items-center justify-end gap-3">
                         <button
                           onclick={() => viewEntity(entity)}
-                          class="flex items-center gap-1 text-[12px] font-bold text-gray-400 hover:text-indigo-600 transition-colors"
+                          class="flex items-center gap-1 text-[12px] font-bold text-gray-400 hover:text-indigo-600 transition-colors cursor-pointer"
                         >
                           <EyeOutline class="w-4 h-4" />
                           {$_("my_entries.actions.view")}
                         </button>
                         <button
                           onclick={() => editEntity(entity)}
-                          class="flex items-center gap-1 text-[12px] font-bold text-gray-400 hover:text-indigo-600 transition-colors"
+                          class="flex items-center gap-1 text-[12px] font-bold text-gray-400 hover:text-indigo-600 transition-colors cursor-pointer"
                         >
                           <EditOutline class="w-4 h-4" />
                           {$_("my_entries.actions.edit")}
