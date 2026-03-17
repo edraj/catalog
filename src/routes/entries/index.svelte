@@ -917,7 +917,7 @@
                     <!-- ACTIONS -->
                     <td class="px-8 py-5 text-right">
                       <div
-                        class="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity"
+                        class="flex items-center justify-end gap-3"
                       >
                         <button
                           onclick={() => viewEntity(entity)}
