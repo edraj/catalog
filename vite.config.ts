@@ -71,8 +71,9 @@ export default defineConfig({
         }),
       ],
       onwarn: (warning, defaultHandler) => {
+      // Ignore a11y_click_events_have_key_events warning from sveltestrap
         if (
-          warning.code?.startsWith("a11y") ||
+          warning.code?.startsWith("a11y") || // warning.filename?.startsWith("/node_modules/svelte-jsoneditor")
           warning.filename?.startsWith("/node_modules")
         ) {
           return;
@@ -89,7 +90,7 @@ export default defineConfig({
     cssCodeSplit: true,
     cssMinify: "lightningcss",
     chunkSizeWarningLimit: 512,
-    minify: "esbuild",
+    minify: "esbuild", // Use esbuild instead of terser (faster and built-in)
     target: "esnext",
 
     rollupOptions: {
@@ -112,7 +113,9 @@ export default defineConfig({
         entryFileNames: "assets/js/[name]-[hash].js",
 
         manualChunks(id) {
+          // Vendor chunks
           if (id.includes("node_modules")) {
+           // Split flowbite into its own chunk
             if (id.includes("flowbite-svelte-icons")) {
               return "vendor-flowbite-icons";
             }
@@ -120,15 +123,15 @@ export default defineConfig({
             if (id.includes("flowbite")) {
               return "vendor-flowbite";
             }
-
+            // Split tailwind into its own chunk
             if (id.includes("tailwind")) {
               return "vendor-tailwind";
             }
-
+             // Other large libraries
             if (id.includes("@roxi/routify")) {
               return "vendor-routify";
             }
-
+             // Split svelte into its own chunk
             if (id.includes("svelte")) {
               return "vendor-svelte";
             }
@@ -146,7 +149,7 @@ export default defineConfig({
 
   css: {
     lightningcss: {
-      // minify is handled by cssMinify above
+     // minify: true, // This is handled by cssMinify above
     },
   },
 
