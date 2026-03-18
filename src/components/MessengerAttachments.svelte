@@ -1,14 +1,11 @@
 <script lang="ts">
   import { Dmart, RequestType, ResourceType } from "@edraj/tsdmart";
-  import Media from "./Media.svelte";
   import { successToastMessage } from "@/lib/toasts_messages";
-  import {
-    CloseOutline,
-    DownloadOutline,
-    EyeOutline,
-    TrashBinSolid,
-    PlaySolid,
-  } from "flowbite-svelte-icons";
+  import CloseOutline from "flowbite-icons-direct/CloseOutline.svelte";
+  import DownloadOutline from "flowbite-icons-direct/DownloadOutline.svelte";
+  import EyeOutline from "flowbite-icons-direct/EyeOutline.svelte";
+  import TrashBinSolid from "flowbite-icons-direct/TrashBinSolid.svelte";
+  import PlaySolid from "flowbite-icons-direct/PlaySolid.svelte";
   import { _ } from "@/i18n";
   import {
     getFileExtension,

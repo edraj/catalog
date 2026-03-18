@@ -6,14 +6,10 @@
     successToastMessage,
     errorToastMessage,
   } from "@/lib/toasts_messages";
-  import {
-    UploadOutline,
-    CheckCircleSolid,
-    CloseCircleSolid,
-    FileOutline,
-  } from "flowbite-svelte-icons";
+  import UploadOutline from "flowbite-icons-direct/UploadOutline.svelte";
+  import CheckCircleSolid from "flowbite-icons-direct/CheckCircleSolid.svelte";
+  import CloseCircleSolid from "flowbite-icons-direct/CloseCircleSolid.svelte";
   import { getFileExtension, isImageFile } from "@/lib/fileUtils";
-  import { createAttachment } from "@/lib/dmart_services";
 
   interface FileUploadItem {
     file: File;

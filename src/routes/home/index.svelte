@@ -1,14 +1,12 @@
 <script>
     import {goto} from "@roxi/routify";
-    import {
-        BellSolid,
-        EditSolid,
-        EyeSolid,
-        HeartSolid,
-        MessageCaptionSolid,
-        MessagesOutline,
-        UserSolid,
-    } from "flowbite-svelte-icons";
+    import BellSolid from "flowbite-icons-direct/BellSolid.svelte";
+    import EditSolid from "flowbite-icons-direct/EditSolid.svelte";
+    import EyeSolid from "flowbite-icons-direct/EyeSolid.svelte";
+    import HeartSolid from "flowbite-icons-direct/HeartSolid.svelte";
+    import MessageCaptionSolid from "flowbite-icons-direct/MessageCaptionSolid.svelte";
+    import MessagesOutline from "flowbite-icons-direct/MessagesOutline.svelte";
+    import UserSolid from "flowbite-icons-direct/UserSolid.svelte";
     import {_} from "@/i18n";
 
     $goto;

@@ -16,22 +16,20 @@
     successToastMessage,
   } from "@/lib/toasts_messages";
   import { ResourceType } from "@edraj/tsdmart";
-  import {
-    ArrowLeftOutline,
-    CloseCircleOutline,
-    CloudArrowUpOutline,
-    FileCheckSolid,
-    FileImportSolid,
-    FloppyDiskSolid,
-    PaperClipOutline,
-    PaperPlaneSolid,
-    PlusOutline,
-    StarOutline,
-    TagOutline,
-    TextUnderlineOutline,
-    TrashBinSolid,
-    UploadOutline,
-  } from "flowbite-svelte-icons";
+  import ArrowLeftOutline from "flowbite-icons-direct/ArrowLeftOutline.svelte";
+  import CloseCircleOutline from "flowbite-icons-direct/CloseCircleOutline.svelte";
+  import CloudArrowUpOutline from "flowbite-icons-direct/CloudArrowUpOutline.svelte";
+  import FileCheckSolid from "flowbite-icons-direct/FileCheckSolid.svelte";
+  import FileImportSolid from "flowbite-icons-direct/FileImportSolid.svelte";
+  import FloppyDiskSolid from "flowbite-icons-direct/FloppyDiskSolid.svelte";
+  import PaperClipOutline from "flowbite-icons-direct/PaperClipOutline.svelte";
+  import PaperPlaneSolid from "flowbite-icons-direct/PaperPlaneSolid.svelte";
+  import PlusOutline from "flowbite-icons-direct/PlusOutline.svelte";
+  import StarOutline from "flowbite-icons-direct/StarOutline.svelte";
+  import TagOutline from "flowbite-icons-direct/TagOutline.svelte";
+  import TextUnderlineOutline from "flowbite-icons-direct/TextUnderlineOutline.svelte";
+  import TrashBinSolid from "flowbite-icons-direct/TrashBinSolid.svelte";
+  import UploadOutline from "flowbite-icons-direct/UploadOutline.svelte";
   import { Diamonds } from "svelte-loading-spinners";
   import { _, locale } from "@/i18n";
   import { derived } from "svelte/store";

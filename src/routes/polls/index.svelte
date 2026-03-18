@@ -7,15 +7,12 @@
     errorToastMessage,
     successToastMessage,
   } from "@/lib/toasts_messages";
-  import {
-    CheckCircleOutline,
-    ClockOutline,
-    EyeOutline,
-    SearchOutline,
-    UserOutline,
-    VolumeDownOutline,
-    ChartOutline,
-  } from "flowbite-svelte-icons";
+  import CheckCircleOutline from "flowbite-icons-direct/CheckCircleOutline.svelte";
+  import ClockOutline from "flowbite-icons-direct/ClockOutline.svelte";
+  import EyeOutline from "flowbite-icons-direct/EyeOutline.svelte";
+  import SearchOutline from "flowbite-icons-direct/SearchOutline.svelte";
+  import UserOutline from "flowbite-icons-direct/UserOutline.svelte";
+  import ChartOutline from "flowbite-icons-direct/ChartOutline.svelte";
   import { user } from "@/stores/user";
   import { Diamonds } from "svelte-loading-spinners";
   // Create Poll imports

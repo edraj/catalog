@@ -1,12 +1,10 @@
 <script>
     import {goto} from "@roxi/routify";
-    import {
-        BookOpenSolid,
-        ChevronDownOutline,
-        EnvelopeSolid,
-        MessagesSolid,
-        QuestionCircleSolid,
-    } from "flowbite-svelte-icons";
+    import BookOpenSolid from "flowbite-icons-direct/BookOpenSolid.svelte";
+    import ChevronDownOutline from "flowbite-icons-direct/ChevronDownOutline.svelte";
+    import EnvelopeSolid from "flowbite-icons-direct/EnvelopeSolid.svelte";
+    import MessagesSolid from "flowbite-icons-direct/MessagesSolid.svelte";
+    import QuestionCircleSolid from "flowbite-icons-direct/QuestionCircleSolid.svelte";
     import {_} from "@/i18n";
 
     let openFaq = $state(null);
