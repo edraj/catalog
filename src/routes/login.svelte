@@ -1,12 +1,10 @@
 <script lang="ts">
   import { goto } from "@roxi/routify";
   import { _, locale } from "@/i18n";
-  import {
-    EyeSlashSolid,
-    EyeSolid,
-    LockSolid,
-    UserSolid,
-  } from "flowbite-svelte-icons";
+  import EyeSlashSolid from "flowbite-icons-direct/EyeSlashSolid.svelte";
+  import EyeSolid from "flowbite-icons-direct/EyeSolid.svelte";
+  import LockSolid from "flowbite-icons-direct/LockSolid.svelte";
+  import UserSolid from "flowbite-icons-direct/UserSolid.svelte";
   import { loginBy, signin } from "@/stores/user";
 
   $goto;

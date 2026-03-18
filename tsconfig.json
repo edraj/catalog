@@ -17,6 +17,9 @@
       ],
       "@/*": [
         "./src/*"
+      ],
+      "flowbite-icons-direct/*": [
+        "node_modules/flowbite-svelte-icons/dist/*"
       ]
     },
     "types": [

@@ -4,12 +4,10 @@
   import { Dmart, RequestType, ResourceType } from "@edraj/tsdmart";
   import { successToastMessage, errorToastMessage } from "@/lib/toasts_messages";
   import { getChildren, getChildrenAndSubChildren } from "@/lib/dmart_services";
-  import {
-    PlusOutline,
-    TrashBinSolid,
-    PenSolid,
-    CloseOutline,
-  } from "flowbite-svelte-icons";
+  import PlusOutline from "flowbite-icons-direct/PlusOutline.svelte";
+  import TrashBinSolid from "flowbite-icons-direct/TrashBinSolid.svelte";
+  import PenSolid from "flowbite-icons-direct/PenSolid.svelte";
+  import CloseOutline from "flowbite-icons-direct/CloseOutline.svelte";
 
   let {
     isOpen = $bindable(false),

@@ -21,21 +21,19 @@
   } from "@/lib/toasts_messages";
   import Avatar from "@/components/Avatar.svelte";
   import { Diamonds } from "svelte-loading-spinners";
-  import {
-    ArrowLeftOutline,
-    CheckCircleSolid,
-    ClockOutline,
-    CloseCircleSolid,
-    EditOutline,
-    EyeSlashSolid,
-    EyeSolid,
-    HeartSolid,
-    MessagesSolid,
-    TagOutline,
-    TrashBinOutline,
-    TrashBinSolid,
-    UserCircleOutline,
-  } from "flowbite-svelte-icons";
+  import ArrowLeftOutline from "flowbite-icons-direct/ArrowLeftOutline.svelte";
+  import CheckCircleSolid from "flowbite-icons-direct/CheckCircleSolid.svelte";
+  import ClockOutline from "flowbite-icons-direct/ClockOutline.svelte";
+  import CloseCircleSolid from "flowbite-icons-direct/CloseCircleSolid.svelte";
+  import EditOutline from "flowbite-icons-direct/EditOutline.svelte";
+  import EyeSlashSolid from "flowbite-icons-direct/EyeSlashSolid.svelte";
+  import EyeSolid from "flowbite-icons-direct/EyeSolid.svelte";
+  import HeartSolid from "flowbite-icons-direct/HeartSolid.svelte";
+  import MessagesSolid from "flowbite-icons-direct/MessagesSolid.svelte";
+  import TagOutline from "flowbite-icons-direct/TagOutline.svelte";
+  import TrashBinOutline from "flowbite-icons-direct/TrashBinOutline.svelte";
+  import TrashBinSolid from "flowbite-icons-direct/TrashBinSolid.svelte";
+  import UserCircleOutline from "flowbite-icons-direct/UserCircleOutline.svelte";
   import { _, locale } from "@/i18n";
   import { derived } from "svelte/store";
   import { marked } from "marked";

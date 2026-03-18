@@ -1,6 +1,9 @@
 <script>
     import {goto} from "@roxi/routify";
-    import {EyeSlashSolid, LockSolid, ShieldCheckSolid, UsersSolid,} from "flowbite-svelte-icons";
+    import EyeSlashSolid from "flowbite-icons-direct/EyeSlashSolid.svelte";
+    import LockSolid from "flowbite-icons-direct/LockSolid.svelte";
+    import ShieldCheckSolid from "flowbite-icons-direct/ShieldCheckSolid.svelte";
+    import UsersSolid from "flowbite-icons-direct/UsersSolid.svelte";
     import {_} from "@/i18n";
 
     $goto;

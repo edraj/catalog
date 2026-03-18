@@ -5,24 +5,17 @@
   import {
     formatDate,
     formatNumberInText,
-    truncateString,
   } from "@/lib/helpers";
   import { errorToastMessage } from "@/lib/toasts_messages";
   import { _, locale } from "@/i18n";
   import { derived } from "svelte/store";
-  import {
-    ClockOutline,
-    EditOutline,
-    EyeOutline,
-    FolderOutline,
-    HeartSolid,
-    MessagesSolid,
-    PhoneOutline,
-    PlusOutline,
-    SearchOutline,
-    TagOutline,
-    LayersSolid,
-  } from "flowbite-svelte-icons";
+  import EditOutline from "flowbite-icons-direct/EditOutline.svelte";
+  import EyeOutline from "flowbite-icons-direct/EyeOutline.svelte";
+  import FolderOutline from "flowbite-icons-direct/FolderOutline.svelte";
+  import PhoneOutline from "flowbite-icons-direct/PhoneOutline.svelte";
+  import PlusOutline from "flowbite-icons-direct/PlusOutline.svelte";
+  import SearchOutline from "flowbite-icons-direct/SearchOutline.svelte";
+  import LayersSolid from "flowbite-icons-direct/LayersSolid.svelte";
 
   $goto;
   let entities = $state([]);

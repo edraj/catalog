@@ -1,14 +1,12 @@
 <script>
     import {goto} from "@roxi/routify";
     import {_, locale} from "@/i18n";
-    import {
-        ArrowLeftOutline,
-        CheckCircleSolid,
-        EnvelopeSolid,
-        MailBoxOutline,
-        MessagesSolid,
-        UserSolid,
-    } from "flowbite-svelte-icons";
+    import ArrowLeftOutline from "flowbite-icons-direct/ArrowLeftOutline.svelte";
+    import CheckCircleSolid from "flowbite-icons-direct/CheckCircleSolid.svelte";
+    import EnvelopeSolid from "flowbite-icons-direct/EnvelopeSolid.svelte";
+    import MailBoxOutline from "flowbite-icons-direct/MailBoxOutline.svelte";
+    import MessagesSolid from "flowbite-icons-direct/MessagesSolid.svelte";
+    import UserSolid from "flowbite-icons-direct/UserSolid.svelte";
     import {contactUs} from "@/stores/user";
 
     const isRTL = $locale === "ar" || $locale === "ku";

@@ -15,8 +15,8 @@
   import { Diamonds } from "svelte-loading-spinners";
   import { formatDate } from "@/lib/helpers";
   import { Modal } from "flowbite-svelte";
-  import { InboxOutline } from "flowbite-svelte-icons";
-
+  import InboxOutline from "flowbite-icons-direct/InboxOutline.svelte";
+  
   let reports = $state([]);
   let isLoading = $state(true);
   let selectedReport = $state(null);

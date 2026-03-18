@@ -2,17 +2,14 @@
   import { goto } from "@roxi/routify";
   import { _, locale } from "@/i18n";
   import { checkExisting, register, requestOtp } from "@/stores/user";
-
-  import {
-    ArrowLeftOutline,
-    CheckCircleSolid,
-    EnvelopeSolid,
-    EyeSlashSolid,
-    EyeSolid,
-    LockSolid,
-    PhoneSolid,
-    UserSolid,
-  } from "flowbite-svelte-icons";
+  import ArrowLeftOutline from "flowbite-icons-direct/ArrowLeftOutline.svelte";
+  import CheckCircleSolid from "flowbite-icons-direct/CheckCircleSolid.svelte";
+  import EnvelopeSolid from "flowbite-icons-direct/EnvelopeSolid.svelte";
+  import EyeSlashSolid from "flowbite-icons-direct/EyeSlashSolid.svelte";
+  import EyeSolid from "flowbite-icons-direct/EyeSolid.svelte";
+  import LockSolid from "flowbite-icons-direct/LockSolid.svelte";
+  import PhoneSolid from "flowbite-icons-direct/PhoneSolid.svelte";
+  import UserSolid from "flowbite-icons-direct/UserSolid.svelte";
   import { getEntity } from "@/lib/dmart_services/dmart_services";
   import { ResourceType } from "@edraj/tsdmart";
 
