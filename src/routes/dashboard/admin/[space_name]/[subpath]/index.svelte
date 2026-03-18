@@ -7,6 +7,14 @@
     getSpaceContents,
     getSpaceTags,
   } from "@/lib/dmart_services";
+  import {
+    schemaTypeMap,
+    parseValueByType,
+    getFieldType,
+    formatValueForEdit,
+    setNestedValue,
+    getNestedValue,
+  } from "@/lib/schemaTypes";
   import { createFolder } from "@/lib/dmart_services/entries";
   import { Diamonds } from "svelte-loading-spinners";
   import { _, locale } from "@/i18n";
@@ -84,6 +92,9 @@
   let isBulkDeleting = $state(false);
   let showBulkDeleteConfirm = $state(false);
   let showBulkTrashConfirm = $state(false);
+  let showBulkEditModal = $state(false);
+  let isBulkSaving = $state(false);
+  let bulkEditData = $state<Record<string, any>>({});
 
   let searchQuery = $state("");
   
@@ -426,11 +437,8 @@
 
   function handleCreateItem() {
     if (subpath === "templates") {
-      $goto("/dashboard/templates", {
-        space_name: spaceName,
-        subpath: $actualSubpath,
-      });
-      // showCreateTemplateModal = true;
+      // Open the template creation modal with locked space
+      showCreateTemplateModal = true;
     } else {
       $goto("/entries/create", {
         space_name: spaceName,
@@ -750,6 +758,215 @@
       localStorage.setItem(SORT_ORDER_KEY, sortOrder);
     }
     applyFilters();
+  }
+
+  // Bulk edit functions
+  function openBulkEditModal() {
+    if (selectedItems.size === 0) return;
+    
+    // Get effective columns to determine which fields to include
+    // Must match the table view logic exactly
+    const effectiveColumns = indexAttributes && indexAttributes.length > 0 && indexAttributes.some(attr => attr && Object.keys(attr).length > 0) 
+      ? indexAttributes 
+      : [
+          { key: 'shortname', name: 'Shortname' },
+          { key: 'schema_shortname', name: 'Schema' },
+          { key: 'status', name: 'Status' },
+          { key: 'created_at', name: 'Created At' },
+          { key: 'updated_at', name: 'Updated At' }
+        ];
+    
+
+    const initialData: Record<string, any> = {};
+    const selectedShortnames = Array.from(selectedItems);
+    for (const shortname of selectedShortnames) {
+      const item = $allContents.find(i => i.shortname === shortname);
+      if (item) {
+        const editData: any = {
+          shortname: item.shortname,
+          new_shortname: item.shortname,
+          is_active: item.attributes?.is_active ?? true,
+          tags: [...(item.attributes?.tags || [])],
+          displayname: { ...(item.attributes?.displayname || {}) },
+          description: { ...(item.attributes?.description || {}) },
+          owner_shortname: item.attributes?.owner_shortname || '',
+          created_at: item.attributes?.created_at || '',
+          updated_at: item.attributes?.updated_at || '',
+          schema_shortname: item.attributes?.schema_shortname || '',
+        };
+
+        for (const col of effectiveColumns) {
+          const key = col.key;
+          const fieldType = getFieldType(key);
+
+          if (key === 'displayname' || key === 'attributes.displayname') {
+            editData[key] = formatValueForEdit(item.attributes?.displayname, 'localized');
+          } else if (key === 'description' || key === 'attributes.description') {
+            editData[key] = formatValueForEdit(item.attributes?.description, 'localized');
+          } else if (key === 'status') {
+            editData.is_active = formatValueForEdit(item.attributes?.is_active, 'boolean');
+          } else if (key === 'tags') {
+            editData.tags = formatValueForEdit(item.attributes?.tags, 'array');
+          } else if (key === 'shortname') {
+            editData.new_shortname = item.shortname;
+          } else if (key === 'author' || key === 'owner_shortname') {
+            editData.owner_shortname = formatValueForEdit(item.attributes?.owner_shortname, 'string');
+          } else if (key === 'created_at') {
+            editData.created_at = formatValueForEdit(item.attributes?.created_at, 'string');
+          } else if (key === 'updated_at') {
+            editData.updated_at = formatValueForEdit(item.attributes?.updated_at, 'string');
+          } else if (key === 'schema_shortname') {
+            editData.schema_shortname = formatValueForEdit(item.attributes?.schema_shortname, 'string');
+          } else if (key.includes('.')) {
+            const parts = key.split('.');
+            let current = item;
+            for (const part of parts) {
+              if (current === null || current === undefined) break;
+              current = current[part];
+            }
+            const rawValue = current !== undefined ? current : '';
+            editData[key] = formatValueForEdit(rawValue, fieldType);
+          } else {
+            const rawValue = getAttributeValue(item, key);
+            editData[key] = formatValueForEdit(rawValue, fieldType);
+          }
+        }
+        
+        initialData[shortname] = editData;
+      }
+    }
+
+    bulkEditData = { ...initialData };
+    showBulkEditModal = true;
+    console.log({bulkEditData})
+  }
+
+  function closeBulkEditModal() {
+    showBulkEditModal = false;
+    bulkEditData = {};
+  }
+
+  function updateBulkEditField(shortname: string, field: string, value: any) {
+    if (bulkEditData[shortname]) {
+      bulkEditData[shortname] = { ...bulkEditData[shortname], [field]: value };
+      bulkEditData = { ...bulkEditData };
+    }
+  }
+
+  function updateBulkEditLocalizedField(shortname: string, field: string, locale: string, value: string) {
+    if (bulkEditData[shortname]) {
+      const currentField = bulkEditData[shortname][field] || {};
+      bulkEditData[shortname] = { 
+        ...bulkEditData[shortname], 
+        [field]: { ...currentField, [locale]: value }
+      };
+      bulkEditData = { ...bulkEditData };
+    }
+  }
+
+  function addTagToBulkEdit(shortname: string, tag: string) {
+    if (bulkEditData[shortname] && tag.trim()) {
+      const currentTags = bulkEditData[shortname].tags || [];
+      if (!currentTags.includes(tag.trim())) {
+        bulkEditData[shortname] = { 
+          ...bulkEditData[shortname], 
+          tags: [...currentTags, tag.trim()]
+        };
+        bulkEditData = { ...bulkEditData };
+      }
+    }
+  }
+
+  function removeTagFromBulkEdit(shortname: string, tag: string) {
+    if (bulkEditData[shortname]) {
+      const currentTags = bulkEditData[shortname].tags || [];
+      bulkEditData[shortname] = { 
+        ...bulkEditData[shortname], 
+        tags: currentTags.filter(t => t !== tag)
+      };
+      bulkEditData = { ...bulkEditData };
+    }
+  }
+
+  async function handleBulkSave() {
+    if (bulkEditData.size === 0) return;
+
+    isBulkSaving = true;
+
+    try {
+      const records: any[] = [];
+
+      for (const [shortname, editData] of Object.entries(bulkEditData)) {
+        const item = $allContents.find(i => i.shortname === shortname);
+        if (item) {
+          const attributes: any = {};
+
+          for (const [key, value] of Object.entries(editData)) {
+            if (key === 'shortname' || key === 'new_shortname') continue;
+
+            const baseKey = key.startsWith('attributes.') ? key.slice(11) : key;
+            if ((baseKey === 'displayname' || baseKey === 'description') && 
+                (!value || (typeof value === 'object' && Object.keys(value).length === 0))) {
+              continue;
+            }
+
+            
+            const fieldType = getFieldType(key);
+            const parsedValue = parseValueByType(value, fieldType);
+
+            const attrKey = key.startsWith('attributes.') ? key.slice(11) : key;
+            
+            setNestedValue(attributes, attrKey, parsedValue);
+          }
+
+          records.push({
+            resource_type: item.resource_type,
+            shortname: item.shortname,
+            subpath: `/${$actualSubpath}`,
+            attributes,
+          });
+        }
+      }
+
+      const response = await Dmart.request({
+        space_name: spaceName,
+        request_type: RequestType.update,
+        records,
+      });
+
+      let successCount = 0;
+      let failCount = 0;
+
+      if (response && response.records) {
+        for (const record of response.records) {
+          if (record.status === 'success') {
+            successCount++;
+          } else {
+            failCount++;
+          }
+        }
+      } else if (response && response.status === 'success') {
+        successCount = records.length;
+      } else {
+        failCount = records.length;
+      }
+
+      if (successCount > 0) {
+        successToastMessage($_("admin_content.bulk_actions.edit_success", { count: successCount }));
+      }
+      if (failCount > 0) {
+        errorToastMessage($_("admin_content.bulk_actions.edit_failed", { count: failCount }));
+      }
+
+      closeBulkEditModal();
+      clearSelection();
+      await loadContents(true);
+    } catch (err) {
+      console.error("Error in bulk edit:", err);
+      errorToastMessage($_("admin_content.bulk_actions.edit_error"));
+    } finally {
+      isBulkSaving = false;
+    }
   }
 
   function handleCardTagClick(event, tag) {
@@ -1560,6 +1777,16 @@
                   {$_("admin_content.bulk_actions.clear_selection")}
                 </button>
                 <button
+                  onclick={() => openBulkEditModal()}
+                  class="bulk-btn bulk-btn-primary"
+                  disabled={isBulkDeleting}
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  {$_("admin_content.bulk_actions.edit")}
+                </button>
+                <button
                   onclick={() => showBulkTrashConfirm = true}
                   class="bulk-btn bulk-btn-warning"
                   disabled={isBulkDeleting}
@@ -2142,6 +2369,240 @@
   </div>
 {/if}
 
+<!-- Bulk Edit Modal -->
+{#if showBulkEditModal}
+  {@const effectiveColumns = indexAttributes && indexAttributes.length > 0 && indexAttributes.some(attr => attr && Object.keys(attr).length > 0) 
+    ? indexAttributes 
+    : [
+        { key: 'shortname', name: 'Shortname' },
+        { key: 'schema_shortname', name: 'Schema' },
+        { key: 'status', name: 'Status' },
+        { key: 'created_at', name: 'Created At' },
+        { key: 'updated_at', name: 'Updated At' }
+      ]}
+  <!-- Key only re-renders when items are added/removed, not on every edit -->
+  {#key Object.keys(bulkEditData).length}
+  <div class="modal-overlay bulk-edit-overlay">
+    <div class="modal-container bulk-edit-container" class:rtl={$isRTL}>
+      <div class="modal-header">
+        <div class="modal-header-content" class:text-right={$isRTL}>
+          <h3 class="modal-title">{$_("admin_content.bulk_actions.edit_title")}</h3>
+        </div>
+        <button
+          onclick={closeBulkEditModal}
+          class="modal-close-btn"
+          aria-label={$_("admin_content.modal.close")}
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-content bulk-edit-content">
+        <div class="bulk-edit-table-wrapper">
+          <table class="bulk-edit-table">
+            <thead>
+              <tr>
+                {#each effectiveColumns as attr}
+                  <th class="bulk-edit-th">{attr.name}</th>
+                {/each}
+              </tr>
+            </thead>
+            <tbody>
+              {#each Object.entries(bulkEditData) as [shortname, editData], rowIndex (shortname)}
+                {@const item = $allContents.find(i => i.shortname === shortname)}
+                <tr class="bulk-edit-row">
+                  {#each effectiveColumns as attr, colIndex (attr.key)}
+                    <td class="bulk-edit-td">
+                      {#if attr.key === 'shortname'}
+                        <!-- Shortname (editable) -->
+                        <div class="flex items-center gap-2">
+                          <span class="text-lg">{item ? getItemIcon(item) : '📋'}</span>
+                          <input
+                            type="text"
+                            value={editData.new_shortname || shortname}
+                            oninput={(e) => updateBulkEditField(shortname, 'new_shortname', e.currentTarget.value)}
+                            class="bulk-edit-input"
+                            placeholder="Shortname"
+                          />
+                        </div>
+                      {:else if attr.key === 'status'}
+                        <!-- Status Toggle -->
+                        <label class="status-toggle">
+                          <input
+                            type="checkbox"
+                            checked={editData.is_active}
+                            onchange={(e) => updateBulkEditField(shortname, 'is_active', e.currentTarget.checked)}
+                            class="sr-only"
+                          />
+                          <span class="status-toggle-slider" class:active={editData.is_active}></span>
+                          <span class="status-toggle-label">
+                            {editData.is_active ? $_('admin_content.status.active') : $_('admin_content.status.inactive')}
+                          </span>
+                        </label>
+                      {:else if attr.key === 'tags' || getFieldType(attr.key) === 'array'}
+                        <!-- Array Editor (tags, conditions, etc.) -->
+                        {@const arrayKey = attr.key}
+                        <div class="tags-editor">
+                          <div class="tags-list compact">
+                            {#each editData[arrayKey] || [] as tagItem, idx (idx)}
+                              <span class="edit-tag">
+                                {tagItem}
+                                <button
+                                  onclick={() => {
+                                    const arr = [...(editData[arrayKey] || [])];
+                                    arr.splice(idx, 1);
+                                    updateBulkEditField(shortname, arrayKey, arr);
+                                  }}
+                                  class="edit-tag-remove"
+                                  type="button"
+                                >
+                                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </span>
+                            {/each}
+                          </div>
+                          <div class="tag-input-wrapper">
+                            <input
+                              type="text"
+                              placeholder="Add item + Enter"
+                              onkeydown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  const val = e.currentTarget.value.trim();
+                                  if (val) {
+                                    const arr = [...(editData[arrayKey] || [])];
+                                    arr.push(val);
+                                    updateBulkEditField(shortname, arrayKey, arr);
+                                    e.currentTarget.value = '';
+                                  }
+                                }
+                              }}
+                              class="bulk-edit-input tag-input"
+                            />
+                          </div>
+                        </div>
+                      {:else if attr.key === 'displayname' || attr.key === 'description' || attr.key === 'attributes.displayname' || attr.key === 'attributes.description'}
+                        <!-- Localized fields (displayname, description) -->
+                        {@const fieldName = attr.key.startsWith('attributes.') ? attr.key.slice(11) : attr.key}
+                        <div class="localized-inputs compact">
+                          {#each ['en', 'ar', 'ku'] as lang}
+                            <div class="localized-input-row">
+                              <span class="locale-badge">{lang}</span>
+                              <input
+                                type="text"
+                                value={editData[fieldName]?.[lang] || ''}
+                                oninput={(e) => updateBulkEditLocalizedField(shortname, fieldName, lang, e.currentTarget.value)}
+                                placeholder={lang}
+                                class="bulk-edit-input"
+                              />
+                            </div>
+                          {/each}
+                        </div>
+                      {:else if attr.key === 'author' || attr.key === 'owner_shortname'}
+                        <!-- Author/Owner (editable) -->
+                        <input
+                          type="text"
+                          value={editData.owner_shortname || item?.attributes?.owner_shortname || ''}
+                          oninput={(e) => updateBulkEditField(shortname, 'owner_shortname', e.currentTarget.value)}
+                          class="bulk-edit-input"
+                          placeholder="Owner"
+                        />
+                      {:else if attr.key === 'created_at'}
+                        <!-- Created At (editable date) -->
+                        <input
+                          type="datetime-local"
+                          value={item?.attributes?.created_at ? new Date(item.attributes.created_at).toISOString().slice(0, 16) : ''}
+                          oninput={(e) => updateBulkEditField(shortname, 'created_at', e.currentTarget.value)}
+                          class="bulk-edit-input"
+                        />
+                      {:else if attr.key === 'updated_at'}
+                        <!-- Updated At (editable date) -->
+                        <input
+                          type="datetime-local"
+                          value={item?.attributes?.updated_at ? new Date(item.attributes.updated_at).toISOString().slice(0, 16) : ''}
+                          oninput={(e) => updateBulkEditField(shortname, 'updated_at', e.currentTarget.value)}
+                          class="bulk-edit-input"
+                        />
+                      {:else if attr.key === 'schema_shortname'}
+                        <!-- Schema (editable) -->
+                        <input
+                          type="text"
+                          value={editData.schema_shortname || item?.attributes?.schema_shortname || ''}
+                          oninput={(e) => updateBulkEditField(shortname, 'schema_shortname', e.currentTarget.value)}
+                          class="bulk-edit-input"
+                          placeholder="Schema"
+                        />
+                      {:else if getFieldType(attr.key) === 'object' || getFieldType(attr.key) === 'array-object'}
+                        <!-- Object/Array-Object - JSON editor -->
+                        {@const objType = getFieldType(attr.key)}
+                        <textarea
+                          value={JSON.stringify(editData[attr.key] || (objType === 'array-object' ? [] : {}), null, 2)}
+                          oninput={(e) => {
+                            try {
+                              const parsed = JSON.parse(e.currentTarget.value);
+                              updateBulkEditField(shortname, attr.key, parsed);
+                            } catch {
+                              // Invalid JSON, store as string temporarily
+                              updateBulkEditField(shortname, attr.key, e.currentTarget.value);
+                            }
+                          }}
+                          class="bulk-edit-input"
+                          placeholder={`{ "key": "value" }`}
+                          rows="3"
+                        />
+                      {:else}
+                        <!-- Generic editable field - any dynamic attribute from index_attributes -->
+                        {@const currentValue = editData[attr.key] !== undefined ? editData[attr.key] : getAttributeValue(item, attr.key)}
+                        <input
+                          type="text"
+                          value={currentValue}
+                          oninput={(e) => updateBulkEditField(shortname, attr.key, e.currentTarget.value)}
+                          class="bulk-edit-input"
+                          placeholder={attr.name}
+                        />
+                      {/if}
+                    </td>
+                  {/each}
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button
+          onclick={closeBulkEditModal}
+          class="btn btn-secondary"
+          disabled={isBulkSaving}
+        >
+          {$_("common.cancel")}
+        </button>
+        <button
+          onclick={handleBulkSave}
+          class="btn btn-primary"
+          disabled={isBulkSaving}
+        >
+          {#if isBulkSaving}
+            <div class="spinner"></div>
+            {$_("admin_content.bulk_actions.saving")}
+          {:else}
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            {$_("admin_content.bulk_actions.save_changes")}
+          {/if}
+        </button>
+      </div>
+    </div>
+  </div>
+  {/key}
+{/if}
+
 {#if showCreateFolderModal}
   <div class="modal-overlay">
     <div class="modal-container" class:rtl={$isRTL}>
@@ -2579,6 +3040,16 @@
       </div>
     </div>
   </div>
+{/if}
+
+{#if showCreateTemplateModal}
+  <CreateTemplateModal
+    currentSpace={spaceName}
+    currentSubpath={$actualSubpath}
+    lockedSpace={spaceName}
+    onClose={handleTemplateModalClose}
+    onSuccess={handleTemplateModalClose}
+  />
 {/if}
 
 <DeleteConfirmationDialog
@@ -3281,6 +3752,328 @@
   }
 
   .rtl .tag-count {
+    margin-left: 0;
+    margin-right: 0.25rem;
+  }
+
+  /* Bulk Edit Modal Styles */
+  .bulk-edit-overlay {
+    z-index: 60;
+  }
+
+  .bulk-edit-container {
+    max-width: 90vw;
+    width: 100%;
+    max-height: 90vh;
+  }
+
+  .bulk-edit-content {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .bulk-edit-table-wrapper {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 60vh;
+  }
+
+  .bulk-edit-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.875rem;
+  }
+
+  .bulk-edit-th {
+    position: sticky;
+    top: 0;
+    background: #f9fafb;
+    padding: 0.875rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6b7280;
+    border-bottom: 1px solid #e5e7eb;
+    white-space: nowrap;
+    z-index: 10;
+  }
+
+  .rtl .bulk-edit-th {
+    text-align: right;
+  }
+
+  .bulk-edit-row {
+    border-bottom: 1px solid #f3f4f6;
+    transition: background-color 0.15s;
+  }
+
+  .bulk-edit-row:hover {
+    background-color: #f9fafb;
+  }
+
+  .bulk-edit-row:last-child {
+    border-bottom: none;
+  }
+
+  .bulk-edit-td {
+    padding: 1rem;
+    vertical-align: top;
+    border-bottom: 1px solid #f3f4f6;
+  }
+
+  .localized-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 200px;
+  }
+
+  .localized-inputs.compact {
+    gap: 0.25rem;
+    min-width: 150px;
+  }
+
+  .localized-input-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .locale-badge {
+    flex-shrink: 0;
+    width: 1.5rem;
+    height: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #e5e7eb;
+    color: #6b7280;
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    border-radius: 0.25rem;
+  }
+
+  .compact .locale-badge {
+    width: 1.25rem;
+    height: 1.25rem;
+    font-size: 0.5625rem;
+  }
+
+  .bulk-edit-input {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    color: #374151;
+    background: white;
+    transition: all 0.2s;
+    min-width: 0;
+  }
+
+  .bulk-edit-input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  }
+
+  .bulk-edit-input::placeholder {
+    color: #9ca3af;
+  }
+
+  .bulk-edit-input[type="datetime-local"] {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.8125rem;
+  }
+
+  textarea.bulk-edit-input {
+    resize: vertical;
+    min-height: 60px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.75rem;
+    line-height: 1.4;
+  }
+
+  .compact .bulk-edit-input {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.8125rem;
+  }
+
+  /* Status Toggle */
+  .status-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+  }
+
+  .status-toggle-slider {
+    position: relative;
+    width: 2.75rem;
+    height: 1.5rem;
+    background: #e5e7eb;
+    border-radius: 9999px;
+    transition: background-color 0.2s;
+    flex-shrink: 0;
+  }
+
+  .status-toggle-slider::after {
+    content: '';
+    position: absolute;
+    top: 0.125rem;
+    left: 0.125rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .status-toggle-slider.active {
+    background: #10b981;
+  }
+
+  .status-toggle-slider.active::after {
+    transform: translateX(1.25rem);
+  }
+
+  .status-toggle-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+  }
+
+  /* Tags Editor */
+  .tags-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 180px;
+  }
+
+  .tags-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+  }
+
+  .tags-list.compact {
+    gap: 0.25rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .edit-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    background: #eef2ff;
+    color: #4338ca;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: 0.375rem;
+  }
+
+  .edit-tag-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.125rem;
+    margin-left: 0.25rem;
+    color: #6366f1;
+    background: none;
+    border: none;
+    cursor: pointer;
+    border-radius: 0.125rem;
+    transition: color 0.15s;
+  }
+
+  .edit-tag-remove:hover {
+    color: #dc2626;
+  }
+
+  .tag-input-wrapper {
+    display: flex;
+  }
+
+  .tag-input {
+    width: 100%;
+  }
+
+  /* Bulk Edit Button */
+  .bulk-btn-primary {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    color: white;
+    box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
+  }
+
+  .bulk-btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(79, 70, 229, 0.3);
+  }
+
+  /* Responsive Bulk Edit */
+  @media (max-width: 1024px) {
+    .bulk-edit-container {
+      max-width: 95vw;
+      max-height: 95vh;
+    }
+
+    .bulk-edit-table-wrapper {
+      max-height: 50vh;
+    }
+
+    .localized-inputs {
+      min-width: 150px;
+    }
+
+    .localized-inputs.compact {
+      min-width: 120px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .bulk-edit-container {
+      max-width: 100vw;
+      max-height: 100vh;
+      margin: 0;
+      border-radius: 0;
+    }
+
+    .bulk-edit-table-wrapper {
+      max-height: calc(100vh - 200px);
+    }
+
+    .bulk-edit-th {
+      padding: 0.75rem 0.5rem;
+      font-size: 0.6875rem;
+    }
+
+    .bulk-edit-td {
+      padding: 0.75rem 0.5rem;
+    }
+
+    .localized-inputs {
+      min-width: 120px;
+    }
+
+    .bulk-edit-input {
+      padding: 0.375rem 0.5rem;
+      font-size: 0.8125rem;
+    }
+  }
+
+  .rtl .localized-input-row {
+    flex-direction: row-reverse;
+  }
+
+  .rtl .edit-tag-remove {
     margin-left: 0;
     margin-right: 0.25rem;
   }

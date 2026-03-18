@@ -10,6 +10,7 @@
   } from "@/lib/dmart_services/dmart_services";
   import { onMount } from "svelte";
   import { _, locale } from "@/i18n";
+  import { params } from "@roxi/routify";
 
   let templates = $state([]);
   let isLoading = $state(true);
@@ -42,6 +43,10 @@
   let loadingSchemas = $state(false);
   let schemaKeys = $state([]);
   let draggedKey = $state(null);
+  
+  // Get space_name from query params (when coming from admin space selection)
+  let querySpaceName = $derived($params?.space_name || "");
+  let isSpaceLocked = $derived(!!querySpaceName);
 
   let saveSpace = $derived(schemaShortname && targetSpaceName ? targetSpaceName : "applications");
 
@@ -168,13 +173,19 @@
     content = "# New Template\n\nStart writing your template content here...";
     saveMessage = "";
     saveError = "";
-    targetSpaceName = "";
+    // If coming from admin with a space_name, use it and lock the field
+    targetSpaceName = querySpaceName || "";
     schemaShortname = "";
-    showOptionalFields = false;
+    // Show optional fields by default when space is locked (schema becomes mandatory)
+    showOptionalFields = isSpaceLocked;
     availableSchemas = [];
     schemaKeys = [];
     draggedKey = null;
     loadSpaces();
+    // If space is locked, load schemas for that space
+    if (targetSpaceName) {
+      loadSchemasForSpace(targetSpaceName);
+    }
     showCreateModal = true;
   }
 
@@ -234,6 +245,12 @@
     // If target space is set, schema is required
     if (targetSpaceName.trim() && !schemaShortname.trim()) {
       saveError = "Please select a schema for the target space";
+      return;
+    }
+    
+    // When space is locked (from admin), schema is mandatory
+    if (isSpaceLocked && !schemaShortname.trim()) {
+      saveError = "Schema is required when creating a template from space admin";
       return;
     }
 
@@ -525,46 +542,63 @@
           <small class="shortname-help">{$_("create_entry.shortname.help_text")}</small>
         </div>
 
-        <!-- Optional Fields Toggle -->
-        <button
-          type="button"
-          class="optional-fields-toggle"
-          onclick={() => showOptionalFields = !showOptionalFields}
-        >
-          <span class="toggle-icon">{showOptionalFields ? "▼" : "▶"}</span>
-          {$_("templates.form.optional_fields_toggle")}
-        </button>
+        <!-- Optional Fields Toggle (hidden when space is locked) -->
+        {#if !isSpaceLocked}
+          <button
+            type="button"
+            class="optional-fields-toggle"
+            onclick={() => showOptionalFields = !showOptionalFields}
+          >
+            <span class="toggle-icon">{showOptionalFields ? "▼" : "▶"}</span>
+            {$_("templates.form.optional_fields_toggle")}
+          </button>
+        {/if}
         
-        {#if showOptionalFields}
-          <div class="optional-fields">
+        {#if showOptionalFields || isSpaceLocked}
+          <div class="optional-fields" class:locked={isSpaceLocked}>
             <div class="form-row">
               <div class="form-group flex-1">
                 <label for="template-target-space">
                   {$_("templates.form.target_space_label")}
-                  <span class="optional-badge">{$_("common.optional")}</span>
+                  {#if isSpaceLocked}
+                    <!-- No badge when locked - it's pre-filled -->
+                  {:else}
+                    <span class="optional-badge">{$_("common.optional")}</span>
+                  {/if}
                 </label>
-                <select
-                  id="template-target-space"
-                  value={targetSpaceName}
-                  onchange={handleTargetSpaceChange}
-                  disabled={isSaving || loadingSpaces}
-                  class="form-select"
-                >
-                  <option value="">{$_("templates.form.select_space")}</option>
-                  {#each availableSpaces as space}
-                    <option value={space.shortname}>
-                      {space.attributes?.displayname?.en || space.shortname}
-                    </option>
-                  {/each}
-                </select>
-                {#if loadingSpaces}
-                  <small class="field-hint">{$_("common.loading")}</small>
+                {#if isSpaceLocked}
+                  <!-- Read-only display when space is locked -->
+                  <input
+                    id="template-target-space"
+                    type="text"
+                    value={targetSpaceName}
+                    disabled={true}
+                    class="form-select locked-input"
+                  />
+                {:else}
+                  <select
+                    id="template-target-space"
+                    value={targetSpaceName}
+                    onchange={handleTargetSpaceChange}
+                    disabled={isSaving || loadingSpaces}
+                    class="form-select"
+                  >
+                    <option value="">{$_("templates.form.select_space")}</option>
+                    {#each availableSpaces as space}
+                      <option value={space.shortname}>
+                        {space.attributes?.displayname?.en || space.shortname}
+                      </option>
+                    {/each}
+                  </select>
+                  {#if loadingSpaces}
+                    <small class="field-hint">{$_("common.loading")}</small>
+                  {/if}
                 {/if}
               </div>
               <div class="form-group flex-1">
                 <label for="template-schema">
                   {$_("templates.form.schema_label")}
-                  {#if targetSpaceName}
+                  {#if targetSpaceName || isSpaceLocked}
                     <span class="required-badge">*</span>
                   {:else}
                     <span class="optional-badge">{$_("common.optional")}</span>
@@ -746,7 +780,11 @@
         {/if}
 
         <div class="editor-container">
-          <MarkdownEditor bind:content handleSave={handleContentChange} />
+          <MarkdownEditor 
+            bind:content 
+            handleSave={handleContentChange}
+            onDropKey={(key) => console.log("Dropped key:", key)}
+          />
         </div>
 
         {#if editingTemplate}
@@ -1283,6 +1321,11 @@
     padding: 1rem;
     margin-bottom: 1.5rem;
   }
+  
+  .optional-fields.locked {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+  }
 
   .optional-badge {
     display: inline-block;
@@ -1343,6 +1386,14 @@
     background-color: #f3f4f6;
     color: #6b7280;
     cursor: not-allowed;
+  }
+  
+  .locked-input {
+    background-color: #eff6ff !important;
+    color: #1e40af !important;
+    border-color: #bfdbfe !important;
+    font-weight: 500;
+    cursor: default !important;
   }
 
   .schema-keys-section {

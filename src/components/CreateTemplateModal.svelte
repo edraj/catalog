@@ -1,17 +1,19 @@
 <script lang="ts">
   import MarkdownEditor from "@/components/editors/MarkdownEditor.svelte";
-  import { createTemplate } from "@/lib/dmart_services/dmart_services";
+  import { createTemplate, getSpaceSchema } from "@/lib/dmart_services/dmart_services";
   import { _ } from "@/i18n";
   import { writable } from "svelte/store";
+  import { onMount } from "svelte";
 
   interface Props {
     currentSpace: string;
     currentSubpath: string;
     onClose: () => void;
     onSuccess: () => void;
+    lockedSpace?: string; // If provided, space is read-only and schema is mandatory
   }
 
-  let { currentSpace, currentSubpath, onClose, onSuccess }: Props = $props();
+  let { currentSpace, currentSubpath, onClose, onSuccess, lockedSpace = "" }: Props = $props();
 
   let templateName = writable("");
   let content = writable({
@@ -22,17 +24,103 @@
   let saveMessage = writable("");
   let saveError = writable("");
   
-  // Optional fields
+  // Optional/Mandatory fields
   let targetSpaceName = writable("");
   let schemaShortname = writable("");
   let showOptionalFields = writable(false);
+  
+  // Schema-related state
+  let availableSchemas = writable([]);
+  let loadingSchemas = writable(false);
+  let schemaKeys = writable([]);
+  
+  let isSpaceLocked = $derived(!!lockedSpace);
 
-  function handleContentChange() {
-    // Handle content changes if needed
+  // Initialize and react to lockedSpace changes
+  $effect(() => {
+    if (lockedSpace) {
+      targetSpaceName.set(lockedSpace);
+      showOptionalFields.set(true);
+      loadSchemasForSpace(lockedSpace);
+    }
+  });
+
+  async function loadSchemasForSpace(spaceName: string) {
+    if (!spaceName) {
+      availableSchemas.set([]);
+      return;
+    }
+    loadingSchemas.set(true);
+    try {
+      const response = await getSpaceSchema(spaceName, "managed");
+      if (response.status === "success") {
+        availableSchemas.set(response.records || []);
+      }
+    } catch (error) {
+      console.error("Error loading schemas:", error);
+      availableSchemas.set([]);
+    } finally {
+      loadingSchemas.set(false);
+    }
+  }
+
+  function handleSchemaChange(event: Event) {
+    const select = event.target as HTMLSelectElement;
+    schemaShortname.set(select.value);
+    schemaKeys.set([]);
+    
+    if (select.value && $targetSpaceName) {
+      const selectedSchema = $availableSchemas.find(s => s.shortname === select.value);
+      if (selectedSchema?.attributes?.payload?.body) {
+        extractSchemaKeys(selectedSchema.attributes.payload.body);
+      }
+    }
+  }
+
+  function extractSchemaKeys(schemaBody: any) {
+    const keys: any[] = [];
+    if (!schemaBody) return;
+    
+    if (schemaBody.properties) {
+      Object.keys(schemaBody.properties).forEach(key => {
+        const prop = schemaBody.properties[key];
+        keys.push({
+          name: key,
+          type: prop.type || 'string',
+          title: prop.title || key
+        });
+      });
+    } else if (typeof schemaBody === 'object') {
+      Object.keys(schemaBody).forEach(key => {
+        keys.push({
+          name: key,
+          type: 'string',
+          title: key
+        });
+      });
+    }
+    schemaKeys.set(keys);
+  }
+
+  function handleDragStart(key: any) {
+    // Handle drag start for schema keys
+  }
+
+  function handleDragEnd() {
+    // Handle drag end
   }
 
   async function handleSave() {
-    if (!$templateName.trim()) return;
+    if (!$templateName.trim()) {
+      saveError.set("Please enter a template name");
+      return;
+    }
+
+    // When space is locked, schema is mandatory
+    if (isSpaceLocked && !$schemaShortname.trim()) {
+      saveError.set("Schema is required when creating a template for this space");
+      return;
+    }
 
     try {
       isSaving.set(true);
@@ -81,6 +169,10 @@
   
   function toggleOptionalFields() {
     showOptionalFields.update(v => !v);
+  }
+  
+  function handleContentChange() {
+    // Handle content changes if needed
   }
 </script>
 
@@ -137,46 +229,111 @@
         </div>
       {/if}
 
-      <!-- Optional Fields Toggle -->
-      <button
-        type="button"
-        class="optional-fields-toggle"
-        onclick={toggleOptionalFields}
-      >
-        <span class="toggle-icon">{$showOptionalFields ? "▼" : "▶"}</span>
-        {$_("templates.form.optional_fields_toggle")}
-      </button>
+      <!-- Optional Fields Toggle (hidden when space is locked) -->
+      {#if !isSpaceLocked}
+        <button
+          type="button"
+          class="optional-fields-toggle"
+          onclick={toggleOptionalFields}
+        >
+          <span class="toggle-icon">{$showOptionalFields ? "▼" : "▶"}</span>
+          {$_("templates.form.optional_fields_toggle")}
+        </button>
+      {/if}
       
-      {#if $showOptionalFields}
-        <div class="optional-fields">
+      {#if $showOptionalFields || isSpaceLocked}
+        <div class="optional-fields" class:locked={isSpaceLocked}>
           <div class="form-row">
             <div class="form-group flex-1">
               <label for="template-target-space">
                 {$_("templates.form.target_space_label")}
-                <span class="optional-badge">{$_("common.optional")}</span>
+                {#if isSpaceLocked}
+                  <!-- No badge when locked -->
+                {:else}
+                  <span class="optional-badge">{$_("common.optional")}</span>
+                {/if}
               </label>
-              <input
-                id="template-target-space"
-                type="text"
-                bind:value={$targetSpaceName}
-                placeholder={$_("templates.form.target_space_placeholder")}
-                disabled={$isSaving}
-              />
+              {#if isSpaceLocked}
+                <input
+                  id="template-target-space"
+                  type="text"
+                  value={$targetSpaceName}
+                  disabled={true}
+                  class="locked-input"
+                />
+              {:else}
+                <input
+                  id="template-target-space"
+                  type="text"
+                  bind:value={$targetSpaceName}
+                  placeholder={$_("templates.form.target_space_placeholder")}
+                  disabled={$isSaving}
+                />
+              {/if}
             </div>
             <div class="form-group flex-1">
               <label for="template-schema">
                 {$_("templates.form.schema_label")}
-                <span class="optional-badge">{$_("common.optional")}</span>
+                {#if isSpaceLocked}
+                  <span class="required-badge">*</span>
+                {:else}
+                  <span class="optional-badge">{$_("common.optional")}</span>
+                {/if}
               </label>
-              <input
+              <select
                 id="template-schema"
-                type="text"
-                bind:value={$schemaShortname}
-                placeholder={$_("templates.form.schema_placeholder")}
-                disabled={$isSaving}
-              />
+                value={$schemaShortname}
+                onchange={handleSchemaChange}
+                disabled={$isSaving || (!$targetSpaceName && !isSpaceLocked) || $loadingSchemas}
+                class="form-select"
+              >
+                <option value="">
+                  {#if $loadingSchemas}
+                    {$_("common.loading")}
+                  {:else if !$targetSpaceName && !isSpaceLocked}
+                    {$_("templates.form.select_space_first")}
+                  {:else}
+                    {$_("templates.form.select_schema")}
+                  {/if}
+                </option>
+                {#each $availableSchemas as schema}
+                  <option value={schema.shortname}>
+                    {schema.attributes?.displayname?.en || schema.shortname}
+                  </option>
+                {/each}
+              </select>
             </div>
           </div>
+          
+          <!-- Schema Keys - Draggable Badges -->
+          {#if $schemaKeys.length > 0}
+            <div class="schema-keys-section">
+              <h4 class="schema-keys-title">
+                {$_("templates.form.schema_keys_title")}
+                <span class="schema-keys-hint">{$_("templates.form.schema_keys_hint")}</span>
+              </h4>
+              <div class="schema-keys-container">
+                {#each $schemaKeys as key}
+                  <div
+                    class="schema-key-badge"
+                    role="button"
+                    tabindex="0"
+                    draggable={true}
+                    ondragstart={(e) => {
+                      handleDragStart(key);
+                      e.dataTransfer.setData("application/json", JSON.stringify(key));
+                      e.dataTransfer.effectAllowed = "copy";
+                    }}
+                    ondragend={handleDragEnd}
+                    title={`${key.title} (${key.type})`}
+                  >
+                    <span class="key-name">{key.name}</span>
+                    <span class="key-type">{key.type}</span>
+                  </div>
+                {/each}
+              </div>
+            </div>
+          {/if}
         </div>
       {/if}
 
@@ -184,6 +341,10 @@
         <MarkdownEditor
           bind:content={$content.content}
           handleSave={handleContentChange}
+          onDropKey={(key) => {
+            // Key is already inserted by the editor, just log or handle any additional logic
+            console.log("Dropped key:", key);
+          }}
         />
       </div>
 
@@ -204,6 +365,18 @@
           <div>
             <strong>{$_("templates.info.resource_type")}</strong> Template
           </div>
+          {#if $targetSpaceName}
+            <div>
+              <strong>{$_("templates.form.target_space_label")}:</strong>
+              {$targetSpaceName}
+            </div>
+          {/if}
+          {#if $schemaShortname}
+            <div>
+              <strong>{$_("templates.form.schema_label")}:</strong>
+              {$schemaShortname}
+            </div>
+          {/if}
         </div>
       </div>
     </div>
@@ -212,7 +385,7 @@
       <button
         class="btn btn-primary"
         onclick={handleSave}
-        disabled={$isSaving || !$templateName.trim()}
+        disabled={$isSaving || !$templateName.trim() || (isSpaceLocked && !$schemaShortname.trim())}
       >
         {#if $isSaving}
           <span class="spinner-sm"></span>
@@ -320,24 +493,36 @@
     margin-bottom: 0.5rem;
   }
 
-  .form-group input {
+  .form-group input,
+  .form-select {
     width: 100%;
     padding: 0.5rem 0.75rem;
     border: 1px solid #d1d5db;
     border-radius: 0.375rem;
     font-size: 0.875rem;
     transition: border-color 0.2s ease;
+    background-color: white;
   }
 
-  .form-group input:focus {
+  .form-group input:focus,
+  .form-select:focus {
     outline: none;
     border-color: #3b82f6;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
   }
 
-  .form-group input:disabled {
+  .form-group input:disabled,
+  .form-select:disabled {
     background-color: #f9fafb;
     color: #6b7280;
+  }
+  
+  .locked-input {
+    background-color: #eff6ff !important;
+    color: #1e40af !important;
+    border-color: #bfdbfe !important;
+    font-weight: 500;
+    cursor: default !important;
   }
   
   .form-row {
@@ -379,6 +564,11 @@
     padding: 1rem;
     margin-bottom: 1.5rem;
   }
+  
+  .optional-fields.locked {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+  }
 
   .optional-badge {
     display: inline-block;
@@ -390,6 +580,17 @@
     border-radius: 0.25rem;
     margin-left: 0.5rem;
     text-transform: uppercase;
+  }
+  
+  .required-badge {
+    display: inline-block;
+    font-size: 0.625rem;
+    font-weight: 500;
+    color: #dc2626;
+    background: #fee2e2;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    margin-left: 0.5rem;
   }
 
   /* Button Styles */
@@ -492,6 +693,68 @@
     color: #374151;
   }
 
+  /* Schema Keys */
+  .schema-keys-section {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px dashed #d1d5db;
+  }
+
+  .schema-keys-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+    margin: 0 0 0.75rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .schema-keys-hint {
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: #6b7280;
+    font-style: italic;
+  }
+
+  .schema-keys-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .schema-key-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    background: #e0e7ff;
+    border: 1px solid #c7d2fe;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    cursor: grab;
+    transition: all 0.2s ease;
+  }
+
+  .schema-key-badge:hover {
+    background: #c7d2fe;
+    transform: translateY(-1px);
+  }
+
+  .schema-key-badge .key-name {
+    font-weight: 600;
+    color: #3730a3;
+  }
+
+  .schema-key-badge .key-type {
+    font-size: 0.625rem;
+    color: #6366f1;
+    text-transform: uppercase;
+    background: rgba(255, 255, 255, 0.5);
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+  }
+
   /* Spinner */
   .spinner-sm {
     width: 1rem;
@@ -518,6 +781,10 @@
 
     .info-grid {
       grid-template-columns: 1fr;
+    }
+    
+    .form-row {
+      flex-direction: column;
     }
   }
 </style>

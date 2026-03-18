@@ -210,7 +210,21 @@
       "trash_error": "حدث خطأ أثناء النقل إلى سلة المهملات",
       "confirm_trash_title": "تأكيد النقل إلى سلة المهملات",
       "confirm_trash_message": "هل أنت متأكد أنك تريد نقل {count} عناصر محددة إلى سلة المهملات؟",
-      "confirm_trash": "نعم، انقل إلى سلة المهملات"
+      "confirm_trash": "نعم، انقل إلى سلة المهملات",
+      "edit": "تعديل جماعي",
+      "edit_title": "تعديل العناصر",
+      "edit_subtitle": "جارٍ تعديل {count} عناصر محددة",
+      "saving": "جارٍ الحفظ...",
+      "save_changes": "حفظ التغييرات",
+      "edit_success": "تم تحديث {count} عناصر بنجاح",
+      "edit_failed": "فشل تحديث {count} عناصر",
+      "edit_error": "حدث خطأ أثناء التعديل الجماعي",
+      "columns": {
+        "shortname": "الاسم المختصر"
+      },
+      "placeholders": {
+        "add_tag": "أضف وسم + Enter"
+      }
     },
     "breadcrumb": {
       "admin": "الإدارة"

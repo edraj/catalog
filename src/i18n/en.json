@@ -210,7 +210,21 @@
       "trash_error": "An error occurred during bulk trash",
       "confirm_trash_title": "Confirm Move to Trash",
       "confirm_trash_message": "Are you sure you want to move {count} selected items to trash?",
-      "confirm_trash": "Yes, Move to Trash"
+      "confirm_trash": "Yes, Move to Trash",
+      "edit": "Bulk Edit",
+      "edit_title": "Bulk Edit Items",
+      "edit_subtitle": "Editing {count} selected items",
+      "saving": "Saving...",
+      "save_changes": "Save Changes",
+      "edit_success": "{count} items updated successfully",
+      "edit_failed": "Failed to update {count} items",
+      "edit_error": "An error occurred during bulk edit",
+      "columns": {
+        "shortname": "Shortname"
+      },
+      "placeholders": {
+        "add_tag": "Add tag + Enter"
+      }
     },
     "breadcrumb": {
       "admin": "Admin"

@@ -93,7 +93,7 @@
       const response = await getSpaces(false, "managed");
       spaces = response.records || [];
       performSearch("");
-      
+
       // Check if applications folders exist
       await checkFolders();
     } catch (err) {
@@ -115,13 +115,17 @@
         missingWorkflow = result.missingWorkflow || false;
         missingReportSchema = result.missingReportSchema || false;
         missingWorkflowSchema = result.missingWorkflowSchema || false;
-        console.log("Missing resources detected:", { missingFolders, missingWorkflow, missingReportSchema, missingWorkflowSchema });
+        console.log("Missing resources detected:", {
+          missingFolders,
+          missingWorkflow,
+          missingReportSchema,
+          missingWorkflowSchema,
+        });
       } else {
         missingFolders = [];
         missingWorkflow = false;
         missingReportSchema = false;
         missingWorkflowSchema = false;
-        console.log("All resources exist or permission denied");
       }
     } catch (err) {
       console.error("Error checking folders:", err);
@@ -150,7 +154,12 @@
         workflowCreated = result.workflowCreated || false;
         reportSchemaCreated = result.reportSchemaCreated || false;
         workflowSchemaCreated = result.workflowSchemaCreated || false;
-        console.log("State updated after fix:", { foldersFixed, workflowCreated, reportSchemaCreated, workflowSchemaCreated });
+        console.log("State updated after fix:", {
+          foldersFixed,
+          workflowCreated,
+          reportSchemaCreated,
+          workflowSchemaCreated,
+        });
       } else {
         // Some folders may have failed
         console.log("Fix partially failed:", result);
@@ -563,7 +572,9 @@
   <div class="bg-gray-50">
     <div class="container mx-auto px-4 py-8 max-w-5xl">
       <div class="text-center">
-        <h1 class="text-2xl font-bold text-gray-900 mb-2">{$_("route_labels.admin_dashboard_title")}</h1>
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">
+          {$_("route_labels.admin_dashboard_title")}
+        </h1>
         <p class="text-sm text-gray-500 max-w-3xl mx-auto">
           {$_("route_labels.admin_dashboard_welcome")}
         </p>
@@ -577,8 +588,18 @@
       <div class="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4">
         <div class="flex items-start gap-3">
           <div class="flex-shrink-0 mt-0.5">
-            <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            <svg
+              class="w-5 h-5 text-amber-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
             </svg>
           </div>
           <div class="flex-1">
@@ -587,22 +608,28 @@
             </h3>
             <p class="text-sm text-amber-700 mb-3">
               {#if missingFolders.length > 0}
-                The following folders are missing in the <strong>applications</strong> space: 
+                The following folders are missing in the <strong
+                  >applications</strong
+                >
+                space:
                 <span class="font-medium">{missingFolders.join(", ")}</span>.
               {/if}
               {#if missingWorkflow}
                 {#if missingFolders.length > 0}<br />{/if}
-                The <strong>report_workflow</strong> is missing in the workflows folder.
+                The <strong>report_workflow</strong> is missing in the workflows
+                folder.
               {/if}
               {#if missingReportSchema}
                 {#if missingFolders.length > 0 || missingWorkflow}<br />{/if}
                 The <strong>report</strong> schema is missing in the schema folder.
               {/if}
               {#if missingWorkflowSchema}
-                {#if missingFolders.length > 0 || missingWorkflow || missingReportSchema}<br />{/if}
+                {#if missingFolders.length > 0 || missingWorkflow || missingReportSchema}<br
+                  />{/if}
                 The <strong>workflow</strong> schema is missing in the schema folder.
               {/if}
-              <br />These are required for reports, polls, and surveys to function properly.
+              <br />These are required for reports, polls, and surveys to
+              function properly.
             </p>
             <button
               onclick={handleFixFolders}
@@ -613,8 +640,18 @@
                 <Diamonds color="#ffffff" size="16" unit="px" />
                 Creating...
               {:else}
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                <svg
+                  class="w-4 h-4 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                  />
                 </svg>
                 Create Missing Resources
               {/if}
@@ -629,16 +666,30 @@
       <div class="mb-6 bg-green-50 border border-green-200 rounded-xl p-4">
         <div class="flex items-start gap-3">
           <div class="flex-shrink-0 mt-0.5">
-            <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              class="w-5 h-5 text-green-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
           </div>
           <div>
-            <h3 class="text-sm font-semibold text-green-800">Resources Created Successfully</h3>
+            <h3 class="text-sm font-semibold text-green-800">
+              Resources Created Successfully
+            </h3>
             <p class="text-sm text-green-700">
-              All required folders, workflows, and schemas have been created in the applications space.
+              All required folders, workflows, and schemas have been created in
+              the applications space.
               {#if workflowCreated}
-                <br /><span class="font-medium">report_workflow</span> has been set up with default states.
+                <br /><span class="font-medium">report_workflow</span> has been set
+                up with default states.
               {/if}
               {#if reportSchemaCreated}
                 <br /><span class="font-medium">report</span> schema has been created.
@@ -863,7 +914,9 @@
                   type="text"
                   bind:value={searchQuery}
                   oninput={() => debounce(handleSearchInput)}
-                  placeholder={$_("route_labels.placeholder_search_by_name_desc")}
+                  placeholder={$_(
+                    "route_labels.placeholder_search_by_name_desc",
+                  )}
                   class="block w-full pl-9 pr-8 py-2 text-sm border-none bg-gray-50 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500"
                 />
                 {#if isSearching}
@@ -1260,7 +1313,7 @@
 
 <!-- Create Space Modal -->
 <Modal
-  title="✨ {$_('admin_dashboard.modal.create.title')}"
+  title={$_("admin_dashboard.modal.create.title")}
   bind:open={showCreateModal}
   size="lg"
   class="bg-white dark:bg-white"
