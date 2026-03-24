@@ -48,7 +48,7 @@
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
       loadContents();
-    }, 400);
+    }, 1500);
   }
 
   // Filter Options

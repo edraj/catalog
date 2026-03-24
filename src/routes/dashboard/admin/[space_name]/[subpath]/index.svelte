@@ -103,7 +103,7 @@
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
       loadContents(true);
-    }, 400);
+    }, 1500);
   }
   
   // Tags filtering state
