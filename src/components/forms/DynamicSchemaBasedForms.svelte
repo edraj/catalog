@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+
   import { _ } from "svelte-i18n";
   import {
     createArrayItemFromSchema,
@@ -21,9 +21,12 @@
     readOnly?: boolean;
   } = $props();
 
-  onMount(() => {
+  $effect.pre(() => {
     if (schema && schema.properties) {
-      content = initializeContentFromSchema(schema.properties, content);
+      const initialized = initializeContentFromSchema(schema.properties, content);
+      if (Object.keys(initialized).length > Object.keys(content).length) {
+        content = initialized;
+      }
     }
   });
 
@@ -333,7 +336,11 @@
                     {#if nestedProperty.type === "string"}
                       <input
                         id={`${propName}-${nestedPropName}`}
-                        bind:value={content[propName][nestedPropName]}
+                        value={content[propName]?.[nestedPropName] ?? ''}
+                        oninput={(e) => {
+                          if (!content[propName]) content[propName] = {};
+                          content[propName][nestedPropName] = e.currentTarget.value;
+                        }}
                         disabled={readOnly}
                         class="form-input form-input-small"
                       />
@@ -341,7 +348,11 @@
                       <input
                         id={`${propName}-${nestedPropName}`}
                         type="number"
-                        bind:value={content[propName][nestedPropName]}
+                        value={content[propName]?.[nestedPropName] ?? ''}
+                        oninput={(e) => {
+                          if (!content[propName]) content[propName] = {};
+                          content[propName][nestedPropName] = e.currentTarget.valueAsNumber;
+                        }}
                         disabled={readOnly}
                         class="form-input form-input-small"
                       />
@@ -350,7 +361,11 @@
                         <input
                           id={`${propName}-${nestedPropName}`}
                           type="checkbox"
-                          bind:checked={content[propName][nestedPropName]}
+                          checked={content[propName]?.[nestedPropName] ?? false}
+                          onchange={(e) => {
+                            if (!content[propName]) content[propName] = {};
+                            content[propName][nestedPropName] = e.currentTarget.checked;
+                          }}
                           disabled={readOnly}
                           class="form-checkbox"
                         />
