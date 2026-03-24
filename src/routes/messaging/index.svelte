@@ -700,14 +700,7 @@
             };
 
             const messageExists = groupMessages.some(
-              (msg) =>
-                msg.id === newGroupMessage.id ||
-                (msg.senderId === newGroupMessage.senderId &&
-                  msg.groupId === newGroupMessage.groupId &&
-                  Math.abs(
-                    new Date(msg.timestamp).getTime() -
-                      new Date(newGroupMessage.timestamp).getTime()
-                  ) < 5000)
+              (msg) => msg.id === newGroupMessage.id
             );
 
             if (!messageExists) {
@@ -827,14 +820,7 @@
           };
 
           const messageExists = messages.some(
-            (msg) =>
-              msg.id === newMessage.id ||
-              (msg.senderId === newMessage.senderId &&
-                msg.receiverId === newMessage.receiverId &&
-                Math.abs(
-                  new Date(msg.timestamp).getTime() -
-                    new Date(newMessage.timestamp).getTime()
-                ) < 5000)
+            (msg) => msg.id === newMessage.id
           );
 
           if (!messageExists) {
@@ -871,14 +857,7 @@
             };
 
             const messageExists = groupMessages.some(
-              (msg) =>
-                msg.id === newGroupMessage.id ||
-                (msg.senderId === newGroupMessage.senderId &&
-                  msg.groupId === newGroupMessage.groupId &&
-                  Math.abs(
-                    new Date(msg.timestamp).getTime() -
-                      new Date(newGroupMessage.timestamp).getTime()
-                  ) < 5000)
+              (msg) => msg.id === newGroupMessage.id
             );
 
             if (!messageExists) {
@@ -1000,14 +979,7 @@
             };
 
             const messageExists = messages.some(
-              (msg) =>
-                msg.id === newMessage.id ||
-                (msg.senderId === newMessage.senderId &&
-                  msg.receiverId === newMessage.receiverId &&
-                  Math.abs(
-                    new Date(msg.timestamp).getTime() -
-                      new Date(newMessage.timestamp).getTime()
-                  ) < 5000)
+              (msg) => msg.id === newMessage.id
             );
 
             if (!messageExists) {

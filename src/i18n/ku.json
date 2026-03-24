@@ -79,6 +79,8 @@
   "create_entry.template.preview_title": "پێشبینینی قاڵب",
   "create_entry.template.fill_data_title": "پڕکردنەوەی زانیاریەکانی قاڵب",
   "create_entry.template.generated_content_title": "پێشبینینی ناوەڕۆکی دروستکراو",
+  "create_entry.template.schema_template_title": "زانیاریەکانی قاڵب",
+  "create_entry.template.schema_template_description": "ئەم سکیمایە قاڵبێکی تێدایە. تکایە زانیاریەکانی قاڵب لە خوارەوە پڕبکەرەوە.",
   "Loading": "لە بارکردن...",
   "Welcome": "بەخێربێیت",
   "Back": "گەڕانەوە",

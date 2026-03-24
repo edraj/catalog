@@ -814,6 +814,8 @@
       "loading": "جارٍ تحميل القوالب...",
       "no_templates": "لا توجد قوالب متاحة للمجال المحدد.",
       "preview_title": "معاينة القالب",
+      "schema_template_description": "يحتوي هذا المخطط على قالب. يرجى ملء بيانات القالب أدناه.",
+      "schema_template_title": "بيانات القالب",
       "select_label": "اختر قالبًا",
       "selection_title": "اختيار القالب"
     },

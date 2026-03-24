@@ -861,6 +861,8 @@
       "loading": "Loading templates...",
       "no_templates": "No templates available for the selected space.",
       "preview_title": "Template Preview",
+      "schema_template_description": "This schema includes a template. Fill in the template data below.",
+      "schema_template_title": "Template Data",
       "select_label": "Select Template",
       "selection_title": "Template Selection"
     },

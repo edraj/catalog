@@ -9,6 +9,10 @@
     getSpaceSchema,
     getTemplates,
   } from "@/lib/dmart_services/dmart_services";
+  import {
+    getTemplateFromSchemaAttachment,
+    hasTemplateAttachment,
+  } from "@/lib/dmart_services/templates";
   import { ensureTemplatesSchemaInSpace } from "@/lib/dmart_services/spaces";
   import { ensureTemplatesFolder } from "@/lib/dmart_services/templates";
   import {
@@ -64,6 +68,7 @@
   let availableTemplates = $state([]);
   let selectedSchema = $state(null);
   let selectedTemplate = $state(null);
+  let schemaBasedTemplate = $state(null); // Template extracted from schema attachment
   let loadingSchemas = $state(false);
   let jsonFormData = $state({});
   let templateFormData = $state({});
@@ -191,6 +196,7 @@
           title: record.attributes?.displayname?.en || record.shortname,
           schema: record.attributes?.payload?.body,
           description: record.attributes?.description?.en || "",
+          raw: record, // Keep raw record to access attachments
         }));
       } else {
         availableSchemas = [];
@@ -219,10 +225,24 @@
 
   function handleSchemaChange(event) {
     const schemaShortname = event.target.value;
-    selectedSchema = availableSchemas.find(
+    const schemaRecord = availableSchemas.find(
       (s) => s.shortname === schemaShortname,
     );
+    selectedSchema = schemaRecord;
     jsonFormData = {};
+    
+    // Check if schema has a template attachment
+    if (schemaRecord && schemaRecord.raw) {
+      const templateFromAttachment = getTemplateFromSchemaAttachment(schemaRecord.raw);
+      if (templateFromAttachment) {
+        schemaBasedTemplate = templateFromAttachment;
+        templateFormData = {};
+      } else {
+        schemaBasedTemplate = null;
+      }
+    } else {
+      schemaBasedTemplate = null;
+    }
   }
 
   function handleTemplateChange(event) {
@@ -605,6 +625,29 @@
         }
       }
 
+      // Check if schema has a template attachment - validate template fields
+      if (schemaBasedTemplate && schemaBasedTemplate.schema) {
+        const fields = parseTemplateFields(schemaBasedTemplate.schema);
+        const requiredFields = fields.filter((f) => f.required);
+        const missingFields = requiredFields.filter((f) => {
+          const value = templateFormData[f.name];
+          if (value == null) return true;
+          if (typeof value === "string") return !value.trim();
+          if (Array.isArray(value)) return value.length === 0;
+          if (typeof value === "object") return Object.keys(value).length === 0;
+          return false;
+        });
+
+        if (missingFields.length > 0) {
+          errorToastMessage(
+            $_("create_entry.error.required_fields_missing", {
+              values: { fields: missingFields.map((f) => f.label).join(", ") },
+            }),
+          );
+          return;
+        }
+      }
+
       if (isJsonFormDataEmpty(jsonFormData)) {
         const hasRequiredFields = selectedSchema?.schema?.required?.some(
           (field) => field && field.trim() !== "",
@@ -616,6 +659,17 @@
         }
       } else {
         bodyContent = jsonFormData;
+      }
+
+      // If schema has a template attachment, wrap body content with template data
+      if (schemaBasedTemplate && schemaBasedTemplate.schema && !isEmpty) {
+        bodyContent = {
+          schema_data: jsonFormData,
+          template: {
+            name: schemaBasedTemplate.shortname,
+            data: { ...templateFormData },
+          },
+        };
       }
     } else if (entryType === "template") {
       if (!selectedTemplate) {
@@ -784,6 +838,35 @@
     }
 
     let content = selectedTemplate.schema;
+
+    // Replace placeholders with values or empty string
+    Object.keys(templateFormData).forEach((key) => {
+      const placeholderPattern = new RegExp(
+        `\\{\\{${key}(?::[^}]+)?\\}\\}`,
+        "g",
+      );
+      let value = templateFormData[key];
+      
+      // Handle list/array type - join non-empty items
+      if (Array.isArray(value)) {
+        value = value.filter(item => item && item.trim()).join(", ");
+      }
+      
+      content = content.replace(placeholderPattern, value || "");
+    });
+
+    // Remove any remaining placeholders that don't have values
+    content = content.replace(/\{\{[^}]+\}\}/g, "");
+
+    return content;
+  }
+
+  function generateContentFromSchemaTemplate() {
+    if (!schemaBasedTemplate || !schemaBasedTemplate.schema) {
+      return "";
+    }
+
+    let content = schemaBasedTemplate.schema;
 
     // Replace placeholders with values or empty string
     Object.keys(templateFormData).forEach((key) => {
@@ -1305,6 +1388,133 @@
               bind:content={jsonFormData}
               schema={selectedSchema.schema}
             />
+          </div>
+        </div>
+      {/if}
+
+      <!-- Schema-based Template Form -->
+      {#if selectedSchema && schemaBasedTemplate && schemaBasedTemplate.schema}
+        <div class="section">
+          <div class="section-header">
+            <FileCheckSolid class="section-icon" />
+            <h2>{$_("create_entry.template.schema_template_title") || "Template Data"}</h2>
+          </div>
+          <div class="section-content">
+            <div class="template-info-box">
+              <p class="template-info-text">
+                {$_("create_entry.template.schema_template_description") || "This schema includes a template. Fill in the template data below."}
+              </p>
+            </div>
+            
+            <!-- Template Data Form Card -->
+            <div class="template-data-card">
+              <div class="template-data-card-header">
+                <h3 class="template-data-title">
+                  {schemaBasedTemplate.title}
+                </h3>
+              </div>
+              <div class="template-data-card-body">
+                <div class="template-form">
+                  {#each parseTemplateFields(schemaBasedTemplate.schema) as field}
+                    <div class="form-field">
+                      <label for="schema-template-{field.name}" class="field-label">
+                        {field.label}
+                        {#if field.required}
+                          <span class="required-indicator">*</span>
+                        {/if}
+                        <span class="field-type">({field.originalType})</span>
+                      </label>
+                      {#if field.originalType === "list"}
+                        <!-- List Input with Add/Delete -->
+                        <div class="list-input-container">
+                          {#if !templateFormData[field.name]}
+                            {templateFormData[field.name] = [''], ''}
+                          {/if}
+                          {#each templateFormData[field.name] as item, index (index)}
+                            <div class="list-input-row">
+                              <input
+                                type="text"
+                                bind:value={templateFormData[field.name][index]}
+                                class="field-input list-input"
+                                placeholder={`Item ${index + 1}`}
+                              />
+                              <button
+                                type="button"
+                                class="list-btn list-btn-remove"
+                                onclick={() => {
+                                  templateFormData[field.name] = templateFormData[field.name].filter((_, i) => i !== index);
+                                }}
+                                title="Remove item"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          {/each}
+                          <button
+                            type="button"
+                            class="list-btn list-btn-add"
+                            onclick={() => {
+                              templateFormData[field.name] = [...templateFormData[field.name], ''];
+                            }}
+                          >
+                            + Add Item
+                          </button>
+                        </div>
+                      {:else if field.type === "textarea"}
+                        <textarea
+                          id="schema-template-{field.name}"
+                          bind:value={templateFormData[field.name]}
+                          class="field-input field-textarea"
+                          placeholder={field.placeholder}
+                          required={field.required}
+                          rows={field.originalType === "object" || field.originalType === "list_object"
+                            ? 5
+                            : 3}
+                        ></textarea>
+                        {#if field.originalType === "object"}
+                          <small class="field-hint"
+                            >Enter valid JSON object</small
+                          >
+                        {:else if field.originalType === "list_object"}
+                          <small class="field-hint"
+                            >Enter valid JSON array of objects</small
+                          >
+                        {/if}
+                      {:else if field.type === "checkbox"}
+                        <div class="checkbox-wrapper">
+                          <input
+                            id="schema-template-{field.name}"
+                            type="checkbox"
+                            bind:checked={templateFormData[field.name]}
+                            class="field-checkbox"
+                          />
+                          <span class="checkbox-label">Yes</span>
+                        </div>
+                      {:else}
+                        <input
+                          id="schema-template-{field.name}"
+                          type={field.type}
+                          bind:value={templateFormData[field.name]}
+                          class="field-input field-text"
+                          placeholder={field.placeholder}
+                          required={field.required}
+                        />
+                      {/if}
+                    </div>
+                  {/each}
+                </div>
+              </div>
+            </div>
+
+            <!-- Template Preview -->
+            <div class="template-preview-section">
+              <h3 class="template-preview-title">
+                {$_("create_entry.template.preview_title")}
+              </h3>
+              <div class="template-preview markdown-preview">
+                {@html marked(generateContentFromSchemaTemplate())}
+              </div>
+            </div>
           </div>
         </div>
       {/if}
@@ -2871,5 +3081,22 @@
 
   .generated-content :global(del) {
     text-decoration: line-through;
+  }
+
+  /* Schema-based Template Info Box */
+  .template-info-box {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    border: 1px solid #3b82f6;
+    border-radius: var(--radius-lg);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .template-info-text {
+    margin: 0;
+    color: #1e40af;
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.5;
   }
 </style>

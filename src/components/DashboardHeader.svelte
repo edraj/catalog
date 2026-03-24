@@ -1,68 +1,78 @@
 <script lang="ts">
   import SearchBar from "./SearchBar.svelte";
   import { onDestroy, onMount } from "svelte";
-  import { website } from "@/config.js";
   import { newNotificationType } from "@/stores/newNotificationType";
   import { _, locale, switchLocale } from "@/i18n";
   import { roles, signout, user } from "@/stores/user";
   import { goto } from "@roxi/routify";
+  import {
+    getWebTransportService,
+    type ConnectionStatus as WTConnectionStatus,
+  } from "@/lib/services/webtransport";
 
   $goto;
 
-  let ws = $state(null);
+  let webTransport = $state(null);
   let isMenuOpen = $state(false);
   let isRTL = $locale === "ar" || $locale === "ku";
 
   onMount(() => {
     if ($user.signedin) {
-      if (isWSOpen(ws)) {
-        ws.send(JSON.stringify({ type: "notification_unsubscribe" }));
-      }
-      if ("websocket" in website) {
-        try {
-          const authToken = localStorage.getItem("authToken") || "";
-          ws = new WebSocket(`${website.websocket}?token=${authToken}`);
-        } catch (e) {
-          console.error({ e });
-        }
-      }
-
-      if (ws) {
-        ws.onopen = () => {
-          ws.send(
-            JSON.stringify({
-              type: "notification_subscription",
-              space_name: "__ALL__",
-              subpath: "__ALL__",
-            }),
-          );
-        };
-
-        ws.onmessage = (event) => {
-          const data = JSON.parse(event?.data ?? "");
-          if (data.type === "notification") {
-            if (data?.message?.action_type === "create") {
-              if (data?.message?.resource_type === "reaction") {
-                $newNotificationType = "create_reaction";
-              } else if (data?.message?.resource_type === "comment") {
-                $newNotificationType = "create_comment";
-              }
-            } else if (data?.message?.action_type === "progress_ticket") {
-              $newNotificationType = "progress";
-            }
-          }
-        };
-      }
+      connectWebTransport();
     }
   });
 
-  onDestroy(() => {
-    if (ws != null) ws.close();
-  });
+  async function connectWebTransport() {
+    try {
+      const authToken = localStorage.getItem("authToken") || "";
 
-  function isWSOpen(ws: any) {
-    return ws != null && ws.readyState === ws.OPEN;
+      webTransport = getWebTransportService(authToken, {
+        onMessage: (data) => {
+          handleRealtimeMessage(data);
+        },
+        onStatusChange: (status: WTConnectionStatus) => {
+          console.log("[DashboardHeader] Connection status:", status);
+        },
+        onError: (error) => {
+          console.error("[DashboardHeader] WebTransport error:", error);
+        },
+      });
+
+      if (!webTransport) {
+        console.error("[DashboardHeader] Failed to initialize WebTransport");
+        return;
+      }
+
+      const connected = await webTransport.connect();
+
+      if (connected) {
+        // Subscribe to ALL notifications across all spaces
+        await webTransport.subscribe("__ALL__", "__ALL__");
+      }
+    } catch (error) {
+      console.error("[DashboardHeader] Failed to connect:", error);
+    }
   }
+
+  function handleRealtimeMessage(data) {
+    if (data.type === "notification") {
+      if (data?.message?.action_type === "create") {
+        if (data?.message?.resource_type === "reaction") {
+          $newNotificationType = "create_reaction";
+        } else if (data?.message?.resource_type === "comment") {
+          $newNotificationType = "create_comment";
+        }
+      } else if (data?.message?.action_type === "progress_ticket") {
+        $newNotificationType = "progress";
+      }
+    }
+  }
+
+  onDestroy(() => {
+    if (webTransport) {
+      webTransport.disconnect();
+    }
+  })
 
   function renderNotificationIconColor() {
     switch ($newNotificationType) {

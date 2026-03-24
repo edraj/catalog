@@ -2,11 +2,12 @@
   import DashboardHeader from "@/components/DashboardHeader.svelte";
   import { signout } from "@/stores/user";
   import { onMount } from "svelte";
-  import { getProfile } from "@/lib/dmart_services/dmart_services.ts";
+  import { getProfile } from "@/lib/dmart_services/dmart_services";
   import { goto } from "@roxi/routify";
   import { Dmart } from "@edraj/tsdmart";
   import { website } from "@/config";
   import axios from "axios";
+  import { get } from "svelte/store";
 
   $goto;
 
@@ -50,16 +51,20 @@
 
   dmartAxios.interceptors.response.use(
     (res) => res,
-    (error) => {
+    async (error) => {
       if (error.code === "ERR_NETWORK") {
         console.warn("Network error: Check connection or server.");
       }
-      // if (
-      //   error.response?.status === 401 &&
-      //   !isPublicRoute(window.location.pathname)
-      // ) {
-      //   $goto("/login");
-      // }
+      
+      if (error.response?.status === 401) {
+        const currentPath = window.location.pathname;
+        if (!isPublicRoute(currentPath)) {
+          console.log("401 Unauthorized - redirecting to login");
+          await signout();
+          get(goto)("/login");
+        }
+      }
+      
       return Promise.reject(error);
     },
   );

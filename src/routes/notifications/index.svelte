@@ -15,17 +15,20 @@
   import { ResourceType } from "@edraj/tsdmart";
   import { _ } from "@/i18n";
   import { goto } from "@roxi/routify";
-  import { website } from "@/config";
   import {
     successToastMessage,
     errorToastMessage,
   } from "@/lib/toasts_messages";
+  import {
+    getWebTransportService,
+    type ConnectionStatus as WTConnectionStatus,
+  } from "@/lib/services/webtransport";
 
   $goto;
 
   let notifications = $state([]);
   let isNotificationsLoading = $state(false);
-  let ws = $state(null);
+  let webTransport = $state(null);
   let connectionStatus = $state("Disconnected");
   let notificationError = $state(null);
 
@@ -35,73 +38,65 @@
   onMount(async () => {
     $newNotificationType = "";
     await loadNotifications();
-    connectWebSocket();
+    connectWebTransport();
   });
 
   onDestroy(() => {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.close();
+    if (webTransport) {
+      webTransport.disconnect();
     }
   });
 
-  function connectWebSocket() {
-    if (!$user.signedin || !website.websocket) {
+  async function connectWebTransport() {
+    if (!$user.signedin) {
       return;
     }
 
     try {
       connectionStatus = "Connecting...";
       const authToken = localStorage.getItem("authToken") || "";
-      ws = new WebSocket(`${website.websocket}?token=${authToken}`);
 
-      ws.onopen = () => {
-        connectionStatus = "Connected";
-        ws.send(
-          JSON.stringify({
-            type: "notification_subscription",
-            space_name: "catalog",
-            subpath: "/reports",
-          })
-        );
+      webTransport = getWebTransportService(authToken, {
+        onMessage: (data) => {
+          handleRealtimeMessage(data);
+        },
+        onStatusChange: (status: WTConnectionStatus) => {
+          connectionStatus = status.charAt(0).toUpperCase() + status.slice(1);
+        },
+        onError: (error) => {
+          console.error("[Notifications] WebTransport error:", error);
+          errorToastMessage("Connection error");
+        },
+      });
 
-        ws.send(
-          JSON.stringify({
-            type: "notification_subscription",
-            space_name: "personal",
-            subpath: `people/${$user.shortname}/notifications`,
-          })
-        );
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          handleWebSocketMessage(data);
-        } catch (error) {
-          errorToastMessage("Failed to parse notification");
-        }
-      };
-
-      ws.onclose = () => {
-        connectionStatus = "Disconnected";
-        setTimeout(() => {
-          if (connectionStatus === "Disconnected") {
-            connectWebSocket();
-          }
-        }, 3000);
-      };
-
-      ws.onerror = (error) => {
+      if (!webTransport) {
         connectionStatus = "Error";
-        errorToastMessage("WebSocket connection error");
-      };
+        errorToastMessage("Failed to initialize connection");
+        return;
+      }
+
+      const connected = await webTransport.connect();
+
+      if (connected && $user.shortname) {
+        // Subscribe to reports in catalog space
+        await webTransport.subscribe("catalog", "/reports");
+        // Subscribe to personal notifications
+        await webTransport.subscribe(
+          "personal",
+          `people/${$user.shortname}/notifications`
+        );
+      } else if (!connected) {
+        connectionStatus = "Failed";
+        errorToastMessage("Failed to connect to notifications server");
+      }
     } catch (error) {
+      console.error("[Notifications] Connection failed:", error);
       connectionStatus = "Error";
       errorToastMessage("Failed to connect to notifications");
     }
   }
 
-  function handleWebSocketMessage(data) {
+  function handleRealtimeMessage(data) {
     if (data.type === "connection_response") {
       return;
     }

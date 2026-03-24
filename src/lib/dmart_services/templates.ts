@@ -279,3 +279,96 @@ export async function deleteTemplate(
     const response: ActionResponse = await Dmart.request(actionRequest);
     return response.status === "success";
 }
+
+/**
+ * Extracts template from schema attachments
+ * Schemas can have attachments, and if a schema has an attachment with shortname 'template',
+ * it is treated as the template for that schema.
+ * 
+ * @param schemaRecord - The schema record object from getSpaceSchema response
+ * @returns The template object if found, null otherwise
+ */
+export function getTemplateFromSchemaAttachment(schemaRecord: any): {
+    shortname: string;
+    title: string;
+    schema: string;
+    description: string;
+    attachment_data?: any;
+} | null {
+    if (!schemaRecord) {
+        return null;
+    }
+
+    // Check for attachments in the schema record
+    const attachments = schemaRecord.attachments || schemaRecord.attributes?.attachments;
+    
+    if (!attachments || !Array.isArray(attachments)) {
+        return null;
+    }
+
+    // Find attachment with shortname 'template'
+    const templateAttachment = attachments.find(
+        (att) => att.shortname === "template"
+    );
+
+    if (!templateAttachment) {
+        return null;
+    }
+
+    // Extract template content from the attachment
+    // The template content could be in different places depending on how it was stored
+    const templateBody = templateAttachment.attributes?.payload?.body;
+    
+    if (!templateBody) {
+        return null;
+    }
+
+    // Handle different formats of template storage
+    let templateContent: string;
+    let templateTitle: string;
+
+    if (typeof templateBody === "string") {
+        // Direct string content
+        templateContent = templateBody;
+        templateTitle = templateAttachment.attributes?.displayname?.en || 
+                       templateAttachment.attributes?.title || 
+                       "Template";
+    } else if (typeof templateBody === "object") {
+        // Object format with content property
+        templateContent = templateBody.content || templateBody.body || JSON.stringify(templateBody);
+        templateTitle = templateBody.title || 
+                       templateAttachment.attributes?.displayname?.en || 
+                       templateAttachment.attributes?.title || 
+                       "Template";
+    } else {
+        return null;
+    }
+
+    return {
+        shortname: "template",
+        title: templateTitle,
+        schema: templateContent,
+        description: templateAttachment.attributes?.description?.en || "",
+        attachment_data: templateAttachment,
+    };
+}
+
+/**
+ * Checks if a schema has a template attachment
+ * 
+ * @param schemaRecord - The schema record object
+ * @returns true if the schema has a 'template' attachment
+ */
+export function hasTemplateAttachment(schemaRecord: any): boolean {
+    if (!schemaRecord) {
+        return false;
+    }
+
+    const attachments = schemaRecord.attachments || schemaRecord.attributes?.attachments;
+    
+    if (!attachments || !Array.isArray(attachments)) {
+        return false;
+    }
+
+    return attachments.some((att) => att.shortname === "template");
+}
