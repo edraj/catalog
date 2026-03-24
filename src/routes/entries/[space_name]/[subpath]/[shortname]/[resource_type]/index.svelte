@@ -64,12 +64,20 @@
   let templateRenderedContent = $state("");
   let isLoadingTemplate = $state(false);
   let templateError = $state("");
+  let loadedTemplateKey: string = $state(""); // Track which template was loaded
   
   // Check if this is a template-based entry
   const isTemplateEntry = $derived(
     entity?.payload?.schema_shortname === "templates" &&
     entity?.payload?.body?.template &&
     entity?.payload?.body?.data
+  );
+  
+  // Generate a unique key for the current template entry to prevent duplicate loads
+  const currentTemplateKey = $derived(
+    isTemplateEntry && $params.space_name
+      ? `${$params.space_name}-${entity?.payload?.body?.template}`
+      : ""
   );
 
   const isRTL = derived(
@@ -219,7 +227,10 @@
       if (entity.payload?.schema_shortname === "templates" && 
           entity.payload?.body?.template && 
           entity.payload?.body?.data) {
-        await loadTemplateContent();
+        const templateShortname = entity.payload.body.template;
+        const templateData = entity.payload.body.data;
+        const contentKey = `${$params.space_name}-${templateShortname}-${templateData ? Object.values(templateData).join(',') : ''}`;
+        await loadTemplateContent(contentKey);
       }
     }
   }
@@ -236,8 +247,12 @@
   }
 
   // Load and render template content
-  async function loadTemplateContent() {
-    if (!isTemplateEntry) return;
+  async function loadTemplateContent(contentKey?: string) {
+    if (!isTemplateEntry || isLoadingTemplate) return;
+    
+    // Prevent duplicate loads of the same template
+    const keyToUse = contentKey || currentTemplateKey;
+    if (keyToUse === loadedTemplateKey) return;
     
     isLoadingTemplate = true;
     templateError = "";
@@ -268,6 +283,9 @@
       
       // Parse markdown to HTML
       templateRenderedContent = await marked.parse(renderedContent) as string;
+      
+      // Mark this template as loaded to prevent duplicate loads
+      loadedTemplateKey = keyToUse;
     } catch (error) {
       console.error("Error loading template:", error);
       templateError = "Failed to load template content";

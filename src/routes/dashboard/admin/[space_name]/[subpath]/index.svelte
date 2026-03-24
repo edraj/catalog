@@ -18,7 +18,7 @@
   import { createFolder } from "@/lib/dmart_services/entries";
   import { Diamonds } from "svelte-loading-spinners";
   import { _, locale } from "@/i18n";
-  import { Dmart, RequestType, ResourceType, QueryType } from "@edraj/tsdmart";
+  import { Dmart, RequestType, ResourceType, QueryType, SortyType } from "@edraj/tsdmart";
   import { derived, writable } from "svelte/store";
   import MetaForm from "@/components/forms/MetaForm.svelte";
   import FolderForm from "@/components/forms/FolderForm.svelte";
@@ -97,6 +97,14 @@
   let bulkEditData = $state<Record<string, any>>({});
 
   let searchQuery = $state("");
+  let searchTimeout = null;
+
+  function handleSearchInput() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      loadContents(true);
+    }, 400);
+  }
   
   // Tags filtering state
   let availableTags = $state([]);
@@ -230,14 +238,22 @@
         }
       }
 
-      // Load all items for client-side filtering and pagination
-      const response = await getSpaceContents(
-        spaceName,
-        `/${$actualSubpath}`,
-        "managed",
-        10000, // Load all items for client-side pagination
-        0,
-        true,
+      // Load items using search query from backend
+      const response = await Dmart.query(
+        {
+          type: QueryType.search,
+          space_name: spaceName,
+          subpath: `/${$actualSubpath}`,
+          search: searchQuery,
+          limit: 10000,
+          sort_by: "shortname",
+          sort_type: SortyType.ascending,
+          offset: 0,
+          retrieve_json_payload: true,
+          retrieve_attachments: true,
+          exact_subpath: true,
+        },
+        "managed"
       );
       
       // Load space tags
@@ -286,23 +302,6 @@
 
   function applyFilters() {
     let filtered = [...$allContents];
-
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter((item) => {
-        const displayName = getDisplayName(item).toLowerCase();
-        const shortname = item.shortname.toLowerCase();
-        const description = getDescription(item).toLowerCase();
-        const owner = (item.attributes?.owner_shortname || "").toLowerCase();
-
-        return (
-          displayName.includes(query) ||
-          shortname.includes(query) ||
-          description.includes(query) ||
-          owner.includes(query)
-        );
-      });
-    }
 
     if (selectedType !== "all") {
       filtered = filtered.filter((item) => item.resource_type === selectedType);
@@ -599,7 +598,7 @@
       localStorage.removeItem(SORT_ORDER_KEY);
     }
     
-    applyFilters();
+    loadContents(true);
   }
   
   async function loadSpaceTags() {
@@ -1630,7 +1629,7 @@
               <input
                 type="text"
                 bind:value={searchQuery}
-                oninput={() => applyFilters()}
+                oninput={handleSearchInput}
                 placeholder={$_("admin_content.search.placeholder")}
                 class="block w-full pl-11 pr-10 py-2.5 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-colors"
               />
@@ -1638,7 +1637,7 @@
                 <button
                   onclick={() => {
                     searchQuery = "";
-                    applyFilters();
+                    loadContents(true);
                   }}
                   class="absolute inset-y-0 right-0 pr-3 flex items-center"
                 >

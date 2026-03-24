@@ -109,6 +109,7 @@
   let templateRenderedContent = $state("");
   let isLoadingTemplate = $state(false);
   let templateError = $state("");
+  let loadedTemplateKey: string = $state(""); // Track which template was loaded
 
   // Check if this is a template-based entry
   const isTemplateEntry = $derived(
@@ -117,13 +118,33 @@
       !!itemDataValue?.payload?.body?.data,
   );
 
+  // Generate a unique key for the current template entry to prevent duplicate loads
+  const currentTemplateKey = $derived(
+    isTemplateEntry && $spaceName
+      ? `${$spaceName}-${itemDataValue?.payload?.body?.template}`
+      : ""
+  );
+
+  // Load template content when it's a template entry
   $effect(() => {
-    console.log({ isTemplateEntry });
+    if (isTemplateEntry && $spaceName && !isLoadingTemplate) {
+      const templateShortname = itemDataValue?.payload?.body?.template;
+      const templateData = itemDataValue?.payload?.body?.data;
+      // Use a content-based key that includes the actual data values
+      const contentKey = `${$spaceName}-${templateShortname}-${templateData ? Object.values(templateData).join(',') : ''}`;
+      if (contentKey !== loadedTemplateKey) {
+        loadTemplateContent(contentKey);
+      }
+    }
   });
 
   // Load and render template content
-  async function loadTemplateContent() {
-    if (!isTemplateEntry || !$spaceName) return;
+  async function loadTemplateContent(contentKey?: string) {
+    if (!isTemplateEntry || !$spaceName || isLoadingTemplate) return;
+    
+    // Prevent duplicate loads of the same template
+    const keyToUse = contentKey || currentTemplateKey;
+    if (keyToUse === loadedTemplateKey) return;
 
     isLoadingTemplate = true;
     templateError = "";
@@ -159,14 +180,12 @@
 
       // Replace placeholders with data
       const renderedContent = renderTemplateWithData(content, templateData);
-      console.log({
-        D: template,
-        content,
-        renderedContent,
-      });
 
       // Parse markdown to HTML
       templateRenderedContent = (await marked.parse(renderedContent)) as string;
+      
+      // Mark this template as loaded to prevent duplicate loads
+      loadedTemplateKey = keyToUse;
     } catch (error) {
       console.error("Error loading template:", error);
       templateError = "Failed to load template content";

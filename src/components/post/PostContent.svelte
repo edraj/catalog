@@ -26,6 +26,7 @@
   let templateContent: string = $state("");
   let isLoadingTemplate: boolean = $state(false);
   let templateError: string = $state("");
+  let loadedTemplateKey: string = $state(""); // Track which template was loaded
   
   // Check if this is a template-based entry
   const isTemplateEntry = $derived(
@@ -34,15 +35,26 @@
     postData?.payload?.body?.data
   );
   
+  const currentTemplateKey = $derived(
+    isTemplateEntry 
+      ? `${spaceName}-${postData?.payload?.body?.template}`
+      : ""
+  );
+  
   // Load template content when it's a template entry
   $effect(() => {
-    if (isTemplateEntry && spaceName) {
-      loadTemplateContent();
+    if (isTemplateEntry && spaceName && !isLoadingTemplate) {
+      const templateShortname = postData?.payload?.body?.template;
+      const templateData = postData?.payload?.body?.data;
+      const contentKey = `${spaceName}-${templateShortname}-${templateData ? Object.values(templateData).join(',') : ''}`;
+      if (contentKey !== loadedTemplateKey) {
+        loadTemplateContent(contentKey);
+      }
     }
   });
   
-  async function loadTemplateContent() {
-    if (!isTemplateEntry || !spaceName) return;
+  async function loadTemplateContent(contentKey: string) {
+    if (!isTemplateEntry || !spaceName || isLoadingTemplate) return;
     
     isLoadingTemplate = true;
     templateError = "";
@@ -78,6 +90,9 @@
       
       // Parse markdown to HTML
       templateContent = await marked.parse(renderedContent) as string;
+      
+      // Mark this template as loaded to prevent duplicate loads
+      loadedTemplateKey = contentKey;
     } catch (error) {
       console.error("Error loading template:", error);
       templateError = "Failed to load template content";

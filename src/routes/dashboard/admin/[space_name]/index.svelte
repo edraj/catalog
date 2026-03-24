@@ -9,7 +9,7 @@
   import { Diamonds } from "svelte-loading-spinners";
   import { _, locale } from "@/i18n";
   import { derived } from "svelte/store";
-  import { Dmart, RequestType, ResourceType } from "@edraj/tsdmart";
+  import { Dmart, RequestType, ResourceType, QueryType, SortyType } from "@edraj/tsdmart";
   import FolderForm from "@/components/forms/FolderForm.svelte";
   import MetaForm from "@/components/forms/MetaForm.svelte";
   import { formatNumberInText } from "@/lib/helpers";
@@ -42,6 +42,14 @@
   let sortBy = $state("name");
   let sortOrder = $state("asc");
   let isSearchActive = $state(false);
+  let searchTimeout = null;
+
+  function handleSearchInput() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      loadContents();
+    }, 400);
+  }
 
   // Filter Options
   const typeOptions = [
@@ -106,13 +114,21 @@
   async function loadContents() {
     isLoading = true;
     try {
-      const response = await getSpaceContents(
-        spaceName,
-        "/",
-        "managed",
-        100,
-        0,
-        true,
+      const response = await Dmart.query(
+        {
+          type: QueryType.search,
+          space_name: spaceName,
+          subpath: "/",
+          search: searchQuery,
+          limit: 100,
+          sort_by: "shortname",
+          sort_type: SortyType.ascending,
+          offset: 0,
+          retrieve_json_payload: true,
+          retrieve_attachments: true,
+          exact_subpath: true,
+        },
+        "managed"
       );
       if (response && response.records) {
         allContents = response.records;
@@ -131,23 +147,6 @@
 
   function applyFilters() {
     let filtered = [...allContents];
-
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter((item) => {
-        const shortname = item.shortname?.toLowerCase() || "";
-        const displayName = getDisplayName(item).toLowerCase();
-        const description = getDescription(item).toLowerCase();
-        const owner = item.attributes?.owner_shortname?.toLowerCase() || "";
-
-        return (
-          shortname.includes(query) ||
-          displayName.includes(query) ||
-          description.includes(query) ||
-          owner.includes(query)
-        );
-      });
-    }
 
     if (selectedType !== "all") {
       filtered = filtered.filter((item) => item.resource_type === selectedType);
@@ -207,7 +206,7 @@
     selectedStatus = "all";
     sortBy = "name";
     sortOrder = "asc";
-    applyFilters();
+    loadContents();
   }
 
   function toggleSortOrder() {
@@ -666,6 +665,7 @@
                 id="search-input"
                 type="text"
                 bind:value={searchQuery}
+                oninput={handleSearchInput}
                 placeholder={$_("route_labels.placeholder_search_by_name_desc")}
                 class="block w-full pl-9 pr-10 py-2.5 text-sm border-none bg-gray-50 rounded-xl text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500"
               />
@@ -673,6 +673,7 @@
                 <button
                   onclick={() => {
                     searchQuery = "";
+                    loadContents();
                   }}
                   class="absolute inset-y-0 right-0 pr-3 flex items-center justify-center hover:text-gray-600 transition-colors"
                 >
