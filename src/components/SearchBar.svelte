@@ -113,7 +113,7 @@
 </script>
 
 <div
-  class="flex items-center bg-gray-50 hover:bg-gray-100 text-gray-400 border border-t-0 border-white/50 shadow-inner hover:shadow-sm transition-all duration-300 ease-in-out rounded-full h-9 px-3 overflow-hidden {isExpanded
+  class="ms-2 w-full flex items-center justify-start h-[37.5px] rounded-[14px] border border-black bg-[#F7F7F5] pt-[8px] pr-[10px] pb-[8px] pl-[10px] {isExpanded
     ? 'w-72 sm:w-96 md:w-[500px] lg:w-[600px]'
     : 'w-48 sm:w-72 md:w-80 lg:w-[400px]'} ms-auto me-2"
   onclick={expandSearch}
