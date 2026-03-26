@@ -18,13 +18,12 @@ export default defineConfig({
   clearScreen: false,
   resolve: {
     alias: {
-      "@": process.cwd() + "/src",
-      "~": process.cwd() + "/node_modules",
+      "@": path.resolve(__dirname, "src"),
+      "~": path.resolve(__dirname, "node_modules"),
     },
   },
   optimizeDeps: {
     include: ["flowbite", "@roxi/routify"],
-    exclude: ["@vite/client", "@vite/env"],
   },
   plugins: [
     tailwindcss(),
@@ -93,25 +92,16 @@ export default defineConfig({
         chunkFileNames: "assets/js/[name]-[hash].js",
         entryFileNames: "assets/js/[name]-[hash].js",
         manualChunks(id) {
-          // Vendor chunks
           if (id.includes("node_modules")) {
-            // Split flowbite into its own chunk
             if (id.includes("flowbite")) {
               return "vendor-flowbite";
             }
-            // Split tailwind into its own chunk
-            if (id.includes("tailwind")) {
-              return "vendor-tailwind";
-            }
-            // Split svelte into its own chunk
             if (id.includes("svelte")) {
               return "vendor-svelte";
             }
-            // Other large libraries
             if (id.includes("@roxi/routify")) {
               return "vendor-routify";
             }
-            // Everything else in vendor
             return "vendor";
           }
         },

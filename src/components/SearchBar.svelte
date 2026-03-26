@@ -1,4 +1,5 @@
 <script>
+  import { onDestroy } from "svelte";
   import {
     getEntities,
     getEntityAttachmentsCount,
@@ -110,6 +111,12 @@
 
     modalOpen = false;
   }
+
+  onDestroy(() => {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+  });
 </script>
 
 <div

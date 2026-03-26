@@ -266,6 +266,7 @@ export async function fetchContactMessages() {
         );
     } catch (err) {
         console.error("Error fetching contact messages:", err);
+        return { status: "failed", records: [], attributes: {} };
     }
 }
 

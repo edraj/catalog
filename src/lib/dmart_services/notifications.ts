@@ -48,23 +48,7 @@ export async function markNotification(
             },
         ],
     });
-    return response.status == "success";
-}
-
-export async function deleteNotification(shortname: string) {
-    const response = await Dmart.request({
-        space_name: "personal",
-        request_type: RequestType.delete,
-        records: [
-            {
-                resource_type: ResourceType.content,
-                shortname: shortname,
-                subpath: `people/${shortname}/notifications`,
-                attributes: {},
-            },
-        ],
-    });
-    return response.status == "success";
+    return response.status === "success";
 }
 
 export async function deleteAllNotification(
@@ -81,5 +65,5 @@ export async function deleteAllNotification(
             attributes: {},
         })),
     });
-    return response.status == "success";
+    return response.status === "success";
 }
