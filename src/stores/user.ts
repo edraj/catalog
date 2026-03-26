@@ -55,13 +55,10 @@ const data =
 user = writable<User>(JSON.parse(data) || signedout);
 
 /**
- * Signs in a user with username and password
- * @param username - The username to sign in with
- * @param password - The password for authentication
+ * Handles successful login response: sets auth token, user state, and localStorage
  */
-export async function signin(username: string, password: string) {
-  const response = await Dmart.login(username, password);
-  if (response.status == "success" && response.records.length > 0) {
+function handleLoginResponse(response: { status: string; records: any[] }) {
+  if (response.status === "success" && response.records.length > 0) {
     const account = response.records[0];
     const auth = account.attributes.access_token;
     authToken.set(auth);
@@ -71,7 +68,7 @@ export async function signin(username: string, password: string) {
 
     const _user: User = {
       signedin: true,
-      locale: Locale.ar,
+      locale: guess_locale(),
       shortname: account.shortname,
       localized_displayname: account.attributes?.displayname?.en,
       account: account,
@@ -88,33 +85,24 @@ export async function signin(username: string, password: string) {
   }
 }
 
+/**
+ * Signs in a user with username and password
+ * @param username - The username to sign in with
+ * @param password - The password for authentication
+ */
+export async function signin(username: string, password: string) {
+  const response = await Dmart.login(username, password);
+  handleLoginResponse(response);
+}
+
+/**
+ * Signs in a user with email and password
+ * @param email - The email to sign in with
+ * @param password - The password for authentication
+ */
 export async function loginBy(email: string, password: string) {
   const response = await Dmart.loginBy({ email: email }, password);
-  if (response.status == "success" && response.records.length > 0) {
-    const account = response.records[0];
-    const auth = account.attributes.access_token;
-    authToken.set(auth);
-
-    if (typeof localStorage !== "undefined")
-      localStorage.setItem("authToken", auth);
-
-    const _user: User = {
-      signedin: true,
-      locale: Locale.ar,
-      shortname: account.shortname,
-      localized_displayname: account.attributes?.displayname?.en,
-      account: account,
-    };
-    user.set(_user);
-    if (typeof localStorage !== "undefined") {
-      localStorage.setItem(KEY, JSON.stringify(_user));
-      localStorage.setItem("rowPerPage", "15");
-    }
-  } else {
-    user.set(signedout);
-    if (typeof localStorage !== "undefined")
-      localStorage.setItem(KEY, JSON.stringify(signedout));
-  }
+  handleLoginResponse(response);
 }
 
 export async function requestOtp(email: string): Promise<string> {
@@ -208,14 +196,20 @@ export async function register(
 export async function signout() {
   if (
     typeof localStorage !== "undefined" &&
-    JSON.parse(localStorage.getItem(KEY))?.signedin
+    JSON.parse(localStorage.getItem(KEY) ?? "null")?.signedin
   ) {
+    // Call server logout first while token is still available
+    try {
+      await Dmart.logout();
+    } catch (error) {
+      console.error("Error during server logout:", error);
+    }
+    // Always clear local state, even if server logout fails
     localStorage.removeItem("rowPerPage");
     localStorage.removeItem("authToken");
     authToken.set("");
     user.set(signedout);
     localStorage.removeItem(KEY);
-    await Dmart.logout();
   }
 }
 
@@ -250,14 +244,7 @@ export async function contactUs(
       ResourceType.content
     );
     if (response.status === "success") {
-      return `
-        <Toast>
-          {#snippet icon()}
-            <FireOutline class="text-primary-500 bg-primary-100 dark:bg-primary-800 dark:text-primary-200 h-6 w-6" />
-          {/snippet}
-            Your message has been sent successfully
-        </Toast>
-      `;
+      return response;
     } else {
       throw new Error(response.error?.message || "Registration failed");
     }

@@ -231,7 +231,7 @@ export async function getChildren(
         limit: limit,
         offset: offset,
     });
-    if (ignoreFilter == false && spaces !== null) {
+    if (ignoreFilter === false && spaces !== null) {
         const selectedSpace = spaces.records.find(
             (record) => record.shortname === space_name
         );
@@ -302,7 +302,8 @@ export async function createSpace({
         await getSpaces();
         return response.status;
     } catch (error) {
-    } finally {
+        console.error(`Error creating space "${shortname}":`, error);
+        throw error;
     }
 }
 
@@ -322,7 +323,8 @@ export async function deleteSpace(shortname: string) {
         });
         await getSpaces();
     } catch (error) {
-    } finally {
+        console.error(`Error deleting space "${shortname}":`, error);
+        throw error;
     }
 }
 
@@ -345,7 +347,8 @@ export async function editSpace(
         });
         await getSpaces();
     } catch (error) {
-    } finally {
+        console.error(`Error editing space "${shortname}":`, error);
+        throw error;
     }
 }
 

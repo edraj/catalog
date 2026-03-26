@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onDestroy } from "svelte";
   import { goto } from "@roxi/routify";
   import { _, locale } from "@/i18n";
   import { checkExisting, register, requestOtp } from "@/stores/user";
@@ -189,15 +190,12 @@
   async function otpRequest() {
     try {
       const response = await requestOtp(formData.email);
-
-      otpRequestId = "mock-request-id-123456";
+      otpRequestId = response;
       isOtpStep = true;
       startResendTimer();
     } catch (error: any) {
       console.error("OTP request error:", error.message);
-      otpRequestId = "mock-request-id-123456";
-      isOtpStep = true;
-      startResendTimer();
+      showError = true;
     }
   }
 
@@ -315,6 +313,12 @@
       $goto("/");
     }
   }
+
+  onDestroy(() => {
+    if (resendTimer) {
+      clearInterval(resendTimer);
+    }
+  });
 </script>
 
 <div class="register-container">

@@ -11,7 +11,8 @@ export async function fetchWorkflows(space_name: string) {
         });
         return result.records || [];
     } catch (e) {
-        console.error("Failed to fetch workflows");
+        console.error("Failed to fetch workflows:", e);
+        return [];
     }
 }
 

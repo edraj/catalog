@@ -1,4 +1,4 @@
-interface WebsiteConfig {
+export interface WebsiteConfig {
   title: string;
   footer: string;
   short_name: string;
@@ -16,34 +16,7 @@ interface WebsiteConfig {
   };
 }
 
-const loadConfig = async (): Promise<WebsiteConfig> => {
-  try {
-    const basePath = import.meta.env.BASE_URL || '/';
-    const configPath = `${basePath}/config.json`.replace('//', '/');
-    const response = await fetch(configPath);
-    if (!response.ok) {
-      throw new Error(`Failed to load config: ${response.status} ${response.statusText}`);
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('Error loading configuration:', error);
-    return {
-      title: "DMART Unified Data Platform",
-      footer: "dmart.cc unified data platform",
-      short_name: "dmart",
-      display_name: "dmart",
-      description: "dmart unified data platform",
-      default_language: "ar",
-      languages: { ar: "العربية", en: "English" },
-      backend: "http://localhost:8282",
-      websocket: "ws://0.0.0.0:8484/ws",
-      backend_timeout: 30000,
-      delay_total_count: false
-    };
-  }
-};
-
-export let website: WebsiteConfig = {
+const defaultConfig: WebsiteConfig = {
   title: "DMART Unified Data Platform",
   footer: "dmart.cc unified data platform",
   short_name: "dmart",
@@ -52,10 +25,30 @@ export let website: WebsiteConfig = {
   default_language: "ar",
   languages: { ar: "العربية", en: "English" },
   backend: "http://localhost:8282",
-  websocket: "ws://0.0.0.0:8484/ws",
+  websocket: "ws://localhost:8484/ws",
   backend_timeout: 30000,
-  delay_total_count: false
+  delay_total_count: false,
 };
+
+const loadConfig = async (): Promise<WebsiteConfig> => {
+  try {
+    const basePath = import.meta.env.BASE_URL || '/';
+    const configUrl = new URL('config.json', window.location.origin + basePath).href;
+    const response = await fetch(configUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to load config: ${response.status} ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error loading configuration:', error);
+    if (import.meta.env.PROD) {
+      console.error('CRITICAL: config.json could not be loaded in production. Using default config.');
+    }
+    return { ...defaultConfig };
+  }
+};
+
+export let website: WebsiteConfig = { ...defaultConfig };
 
 export const configReady: Promise<void> = loadConfig().then(config => {
   website = config;

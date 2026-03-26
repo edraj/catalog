@@ -25,18 +25,9 @@
       crossorigin
     />
 
-    <!-- Preload critical CSS -->
-    <link
-      rel="preload"
-      href="/assets/style.css"
-      as="style"
-      onload="this.onload=null;this.rel='stylesheet'"
-    />
-    <noscript><link rel="stylesheet" href="/assets/style.css" /></noscript>
     <title>Catalog</title>
   </head>
   <body>
-    <div id="app"><!--ssr:html--></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

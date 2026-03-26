@@ -1,11 +1,12 @@
 {
   "compilerOptions": {
     "module": "es2022",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "target": "es2022",
+    "strict": true,
+    "isolatedModules": true,
     "allowJs": true,
     "checkJs": true,
-    "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "verbatimModuleSyntax": true,
     "resolveJsonModule": true,

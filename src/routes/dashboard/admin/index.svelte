@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import {
     createSpace,
     deleteSpace,
@@ -566,6 +566,12 @@
     if (!dateString) return "N/A";
     return new Date(dateString).toLocaleDateString();
   }
+
+  onDestroy(() => {
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+    }
+  });
 </script>
 
 <div class="min-h-screen bg-gray-50" class:rtl={$isRTL}>
