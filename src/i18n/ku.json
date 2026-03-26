@@ -53,6 +53,7 @@
   "create_entry.error.required_fields_missing": "تکایە خانە پێویستەکان پڕ بکەوە: {fields}",
   "create_entry.error.save_failed": "شکستی پاشەکەوتکردنی تۆمار.",
   "create_entry.error.select_template": "تکایە قاڵبێک هەڵبژێرە.",
+  "create_entry.error.shortname_required": "ناوی کورت پێویستە! تکایە ناوێکی کورت بۆ تۆمارەکە دابنێ.",
   "common.optional": "اختیاری",
   "create_entry.success.published": "تۆمار بە سەرکەوتوویی بڵاوکرایەوە!",
   "create_entry.success.saved": "تۆمار وەک ڕەشنووس پاشەکەوتکرا!",
@@ -1472,7 +1473,8 @@
       "relationships": "پەیوەندیەکان",
       "attachments": "پاشکۆکان",
       "author_entries": "تۆمارەکانی نووسەر",
-      "metadata": "داتای وەسفی"
+      "metadata": "داتای وەسفی",
+      "template": "قاڵب"
     },
     "overview": {
       "basic_info": "زانیاری بنەڕەتی"

@@ -23,7 +23,8 @@ export function transformFormToJson(obj: any): any {
     }
 
     if (Array.isArray(obj)) {
-        return obj.map(transformFormToJson);
+        // Filter out null items but keep __removed markers
+        return obj.filter(item => item !== null).map(transformFormToJson);
     }
 
     // Deep transform all properties except id
@@ -69,6 +70,15 @@ export function convertArrayToObject(arr) {
     const obj = {};
 
     for (const item of arr) {
+        // Skip null items (removed properties)
+        if (item === null) {
+            continue;
+        }
+        // Handle removed properties - keep them with null value
+        if (item.__removed && item.name) {
+            obj[item.name] = null;
+            continue;
+        }
         const key = item["name"];
         delete item.name;
         obj[key] = item;
@@ -89,7 +99,7 @@ export function transformJsonToForm(obj: any) {
         obj.id = generateUUID();
     }
     if (Array.isArray(obj)) {
-        return obj.map(transformJsonToForm);
+        return obj.filter(item => item !== null).map(transformJsonToForm);
     }
 
     const result = { ...obj };
@@ -120,6 +130,11 @@ export function convertObjectToArray(obj) {
 
     for (const key in obj) {
         if (key !== "id" && obj.hasOwnProperty(key)) {
+            // Handle null values (removed properties) - mark them as removed
+            if (obj[key] === null) {
+                arr.push({ name: key, __removed: true });
+                continue;
+            }
             const item = { name: key, ...obj[key] };
             if (item.title === undefined){
                 item.title = "";

@@ -38,6 +38,7 @@
   import { getTemplate } from "@/lib/dmart_services/templates";
   import RelationshipModal from "@/components/management/RelationshipModal.svelte";
   import AttachmentModal from "@/components/management/AttachmentModal.svelte";
+  import SchemaTemplateManager from "@/components/management/SchemaTemplateManager.svelte";
   import {
     PlusOutline,
     HeartSolid,
@@ -895,6 +896,17 @@
             >
               {$_("admin_item_detail.tabs.attachments")}
             </button>
+            {#if isSchemaBasedItem}
+              <button
+                onclick={() => setActiveTab("template")}
+                class="py-4 px-4 font-medium text-sm whitespace-nowrap border-b-2 transition-colors {$activeTab ===
+                'template'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-900 hover:border-gray-300'}"
+              >
+                {$_("admin_item_detail.tabs.template")}
+              </button>
+            {/if}
             {#if actualSubpathValue === "authors"}
               <button
                 onclick={() => setActiveTab("author-entries")}
@@ -1974,6 +1986,43 @@
                   <p class="mt-2">
                     {$_("admin_item_detail.attachments.no_attachments")}
                   </p>
+                </div>
+              {/if}
+            </div>
+          {/if}
+
+          {#if $activeTab === "template"}
+            <div class="space-y-6">
+              {#if isSchemaBasedItem}
+                {@const templateAttachment = itemDataValue?.attachments?.media?.find(
+                  (att) => att.shortname === "template"
+                ) || null}
+                <SchemaTemplateManager
+                  space_name={spaceNameValue}
+                  subpath={actualSubpathValue}
+                  parent_shortname={itemShortnameValue}
+                  {templateAttachment}
+                  onTemplateUpdate={() => {
+                    // Refresh item data to show updated attachments
+                    loadItemData();
+                  }}
+                />
+              {:else}
+                <div class="text-center py-12 text-gray-500">
+                  <svg
+                    class="mx-auto h-12 w-12 text-gray-400 mb-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  <p>Template management is only available for schema items.</p>
                 </div>
               {/if}
             </div>

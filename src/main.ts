@@ -2,19 +2,24 @@ import { hydrate } from "svelte";
 import App from "./App.svelte";
 import "./app.css";
 import { loadFontsLazily, preloadCriticalResources } from "./lib/performance";
+import {configReady} from './config';
 
-const isClient = typeof window !== "undefined";
-const isHydrating =
-  isClient && document.body.hasAttribute("data-svelte-hydrated");
 
-if (isClient) {
-  const target = document.body;
+configReady.then(async () => {
+  const isClient = typeof window !== "undefined";
+  const isHydrating =
+      isClient && document.body.hasAttribute("data-svelte-hydrated");
 
-  hydrate(App, { target });
+  if (isClient) {
+    const target = document.body;
 
-  document.body.setAttribute("data-svelte-hydrated", "true");
+    hydrate(App, { target });
 
-  // Initialize performance optimizations
-  loadFontsLazily();
-  preloadCriticalResources();
-}
+    document.body.setAttribute("data-svelte-hydrated", "true");
+
+    // Initialize performance optimizations
+    loadFontsLazily();
+    preloadCriticalResources();
+  }
+});
+
