@@ -33,7 +33,7 @@ export async function getAllUsers(
         });
     } catch (error) {
         console.error("Error fetching users:", error);
-        return null;
+        return { status: "failed", records: [], attributes: {} } as ApiQueryResponse;
     }
 }
 
@@ -56,8 +56,8 @@ export async function filterUserByRole(
             exact_subpath: false,
         });
     } catch (error) {
-        console.error("Error fetching users:", error);
-        return null;
+        console.error("Error filtering users by role:", error);
+        return { status: "failed", records: [], attributes: {} } as ApiQueryResponse;
     }
 }
 

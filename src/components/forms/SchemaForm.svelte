@@ -88,7 +88,13 @@
     const lastPart = parts[parts.length - 1];
     if (!current[lastPart]) return;
 
-    current[lastPart].splice(index, 1);
+    // Mark property as removed but preserve its name
+    const propertyName = current[lastPart][index]?.name;
+    if (propertyName) {
+      current[lastPart][index] = { __removed: true, name: propertyName };
+    } else {
+      current[lastPart][index] = null;
+    }
     formContent = { ...formContent };
   }
 
@@ -191,7 +197,7 @@
 
       {#if formContent.properties && formContent.properties.length > 0}
         <div class="accordion">
-          {#each formContent.properties as property, index}
+          {#each formContent.properties.filter(p => p !== null && !p.__removed) as property, index}
             <div class="accordion-item">
               <button
                 type="button"
@@ -456,7 +462,7 @@
 
                                 {#if property.items.properties.length > 0}
                                   <div class="nested-items">
-                                    {#each property.items.properties as itemProperty, itemIndex}
+                                    {#each property.items.properties.filter(p => p !== null && !p.__removed) as itemProperty, itemIndex}
                                       <div class="nested-item">
                                         <div class="form-grid">
                                           <div class="form-group">
@@ -565,7 +571,7 @@
 
                         {#if property.properties && property.properties.length > 0}
                           <div class="nested-items">
-                            {#each property.properties as nestedProperty, nestedIndex}
+                            {#each property.properties.filter(p => p !== null && !p.__removed) as nestedProperty, nestedIndex}
                               <div class="nested-item">
                                 <div class="form-grid">
                                   <div class="form-group">

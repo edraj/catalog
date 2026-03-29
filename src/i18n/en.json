@@ -454,7 +454,8 @@
       "author_entries": "Author Related Entries",
       "content": "Content",
       "overview": "Overview",
-      "relationships": "Relationships"
+      "relationships": "Relationships",
+      "template": "Template"
     },
     "unnamed_item": "Unnamed Item"
   },
@@ -821,6 +822,7 @@
       "publish_failed": "Failed to publish entry!",
       "required_fields_missing": "Please fill in the required fields: {fields}",
       "save_failed": "Failed to save entry!",
+      "shortname_required": "Shortname is required! Please enter a shortname for the entry.",
       "select_space": "Please select a space!",
       "select_template": "Please select a template!"
     },
@@ -1638,7 +1640,18 @@
     "schema_title_label": "Schema Title",
     "schema_title_placeholder": "Schema title",
     "string_options_title": "String Options",
-    "title": "Schema Editor"
+    "title": "Schema Editor",
+    "property_name_placeholder": "Enter property name",
+    "property_title_placeholder": "Enter property title",
+    "property_description_placeholder": "Enter property description",
+    "min_length_placeholder": "Min length",
+    "max_length_placeholder": "Max length",
+    "pattern_placeholder": "Pattern",
+    "minimum_placeholder": "Minimum value",
+    "maximum_placeholder": "Maximum value",
+    "multiple_of_placeholder": "Multiple of",
+    "min_items_placeholder": "Min items",
+    "max_items_placeholder": "Max items"
   },
   "searchPermissionsPlaceholder": "Search permissions...",
   "search_filters": {

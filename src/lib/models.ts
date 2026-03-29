@@ -1,24 +1,24 @@
-interface Translation {
+export interface Translation {
   ar: string;
   en: string;
   ku: string;
 }
 
-interface User {
+export interface User {
   shortname: string;
   displayname: Translation;
   description: Translation;
   password: string;
 }
 
-interface Entity {
+export interface Entity {
   title: string;
   tags: string[];
   content: string;
   is_active: boolean;
 }
 
-interface EntitySearch {
+export interface EntitySearch {
   limit: number;
   offset: number;
   shortname: string;

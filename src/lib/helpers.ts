@@ -8,8 +8,12 @@ import {ContentType, ResourceType} from "@edraj/tsdmart";
 export function formatDate(dateString: string): string {
   const date = new Date(dateString);
 
+  if (isNaN(date.getTime())) {
+    return "N/A";
+  }
+
   const yyyy = date.getFullYear();
-  const mm = String(date.getMonth() + 1).padStart(2, "0"); // Months are 0-based
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
   const dd = String(date.getDate()).padStart(2, "0");
   const hh = String(date.getHours()).padStart(2, "0");
   const MM = String(date.getMinutes()).padStart(2, "0");
@@ -31,7 +35,7 @@ export function truncateString(str: string): string {
  * @param entity - The entity object containing is_active and state properties
  * @returns Human-readable state string (Inactive, Pending, In Progress, Approved, Rejected, or N/A)
  */
-export function renderStateString(entity: any) {
+export function renderStateString(entity: { is_active?: boolean; state?: string }) {
   if (entity.is_active === false) {
     return "Inactive";
   }
@@ -100,7 +104,7 @@ export function getFileType(
  * @param locale - The locale string (e.g., 'ar' for Arabic, defaults to English)
  * @returns Formatted number string according to locale
  */
-export function formatNumber(number: number, locale): string {
+export function formatNumber(number: number, locale: string): string {
   if (locale === "ar") {
     return number.toLocaleString("ar-EG");
   }

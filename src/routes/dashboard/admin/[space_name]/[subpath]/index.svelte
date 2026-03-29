@@ -2,7 +2,6 @@
   import { goto, params } from "@roxi/routify";
   import {
     deleteEntity,
-    getAvatar,
     getEntity,
     getSpaceContents,
     getSpaceTags,
@@ -266,21 +265,8 @@
       await loadSpaceTags();
 
       if (response && response.records) {
-        const enhancedItems = await Promise.all(
-          response.records.map(async (item) => {
-            let avatarUrl = "";
-            try {
-              const result = getAvatar(item.attributes?.owner_shortname);
-              avatarUrl = result instanceof Promise ? await result : result;
-            } catch {
-              avatarUrl = "";
-            }
-            return { ...item, avatarUrl };
-          }),
-        );
-
-        $allContents = enhancedItems;
-        totalItemsCount = enhancedItems.length;
+        $allContents = response.records;
+        totalItemsCount = response.records.length;
 
         applyFilters();
       } else {
@@ -985,31 +971,25 @@
       let successCount = 0;
       let failCount = 0;
 
-      if (response && response.records) {
-        for (const record of response.records) {
-          if (record.status === "success") {
-            successCount++;
-          } else {
-            failCount++;
-          }
-        }
-      } else if (response && response.status === "success") {
+      if (response && response.status === 'success') {
         successCount = records.length;
       } else {
         failCount = records.length;
       }
 
       if (successCount > 0) {
-        successToastMessage(
-          $_("admin_content.bulk_actions.edit_success", {
-            count: successCount,
-          }),
-        );
+        successToastMessage($_("admin_content.bulk_actions.edit_success", {
+        values: {
+          count: successCount
+        }
+      }));
       }
       if (failCount > 0) {
-        errorToastMessage(
-          $_("admin_content.bulk_actions.edit_failed", { count: failCount }),
-        );
+        errorToastMessage($_("admin_content.bulk_actions.edit_failed", {
+          values: {
+          count: failCount
+        }
+      }));
       }
 
       closeBulkEditModal();
@@ -2083,31 +2063,13 @@
                           {:else if attr.key === "author"}
                             <div class="flex items-center gap-2">
                               {#if item.attributes?.owner_shortname}
-                                {#await getAvatar(item.attributes?.owner_shortname) then avatar}
-                                  {#if typeof avatar === "string" && avatar.trim() !== ""}
-                                    <img
-                                      src={avatar}
-                                      alt={item.attributes?.owner_shortname}
-                                      class="w-6 h-6 rounded-full object-cover"
-                                    />
-                                  {:else}
-                                    <div
-                                      class="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[10px] font-medium text-gray-600"
-                                    >
-                                      {item.attributes?.owner_shortname
-                                        .charAt(0)
-                                        .toUpperCase()}
-                                    </div>
-                                  {/if}
-                                {:catch}
-                                  <div
-                                    class="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[10px] font-medium text-gray-600"
-                                  >
-                                    {item.attributes?.owner_shortname
-                                      .charAt(0)
-                                      .toUpperCase()}
-                                  </div>
-                                {/await}
+                                <div
+                                  class="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[10px] font-medium text-gray-600"
+                                >
+                                  {item.attributes?.owner_shortname
+                                    .charAt(0)
+                                    .toUpperCase()}
+                                </div>
                                 <span class="text-sm font-medium text-gray-700"
                                   >{item.attributes?.owner_shortname}</span
                                 >

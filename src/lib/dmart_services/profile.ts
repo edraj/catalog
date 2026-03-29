@@ -15,13 +15,14 @@ export async function getProfile() {
         if (profile === null) {
             return null;
         }
-        if (profile.status == "success" && profile.records.length > 0) {
+        if (profile.status === "success" && profile.records.length > 0) {
             return profile.records[0];
         }
 
         return null;
     } catch (e) {
-        return e;
+        console.error("Error fetching profile:", e);
+        return null;
     }
 }
 
@@ -74,7 +75,7 @@ export async function setAvatar(shortname: string, attachment: File) {
         payload_file: attachment,
     });
 
-    return response.status == "success" && response.records.length > 0;
+    return response.status === "success" && response.records.length > 0;
 }
 
 /**
@@ -95,7 +96,7 @@ export async function updateProfile(data: any) {
         },
     };
     const response = await Dmart.updateUser(request);
-    return response.status == "success";
+    return response.status === "success";
 }
 
 /**
@@ -113,5 +114,5 @@ export async function updatePassword(data: any) {
         },
     };
     const response = await Dmart.updateUser(request);
-    return response.status == "success";
+    return response.status === "success";
 }

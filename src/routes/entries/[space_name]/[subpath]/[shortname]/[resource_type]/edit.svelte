@@ -10,7 +10,9 @@
     attachAttachmentsToEntity,
     getEntity,
     updateEntity,
+    getSpaceSchema,
   } from "@/lib/dmart_services/dmart_services";
+  import DynamicSchemaBasedForms from "@/components/forms/DynamicSchemaBasedForms.svelte";
   import {
     errorToastMessage,
     successToastMessage,
@@ -53,6 +55,12 @@
   let isTemplateBasedItem = $state(false);
   let templateEditorContent = $state("");
   let jsonEditorContent = $state({});
+
+  // Schema-based form state
+  let isSchemaBasedItem = $state(false);
+  let selectedSchema = $state(null);
+  let schemaFormData = $state({});
+  let loadingSchema = $state(false);
 
   const isRTL = derived(
     locale,
@@ -142,7 +150,21 @@
     let contentToSave;
 
     // Handle different content types like admin page
-    if (entity?.payload?.content_type === "json") {
+    if (isSchemaBasedItem && selectedSchema) {
+      // For schema-based entries, use the form data
+      const originalContent = getItemContent(entity);
+      // Preserve structured entry format if it exists
+      if (originalContent && typeof originalContent === "object" && originalContent.schema_data) {
+        // This is a structured entry with schema_data and template
+        contentToSave = {
+          ...originalContent,
+          schema_data: schemaFormData
+        };
+      } else {
+        // Regular schema-based entry
+        contentToSave = schemaFormData;
+      }
+    } else if (entity?.payload?.content_type === "json") {
       htmlContent = JSON.stringify(jsonEditorContent);
       contentToSave = prepareContentForSave(htmlContent, "json");
     } else {
@@ -171,9 +193,7 @@
       $params.space_name,
       $params.subpath,
       $params.resource_type,
-      entityData,
-      entity.workflow_shortname,
-      entity.payload?.schema_shortname
+      entityData
     );
     const msg = isPublish
       ? $_("entry_edit.published")
@@ -183,7 +203,7 @@
       successToastMessage($_("entry_edit.success"));
       for (const attachment of attachments) {
         const r = await attachAttachmentsToEntity(
-          response,
+          $params.shortname,
           $params.space_name,
           $params.subpath,
           attachment
@@ -210,6 +230,32 @@
 
   function getContent() {
     return htmlEditor;
+  }
+
+  async function loadSchemaForEntry(schemaShortname: string) {
+    loadingSchema = true;
+    try {
+      const response = await getSpaceSchema($params.space_name, "managed");
+      if (response?.status === "success" && response?.records) {
+        const schemaRecord = response.records.find(
+          (record) => record.shortname === schemaShortname
+        );
+        if (schemaRecord) {
+          selectedSchema = {
+            shortname: schemaRecord.shortname,
+            title: schemaRecord.attributes?.displayname?.en || schemaRecord.shortname,
+            schema: schemaRecord.attributes?.payload?.body,
+            description: schemaRecord.attributes?.description?.en || "",
+          };
+          return true;
+        }
+      }
+    } catch (error) {
+      console.error("Error loading schema:", error);
+    } finally {
+      loadingSchema = false;
+    }
+    return false;
   }
 
   onMount(async () => {
@@ -240,6 +286,26 @@
 
       if (isTemplateBasedItem) {
         templateEditorContent = itemContent || "";
+      }
+
+      // Check if it's schema-based (but not templates or meta_schema)
+      const schemaShortname = entity.payload?.schema_shortname;
+      if (schemaShortname && schemaShortname !== "templates" && schemaShortname !== "meta_schema") {
+        isSchemaBasedItem = true;
+        const schemaLoaded = await loadSchemaForEntry(schemaShortname);
+        if (schemaLoaded) {
+          // Initialize form data from the entity body
+          // Handle structured entry format: { schema_data: {...}, template: {...} }
+          if (itemContent && typeof itemContent === "object") {
+            if (itemContent.schema_data) {
+              schemaFormData = itemContent.schema_data;
+            } else {
+              schemaFormData = itemContent;
+            }
+          } else {
+            schemaFormData = {};
+          }
+        }
       }
 
       tags = entity.tags || [];
@@ -514,9 +580,25 @@
           <h2>{$_("entry_edit.content")}</h2>
         </div>
         <div class="section-content">
-          <div class="editor-container">
+          <div class="editor-container" class:schema-form-container={isSchemaBasedItem && selectedSchema}>
             {#if editorReady}
-              {#if isTemplateBasedItem}
+              {#if loadingSchema}
+                <div class="schema-loading">
+                  <Diamonds size="40" color="#2563eb" unit="px" duration="1s" />
+                  <p>Loading schema form...</p>
+                </div>
+              {:else if isSchemaBasedItem && selectedSchema}
+                <div class="schema-form-wrapper">
+                  <div class="schema-info-bar">
+                    <span class="schema-label">Schema:</span>
+                    <span class="schema-name">{selectedSchema.title}</span>
+                  </div>
+                  <DynamicSchemaBasedForms
+                    bind:content={schemaFormData}
+                    schema={selectedSchema.schema}
+                  />
+                </div>
+              {:else if isTemplateBasedItem}
                 <TemplateEditor
                   content={templateEditorContent}
                   space_name={$params.space_name}
@@ -1492,12 +1574,67 @@
     .json-edit-with-preview {
       grid-template-columns: 1fr;
     }
-    
+
     .preview-section {
       border-left: none;
       border-top: 1px solid #e5e7eb;
       padding-left: 0;
       padding-top: 24px;
+    }
+  }
+
+  /* Schema Form Styles */
+  .schema-form-container {
+    height: auto;
+    min-height: 500px;
+  }
+
+  .schema-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 500px;
+    background: var(--gray-50);
+    border-radius: var(--radius-lg);
+    color: var(--gray-600);
+  }
+
+  .schema-loading p {
+    margin-top: 1rem;
+    font-size: 0.875rem;
+  }
+
+  .schema-form-wrapper {
+    padding: 1.5rem;
+  }
+
+  .schema-info-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    border: 1px solid #3b82f6;
+    border-radius: var(--radius-lg);
+    margin-bottom: 1.5rem;
+  }
+
+  .schema-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1e40af;
+  }
+
+  .schema-name {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #1e3a8a;
+  }
+
+  @media (max-width: 768px) {
+    .schema-form-wrapper {
+      padding: 1rem;
     }
   }
 </style>

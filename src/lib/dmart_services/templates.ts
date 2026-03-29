@@ -372,3 +372,104 @@ export function hasTemplateAttachment(schemaRecord: any): boolean {
 
     return attachments.some((att) => att.shortname === "template");
 }
+
+/**
+ * Checks if a schema has a markdown template attachment
+ * A markdown template attachment has shortname 'template' and content_type of 'markdown' or 'md'
+ * 
+ * @param schemaRecord - The schema record object
+ * @returns true if the schema has a markdown 'template' attachment
+ */
+export function hasMarkdownTemplateAttachment(schemaRecord: any): boolean {
+    if (!schemaRecord) {
+        return false;
+    }
+
+    const attachments = schemaRecord.attachments || schemaRecord.attributes?.attachments;
+    
+    if (!attachments || !Array.isArray(attachments)) {
+        return false;
+    }
+
+    const templateAttachment = attachments.find((att) => att.shortname === "template");
+    
+    if (!templateAttachment) {
+        return false;
+    }
+
+    const contentType = templateAttachment.attributes?.payload?.content_type;
+    return contentType === "markdown" || contentType === "md";
+}
+
+/**
+ * Extracts markdown template from schema attachments
+ * Similar to getTemplateFromSchemaAttachment but specifically for markdown templates
+ * 
+ * @param schemaRecord - The schema record object from getSpaceSchema response
+ * @returns The markdown template object if found, null otherwise
+ */
+export function getMarkdownTemplateFromSchemaAttachment(schemaRecord: any): {
+    shortname: string;
+    title: string;
+    schema: string;
+    description: string;
+    attachment_data?: any;
+} | null {
+    if (!schemaRecord) {
+        return null;
+    }
+
+    // Check for attachments in the schema record
+    const attachments = schemaRecord.attachments || schemaRecord.attributes?.attachments;
+    
+    if (!attachments || !Array.isArray(attachments)) {
+        return null;
+    }
+
+    // Find attachment with shortname 'template' and markdown content type
+    const templateAttachment = attachments.find(
+        (att) => att.shortname === "template" && 
+                 (att.attributes?.payload?.content_type === "markdown" || 
+                  att.attributes?.payload?.content_type === "md")
+    );
+
+    if (!templateAttachment) {
+        return null;
+    }
+
+    // Extract template content from the attachment
+    const templateBody = templateAttachment.attributes?.payload?.body;
+    
+    if (!templateBody) {
+        return null;
+    }
+
+    // Handle different formats of template storage
+    let templateContent: string;
+    let templateTitle: string;
+
+    if (typeof templateBody === "string") {
+        // Direct string content
+        templateContent = templateBody;
+        templateTitle = templateAttachment.attributes?.displayname?.en || 
+                       templateAttachment.attributes?.title || 
+                       "Template";
+    } else if (typeof templateBody === "object") {
+        // Object format with content property
+        templateContent = templateBody.content || templateBody.body || JSON.stringify(templateBody);
+        templateTitle = templateBody.title || 
+                       templateAttachment.attributes?.displayname?.en || 
+                       templateAttachment.attributes?.title || 
+                       "Template";
+    } else {
+        return null;
+    }
+
+    return {
+        shortname: "template",
+        title: templateTitle,
+        schema: templateContent,
+        description: templateAttachment.attributes?.description?.en || "",
+        attachment_data: templateAttachment,
+    };
+}

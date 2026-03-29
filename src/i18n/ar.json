@@ -453,7 +453,8 @@
       "author_entries": "مدخلات المؤلف",
       "content": "المحتوى",
       "overview": "نظرة عامة",
-      "relationships": "العلاقات"
+      "relationships": "العلاقات",
+      "template": "قالب"
     },
     "unnamed_item": "عنصر بلا اسم"
   },
@@ -775,7 +776,8 @@
       "required_fields_missing": "يرجى ملء الحقول المطلوبة: {fields}",
       "save_failed": "فشل في حفظ المقال!",
       "select_space": "يرجى اختيار مساحة!",
-      "select_template": "يرجى اختيار قالب!"
+      "select_template": "يرجى اختيار قالب!",
+      "shortname_required": "الاسم المختصر مطلوب! يرجى إدخال اسم مختصر للإدخال."
     },
     "navigation": {
       "back_to_entries": "العودة إلى مقالاتي"
@@ -1591,7 +1593,18 @@
     "schema_title_label": "عنوان المخطط",
     "schema_title_placeholder": "عنوان المخطط",
     "string_options_title": "خيارات النص",
-    "title": "محرر المخطط"
+    "title": "محرر المخطط",
+    "property_name_placeholder": "أدخل اسم الخاصية",
+    "property_title_placeholder": "أدخل عنوان الخاصية",
+    "property_description_placeholder": "أدخل وصف الخاصية",
+    "min_length_placeholder": "الحد الأدنى للطول",
+    "max_length_placeholder": "الحد الأقصى للطول",
+    "pattern_placeholder": "النمط",
+    "minimum_placeholder": "الحد الأدنى للقيمة",
+    "maximum_placeholder": "الحد الأقصى للقيمة",
+    "multiple_of_placeholder": "مضاعف لـ",
+    "min_items_placeholder": "الحد الأدنى للعناصر",
+    "max_items_placeholder": "الحد الأقصى للعناصر"
   },
   "searchPermissionsPlaceholder": "البحث في الصلاحيات...",
   "search_filters": {

@@ -7,14 +7,13 @@
     getSpaceFolders,
     getSpaces,
     getSpaceSchema,
-    getTemplates,
   } from "@/lib/dmart_services/dmart_services";
   import {
     getTemplateFromSchemaAttachment,
     hasTemplateAttachment,
+    hasMarkdownTemplateAttachment,
+    getMarkdownTemplateFromSchemaAttachment,
   } from "@/lib/dmart_services/templates";
-  import { ensureTemplatesSchemaInSpace } from "@/lib/dmart_services/spaces";
-  import { ensureTemplatesFolder } from "@/lib/dmart_services/templates";
   import {
     errorToastMessage,
     successToastMessage,
@@ -65,9 +64,7 @@
 
   let entryType = $state("content");
   let availableSchemas = $state([]);
-  let availableTemplates = $state([]);
   let selectedSchema = $state(null);
-  let selectedTemplate = $state(null);
   let schemaBasedTemplate = $state(null); // Template extracted from schema attachment
   let loadingSchemas = $state(false);
   let jsonFormData = $state({});
@@ -90,7 +87,7 @@
   let loadingSubpaths = $state(false);
 
   const canCreateEntry = $derived(
-    title.trim().length > 0 && shortname.trim().length > 0,
+    shortname.trim().length > 0,
   );
   let workflow_shortname = "";
   let schema_shortname = "";
@@ -111,11 +108,8 @@
   });
 
   async function handleEntryTypeChange() {
-    if (entryType === "json" && selectedSpace) {
+    if (entryType === "structured" && selectedSpace) {
       await loadSchemasForSpace();
-    }
-    if (entryType === "template") {
-      await loadTemplatesForSpace();
     }
     if (entryType === "poll") {
       selectedSpace = "poll";
@@ -160,30 +154,6 @@
     }
   }
 
-  async function loadTemplatesForSpace() {
-    loadingSchemas = true;
-    try {
-      const response = await getTemplates();
-
-      if (response?.status === "success" && response?.records) {
-        availableTemplates = response.records.map((record) => ({
-          shortname: record.shortname,
-          title: record.attributes?.payload?.body?.title || record.shortname,
-          schema: record.attributes?.payload?.body?.content,
-          description: record.attributes?.description?.en || "",
-        }));
-      } else {
-        availableTemplates = [];
-      }
-    } catch (error) {
-      errorToastMessage("Failed to load templates");
-      console.error("Error loading templates:", error);
-      availableTemplates = [];
-    } finally {
-      loadingSchemas = false;
-    }
-  }
-
   async function loadSchemasForSpace() {
     if (!selectedSpace) return;
 
@@ -214,11 +184,8 @@
     selectedSpace = event.target.value;
     if (selectedSpace) {
       await initializeSubpathHierarchy(selectedSpace);
-      if (entryType === "json") {
+      if (entryType === "structured") {
         await loadSchemasForSpace();
-      }
-      if (entryType === "template") {
-        await loadTemplatesForSpace();
       }
     }
   }
@@ -232,25 +199,30 @@
     jsonFormData = {};
     
     // Check if schema has a template attachment
+    // For structured entries, specifically check for markdown template attachments
     if (schemaRecord && schemaRecord.raw) {
-      const templateFromAttachment = getTemplateFromSchemaAttachment(schemaRecord.raw);
-      if (templateFromAttachment) {
-        schemaBasedTemplate = templateFromAttachment;
-        templateFormData = {};
+      if (entryType === "structured") {
+        // For structured entries, only use markdown template attachments
+        const markdownTemplate = getMarkdownTemplateFromSchemaAttachment(schemaRecord.raw);
+        if (markdownTemplate) {
+          schemaBasedTemplate = markdownTemplate;
+          templateFormData = {};
+        } else {
+          schemaBasedTemplate = null;
+        }
       } else {
-        schemaBasedTemplate = null;
+        // For json entries, use any template attachment
+        const templateFromAttachment = getTemplateFromSchemaAttachment(schemaRecord.raw);
+        if (templateFromAttachment) {
+          schemaBasedTemplate = templateFromAttachment;
+          templateFormData = {};
+        } else {
+          schemaBasedTemplate = null;
+        }
       }
     } else {
       schemaBasedTemplate = null;
     }
-  }
-
-  function handleTemplateChange(event) {
-    const templateShortname = event.target.value;
-    selectedTemplate = availableTemplates.find(
-      (t) => t.shortname === templateShortname,
-    );
-    templateFormData = {};
   }
 
   onMount(async () => {
@@ -596,12 +568,12 @@
       return;
     }
 
-    if (!canCreateEntry) {
-      errorToastMessage($_("create_entry.error.cannot_create"));
+    if (!shortname.trim()) {
+      errorToastMessage($_("create_entry.error.shortname_required"));
       return;
     }
 
-    if (entryType === "json") {
+    if (entryType === "structured") {
       if (selectedSchema && selectedSchema.schema) {
         validationResult = validateRequiredFields(
           jsonFormData,
@@ -671,42 +643,6 @@
           },
         };
       }
-    } else if (entryType === "template") {
-      if (!selectedTemplate) {
-        errorToastMessage($_("create_entry.error.select_template"));
-        isLoading = false;
-        return;
-      }
-
-      // Validate required fields
-      const fields = parseTemplateFields(selectedTemplate.schema);
-      const requiredFields = fields.filter((f) => f.required);
-      const missingFields = requiredFields.filter((f) => {
-        const value = templateFormData[f.name];
-        if (value == null) return true;
-        if (typeof value === "string") return !value.trim();
-        if (Array.isArray(value)) return value.length === 0;
-        if (typeof value === "object") return Object.keys(value).length === 0;
-        return false;
-      });
-
-      if (missingFields.length > 0) {
-        errorToastMessage(
-          $_("create_entry.error.required_fields_missing", {
-            values: { fields: missingFields.map((f) => f.label).join(", ") },
-          }),
-        );
-        isLoading = false;
-        return;
-      }
-
-      // Save as JSON structure: { template: ..., data: {...} }
-      bodyContent = {
-        template: selectedTemplate.shortname,
-        data: { ...templateFormData },
-      };
-      contentType = "json";
-      schema_shortname = "templates";
     } else {
       const content = getContent();
       if (isContentEmpty(content, selectedEditorType)) {
@@ -716,38 +652,12 @@
       contentType = selectedEditorType;
     }
 
-    if (isEmpty && entryType !== "json") {
+    if (isEmpty) {
       errorToastMessage($_("create_entry.error.content_required"));
       return;
     }
 
     isLoading = true;
-
-    // For template entries, ensure templates folder and schema exist before creating
-    if (entryType === "template") {
-      try {
-        // Ensure templates folder exists in the selected space (check first, create if missing)
-        const folderExists = await ensureTemplatesFolder(selectedSpace);
-        if (!folderExists) {
-          errorToastMessage("Failed to create templates folder in the selected space");
-          isLoading = false;
-          return;
-        }
-      } catch (error) {
-        console.error("Failed to ensure templates folder:", error);
-        errorToastMessage("Failed to ensure templates folder exists");
-        isLoading = false;
-        return;
-      }
-
-      try {
-        // Ensure templates schema exists in the current space (not applications)
-        await ensureTemplatesSchemaInSpace(selectedSpace, "managed");
-      } catch (error) {
-        console.error("Failed to create templates schema:", error);
-        // Continue anyway - the schema might already exist
-      }
-    }
 
     // Resolve the subpath once — $params.subpath may be undefined when the
     // page is accessed via /entries/create (no [subpath] route segment).
@@ -830,35 +740,6 @@
     } else {
       return markdownContent;
     }
-  }
-
-  function generateContentFromTemplate() {
-    if (!selectedTemplate || !selectedTemplate.schema) {
-      return "";
-    }
-
-    let content = selectedTemplate.schema;
-
-    // Replace placeholders with values or empty string
-    Object.keys(templateFormData).forEach((key) => {
-      const placeholderPattern = new RegExp(
-        `\\{\\{${key}(?::[^}]+)?\\}\\}`,
-        "g",
-      );
-      let value = templateFormData[key];
-      
-      // Handle list/array type - join non-empty items
-      if (Array.isArray(value)) {
-        value = value.filter(item => item && item.trim()).join(", ");
-      }
-      
-      content = content.replace(placeholderPattern, value || "");
-    });
-
-    // Remove any remaining placeholders that don't have values
-    content = content.replace(/\{\{[^}]+\}\}/g, "");
-
-    return content;
   }
 
   function generateContentFromSchemaTemplate() {
@@ -1119,19 +1000,6 @@
             <input
               type="radio"
               bind:group={entryType}
-              value="template"
-              onchange={handleEntryTypeChange}
-            />
-            <span class="entry-type-label">
-              <strong>{$_("create_entry.entry_type.template_title")}</strong>
-              <small>{$_("create_entry.entry_type.template_description")}</small
-              >
-            </span>
-          </label>
-          <label class="entry-type-option">
-            <input
-              type="radio"
-              bind:group={entryType}
               value="poll"
               onchange={handleEntryTypeChange}
             />
@@ -1144,12 +1012,12 @@
             <input
               type="radio"
               bind:group={entryType}
-              value="json"
+              value="structured"
               onchange={handleEntryTypeChange}
             />
             <span class="entry-type-label">
-              <strong>{$_("create_entry.entry_type.json_title")}</strong>
-              <small>{$_("create_entry.entry_type.json_description")}</small>
+              <strong>Structured Entry</strong>
+              <small>Form data merged with markdown template preview</small>
             </span>
           </label>
         </div>
@@ -1198,7 +1066,7 @@
     <div class="section">
       <div class="section-header">
         <TagOutline class="section-icon" />
-        <h2>{$_("create_entry.shortname.section_title")}</h2>
+        <h2>{$_("create_entry.shortname.section_title")} <span class="required-indicator">*</span></h2>
       </div>
       <div class="section-content">
         <div class="shortname-input-group">
@@ -1518,165 +1386,210 @@
           </div>
         </div>
       {/if}
-    {:else if entryType === "template"}
+    {:else if entryType === "structured"}
+      <!-- Structured Entry: Schema Selection Section -->
       <div class="section">
         <div class="section-header">
           <FileCheckSolid class="section-icon" />
-          <h2>{$_("create_entry.template.selection_title")}</h2>
+          <h2>{$_("create_entry.schema.selection_title")}</h2>
         </div>
         <div class="section-content">
           {#if loadingSchemas}
             <div class="loading-state">
-              <p>{$_("create_entry.template.loading")}</p>
+              <p>{$_("create_entry.schema.loading")}</p>
             </div>
-          {:else if availableTemplates.length > 0}
-            <div class="template-selector">
-              <label for="template-select" class="selector-label"
-                >{$_("create_entry.template.select_label")}</label
+          {:else if availableSchemas.length > 0}
+            <div class="schema-selector">
+              <label for="schema-select" class="selector-label"
+                >{$_("create_entry.schema.select_label")}</label
               >
               <select
-                id="template-select"
-                onchange={handleTemplateChange}
+                id="schema-select"
+                onchange={handleSchemaChange}
                 class="destination-select"
               >
                 <option value=""
-                  >{$_("create_entry.template.choose_option")}</option
+                  >{$_("create_entry.schema.choose_option")}</option
                 >
-                {#each availableTemplates as template}
-                  <option value={template.shortname}>{template.title}</option>
+                {#each availableSchemas as schema}
+                  <option value={schema.shortname}>{schema.title}</option>
                 {/each}
               </select>
-              {#if selectedTemplate}
-                <div class="template-info">
-                  <h4>{selectedTemplate.title}</h4>
-                  {#if selectedTemplate.description}
-                    <p class="template-description">
-                      {selectedTemplate.description}
+              {#if selectedSchema}
+                <div class="schema-info">
+                  <h4>{selectedSchema.title}</h4>
+                  {#if selectedSchema.description}
+                    <p class="schema-description">
+                      {selectedSchema.description}
                     </p>
                   {/if}
                 </div>
               {/if}
             </div>
-
-            {#if selectedTemplate && selectedTemplate.schema}
-              <!-- Template Data Form Card -->
-              <div class="template-data-card">
-                <div class="template-data-card-header">
-                  <h3 class="template-data-title">
-                    {$_("create_entry.template.fill_data_title")}
-                  </h3>
-                </div>
-                <div class="template-data-card-body">
-                  <div class="template-form">
-                    {#each parseTemplateFields(selectedTemplate.schema) as field}
-                      <div class="form-field">
-                        <label for="template-{field.name}" class="field-label">
-                          {field.label}
-                          {#if field.required}
-                            <span class="required-indicator">*</span>
-                          {/if}
-                          <span class="field-type">({field.originalType})</span>
-                        </label>
-                        {#if field.originalType === "list"}
-                          <!-- List Input with Add/Delete -->
-                          <div class="list-input-container">
-                            {#if !templateFormData[field.name]}
-                              {templateFormData[field.name] = [''], ''}
-                            {/if}
-                            {#each templateFormData[field.name] as item, index (index)}
-                              <div class="list-input-row">
-                                <input
-                                  type="text"
-                                  bind:value={templateFormData[field.name][index]}
-                                  class="field-input list-input"
-                                  placeholder={`Item ${index + 1}`}
-                                />
-                                <button
-                                  type="button"
-                                  class="list-btn list-btn-remove"
-                                  onclick={() => {
-                                    templateFormData[field.name] = templateFormData[field.name].filter((_, i) => i !== index);
-                                  }}
-                                  title="Remove item"
-                                >
-                                  ✕
-                                </button>
-                              </div>
-                            {/each}
-                            <button
-                              type="button"
-                              class="list-btn list-btn-add"
-                              onclick={() => {
-                                templateFormData[field.name] = [...templateFormData[field.name], ''];
-                              }}
-                            >
-                              + Add Item
-                            </button>
-                          </div>
-                        {:else if field.type === "textarea"}
-                          <textarea
-                            id="template-{field.name}"
-                            bind:value={templateFormData[field.name]}
-                            class="field-input field-textarea"
-                            placeholder={field.placeholder}
-                            required={field.required}
-                            rows={field.originalType === "object" || field.originalType === "list_object"
-                              ? 5
-                              : 3}
-                          ></textarea>
-                          {#if field.originalType === "object"}
-                            <small class="field-hint"
-                              >Enter valid JSON object</small
-                            >
-                          {:else if field.originalType === "list_object"}
-                            <small class="field-hint"
-                              >Enter valid JSON array of objects</small
-                            >
-                          {/if}
-                        {:else if field.type === "checkbox"}
-                          <div class="checkbox-wrapper">
-                            <input
-                              id="template-{field.name}"
-                              type="checkbox"
-                              bind:checked={templateFormData[field.name]}
-                              class="field-checkbox"
-                            />
-                            <span class="checkbox-label">Yes</span>
-                          </div>
-                        {:else}
-                          <input
-                            id="template-{field.name}"
-                            type={field.type}
-                            bind:value={templateFormData[field.name]}
-                            class="field-input field-text"
-                            placeholder={field.placeholder}
-                            required={field.required}
-                          />
-                        {/if}
-                      </div>
-                    {/each}
-                  </div>
-                </div>
-              </div>
-
-              <!-- Template Preview -->
-              <div class="template-preview-section">
-                <h3 class="template-preview-title">
-                  {$_("create_entry.template.preview_title")}
-                </h3>
-                <div class="template-preview markdown-preview">
-                  {@html marked(generateContentFromTemplate())}
-                </div>
-              </div>
-            {/if}
           {:else}
             <div class="empty-state">
               <FileCheckSolid class="empty-icon" />
-              <p>{$_("create_entry.template.no_templates")}</p>
+              <p>{$_("create_entry.schema.no_schemas")}</p>
             </div>
           {/if}
         </div>
       </div>
+
+      {#if selectedSchema && selectedSchema.schema}
+        {#if schemaBasedTemplate && schemaBasedTemplate.schema}
+          <!-- Structured Entry with Markdown Template: Side-by-side layout -->
+          <div class="structured-entry-layout">
+            <div class="structured-entry-form">
+              <div class="section">
+                <div class="section-header">
+                  <FileCheckSolid class="section-icon" />
+                  <h2>{$_("create_entry.schema.entry_data_title")}</h2>
+                </div>
+                <div class="section-content">
+                  <DynamicSchemaBasedForms
+                    bind:content={jsonFormData}
+                    schema={selectedSchema.schema}
+                  />
+                </div>
+              </div>
+
+              <div class="section">
+                <div class="section-header">
+                  <FileCheckSolid class="section-icon" />
+                  <h2>{$_("create_entry.template.schema_template_title") || "Template Data"}</h2>
+                </div>
+                <div class="section-content">
+                  <div class="template-info-box">
+                    <p class="template-info-text">
+                      Fill in the template data below. This will be merged with the form data to create the final structured entry.
+                    </p>
+                  </div>
+                  
+                  <div class="template-data-card">
+                    <div class="template-data-card-header">
+                      <h3 class="template-data-title">
+                        {schemaBasedTemplate.title}
+                      </h3>
+                    </div>
+                    <div class="template-data-card-body">
+                      <div class="template-form">
+                        {#each parseTemplateFields(schemaBasedTemplate.schema) as field}
+                          <div class="form-field">
+                            <label for="structured-template-{field.name}" class="field-label">
+                              {field.label}
+                              {#if field.required}
+                                <span class="required-indicator">*</span>
+                              {/if}
+                              <span class="field-type">({field.originalType})</span>
+                            </label>
+                            {#if field.originalType === "list"}
+                              <div class="list-input-container">
+                                {#if !templateFormData[field.name]}
+                                  {templateFormData[field.name] = [''], ''}
+                                {/if}
+                                {#each templateFormData[field.name] as item, index (index)}
+                                  <div class="list-input-row">
+                                    <input
+                                      type="text"
+                                      bind:value={templateFormData[field.name][index]}
+                                      class="field-input list-input"
+                                      placeholder={`Item ${index + 1}`}
+                                    />
+                                    <button
+                                      type="button"
+                                      class="list-btn list-btn-remove"
+                                      onclick={() => {
+                                        templateFormData[field.name] = templateFormData[field.name].filter((_, i) => i !== index);
+                                      }}
+                                      title="Remove item"
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
+                                {/each}
+                                <button
+                                  type="button"
+                                  class="list-btn list-btn-add"
+                                  onclick={() => {
+                                    templateFormData[field.name] = [...templateFormData[field.name], ''];
+                                  }}
+                                >
+                                  + Add Item
+                                </button>
+                              </div>
+                            {:else if field.type === "textarea"}
+                              <textarea
+                                id="structured-template-{field.name}"
+                                bind:value={templateFormData[field.name]}
+                                class="field-input field-textarea"
+                                placeholder={field.placeholder}
+                                required={field.required}
+                                rows={field.originalType === "object" || field.originalType === "list_object" ? 5 : 3}
+                              ></textarea>
+                              {#if field.originalType === "object"}
+                                <small class="field-hint">Enter valid JSON object</small>
+                              {:else if field.originalType === "list_object"}
+                                <small class="field-hint">Enter valid JSON array of objects</small>
+                              {/if}
+                            {:else if field.type === "checkbox"}
+                              <div class="checkbox-wrapper">
+                                <input
+                                  id="structured-template-{field.name}"
+                                  type="checkbox"
+                                  bind:checked={templateFormData[field.name]}
+                                  class="field-checkbox"
+                                />
+                                <span class="checkbox-label">Yes</span>
+                              </div>
+                            {:else}
+                              <input
+                                id="structured-template-{field.name}"
+                                type={field.type}
+                                bind:value={templateFormData[field.name]}
+                                class="field-input field-text"
+                                placeholder={field.placeholder}
+                                required={field.required}
+                              />
+                            {/if}
+                          </div>
+                        {/each}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="structured-entry-preview">
+              <div class="section preview-section">
+                <div class="section-header">
+                  <FileCheckSolid class="section-icon" />
+                  <h2>Preview</h2>
+                </div>
+                <div class="section-content">
+                  <div class="template-preview markdown-preview">
+                    {@html marked(generateContentFromSchemaTemplate())}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        {:else}
+          <!-- Structured Entry without Markdown Template: Form only -->
+          <div class="section">
+            <div class="section-header">
+              <FileCheckSolid class="section-icon" />
+              <h2>{$_("create_entry.schema.entry_data_title")}</h2>
+            </div>
+            <div class="section-content">
+              <DynamicSchemaBasedForms
+                bind:content={jsonFormData}
+                schema={selectedSchema.schema}
+              />
+            </div>
+          </div>
+        {/if}
+      {/if}
     {:else if entryType === "poll"}
       <!-- Poll Entry Data Section -->
       <div class="section">
@@ -3098,5 +3011,47 @@
     font-size: 0.875rem;
     font-weight: 500;
     line-height: 1.5;
+  }
+
+  /* Structured Entry Layout */
+  .structured-entry-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  .structured-entry-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .structured-entry-preview {
+    position: sticky;
+    top: 1rem;
+  }
+
+  .structured-entry-preview .section {
+    margin: 0;
+  }
+
+  .structured-entry-preview .section-content {
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+  }
+
+  @media (max-width: 1024px) {
+    .structured-entry-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .structured-entry-preview {
+      position: static;
+    }
+
+    .structured-entry-preview .section-content {
+      max-height: none;
+    }
   }
 </style>
