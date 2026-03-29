@@ -24,3 +24,5 @@ public/config.json
 *.sw?
 .routify
 .vscode
+yarn.lock
+package-lock.json
