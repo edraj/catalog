@@ -12,6 +12,11 @@
 
   $goto;
 
+$effect(() => {
+  if (!$user?.signedin && window.location.pathname !== "/login") {
+    $goto("/login");
+  }
+});
   let webTransport = $state(null);
   let isMenuOpen = $state(false);
   let isRTL = $locale === "ar" || $locale === "ku";
@@ -72,7 +77,7 @@
     if (webTransport) {
       webTransport.disconnect();
     }
-  })
+  });
 
   function renderNotificationIconColor() {
     switch ($newNotificationType) {
@@ -141,32 +146,105 @@
 </script>
 
 <header
-  class={`sticky top-0 z-40 w-full ${$user.signedin ? "pt-4 pb-2 px-4 sm:px-6 lg:px-8 max-w-[1600px] mx-auto" : "border-b border-gray-200 bg-white backdrop-blur-md supports-[backdrop-filter]:bg-white/80"}`}
+  class={`sticky top-0 z-40 w-full  ${$user.signedin ? "pt-4 pb-2  max-w-[1200px]  mx-auto" : "border-b border-gray-200  backdrop-blur-md "}`}
 >
-  <div class={$user.signedin ? "" : "container mx-auto px-4 sm:px-6 lg:px-8"}>
+  <div class={$user.signedin ? "" : "container mx-auto sm:px-6 "}>
     <div
       class={$user.signedin
-        ? "bg-white rounded-[2rem] shadow-sm flex h-[3.25rem] items-center justify-between px-2 pr-3 border border-black/5"
+        ? "w-full h-[58px] bg-white flex items-center px-4 justify-between rounded-[16px] border border-[#FFFFFF66] border-[1px] py-[1px] shadow-[0px_2px_20px_0px_#00000008]"
         : "flex h-16 items-center justify-between"}
     >
       <!-- Logo/Brand -->
       <div
-        class={$user.signedin ? "flex items-center pl-2" : "flex items-center"}
+        class={$user.signedin
+          ? "flex items-center pl-2 w-3/6"
+          : "flex items-center w-3/6"}
       >
         <a
           href="/"
-          class={`flex items-center group ${$user.signedin ? "space-x-2" : "space-x-3"}`}
+          class={`flex items-center justify-start group ${$user.signedin ? "space-x-2" : "space-x-3"}`}
         >
-          <div
-            class={`flex items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-sm transition-all duration-300 group-hover:scale-105 ${$user.signedin ? "h-8 w-8" : "h-10 w-10 shadow-lg group-hover:shadow-xl"}`}
+          <svg
+            class="me-2"
+            width="32"
+            height="32"
+            viewBox="8 6 32 32"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
           >
-            CS
-          </div>
+            <g filter="url(#filter0_d_30_2327)">
+              <path
+                d="M8 16C8 10.4772 12.4772 6 18 6H30C35.5228 6 40 10.4772 40 16V28C40 33.5228 35.5228 38 30 38H18C12.4772 38 8 33.5228 8 28V16Z"
+                fill="url(#paint0_linear_30_2327)"
+              />
+              <path
+                d="M18.6667 23.3333C18.5406 23.3338 18.4169 23.2984 18.31 23.2313C18.2032 23.1643 18.1176 23.0682 18.0631 22.9544C18.0087 22.8406 17.9876 22.7137 18.0024 22.5884C18.0172 22.4632 18.0673 22.3446 18.1467 22.2467L24.7467 15.4467C24.7963 15.3895 24.8637 15.3509 24.9381 15.3372C25.0124 15.3234 25.0892 15.3353 25.1559 15.371C25.2226 15.4067 25.2751 15.4639 25.305 15.5334C25.3348 15.6029 25.3401 15.6804 25.3201 15.7533L24.0401 19.7667C24.0023 19.8677 23.9897 19.9764 24.0031 20.0833C24.0166 20.1903 24.0558 20.2925 24.1175 20.381C24.1791 20.4695 24.2613 20.5417 24.3569 20.5914C24.4526 20.6412 24.5589 20.667 24.6667 20.6667H29.3334C29.4596 20.6662 29.5833 20.7016 29.6901 20.7687C29.797 20.8358 29.8826 20.9318 29.937 21.0456C29.9915 21.1594 30.0125 21.2863 29.9977 21.4116C29.9829 21.5369 29.9329 21.6554 29.8534 21.7533L23.2534 28.5533C23.2039 28.6105 23.1364 28.6491 23.0621 28.6629C22.9877 28.6766 22.9109 28.6647 22.8443 28.629C22.7776 28.5933 22.725 28.5361 22.6952 28.4666C22.6654 28.3971 22.66 28.3196 22.6801 28.2467L23.9601 24.2333C23.9978 24.1323 24.0105 24.0237 23.997 23.9167C23.9835 23.8097 23.9443 23.7076 23.8827 23.6191C23.8211 23.5306 23.7389 23.4583 23.6432 23.4086C23.5476 23.3588 23.4412 23.333 23.3334 23.3333H18.6667Z"
+                stroke="white"
+                stroke-width="1.33333"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </g>
+            <defs>
+              <filter
+                id="filter0_d_30_2327"
+                x="0"
+                y="0"
+                width="48"
+                height="48"
+                filterUnits="userSpaceOnUse"
+                color-interpolation-filters="sRGB"
+              >
+                <feFlood flood-opacity="0" result="BackgroundImageFix" />
+                <feColorMatrix
+                  in="SourceAlpha"
+                  type="matrix"
+                  values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
+                  result="hardAlpha"
+                />
+                <feOffset dy="2" />
+                <feGaussianBlur stdDeviation="4" />
+                <feComposite in2="hardAlpha" operator="out" />
+                <feColorMatrix
+                  type="matrix"
+                  values="0 0 0 0 0.388235 0 0 0 0 0.4 0 0 0 0 0.945098 0 0 0 0.2 0"
+                />
+                <feBlend
+                  mode="normal"
+                  in2="BackgroundImageFix"
+                  result="effect1_dropShadow_30_2327"
+                />
+                <feBlend
+                  mode="normal"
+                  in="SourceGraphic"
+                  in2="effect1_dropShadow_30_2327"
+                  result="shape"
+                />
+              </filter>
+              <linearGradient
+                id="paint0_linear_30_2327"
+                x1="8"
+                y1="6"
+                x2="40"
+                y2="38"
+                gradientUnits="userSpaceOnUse"
+              >
+                <stop stop-color="#6366F1" />
+                <stop offset="1" stop-color="#8B5CF6" />
+              </linearGradient>
+            </defs>
+          </svg>
+
           <span
-            class={`font-bold text-gray-900 sm:inline-block transition-colors duration-200 ${$user.signedin ? "text-[1.1rem] group-hover:text-indigo-600" : "text-xl group-hover:text-blue-600"}`}
+            class={`font-inter font-bold text-[17px] leading-[25.5px] tracking-[-0.43px] text-[#1A1A2E] ${$user.signedin ? "text-[1.1rem] group-hover:text-indigo-600" : "text-xl group-hover:text-blue-600"}`}
             >{$_("Spaces")}</span
           >
         </a>
+        {#if $user.signedin}
+          <div class="w-4/6 ms-2">
+            <SearchBar />
+          </div>
+        {/if}
       </div>
 
       <!-- Navigation Items -->
@@ -174,10 +252,6 @@
         class={`flex items-center ${$user.signedin ? "space-x-1 sm:space-x-2" : "space-x-3"}`}
       >
         {#if $user.signedin}
-          <div class="me-2">
-            <SearchBar />
-          </div>
-
           <button
             aria-label={`Notifications`}
             onclick={() => handleMenuItemClick("/notifications")}
@@ -238,7 +312,7 @@
 
             {#if isMenuOpen}
               <div
-                class="dropdown-menu {isRTL
+                class="dropdown-menu  max-h-[500px] overflow-y-auto {isRTL
                   ? 'dropdown-menu-rtl'
                   : 'dropdown-menu-ltr'}"
               >

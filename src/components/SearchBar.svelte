@@ -14,95 +14,77 @@
   let modalOpen = $state(false);
   let searchString = $state("");
   let entities = $state([]);
-  let isExpanded = $state(false);
   let searchInput = $state(null);
 
   function toggleModal() {
     modalOpen = !modalOpen;
-    if (!modalOpen) {
-      // When closing modal, collapse search if empty
-      collapseSearch();
-    }
   }
+
   function openModal() {
     if (modalOpen) return;
     modalOpen = true;
-    // Trigger search if we have a search string
     if (searchString.trim()) {
       setTimeout(() => handleSearchChange(), 100);
     }
   }
 
-  function expandSearch() {
-    isExpanded = true;
-    // Focus the input after expansion
-    setTimeout(() => {
-      if (searchInput) {
-        searchInput.focus();
-      }
-    }, 100);
-  }
-
-  function collapseSearch() {
-    if (!searchString.trim()) {
-      isExpanded = false;
-    }
-  }
-
   let timeout;
-  async function handleSearchChange(event) {
-    // Open modal when user starts typing
-    if (!modalOpen && searchString.trim()) {
-      openModal();
-    }
-
-    if (!searchString.trim()) {
-      return;
-    }
-    try {
-      if (timeout) {
-        clearTimeout(timeout);
-      }
-      timeout = setTimeout(async () => {
-        isProjectBeingFetched = true;
-        const results = await getEntities({
-          limit: 15,
-          offset: 0,
-          shortname: "",
-          search: searchString,
-        });
-
-        if (results === null) {
-          return;
-        }
-
-        const _entities = [];
-        for (const item of results) {
-          const counts = await getEntityAttachmentsCount(
-            item.shortname,
-            item.space_name,
-            item.subpath,
-          );
-
-          _entities.push({
-            shortname: item.shortname,
-            owner: item.attributes.owner_shortname,
-            tags: item.attributes.tags,
-            state: item.attributes.state,
-            is_active: item.attributes.is_active,
-            updated_at: formatDate(item.attributes.updated_at),
-            ...item.attributes.payload.body,
-            ...counts[0].attributes,
-          });
-        }
-        entities = _entities;
-
-        isProjectBeingFetched = false;
-      }, 500);
-    } catch (e) {
-      isProjectBeingFetched = false;
-    }
+  async function handleSearchChange() {
+  if (searchString.trim() && !modalOpen) {
+    openModal();
   }
+
+  if (!searchString.trim()) {
+    modalOpen = false;
+    entities = [];
+    return;
+  }
+
+  try {
+    if (timeout) clearTimeout(timeout);
+
+    timeout = setTimeout(async () => {
+      isProjectBeingFetched = true;
+
+      const results = await getEntities({
+        limit: 15,
+        offset: 0,
+        shortname: "",
+        search: searchString,
+      });
+
+      if (results === null) {
+        isProjectBeingFetched = false;
+        return;
+      }
+
+      const _entities = [];
+      for (const item of results) {
+        const counts = await getEntityAttachmentsCount(
+          item.shortname,
+          item.space_name,
+          item.subpath,
+        );
+
+        _entities.push({
+          shortname: item.shortname,
+          owner: item.attributes.owner_shortname,
+          tags: item.attributes.tags,
+          state: item.attributes.state,
+          is_active: item.attributes.is_active,
+          updated_at: formatDate(item.attributes.updated_at),
+          ...item.attributes.payload.body,
+          ...counts[0].attributes,
+        });
+      }
+
+      entities = _entities;
+      isProjectBeingFetched = false;
+    }, 500);
+  } catch (e) {
+    isProjectBeingFetched = false;
+  }
+}
 
   function gotoEntityDetails(entity) {
     $goto("/dashboard/[shortname]", {
@@ -120,46 +102,25 @@
 </script>
 
 <div
-  class="flex items-center bg-gray-50 hover:bg-gray-100 text-gray-400 border border-t-0 border-white/50 shadow-inner hover:shadow-sm transition-all duration-300 ease-in-out rounded-full h-9 px-3 overflow-hidden {isExpanded
-    ? 'w-72 sm:w-96 md:w-[500px] lg:w-[600px]'
-    : 'w-48 sm:w-72 md:w-80 lg:w-[400px]'} ms-auto me-2"
-  onclick={expandSearch}
-  role="button"
-  tabindex="0"
-  onkeydown={(e) => e.key === "Enter" && expandSearch()}
+  class="ms-2 me-2 ms-auto w-full lg:w-[400px] flex items-center justify-start h-[37.5px] rounded-[14px] bg-[#F7F7F5] pt-[8px] pr-[10px] pb-[8px] pl-[10px]"
   aria-label={$_("route_labels.aria_search")}
   title={$_("route_labels.aria_search")}
 >
-  <svg
-    class="w-4 h-4 mr-2 opacity-70 flex-shrink-0"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      stroke-width="2"
-      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-    ></path>
-  </svg>
-  {#if isExpanded}
-    <input
-      bind:this={searchInput}
-      type="text"
-      placeholder={$_("route_labels.search_placeholder_short")}
-      bind:value={searchString}
-      onkeyup={handleSearchChange}
-      onblur={collapseSearch}
-      class="w-full bg-transparent border-none outline-none text-gray-900 placeholder-gray-400 text-sm"
-    />
-  {:else}
-    <span class="truncate text-sm font-medium"
-      >{$_("route_labels.search_placeholder_short")}</span
-    >
-  {/if}
-</div>
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M7.33333 12.6667C10.2789 12.6667 12.6667 10.2789 12.6667 7.33333C12.6667 4.38781 10.2789 2 7.33333 2C4.38781 2 2 4.38781 2 7.33333C2 10.2789 4.38781 12.6667 7.33333 12.6667Z" stroke="#C4C4C4" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M14 14L11.1333 11.1333" stroke="#C4C4C4" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
 
+
+  <input
+    bind:this={searchInput}
+    type="text"
+    placeholder={$_("route_labels.search_placeholder_short")}
+    bind:value={searchString}
+    onkeyup={handleSearchChange}
+    class="w-full bg-transparent border-none outline-none ring-0 focus:outline-none focus:ring-0 text-gray-900 placeholder-gray-400 text-sm"
+  />
+</div>
 {#if modalOpen}
   <div class="fixed inset-0 z-50 flex items-start justify-center pt-16 px-4">
     <div

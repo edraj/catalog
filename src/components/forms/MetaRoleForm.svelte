@@ -207,7 +207,7 @@
     border: 1px solid #e5e7eb;
     padding: 24px;
     margin-bottom: 24px;
-    max-width: 1024px;
+    max-width: 1200px;
     margin-left: auto;
     margin-right: auto;
   }

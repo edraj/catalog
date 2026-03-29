@@ -112,7 +112,7 @@
   });
 </script>
 
-<div class="bg-gray-50">
+<div class="bg-[#F3F8FF]">
   <DashboardHeader />
   <slot />
 </div>

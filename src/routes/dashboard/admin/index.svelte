@@ -576,7 +576,7 @@
 
 <div class="min-h-screen bg-gray-50" class:rtl={$isRTL}>
   <div class="bg-gray-50">
-    <div class="container mx-auto px-4 py-8 max-w-5xl">
+    <div class="container mx-auto px-4 py-8 max-w-[1200px]">
       <div class="text-center">
         <h1 class="text-2xl font-bold text-gray-900 mb-2">
           {$_("route_labels.admin_dashboard_title")}
@@ -588,7 +588,7 @@
     </div>
   </div>
 
-  <div class="container mx-auto px-4 pb-8 max-w-5xl">
+  <div class="mx-auto  pb-8 max-w-[1200px]">
     <!-- Missing Folders Warning -->
     {#if !checkingFolders && (missingFolders.length > 0 || missingWorkflow || missingReportSchema || missingWorkflowSchema) && !foldersFixed}
       <div class="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4">

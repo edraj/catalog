@@ -17,12 +17,18 @@
   import { createFolder } from "@/lib/dmart_services/entries";
   import { Diamonds } from "svelte-loading-spinners";
   import { _, locale } from "@/i18n";
-  import { Dmart, RequestType, ResourceType, QueryType, SortyType } from "@edraj/tsdmart";
+  import {
+    Dmart,
+    RequestType,
+    ResourceType,
+    QueryType,
+    SortyType,
+  } from "@edraj/tsdmart";
   import { derived, writable } from "svelte/store";
   import MetaForm from "@/components/forms/MetaForm.svelte";
   import FolderForm from "@/components/forms/FolderForm.svelte";
   import Avatar from "@/components/Avatar.svelte";
-  import {formatNumber, getParentPath} from "@/lib/helpers";
+  import { formatNumber, getParentPath } from "@/lib/helpers";
   import SchemaForm from "@/components/forms/SchemaForm.svelte";
   import CreateTemplateModal from "@/components/CreateTemplateModal.svelte";
   import WorkflowForm from "@/components/forms/WorkflowForm.svelte";
@@ -49,32 +55,32 @@
   const SORT_ORDER_KEY = "admin_sortOrder";
   const SELECTED_TYPE_KEY = "admin_selectedType";
   const SELECTED_STATUS_KEY = "admin_selectedStatus";
-  
+
   let currentPage = $state(1);
   let itemsPerPage = $state(
     typeof localStorage !== "undefined"
       ? parseInt(localStorage.getItem(ITEMS_PER_PAGE_KEY) || "10", 10)
-      : 10
+      : 10,
   );
   let sortBy = $state(
     typeof localStorage !== "undefined"
       ? localStorage.getItem(SORT_BY_KEY) || "name"
-      : "name"
+      : "name",
   );
   let sortOrder = $state(
     typeof localStorage !== "undefined"
       ? localStorage.getItem(SORT_ORDER_KEY) || "asc"
-      : "asc"
+      : "asc",
   );
   let selectedType = $state(
     typeof localStorage !== "undefined"
       ? localStorage.getItem(SELECTED_TYPE_KEY) || "all"
-      : "all"
+      : "all",
   );
   let selectedStatus = $state(
     typeof localStorage !== "undefined"
       ? localStorage.getItem(SELECTED_STATUS_KEY) || "all"
-      : "all"
+      : "all",
   );
   let totalItemsCount = $state(0);
   let totalPages = $state(1);
@@ -104,7 +110,7 @@
       loadContents(true);
     }, 1500);
   }
-  
+
   // Tags filtering state
   let availableTags = $state([]);
   let selectedTags = $state([]);
@@ -252,9 +258,9 @@
           retrieve_attachments: true,
           exact_subpath: true,
         },
-        "managed"
+        "managed",
       );
-      
+
       // Load space tags
       await loadSpaceTags();
 
@@ -303,9 +309,7 @@
     // Filter by selected tags
     if (selectedTags.length > 0) {
       filtered = filtered.filter((item) =>
-        selectedTags.some((tag) =>
-          item.attributes?.tags?.includes(tag)
-        )
+        selectedTags.some((tag) => item.attributes?.tags?.includes(tag)),
       );
     }
 
@@ -349,12 +353,12 @@
     filteredContents = filtered;
     totalItemsCount = filtered.length;
     totalPages = Math.ceil(totalItemsCount / itemsPerPage) || 1;
-    
+
     // Reset to page 1 if current page is out of bounds
     if (currentPage > totalPages) {
       currentPage = 1;
     }
-    
+
     updatePaginatedContents();
   }
 
@@ -370,9 +374,9 @@
       currentPage = page;
       updatePaginatedContents();
       // Scroll to top of table
-      const tableContainer = document.querySelector('.overflow-x-auto');
+      const tableContainer = document.querySelector(".overflow-x-auto");
       if (tableContainer) {
-        tableContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        tableContainer.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     }
   }
@@ -575,7 +579,7 @@
     sortBy = "name";
     sortOrder = "asc";
     currentPage = 1;
-    
+
     // Clear localStorage for filters
     if (typeof localStorage !== "undefined") {
       localStorage.removeItem(SELECTED_TYPE_KEY);
@@ -583,10 +587,10 @@
       localStorage.removeItem(SORT_BY_KEY);
       localStorage.removeItem(SORT_ORDER_KEY);
     }
-    
+
     loadContents(true);
   }
-  
+
   async function loadSpaceTags() {
     try {
       const tagsResponse = await getSpaceTags(spaceName);
@@ -604,7 +608,7 @@
       tagCounts = {};
     }
   }
-  
+
   function toggleTag(tag: string) {
     if (selectedTags.includes(tag)) {
       selectedTags = selectedTags.filter((t) => t !== tag);
@@ -614,7 +618,7 @@
     currentPage = 1;
     applyFilters();
   }
-  
+
   const displayedTags = $derived.by(() => {
     if (showAllTags) return availableTags;
     return availableTags.slice(0, 12);
@@ -634,7 +638,7 @@
     if (selectedItems.size === displayedContents.length) {
       selectedItems.clear();
     } else {
-      selectedItems = new Set(displayedContents.map(item => item.shortname));
+      selectedItems = new Set(displayedContents.map((item) => item.shortname));
     }
     selectedItems = new Set(selectedItems);
   }
@@ -653,7 +657,7 @@
 
     try {
       for (const shortname of selectedItems) {
-        const item = displayedContents.find(i => i.shortname === shortname);
+        const item = displayedContents.find((i) => i.shortname === shortname);
         if (item) {
           try {
             const success = await deleteEntity(
@@ -674,10 +678,16 @@
       }
 
       if (successCount > 0) {
-        successToastMessage($_("admin_content.bulk_actions.delete_success", { count: successCount }));
+        successToastMessage(
+          $_("admin_content.bulk_actions.delete_success", {
+            count: successCount,
+          }),
+        );
       }
       if (failCount > 0) {
-        errorToastMessage($_("admin_content.bulk_actions.delete_failed", { count: failCount }));
+        errorToastMessage(
+          $_("admin_content.bulk_actions.delete_failed", { count: failCount }),
+        );
       }
 
       clearSelection();
@@ -699,7 +709,7 @@
 
     try {
       for (const shortname of selectedItems) {
-        const item = displayedContents.find(i => i.shortname === shortname);
+        const item = displayedContents.find((i) => i.shortname === shortname);
         if (item) {
           try {
             // TODO: Replace with actual trashEntity function when available
@@ -721,10 +731,16 @@
       }
 
       if (successCount > 0) {
-        successToastMessage($_("admin_content.bulk_actions.trash_success", { count: successCount }));
+        successToastMessage(
+          $_("admin_content.bulk_actions.trash_success", {
+            count: successCount,
+          }),
+        );
       }
       if (failCount > 0) {
-        errorToastMessage($_("admin_content.bulk_actions.trash_failed", { count: failCount }));
+        errorToastMessage(
+          $_("admin_content.bulk_actions.trash_failed", { count: failCount }),
+        );
       }
 
       clearSelection();
@@ -748,24 +764,26 @@
   // Bulk edit functions
   function openBulkEditModal() {
     if (selectedItems.size === 0) return;
-    
+
     // Get effective columns to determine which fields to include
     // Must match the table view logic exactly
-    const effectiveColumns = indexAttributes && indexAttributes.length > 0 && indexAttributes.some(attr => attr && Object.keys(attr).length > 0) 
-      ? indexAttributes 
-      : [
-          { key: 'shortname', name: 'Shortname' },
-          { key: 'schema_shortname', name: 'Schema' },
-          { key: 'status', name: 'Status' },
-          { key: 'created_at', name: 'Created At' },
-          { key: 'updated_at', name: 'Updated At' }
-        ];
-    
+    const effectiveColumns =
+      indexAttributes &&
+      indexAttributes.length > 0 &&
+      indexAttributes.some((attr) => attr && Object.keys(attr).length > 0)
+        ? indexAttributes
+        : [
+            { key: "shortname", name: "Shortname" },
+            { key: "schema_shortname", name: "Schema" },
+            { key: "status", name: "Status" },
+            { key: "created_at", name: "Created At" },
+            { key: "updated_at", name: "Updated At" },
+          ];
 
     const initialData: Record<string, any> = {};
     const selectedShortnames = Array.from(selectedItems);
     for (const shortname of selectedShortnames) {
-      const item = $allContents.find(i => i.shortname === shortname);
+      const item = $allContents.find((i) => i.shortname === shortname);
       if (item) {
         const editData: any = {
           shortname: item.shortname,
@@ -774,56 +792,80 @@
           tags: [...(item.attributes?.tags || [])],
           displayname: { ...(item.attributes?.displayname || {}) },
           description: { ...(item.attributes?.description || {}) },
-          owner_shortname: item.attributes?.owner_shortname || '',
-          created_at: item.attributes?.created_at || '',
-          updated_at: item.attributes?.updated_at || '',
-          schema_shortname: item.attributes?.schema_shortname || '',
+          owner_shortname: item.attributes?.owner_shortname || "",
+          created_at: item.attributes?.created_at || "",
+          updated_at: item.attributes?.updated_at || "",
+          schema_shortname: item.attributes?.schema_shortname || "",
         };
 
         for (const col of effectiveColumns) {
           const key = col.key;
           const fieldType = getFieldType(key);
 
-          if (key === 'displayname' || key === 'attributes.displayname') {
-            editData[key] = formatValueForEdit(item.attributes?.displayname, 'localized');
-          } else if (key === 'description' || key === 'attributes.description') {
-            editData[key] = formatValueForEdit(item.attributes?.description, 'localized');
-          } else if (key === 'status') {
-            editData.is_active = formatValueForEdit(item.attributes?.is_active, 'boolean');
-          } else if (key === 'tags') {
-            editData.tags = formatValueForEdit(item.attributes?.tags, 'array');
-          } else if (key === 'shortname') {
+          if (key === "displayname" || key === "attributes.displayname") {
+            editData[key] = formatValueForEdit(
+              item.attributes?.displayname,
+              "localized",
+            );
+          } else if (
+            key === "description" ||
+            key === "attributes.description"
+          ) {
+            editData[key] = formatValueForEdit(
+              item.attributes?.description,
+              "localized",
+            );
+          } else if (key === "status") {
+            editData.is_active = formatValueForEdit(
+              item.attributes?.is_active,
+              "boolean",
+            );
+          } else if (key === "tags") {
+            editData.tags = formatValueForEdit(item.attributes?.tags, "array");
+          } else if (key === "shortname") {
             editData.new_shortname = item.shortname;
-          } else if (key === 'author' || key === 'owner_shortname') {
-            editData.owner_shortname = formatValueForEdit(item.attributes?.owner_shortname, 'string');
-          } else if (key === 'created_at') {
-            editData.created_at = formatValueForEdit(item.attributes?.created_at, 'string');
-          } else if (key === 'updated_at') {
-            editData.updated_at = formatValueForEdit(item.attributes?.updated_at, 'string');
-          } else if (key === 'schema_shortname') {
-            editData.schema_shortname = formatValueForEdit(item.attributes?.schema_shortname, 'string');
-          } else if (key.includes('.')) {
-            const parts = key.split('.');
+          } else if (key === "author" || key === "owner_shortname") {
+            editData.owner_shortname = formatValueForEdit(
+              item.attributes?.owner_shortname,
+              "string",
+            );
+          } else if (key === "created_at") {
+            editData.created_at = formatValueForEdit(
+              item.attributes?.created_at,
+              "string",
+            );
+          } else if (key === "updated_at") {
+            editData.updated_at = formatValueForEdit(
+              item.attributes?.updated_at,
+              "string",
+            );
+          } else if (key === "schema_shortname") {
+            editData.schema_shortname = formatValueForEdit(
+              item.attributes?.schema_shortname,
+              "string",
+            );
+          } else if (key.includes(".")) {
+            const parts = key.split(".");
             let current = item;
             for (const part of parts) {
               if (current === null || current === undefined) break;
               current = current[part];
             }
-            const rawValue = current !== undefined ? current : '';
+            const rawValue = current !== undefined ? current : "";
             editData[key] = formatValueForEdit(rawValue, fieldType);
           } else {
             const rawValue = getAttributeValue(item, key);
             editData[key] = formatValueForEdit(rawValue, fieldType);
           }
         }
-        
+
         initialData[shortname] = editData;
       }
     }
 
     bulkEditData = { ...initialData };
     showBulkEditModal = true;
-    console.log({bulkEditData})
+    console.log({ bulkEditData });
   }
 
   function closeBulkEditModal() {
@@ -838,12 +880,17 @@
     }
   }
 
-  function updateBulkEditLocalizedField(shortname: string, field: string, locale: string, value: string) {
+  function updateBulkEditLocalizedField(
+    shortname: string,
+    field: string,
+    locale: string,
+    value: string,
+  ) {
     if (bulkEditData[shortname]) {
       const currentField = bulkEditData[shortname][field] || {};
-      bulkEditData[shortname] = { 
-        ...bulkEditData[shortname], 
-        [field]: { ...currentField, [locale]: value }
+      bulkEditData[shortname] = {
+        ...bulkEditData[shortname],
+        [field]: { ...currentField, [locale]: value },
       };
       bulkEditData = { ...bulkEditData };
     }
@@ -853,9 +900,9 @@
     if (bulkEditData[shortname] && tag.trim()) {
       const currentTags = bulkEditData[shortname].tags || [];
       if (!currentTags.includes(tag.trim())) {
-        bulkEditData[shortname] = { 
-          ...bulkEditData[shortname], 
-          tags: [...currentTags, tag.trim()]
+        bulkEditData[shortname] = {
+          ...bulkEditData[shortname],
+          tags: [...currentTags, tag.trim()],
         };
         bulkEditData = { ...bulkEditData };
       }
@@ -865,9 +912,9 @@
   function removeTagFromBulkEdit(shortname: string, tag: string) {
     if (bulkEditData[shortname]) {
       const currentTags = bulkEditData[shortname].tags || [];
-      bulkEditData[shortname] = { 
-        ...bulkEditData[shortname], 
-        tags: currentTags.filter(t => t !== tag)
+      bulkEditData[shortname] = {
+        ...bulkEditData[shortname],
+        tags: currentTags.filter((t) => t !== tag),
       };
       bulkEditData = { ...bulkEditData };
     }
@@ -882,25 +929,27 @@
       const records: any[] = [];
 
       for (const [shortname, editData] of Object.entries(bulkEditData)) {
-        const item = $allContents.find(i => i.shortname === shortname);
+        const item = $allContents.find((i) => i.shortname === shortname);
         if (item) {
           const attributes: any = {};
 
           for (const [key, value] of Object.entries(editData)) {
-            if (key === 'shortname' || key === 'new_shortname') continue;
+            if (key === "shortname" || key === "new_shortname") continue;
 
-            const baseKey = key.startsWith('attributes.') ? key.slice(11) : key;
-            if ((baseKey === 'displayname' || baseKey === 'description') && 
-                (!value || (typeof value === 'object' && Object.keys(value).length === 0))) {
+            const baseKey = key.startsWith("attributes.") ? key.slice(11) : key;
+            if (
+              (baseKey === "displayname" || baseKey === "description") &&
+              (!value ||
+                (typeof value === "object" && Object.keys(value).length === 0))
+            ) {
               continue;
             }
 
-            
             const fieldType = getFieldType(key);
             const parsedValue = parseValueByType(value, fieldType);
 
-            const attrKey = key.startsWith('attributes.') ? key.slice(11) : key;
-            
+            const attrKey = key.startsWith("attributes.") ? key.slice(11) : key;
+
             setNestedValue(attributes, attrKey, parsedValue);
           }
 
@@ -965,7 +1014,8 @@
   const totalItemsDerived = $derived.by(() => totalItemsCount);
 
   const paginationInfoDerived = $derived.by(() => {
-    const start = totalItemsCount === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+    const start =
+      totalItemsCount === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
     const end = Math.min(currentPage * itemsPerPage, totalItemsCount);
     return { start, end, total: totalItemsCount, currentPage, totalPages };
   });
@@ -1084,7 +1134,9 @@
   }
 
   function removeColumnSetting(index) {
-    editingIndexAttributes = editingIndexAttributes.filter((_, i) => i !== index);
+    editingIndexAttributes = editingIndexAttributes.filter(
+      (_, i) => i !== index,
+    );
   }
 
   async function handleUpdateColumns() {
@@ -1224,7 +1276,9 @@
       }
     } catch (err) {
       console.error("Error creating workflow:", err);
-      errorToastMessage($_("toast.workflow_create_failed") + ": " + err.message);
+      errorToastMessage(
+        $_("toast.workflow_create_failed") + ": " + err.message,
+      );
     } finally {
       isCreatingWorkflow = false;
     }
@@ -1284,9 +1338,9 @@
   }
 </script>
 
-<div class="min-h-screen bg-gray-50" class:rtl={$isRTL}>
+<div class="min-h-screen bg-gray-50 px-[21px]" class:rtl={$isRTL}>
   <div class="bg-gray-50">
-    <div class="container mx-auto px-4 py-8 max-w-6xl">
+    <div class="mx-auto py-8 max-w-[1200px]">
       <div
         class="flex flex-col md:flex-row md:items-center justify-between gap-4"
       >
@@ -1312,6 +1366,17 @@
             </svg>
           </button>
           <div>
+            <h1
+              class="font-inter font-bold text-[28px] leading-[42px] tracking-[0px] text-[#1A1A2E]"
+            >
+              {$_("admin_content.title", {
+                values: {
+                  name:
+                    breadcrumbs[breadcrumbs.length - 1]?.name ||
+                    $actualSubpath.split("/").pop(),
+                },
+              })}
+            </h1>
             <nav
               class="flex text-sm text-gray-500 font-medium mb-1"
               aria-label="Breadcrumb"
@@ -1337,26 +1402,20 @@
                     {#if crumb.path}
                       <button
                         onclick={() => navigateToBreadcrumb(crumb.path)}
-                        class="hover:text-indigo-600 transition-colors"
+                        class="font-inter font-normal text-[14px] leading-[21px] tracking-[0px] text-[#888888] cursor-pointer"
                       >
                         {crumb.name}
                       </button>
                     {:else}
-                      <span class="text-gray-900">{crumb.name}</span>
+                      <span
+                        class="font-inter font-normal text-[14px] leading-[21px] tracking-[0px] text-gray-900"
+                        >{crumb.name}</span
+                      >
                     {/if}
                   </li>
                 {/each}
               </ol>
             </nav>
-            <h1 class="text-2xl font-bold text-gray-900">
-              {$_("admin_content.title", {
-                values: {
-                  name:
-                    breadcrumbs[breadcrumbs.length - 1]?.name ||
-                    $actualSubpath.split("/").pop(),
-                },
-              })}
-            </h1>
           </div>
         </div>
 
@@ -1365,7 +1424,7 @@
             {#if $actualSubpath !== "schema"}
               <button
                 onclick={handleCreateFolder}
-                class="bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 px-4 py-2 rounded-xl font-medium transition-colors duration-200 flex items-center gap-2 shadow-sm"
+                class="bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 px-4 py-2 rounded-[14px] cursor-pointer font-medium transition-colors duration-200 flex items-center gap-2 shadow-sm"
               >
                 <svg
                   class="w-4 h-4 text-gray-500"
@@ -1391,7 +1450,7 @@
 
               <button
                 onclick={handleCreateItem}
-                class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-xl font-medium transition-colors duration-200 flex items-center gap-2 shadow-sm"
+                class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-[14px] cursor-pointer font-medium transition-colors duration-200 flex items-center gap-2 shadow-sm"
               >
                 <svg
                   class="w-4 h-4"
@@ -1432,7 +1491,7 @@
     </div>
   </div>
 
-  <div class="container mx-auto px-4 pb-12 max-w-6xl">
+  <div class=" mx-auto pb-12 max-w-[1200px]">
     {#if $isLoading || isInitialLoad}
       <div class="flex justify-center py-16">
         <Diamonds color="#4f46e5" size="60" unit="px" />
@@ -1471,18 +1530,16 @@
       </div>
     {:else}
       <!-- Stats -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <div class="flex gap-2 mb-3">
         <div
-          class="bg-white rounded-[20px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 p-6"
+          class="w-[102.05px] h-[41.5px] px-4 gap-2 rounded-[14px] border border-[#F0F0EE] bg-white flex items-center"
         >
-          <div class="flex items-center gap-4">
-            <div
-              class="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-500"
-            >
+          <div class="flex items-center justify-between gap-2">
+            <div>
               <svg
-                class="w-6 h-6"
+                class="w-4 h-4"
                 fill="none"
-                stroke="currentColor"
+                stroke="#615FFF"
                 viewBox="0 0 24 24"
               >
                 <path
@@ -1493,25 +1550,27 @@
                 ></path>
               </svg>
             </div>
-            <div>
-              <p class="text-sm font-medium text-gray-500">Total Items</p>
-              <h3 class="text-2xl font-bold text-gray-900 mt-1">
-                {formatNumber(totalItemsDerived, $locale)}
-              </h3>
-            </div>
+            <p
+              class="font-inter font-normal text-[12px] leading-[18px] tracking-[0px] text-[#888888] me-1"
+            >
+              Total
+            </p>
+            <h3
+              class="font-inter font-bold text-[13px] leading-[19.5px] tracking-[0px] text-[#1A1A2E]"
+            >
+              {formatNumber(totalItemsDerived, $locale)}
+            </h3>
           </div>
         </div>
         <div
-          class="bg-white rounded-[20px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 p-6"
+          class="w-[102.05px] h-[41.5px] px-4 gap-2 rounded-[14px] border border-[#F0F0EE] bg-white flex items-center"
         >
-          <div class="flex items-center gap-4">
-            <div
-              class="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-500"
-            >
+          <div class="flex items-center justify-between gap-2">
+            <div>
               <svg
-                class="w-6 h-6"
+                class="w-4 h-4"
                 fill="none"
-                stroke="currentColor"
+                stroke="#34D399"
                 viewBox="0 0 24 24"
               >
                 <path
@@ -1522,15 +1581,19 @@
                 ></path>
               </svg>
             </div>
-            <div>
-              <p class="text-sm font-medium text-gray-500">Active Items</p>
-              <h3 class="text-2xl font-bold text-gray-900 mt-1">
-                {formatNumber(
-                  $allContents.filter((i) => i.attributes?.is_active).length,
-                  $locale,
-                )}
-              </h3>
-            </div>
+            <p
+              class="font-inter font-normal text-[12px] leading-[18px] tracking-[0px] text-[#888888] me-1"
+            >
+              Active
+            </p>
+            <h3
+              class="font-inter font-bold text-[13px] leading-[19.5px] tracking-[0px] text-[#1A1A2E]"
+            >
+              {formatNumber(
+                $allContents.filter((i) => i.attributes?.is_active).length,
+                $locale,
+              )}
+            </h3>
           </div>
         </div>
       </div>
@@ -1747,7 +1810,8 @@
             <div class="bulk-actions-content">
               <div class="bulk-actions-info">
                 <span class="bulk-actions-count">
-                  {selectedItems.size} {$_("admin_content.bulk_actions.items_selected")}
+                  {selectedItems.size}
+                  {$_("admin_content.bulk_actions.items_selected")}
                 </span>
               </div>
               <div class="bulk-actions-buttons">
@@ -1756,8 +1820,18 @@
                   class="bulk-btn bulk-btn-secondary"
                   disabled={isBulkDeleting}
                 >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                   {$_("admin_content.bulk_actions.clear_selection")}
                 </button>
@@ -1766,32 +1840,64 @@
                   class="bulk-btn bulk-btn-primary"
                   disabled={isBulkDeleting}
                 >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                    />
                   </svg>
                   {$_("admin_content.bulk_actions.edit")}
                 </button>
                 <button
-                  onclick={() => showBulkTrashConfirm = true}
+                  onclick={() => (showBulkTrashConfirm = true)}
                   class="bulk-btn bulk-btn-warning"
                   disabled={isBulkDeleting}
                 >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
                   </svg>
                   {$_("admin_content.bulk_actions.trash")}
                 </button>
                 <button
-                  onclick={() => showBulkDeleteConfirm = true}
+                  onclick={() => (showBulkDeleteConfirm = true)}
                   class="bulk-btn bulk-btn-danger"
                   disabled={isBulkDeleting}
                 >
                   {#if isBulkDeleting}
-                    <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    <div
+                      class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
+                    ></div>
                     {$_("admin_content.bulk_actions.deleting")}
                   {:else}
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
                     </svg>
                     {$_("admin_content.bulk_actions.delete")}
                   {/if}
@@ -1824,7 +1930,10 @@
               {$_("admin_content.empty.title")}
             </h3>
             <p class="text-gray-500 mb-6">
-              {searchQuery || selectedType !== "all" || selectedStatus !== "all" || selectedTags.length > 0
+              {searchQuery ||
+              selectedType !== "all" ||
+              selectedStatus !== "all" ||
+              selectedTags.length > 0
                 ? $_("admin_content.empty.no_matches")
                 : $_("admin_content.empty.description")}
             </p>
@@ -1841,18 +1950,20 @@
           <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
               <thead>
-                <tr class="bg-gray-50/50 border-b border-gray-100">
+                <tr class="border-b border-gray-100">
                   <th class="px-4 py-4 w-12">
                     <input
                       type="checkbox"
-                      checked={selectedItems.size > 0 && selectedItems.size === displayedContents.length}
-                      indeterminate={selectedItems.size > 0 && selectedItems.size < displayedContents.length}
+                      checked={selectedItems.size > 0 &&
+                        selectedItems.size === displayedContents.length}
+                      indeterminate={selectedItems.size > 0 &&
+                        selectedItems.size < displayedContents.length}
                       onchange={toggleAllItems}
                       class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
                       aria-label={$_("admin_content.bulk_actions.select_all")}
                     />
                   </th>
-                  {#if indexAttributes && indexAttributes.length > 0 && indexAttributes.some(attr => attr && Object.keys(attr).length > 0)}
+                  {#if indexAttributes && indexAttributes.length > 0 && indexAttributes.some((attr) => attr && Object.keys(attr).length > 0)}
                     {#each indexAttributes as attr}
                       <th
                         class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider"
@@ -1891,21 +2002,28 @@
               <tbody class="divide-y divide-gray-100 bg-white">
                 {#each displayedContents as item}
                   <tr
-                    class="hover:bg-gray-50/50 transition-colors group cursor-pointer {selectedItems.has(item.shortname) ? 'bg-indigo-50/30' : ''}"
+                    class="hover:bg-gray-50/50 transition-colors group cursor-pointer {selectedItems.has(
+                      item.shortname,
+                    )
+                      ? 'bg-indigo-50/30'
+                      : ''}"
                     onclick={() => handleItemClick(item)}
                   >
-                    <td class="px-4 py-4" onclick={(e) => e.stopPropagation()}>
+                    <td class="px-4 py-8" onclick={(e) => e.stopPropagation()}>
                       <input
                         type="checkbox"
                         checked={selectedItems.has(item.shortname)}
                         onchange={() => toggleItemSelection(item.shortname)}
                         class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
-                        aria-label={$_("admin_content.bulk_actions.select_item", { name: getDisplayName(item) })}
+                        aria-label={$_(
+                          "admin_content.bulk_actions.select_item",
+                          { name: getDisplayName(item) },
+                        )}
                       />
                     </td>
-                    {#if indexAttributes && indexAttributes.length > 0 && indexAttributes.some(attr => attr && Object.keys(attr).length > 0)}
+                    {#if indexAttributes && indexAttributes.length > 0 && indexAttributes.some((attr) => attr && Object.keys(attr).length > 0)}
                       {#each indexAttributes as attr}
-                        <td class="px-6 py-4">
+                        <td class="px-6 py-8">
                           {#if attr.key === "displayname"}
                             <div class="flex flex-col">
                               <span
@@ -1974,7 +2092,7 @@
                         </td>
                       {/each}
                     {:else}
-                      <td class="px-6 py-4">
+                      <td class="px-6 py-8">
                         <div class="flex flex-col">
                           <span
                             class="inline-flex w-fit items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mb-1.5 {getResourceTypeColor(
@@ -1994,12 +2112,12 @@
                           </div>
                         </div>
                       </td>
-                      <td class="px-6 py-4">
+                      <td class="px-6 py-8">
                         <span class="text-sm text-gray-500 font-medium"
                           >{item.attributes?.schema_shortname || "-"}</span
                         >
                       </td>
-                      <td class="px-6 py-4">
+                      <td class="px-6 py-8">
                         <span
                           class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium {item
                             .attributes?.is_active
@@ -2017,18 +2135,18 @@
                             : $_("admin_content.status.inactive")}
                         </span>
                       </td>
-                      <td class="px-6 py-4">
+                      <td class="px-6 py-8">
                         <span class="text-sm text-gray-500 font-medium"
                           >{formatDate(item.attributes?.created_at)}</span
                         >
                       </td>
-                      <td class="px-6 py-4">
+                      <td class="px-6 py-8">
                         <span class="text-sm text-gray-500 font-medium"
                           >{formatDate(item.attributes?.updated_at)}</span
                         >
                       </td>
                     {/if}
-                    <td class="px-6 py-4">
+                    <td class="px-6 py-8">
                       <div
                         class="flex items-center justify-end gap-4 opacity-0 group-hover:opacity-100 transition-opacity"
                       >
@@ -2110,7 +2228,9 @@
               <div class="flex items-center justify-between gap-4">
                 <!-- Items per page selector -->
                 <div class="flex items-center gap-2">
-                  <span class="text-sm text-gray-500">{$_("admin_content.pagination.items_per_page")}</span>
+                  <span class="text-sm text-gray-500"
+                    >{$_("admin_content.pagination.items_per_page")}</span
+                  >
                   <select
                     bind:value={itemsPerPage}
                     onchange={() => handleItemsPerPageChange(itemsPerPage)}
@@ -2124,12 +2244,12 @@
 
                 <!-- Pagination info -->
                 <div class="text-sm text-gray-500 hidden sm:block">
-                  {$_("admin_content.pagination.showing", { 
-                    values: { 
+                  {$_("admin_content.pagination.showing", {
+                    values: {
                       start: formatNumber(paginationInfoDerived.start, $locale),
                       end: formatNumber(paginationInfoDerived.end, $locale),
-                      total: formatNumber(paginationInfoDerived.total, $locale)
-                    } 
+                      total: formatNumber(paginationInfoDerived.total, $locale),
+                    },
                   })}
                 </div>
 
@@ -2141,8 +2261,18 @@
                     class="p-2 bg-white border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-indigo-600 hover:border-indigo-200 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                     aria-label={$_("admin_content.pagination.previous")}
                   >
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M15 19l-7-7 7-7"
+                      />
                     </svg>
                   </button>
 
@@ -2150,7 +2280,10 @@
                     {#if totalPages <= 7}
                       {#each Array(totalPages) as _, index}
                         <button
-                          class="w-8 h-8 rounded-lg text-sm font-medium transition-all {currentPage === index + 1 ? 'bg-indigo-500 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-indigo-600'}"
+                          class="w-8 h-8 rounded-lg text-sm font-medium transition-all {currentPage ===
+                          index + 1
+                            ? 'bg-indigo-500 text-white'
+                            : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-indigo-600'}"
                           onclick={() => goToPage(index + 1)}
                         >
                           {formatNumber(index + 1, $locale)}
@@ -2158,7 +2291,10 @@
                       {/each}
                     {:else}
                       <button
-                        class="w-8 h-8 rounded-lg text-sm font-medium transition-all {currentPage === 1 ? 'bg-indigo-500 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}"
+                        class="w-8 h-8 rounded-lg text-sm font-medium transition-all {currentPage ===
+                        1
+                          ? 'bg-indigo-500 text-white'
+                          : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}"
                         onclick={() => goToPage(1)}
                       >
                         {formatNumber(1, $locale)}
@@ -2171,7 +2307,10 @@
                       {#each Array(totalPages) as _, index}
                         {#if index + 1 > 1 && index + 1 < totalPages && Math.abs(currentPage - (index + 1)) <= 1}
                           <button
-                            class="w-8 h-8 rounded-lg text-sm font-medium transition-all {currentPage === index + 1 ? 'bg-indigo-500 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}"
+                            class="w-8 h-8 rounded-lg text-sm font-medium transition-all {currentPage ===
+                            index + 1
+                              ? 'bg-indigo-500 text-white'
+                              : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}"
                             onclick={() => goToPage(index + 1)}
                           >
                             {formatNumber(index + 1, $locale)}
@@ -2184,7 +2323,10 @@
                       {/if}
 
                       <button
-                        class="w-8 h-8 rounded-lg text-sm font-medium transition-all {currentPage === totalPages ? 'bg-indigo-500 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}"
+                        class="w-8 h-8 rounded-lg text-sm font-medium transition-all {currentPage ===
+                        totalPages
+                          ? 'bg-indigo-500 text-white'
+                          : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}"
                         onclick={() => goToPage(totalPages)}
                       >
                         {formatNumber(totalPages, $locale)}
@@ -2198,8 +2340,18 @@
                     class="p-2 bg-white border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-indigo-600 hover:border-indigo-200 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                     aria-label={$_("admin_content.pagination.next")}
                   >
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9 5l7 7-7 7"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -2210,7 +2362,9 @@
               <div class="flex items-center justify-between gap-4">
                 <!-- Items per page selector (single page) -->
                 <div class="flex items-center gap-2">
-                  <span class="text-sm text-gray-500">{$_("admin_content.pagination.items_per_page")}</span>
+                  <span class="text-sm text-gray-500"
+                    >{$_("admin_content.pagination.items_per_page")}</span
+                  >
                   <select
                     bind:value={itemsPerPage}
                     onchange={() => handleItemsPerPageChange(itemsPerPage)}
@@ -2223,8 +2377,8 @@
                 </div>
 
                 <div class="text-sm text-gray-500">
-                  {$_("admin_content.pagination.total_items", { 
-                    values: { total: formatNumber(totalItemsDerived, $locale) }
+                  {$_("admin_content.pagination.total_items", {
+                    values: { total: formatNumber(totalItemsDerived, $locale) },
                   })}
                 </div>
               </div>
@@ -2242,25 +2396,39 @@
     <div class="modal-container" class:rtl={$isRTL}>
       <div class="modal-header">
         <div class="modal-header-content" class:text-right={$isRTL}>
-          <h3 class="modal-title">{$_("admin_content.bulk_actions.confirm_delete_title")}</h3>
+          <h3 class="modal-title">
+            {$_("admin_content.bulk_actions.confirm_delete_title")}
+          </h3>
           <p class="modal-subtitle">
-            {$_("admin_content.bulk_actions.confirm_delete_message", { count: selectedItems.size })}
+            {$_("admin_content.bulk_actions.confirm_delete_message", {
+              count: selectedItems.size,
+            })}
           </p>
         </div>
         <button
-          onclick={() => showBulkDeleteConfirm = false}
+          onclick={() => (showBulkDeleteConfirm = false)}
           class="modal-close-btn"
           aria-label={$_("admin_content.modal.close")}
         >
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          <svg
+            class="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
         </button>
       </div>
 
       <div class="modal-footer">
         <button
-          onclick={() => showBulkDeleteConfirm = false}
+          onclick={() => (showBulkDeleteConfirm = false)}
           class="btn btn-secondary"
           disabled={isBulkDeleting}
         >
@@ -2292,25 +2460,39 @@
     <div class="modal-container" class:rtl={$isRTL}>
       <div class="modal-header">
         <div class="modal-header-content" class:text-right={$isRTL}>
-          <h3 class="modal-title">{$_("admin_content.bulk_actions.confirm_trash_title")}</h3>
+          <h3 class="modal-title">
+            {$_("admin_content.bulk_actions.confirm_trash_title")}
+          </h3>
           <p class="modal-subtitle">
-            {$_("admin_content.bulk_actions.confirm_trash_message", { count: selectedItems.size })}
+            {$_("admin_content.bulk_actions.confirm_trash_message", {
+              count: selectedItems.size,
+            })}
           </p>
         </div>
         <button
-          onclick={() => showBulkTrashConfirm = false}
+          onclick={() => (showBulkTrashConfirm = false)}
           class="modal-close-btn"
           aria-label={$_("admin_content.modal.close")}
         >
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          <svg
+            class="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
         </button>
       </div>
 
       <div class="modal-footer">
         <button
-          onclick={() => showBulkTrashConfirm = false}
+          onclick={() => (showBulkTrashConfirm = false)}
           class="btn btn-secondary"
           disabled={isBulkDeleting}
         >
@@ -2338,235 +2520,364 @@
 
 <!-- Bulk Edit Modal -->
 {#if showBulkEditModal}
-  {@const effectiveColumns = indexAttributes && indexAttributes.length > 0 && indexAttributes.some(attr => attr && Object.keys(attr).length > 0) 
-    ? indexAttributes 
-    : [
-        { key: 'shortname', name: 'Shortname' },
-        { key: 'schema_shortname', name: 'Schema' },
-        { key: 'status', name: 'Status' },
-        { key: 'created_at', name: 'Created At' },
-        { key: 'updated_at', name: 'Updated At' }
-      ]}
+  {@const effectiveColumns =
+    indexAttributes &&
+    indexAttributes.length > 0 &&
+    indexAttributes.some((attr) => attr && Object.keys(attr).length > 0)
+      ? indexAttributes
+      : [
+          { key: "shortname", name: "Shortname" },
+          { key: "schema_shortname", name: "Schema" },
+          { key: "status", name: "Status" },
+          { key: "created_at", name: "Created At" },
+          { key: "updated_at", name: "Updated At" },
+        ]}
   <!-- Key only re-renders when items are added/removed, not on every edit -->
   {#key Object.keys(bulkEditData).length}
-  <div class="modal-overlay bulk-edit-overlay">
-    <div class="modal-container bulk-edit-container" class:rtl={$isRTL}>
-      <div class="modal-header">
-        <div class="modal-header-content" class:text-right={$isRTL}>
-          <h3 class="modal-title">{$_("admin_content.bulk_actions.edit_title")}</h3>
+    <div class="modal-overlay bulk-edit-overlay">
+      <div class="modal-container bulk-edit-container" class:rtl={$isRTL}>
+        <div class="modal-header">
+          <div class="modal-header-content" class:text-right={$isRTL}>
+            <h3 class="modal-title">
+              {$_("admin_content.bulk_actions.edit_title")}
+            </h3>
+          </div>
+          <button
+            onclick={closeBulkEditModal}
+            class="modal-close-btn"
+            aria-label={$_("admin_content.modal.close")}
+          >
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
         </div>
-        <button
-          onclick={closeBulkEditModal}
-          class="modal-close-btn"
-          aria-label={$_("admin_content.modal.close")}
-        >
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
 
-      <div class="modal-content bulk-edit-content">
-        <div class="bulk-edit-table-wrapper">
-          <table class="bulk-edit-table">
-            <thead>
-              <tr>
-                {#each effectiveColumns as attr}
-                  <th class="bulk-edit-th">{attr.name}</th>
-                {/each}
-              </tr>
-            </thead>
-            <tbody>
-              {#each Object.entries(bulkEditData) as [shortname, editData], rowIndex (shortname)}
-                {@const item = $allContents.find(i => i.shortname === shortname)}
-                <tr class="bulk-edit-row">
-                  {#each effectiveColumns as attr, colIndex (attr.key)}
-                    <td class="bulk-edit-td">
-                      {#if attr.key === 'shortname'}
-                        <!-- Shortname (editable) -->
-                        <div class="flex items-center gap-2">
-                          <span class="text-lg">{item ? getItemIcon(item) : '📋'}</span>
-                          <input
-                            type="text"
-                            value={editData.new_shortname || shortname}
-                            oninput={(e) => updateBulkEditField(shortname, 'new_shortname', e.currentTarget.value)}
-                            class="bulk-edit-input"
-                            placeholder="Shortname"
-                          />
-                        </div>
-                      {:else if attr.key === 'status'}
-                        <!-- Status Toggle -->
-                        <label class="status-toggle">
-                          <input
-                            type="checkbox"
-                            checked={editData.is_active}
-                            onchange={(e) => updateBulkEditField(shortname, 'is_active', e.currentTarget.checked)}
-                            class="sr-only"
-                          />
-                          <span class="status-toggle-slider" class:active={editData.is_active}></span>
-                          <span class="status-toggle-label">
-                            {editData.is_active ? $_('admin_content.status.active') : $_('admin_content.status.inactive')}
-                          </span>
-                        </label>
-                      {:else if attr.key === 'tags' || getFieldType(attr.key) === 'array'}
-                        <!-- Array Editor (tags, conditions, etc.) -->
-                        {@const arrayKey = attr.key}
-                        <div class="tags-editor">
-                          <div class="tags-list compact">
-                            {#each editData[arrayKey] || [] as tagItem, idx (idx)}
-                              <span class="edit-tag">
-                                {tagItem}
-                                <button
-                                  onclick={() => {
-                                    const arr = [...(editData[arrayKey] || [])];
-                                    arr.splice(idx, 1);
-                                    updateBulkEditField(shortname, arrayKey, arr);
-                                  }}
-                                  class="edit-tag-remove"
-                                  type="button"
-                                >
-                                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                  </svg>
-                                </button>
-                              </span>
-                            {/each}
-                          </div>
-                          <div class="tag-input-wrapper">
-                            <input
-                              type="text"
-                              placeholder="Add item + Enter"
-                              onkeydown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault();
-                                  const val = e.currentTarget.value.trim();
-                                  if (val) {
-                                    const arr = [...(editData[arrayKey] || [])];
-                                    arr.push(val);
-                                    updateBulkEditField(shortname, arrayKey, arr);
-                                    e.currentTarget.value = '';
-                                  }
-                                }
-                              }}
-                              class="bulk-edit-input tag-input"
-                            />
-                          </div>
-                        </div>
-                      {:else if attr.key === 'displayname' || attr.key === 'description' || attr.key === 'attributes.displayname' || attr.key === 'attributes.description'}
-                        <!-- Localized fields (displayname, description) -->
-                        {@const fieldName = attr.key.startsWith('attributes.') ? attr.key.slice(11) : attr.key}
-                        <div class="localized-inputs compact">
-                          {#each ['en', 'ar', 'ku'] as lang}
-                            <div class="localized-input-row">
-                              <span class="locale-badge">{lang}</span>
-                              <input
-                                type="text"
-                                value={editData[fieldName]?.[lang] || ''}
-                                oninput={(e) => updateBulkEditLocalizedField(shortname, fieldName, lang, e.currentTarget.value)}
-                                placeholder={lang}
-                                class="bulk-edit-input"
-                              />
-                            </div>
-                          {/each}
-                        </div>
-                      {:else if attr.key === 'author' || attr.key === 'owner_shortname'}
-                        <!-- Author/Owner (editable) -->
-                        <input
-                          type="text"
-                          value={editData.owner_shortname || item?.attributes?.owner_shortname || ''}
-                          oninput={(e) => updateBulkEditField(shortname, 'owner_shortname', e.currentTarget.value)}
-                          class="bulk-edit-input"
-                          placeholder="Owner"
-                        />
-                      {:else if attr.key === 'created_at'}
-                        <!-- Created At (editable date) -->
-                        <input
-                          type="datetime-local"
-                          value={item?.attributes?.created_at ? new Date(item.attributes.created_at).toISOString().slice(0, 16) : ''}
-                          oninput={(e) => updateBulkEditField(shortname, 'created_at', e.currentTarget.value)}
-                          class="bulk-edit-input"
-                        />
-                      {:else if attr.key === 'updated_at'}
-                        <!-- Updated At (editable date) -->
-                        <input
-                          type="datetime-local"
-                          value={item?.attributes?.updated_at ? new Date(item.attributes.updated_at).toISOString().slice(0, 16) : ''}
-                          oninput={(e) => updateBulkEditField(shortname, 'updated_at', e.currentTarget.value)}
-                          class="bulk-edit-input"
-                        />
-                      {:else if attr.key === 'schema_shortname'}
-                        <!-- Schema (editable) -->
-                        <input
-                          type="text"
-                          value={editData.schema_shortname || item?.attributes?.schema_shortname || ''}
-                          oninput={(e) => updateBulkEditField(shortname, 'schema_shortname', e.currentTarget.value)}
-                          class="bulk-edit-input"
-                          placeholder="Schema"
-                        />
-                      {:else if getFieldType(attr.key) === 'object' || getFieldType(attr.key) === 'array-object'}
-                        <!-- Object/Array-Object - JSON editor -->
-                        {@const objType = getFieldType(attr.key)}
-                        <textarea
-                          value={JSON.stringify(editData[attr.key] || (objType === 'array-object' ? [] : {}), null, 2)}
-                          oninput={(e) => {
-                            try {
-                              const parsed = JSON.parse(e.currentTarget.value);
-                              updateBulkEditField(shortname, attr.key, parsed);
-                            } catch {
-                              // Invalid JSON, store as string temporarily
-                              updateBulkEditField(shortname, attr.key, e.currentTarget.value);
-                            }
-                          }}
-                          class="bulk-edit-input"
-                          placeholder={`{ "key": "value" }`}
-                          rows="3"
-                        />
-                      {:else}
-                        <!-- Generic editable field - any dynamic attribute from index_attributes -->
-                        {@const currentValue = editData[attr.key] !== undefined ? editData[attr.key] : getAttributeValue(item, attr.key)}
-                        <input
-                          type="text"
-                          value={currentValue}
-                          oninput={(e) => updateBulkEditField(shortname, attr.key, e.currentTarget.value)}
-                          class="bulk-edit-input"
-                          placeholder={attr.name}
-                        />
-                      {/if}
-                    </td>
+        <div class="modal-content bulk-edit-content">
+          <div class="bulk-edit-table-wrapper">
+            <table class="bulk-edit-table">
+              <thead>
+                <tr>
+                  {#each effectiveColumns as attr}
+                    <th class="bulk-edit-th">{attr.name}</th>
                   {/each}
                 </tr>
-              {/each}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {#each Object.entries(bulkEditData) as [shortname, editData], rowIndex (shortname)}
+                  {@const item = $allContents.find(
+                    (i) => i.shortname === shortname,
+                  )}
+                  <tr class="bulk-edit-row">
+                    {#each effectiveColumns as attr, colIndex (attr.key)}
+                      <td class="bulk-edit-td">
+                        {#if attr.key === "shortname"}
+                          <!-- Shortname (editable) -->
+                          <div class="flex items-center gap-2">
+                            <span class="text-lg"
+                              >{item ? getItemIcon(item) : "📋"}</span
+                            >
+                            <input
+                              type="text"
+                              value={editData.new_shortname || shortname}
+                              oninput={(e) =>
+                                updateBulkEditField(
+                                  shortname,
+                                  "new_shortname",
+                                  e.currentTarget.value,
+                                )}
+                              class="bulk-edit-input"
+                              placeholder="Shortname"
+                            />
+                          </div>
+                        {:else if attr.key === "status"}
+                          <!-- Status Toggle -->
+                          <label class="status-toggle">
+                            <input
+                              type="checkbox"
+                              checked={editData.is_active}
+                              onchange={(e) =>
+                                updateBulkEditField(
+                                  shortname,
+                                  "is_active",
+                                  e.currentTarget.checked,
+                                )}
+                              class="sr-only"
+                            />
+                            <span
+                              class="status-toggle-slider"
+                              class:active={editData.is_active}
+                            ></span>
+                            <span class="status-toggle-label">
+                              {editData.is_active
+                                ? $_("admin_content.status.active")
+                                : $_("admin_content.status.inactive")}
+                            </span>
+                          </label>
+                        {:else if attr.key === "tags" || getFieldType(attr.key) === "array"}
+                          <!-- Array Editor (tags, conditions, etc.) -->
+                          {@const arrayKey = attr.key}
+                          <div class="tags-editor">
+                            <div class="tags-list compact">
+                              {#each editData[arrayKey] || [] as tagItem, idx (idx)}
+                                <span class="edit-tag">
+                                  {tagItem}
+                                  <button
+                                    onclick={() => {
+                                      const arr = [
+                                        ...(editData[arrayKey] || []),
+                                      ];
+                                      arr.splice(idx, 1);
+                                      updateBulkEditField(
+                                        shortname,
+                                        arrayKey,
+                                        arr,
+                                      );
+                                    }}
+                                    class="edit-tag-remove"
+                                    type="button"
+                                  >
+                                    <svg
+                                      class="w-3 h-3"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M6 18L18 6M6 6l12 12"
+                                      />
+                                    </svg>
+                                  </button>
+                                </span>
+                              {/each}
+                            </div>
+                            <div class="tag-input-wrapper">
+                              <input
+                                type="text"
+                                placeholder="Add item + Enter"
+                                onkeydown={(e) => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    const val = e.currentTarget.value.trim();
+                                    if (val) {
+                                      const arr = [
+                                        ...(editData[arrayKey] || []),
+                                      ];
+                                      arr.push(val);
+                                      updateBulkEditField(
+                                        shortname,
+                                        arrayKey,
+                                        arr,
+                                      );
+                                      e.currentTarget.value = "";
+                                    }
+                                  }
+                                }}
+                                class="bulk-edit-input tag-input"
+                              />
+                            </div>
+                          </div>
+                        {:else if attr.key === "displayname" || attr.key === "description" || attr.key === "attributes.displayname" || attr.key === "attributes.description"}
+                          <!-- Localized fields (displayname, description) -->
+                          {@const fieldName = attr.key.startsWith("attributes.")
+                            ? attr.key.slice(11)
+                            : attr.key}
+                          <div class="localized-inputs compact">
+                            {#each ["en", "ar", "ku"] as lang}
+                              <div class="localized-input-row">
+                                <span class="locale-badge">{lang}</span>
+                                <input
+                                  type="text"
+                                  value={editData[fieldName]?.[lang] || ""}
+                                  oninput={(e) =>
+                                    updateBulkEditLocalizedField(
+                                      shortname,
+                                      fieldName,
+                                      lang,
+                                      e.currentTarget.value,
+                                    )}
+                                  placeholder={lang}
+                                  class="bulk-edit-input"
+                                />
+                              </div>
+                            {/each}
+                          </div>
+                        {:else if attr.key === "author" || attr.key === "owner_shortname"}
+                          <!-- Author/Owner (editable) -->
+                          <input
+                            type="text"
+                            value={editData.owner_shortname ||
+                              item?.attributes?.owner_shortname ||
+                              ""}
+                            oninput={(e) =>
+                              updateBulkEditField(
+                                shortname,
+                                "owner_shortname",
+                                e.currentTarget.value,
+                              )}
+                            class="bulk-edit-input"
+                            placeholder="Owner"
+                          />
+                        {:else if attr.key === "created_at"}
+                          <!-- Created At (editable date) -->
+                          <input
+                            type="datetime-local"
+                            value={item?.attributes?.created_at
+                              ? new Date(item.attributes.created_at)
+                                  .toISOString()
+                                  .slice(0, 16)
+                              : ""}
+                            oninput={(e) =>
+                              updateBulkEditField(
+                                shortname,
+                                "created_at",
+                                e.currentTarget.value,
+                              )}
+                            class="bulk-edit-input"
+                          />
+                        {:else if attr.key === "updated_at"}
+                          <!-- Updated At (editable date) -->
+                          <input
+                            type="datetime-local"
+                            value={item?.attributes?.updated_at
+                              ? new Date(item.attributes.updated_at)
+                                  .toISOString()
+                                  .slice(0, 16)
+                              : ""}
+                            oninput={(e) =>
+                              updateBulkEditField(
+                                shortname,
+                                "updated_at",
+                                e.currentTarget.value,
+                              )}
+                            class="bulk-edit-input"
+                          />
+                        {:else if attr.key === "schema_shortname"}
+                          <!-- Schema (editable) -->
+                          <input
+                            type="text"
+                            value={editData.schema_shortname ||
+                              item?.attributes?.schema_shortname ||
+                              ""}
+                            oninput={(e) =>
+                              updateBulkEditField(
+                                shortname,
+                                "schema_shortname",
+                                e.currentTarget.value,
+                              )}
+                            class="bulk-edit-input"
+                            placeholder="Schema"
+                          />
+                        {:else if getFieldType(attr.key) === "object" || getFieldType(attr.key) === "array-object"}
+                          <!-- Object/Array-Object - JSON editor -->
+                          {@const objType = getFieldType(attr.key)}
+                          <textarea
+                            value={JSON.stringify(
+                              editData[attr.key] ||
+                                (objType === "array-object" ? [] : {}),
+                              null,
+                              2,
+                            )}
+                            oninput={(e) => {
+                              try {
+                                const parsed = JSON.parse(
+                                  e.currentTarget.value,
+                                );
+                                updateBulkEditField(
+                                  shortname,
+                                  attr.key,
+                                  parsed,
+                                );
+                              } catch {
+                                // Invalid JSON, store as string temporarily
+                                updateBulkEditField(
+                                  shortname,
+                                  attr.key,
+                                  e.currentTarget.value,
+                                );
+                              }
+                            }}
+                            class="bulk-edit-input"
+                            placeholder={`{ "key": "value" }`}
+                            rows="3"
+                          />
+                        {:else}
+                          <!-- Generic editable field - any dynamic attribute from index_attributes -->
+                          {@const currentValue =
+                            editData[attr.key] !== undefined
+                              ? editData[attr.key]
+                              : getAttributeValue(item, attr.key)}
+                          <input
+                            type="text"
+                            value={currentValue}
+                            oninput={(e) =>
+                              updateBulkEditField(
+                                shortname,
+                                attr.key,
+                                e.currentTarget.value,
+                              )}
+                            class="bulk-edit-input"
+                            placeholder={attr.name}
+                          />
+                        {/if}
+                      </td>
+                    {/each}
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button
+            onclick={closeBulkEditModal}
+            class="btn btn-secondary"
+            disabled={isBulkSaving}
+          >
+            {$_("common.cancel")}
+          </button>
+          <button
+            onclick={handleBulkSave}
+            class="btn btn-primary"
+            disabled={isBulkSaving}
+          >
+            {#if isBulkSaving}
+              <div class="spinner"></div>
+              {$_("admin_content.bulk_actions.saving")}
+            {:else}
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+              {$_("admin_content.bulk_actions.save_changes")}
+            {/if}
+          </button>
         </div>
       </div>
-
-      <div class="modal-footer">
-        <button
-          onclick={closeBulkEditModal}
-          class="btn btn-secondary"
-          disabled={isBulkSaving}
-        >
-          {$_("common.cancel")}
-        </button>
-        <button
-          onclick={handleBulkSave}
-          class="btn btn-primary"
-          disabled={isBulkSaving}
-        >
-          {#if isBulkSaving}
-            <div class="spinner"></div>
-            {$_("admin_content.bulk_actions.saving")}
-          {:else}
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-            </svg>
-            {$_("admin_content.bulk_actions.save_changes")}
-          {/if}
-        </button>
-      </div>
     </div>
-  </div>
   {/key}
 {/if}
 
@@ -3074,7 +3385,6 @@
     flex-direction: row-reverse;
   }
 
-
   .rtl .filter-label {
     text-align: right;
   }
@@ -3082,7 +3392,6 @@
   .rtl .filter-select {
     text-align: right;
   }
-
 
   .rtl .sort-controls {
     flex-direction: row-reverse;
@@ -3505,7 +3814,9 @@
     border-radius: 0.75rem;
     padding: 0.875rem 1.25rem;
     margin: 1rem 0;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    box-shadow:
+      0 4px 6px -1px rgba(0, 0, 0, 0.1),
+      0 2px 4px -1px rgba(0, 0, 0, 0.06);
   }
 
   .bulk-actions-bar.rtl {
@@ -3860,7 +4171,8 @@
   textarea.bulk-edit-input {
     resize: vertical;
     min-height: 60px;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+      monospace;
     font-size: 0.75rem;
     line-height: 1.4;
   }
@@ -3889,7 +4201,7 @@
   }
 
   .status-toggle-slider::after {
-    content: '';
+    content: "";
     position: absolute;
     top: 0.125rem;
     left: 0.125rem;
