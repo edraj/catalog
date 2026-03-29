@@ -503,8 +503,8 @@
 </script>
 
 <div class="min-h-screen bg-gray-50" class:rtl={$isRTL}>
-  <div class="bg-white border-b border-gray-100" class:rtl={$isRTL}>
-    <div class="container mx-auto px-4 py-8 max-w-5xl">
+  <div class="bg-white border-b border-gray-100 max-w-[1200px] mx-auto rounded-[14px] px-4" class:rtl={$isRTL}>
+    <div class="mx-auto py-8 max-w-[1200px]">
       <div class="flex items-start justify-between">
         <button
           onclick={goBack}
@@ -566,7 +566,7 @@
     </div>
   </div>
 
-  <div class="container mx-auto px-4 pb-12 max-w-5xl">
+  <div class="mx-auto pb-12 max-w-[1200px]">
     {#if isLoading}
       <div class="flex items-center justify-center py-32">
         <Diamonds color="#3b82f6" size="60" unit="px" />

@@ -12,6 +12,11 @@
 
   $goto;
 
+$effect(() => {
+  if (!$user?.signedin && window.location.pathname !== "/login") {
+    $goto("/login");
+  }
+});
   let webTransport = $state(null);
   let isMenuOpen = $state(false);
   let isRTL = $locale === "ar" || $locale === "ku";
@@ -141,17 +146,19 @@
 </script>
 
 <header
-  class={`sticky top-0 z-40 w-full  ${$user.signedin ? "pt-4 pb-2 px-4 sm:px-6 lg:px-8 max-w-[1600px] mx-auto" : "border-b border-gray-200 bg-white backdrop-blur-md supports-[backdrop-filter]:bg-white/80"}`}
+  class={`sticky top-0 z-40 w-full  ${$user.signedin ? "pt-4 pb-2  max-w-[1200px]  mx-auto" : "border-b border-gray-200  backdrop-blur-md "}`}
 >
-  <div class={$user.signedin ? "" : "container mx-auto px-4 sm:px-6 lg:px-8"}>
+  <div class={$user.signedin ? "" : "container mx-auto sm:px-6 "}>
     <div
       class={$user.signedin
-        ? "w-full h-[58px] bg-white flex items-center justify-between rounded-[16px] border border-[#FFFFFF66] border-[1px] px-[21px] py-[1px] shadow-[0px_2px_20px_0px_#00000008]"
+        ? "w-full h-[58px] bg-white flex items-center px-4 justify-between rounded-[16px] border border-[#FFFFFF66] border-[1px] py-[1px] shadow-[0px_2px_20px_0px_#00000008]"
         : "flex h-16 items-center justify-between"}
     >
       <!-- Logo/Brand -->
       <div
-        class={$user.signedin ? "flex items-center pl-2 w-3/6" : "flex items-center w-3/6"}
+        class={$user.signedin
+          ? "flex items-center pl-2 w-3/6"
+          : "flex items-center w-3/6"}
       >
         <a
           href="/"
@@ -232,13 +239,12 @@
             class={`font-inter font-bold text-[17px] leading-[25.5px] tracking-[-0.43px] text-[#1A1A2E] ${$user.signedin ? "text-[1.1rem] group-hover:text-indigo-600" : "text-xl group-hover:text-blue-600"}`}
             >{$_("Spaces")}</span
           >
-          
         </a>
         {#if $user.signedin}
-            <div class="w-4/6 ms-2">
-              <SearchBar />
-            </div>
-          {/if}
+          <div class="w-4/6 ms-2">
+            <SearchBar />
+          </div>
+        {/if}
       </div>
 
       <!-- Navigation Items -->
@@ -246,10 +252,6 @@
         class={`flex items-center ${$user.signedin ? "space-x-1 sm:space-x-2" : "space-x-3"}`}
       >
         {#if $user.signedin}
-          <div class="me-2">
-            <SearchBar />
-          </div>
-
           <button
             aria-label={`Notifications`}
             onclick={() => handleMenuItemClick("/notifications")}
@@ -310,7 +312,7 @@
 
             {#if isMenuOpen}
               <div
-                class="dropdown-menu {isRTL
+                class="dropdown-menu  max-h-[500px] overflow-y-auto {isRTL
                   ? 'dropdown-menu-rtl'
                   : 'dropdown-menu-ltr'}"
               >

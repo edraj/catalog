@@ -355,7 +355,7 @@
 </script>
 
 <div class="min-h-screen bg-gray-50/30" class:rtl={$isRTL}>
-  <div class="container mx-auto px-6 py-10 max-w-7xl">
+  <div class=" mx-auto py-10 max-w-[1200px]">
     <!-- Header -->
     <div
       class="mb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6"
@@ -372,7 +372,7 @@
       <button
         aria-label={$_("my_entries.create_new") || "Create New Entry"}
         onclick={createNewEntry}
-        class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-full font-semibold flex items-center justify-center gap-2 transition-all shadow-sm shadow-indigo-200 text-sm"
+        class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-[14px] font-semibold flex items-center justify-center gap-2 transition-all shadow-sm shadow-indigo-200 text-sm"
       >
         <PlusOutline class="w-4 h-4" />
         {$_("my_entries.create_new") || "Create New Entry"}
@@ -411,19 +411,6 @@
         <div
           class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-gray-400"
         >
-          <svg
-            class="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M19 9l-7 7-7-7"
-            ></path>
-          </svg>
         </div>
       </div>
 
@@ -447,19 +434,7 @@
         <div
           class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-gray-400"
         >
-          <svg
-            class="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M19 9l-7 7-7-7"
-            ></path>
-          </svg>
+       
         </div>
       </div>
 
@@ -479,19 +454,7 @@
         <div
           class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-gray-400"
         >
-          <svg
-            class="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M19 9l-7 7-7-7"
-            ></path>
-          </svg>
+        
         </div>
       </div>
     </div>
