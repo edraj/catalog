@@ -185,6 +185,38 @@ export async function getGroupMessages(
     }
 }
 
+export async function getGroupMessageByShortname(shortname: string) {
+    try {
+        const record = await getEntity(
+            shortname,
+            "messages",
+            "messages",
+            ResourceType.content,
+            "managed",
+            true,
+            true
+        );
+
+        if (record) {
+            const payload = record.payload?.body;
+            if (payload) {
+                return {
+                    id: record.shortname,
+                    senderId: payload.sender,
+                    groupId: payload.groupId,
+                    content: payload.content,
+                    timestamp: new Date(record.created_at || Date.now()),
+                    attachments: record.attachments?.media || null,
+                };
+            }
+        }
+        return null;
+    } catch (error) {
+        console.error("Failed to fetch group message by shortname:", error);
+        return null;
+    }
+}
+
 export async function addUserToGroup(
     groupShortname: string,
     userShortname: string

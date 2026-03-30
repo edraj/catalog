@@ -288,9 +288,10 @@
         templateEditorContent = itemContent || "";
       }
 
-      // Check if it's schema-based (but not templates or meta_schema)
+      // Check if it's schema-based: must be JSON content type AND have a schema_shortname (but not templates or meta_schema)
       const schemaShortname = entity.payload?.schema_shortname;
-      if (schemaShortname && schemaShortname !== "templates" && schemaShortname !== "meta_schema") {
+      const isJsonContent = entity.payload?.content_type === "json";
+      if (isJsonContent && schemaShortname && schemaShortname !== "templates" && schemaShortname !== "meta_schema") {
         isSchemaBasedItem = true;
         const schemaLoaded = await loadSchemaForEntry(schemaShortname);
         if (schemaLoaded) {

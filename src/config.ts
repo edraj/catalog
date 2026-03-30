@@ -7,8 +7,8 @@ export interface WebsiteConfig {
   default_language: string;
   languages: Record<string, string>;
   backend: string;
-  backend_timeout: number;
-  websocket?: string;
+  webtransport: string;
+  backend_timeout?: number;
   delay_total_count?: boolean;
   theme?: {
     type: "solid" | "gradient";
@@ -25,7 +25,8 @@ const defaultConfig: WebsiteConfig = {
   default_language: "ar",
   languages: { ar: "العربية", en: "English" },
   backend: "http://localhost:8282",
-  websocket: "ws://localhost:8484/ws",
+  webtransport: "http://localhost:8585",
+
   backend_timeout: 30000,
   delay_total_count: false,
 };

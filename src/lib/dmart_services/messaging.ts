@@ -139,18 +139,28 @@ export async function getMessagesBetweenUsers(
 export async function getMessageByShortname(
     shortname: string,
     senderShortname?: string,
-    receiverShortname?: string
+    receiverShortname?: string,
+    subpath?: string
 ) {
     try {
         // Try to find the message in either user's protected folder
         const possibleLocations = [];
 
-        if (senderShortname && receiverShortname) {
-            // If we know both sender and receiver, check both locations
+        if (subpath) {
+            // If we know the exact subpath from a notification, try it first
+            possibleLocations.push({
+                space: PERSONAL_SPACE,
+                subpath: subpath.startsWith("/") ? subpath.substring(1) : subpath,
+            });
+        }
+
+        if (receiverShortname) {
             possibleLocations.push({
                 space: PERSONAL_SPACE,
                 subpath: getUserProtectedSubpath(receiverShortname),
             });
+        }
+        if (senderShortname) {
             possibleLocations.push({
                 space: PERSONAL_SPACE,
                 subpath: getUserProtectedSubpath(senderShortname),
@@ -183,6 +193,7 @@ export async function getMessageByShortname(
                             timestamp: new Date((record as any).created_at || Date.now()),
                             messageType: body.message_type || "text",
                             isGroupMessage: false,
+                            attachments: (record as any).attachments?.media || null,
                         };
                     }
                 }

@@ -165,7 +165,7 @@ async function backendAlignedExample() {
   });
 
   if (!wt) {
-    console.warn("WebTransport not supported, use WebSocket fallback");
+    console.warn("WebTransport not supported in this browser");
     return;
   }
 
@@ -189,36 +189,6 @@ function displayChatMessage(from: string, message: string) {
 }
 
 // ============================================================================
-// Example 5: Fallback Pattern (WebSocket -> WebTransport)
-// ============================================================================
-
-async function fallbackPatternExample() {
-  const token = localStorage.getItem("authToken") || "";
-  let transport: "webtransport" | "websocket" | null = null;
-  
-  // Try WebTransport first
-  if (WebTransportService.isSupported()) {
-    const wt = getWebTransportService(token);
-    if (wt) {
-      const connected = await wt.connect();
-      if (connected) {
-        transport = "webtransport";
-        console.log("Using WebTransport");
-      }
-    }
-  }
-  
-  // Fallback to WebSocket
-  if (!transport) {
-    const socket = new WebSocket(`ws://localhost:8484/ws?token=${token}`);
-    socket.onopen = () => {
-      transport = "websocket";
-      console.log("Using WebSocket fallback");
-    };
-  }
-}
-
-// ============================================================================
 // Export examples for reference
 // ============================================================================
 
@@ -226,7 +196,6 @@ export const webTransportExamples = {
   basicUsageExample,
   directInstanceExample,
   backendAlignedExample,
-  fallbackPatternExample,
 };
 
 export default webTransportExamples;

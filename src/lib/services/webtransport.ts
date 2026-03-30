@@ -1,8 +1,8 @@
 /**
  * WebTransport Service for Real-time Communication
  * 
- * This service provides a WebTransport-based alternative to WebSocket
- * for real-time chat and notifications.
+ * This service provides WebTransport-based real-time communication
+ * for chat and notifications, with automatic WebSocket fallback.
  */
 
 import { website } from "@/config";
@@ -20,11 +20,13 @@ export interface WebTransportCallbacks {
   onError?: (error: Error) => void;
 }
 
+type TransportMode = "webtransport" | "websocket" | "none";
+
 export class WebTransportService {
   private transport: WebTransport | null = null;
-  private ws: WebSocket | null = null;
   private writer: WritableStreamDefaultWriter<Uint8Array> | null = null;
   private reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
+  private ws: WebSocket | null = null;
   private encoder = new TextEncoder();
   private decoder = new TextDecoder();
   private status: ConnectionStatus = "disconnected";
@@ -36,6 +38,8 @@ export class WebTransportService {
   private token: string;
   private subscriptions: WebTransportMessage[] = [];
   private isReading = false;
+  private mode: TransportMode = "none";
+  private connectPromise: Promise<boolean> | null = null;
 
   constructor(token: string, callbacks: WebTransportCallbacks = {}) {
     this.token = token;
@@ -47,6 +51,20 @@ export class WebTransportService {
    */
   getStatus(): ConnectionStatus {
     return this.status;
+  }
+
+  /**
+   * Get current transport mode
+   */
+  getMode(): TransportMode {
+    return this.mode;
+  }
+
+  /**
+   * Get active subscriptions
+   */
+  getSubscriptions(): WebTransportMessage[] {
+    return [...this.subscriptions];
   }
 
   /**
@@ -64,25 +82,60 @@ export class WebTransportService {
   }
 
   /**
-   * Connect to the WebTransport server
+   * Connect to the server (tries WebTransport first, falls back to WebSocket)
    */
   async connect(): Promise<boolean> {
-    if (this.status === "connected" || this.status === "connecting") {
+    if (this.status === "connected") {
       return true;
     }
 
-    this.updateStatus("connecting");
-    this.clearReconnectTimer();
+    if (this.connectPromise) {
+      return this.connectPromise;
+    }
 
-    if (WebTransportService.isSupported()) {
+    this.connectPromise = (async () => {
+      try {
+        console.log("[Transport] Starting connection process...");
+        this.updateStatus("connecting");
+        this.clearReconnectTimer();
 
+        // Try WebTransport first
+        if (WebTransportService.isSupported()) {
+          const wtSuccess = await this.connectWebTransport();
+          if (wtSuccess) {
+            return true;
+          }
+          console.warn("[WebTransport] WebTransport failed, falling back to WebSocket");
+        } else {
+          console.warn("[WebTransport] Not supported in this browser, using WebSocket");
+        }
+
+        // Fall back to WebSocket
+        const wsSuccess = await this.connectWebSocket();
+        if (wsSuccess) {
+          return true;
+        }
+
+        this.updateStatus("error");
+        return false;
+      } finally {
+        this.connectPromise = null;
+      }
+    })();
+
+    return this.connectPromise;
+  }
+
+  /**
+   * Try to connect via WebTransport (QUIC/H3)
+   */
+  private async connectWebTransport(): Promise<boolean> {
     try {
       const url = `${website.webtransport}/${this.token}`;
       let transportOptions: any = undefined;
 
       if (website.webtransport.includes("localhost") || website.webtransport.includes("127.0.0.1")) {
         try {
-          // Try fetching fingerprint from the server if it's localhost
           const urlObj = new URL(website.webtransport);
           const fingerUrl = `http://${urlObj.hostname}:${urlObj.port}/wt-fingerprint`;
           console.log(`[WebTransport] Attempting to fetch certificate fingerprint from ${fingerUrl}`);
@@ -109,113 +162,180 @@ export class WebTransportService {
             console.warn(`[WebTransport] Failed to fetch fingerprint: ${response.status} ${response.statusText}`);
           }
         } catch (e) {
-          console.warn("[WebTransport] Could not fetch certificate fingerprint. It might fail if self-signed.", e);
+          console.warn("[WebTransport] Could not fetch certificate fingerprint.", e);
         }
       }
 
       this.transport = new WebTransport(url, transportOptions);
 
-      // Add event listener for error/closed to get more details
+      const transportRef = this.transport;
       this.transport.closed.then(() => {
         console.log("[WebTransport] Connection closed gracefully");
+        if (this.transport === transportRef && this.mode === "webtransport") {
+          this.handleDisconnect();
+        }
       }).catch((error) => {
         console.error("[WebTransport] Connection closed with error:", error);
-        
-        // If we see QUIC_IETF_GQUIC_ERROR_MISSING, it's usually because WT_ENABLED is not set on the server
-        if (error.message && error.message.includes("WT_ENABLED")) {
-          console.warn("[WebTransport] HINT: The server must enable WebTransport. Ensure the SETTINGS_WEBTRANSPORT frame is sent with value 1.");
-        }
-        
-        if (this.callbacks.onError) {
-          this.callbacks.onError(error);
+        if (this.transport === transportRef && this.mode === "webtransport") {
+          this.handleDisconnect();
         }
       });
 
-      // Add options for better handshake in some environments
-      // Some servers might require certain options or drafts.
-      // this.transport = new WebTransport(url, { ...transportOptions, requireUnreliable: true });
-
-      // Wait for connection to be ready
       await this.transport.ready;
       console.log("[WebTransport] Connection ready");
 
-      // Create bidirectional stream
       const stream = await this.transport.createBidirectionalStream();
       this.writer = stream.writable.getWriter();
       this.reader = stream.readable.getReader();
 
+      this.mode = "webtransport";
       this.updateStatus("connected");
       this.reconnectAttempts = 0;
 
-      // Start reading messages
-      this.startReading();
-
-      // Resend any pending subscriptions
+      this.startReadingWebTransport();
       this.resendSubscriptions();
 
       return true;
     } catch (error: any) {
-      console.error("[WebTransport] Connection failed, falling back to WebSocket:", error);
-      
-      if (error.name === "WebTransportError" && error.message && error.message.includes("rejected")) {
-        console.warn("[WebTransport] HINT: Connection rejected.");
-      }
-      
-      if (this.callbacks.onError) {
-        this.callbacks.onError(error);
-      }
+      console.error("[WebTransport] WebTransport connection failed:", error?.message || error);
+      // Clean up failed attempt
+      this.cleanupWebTransport();
+      return false;
     }
-    } else {
-      console.warn("[WebTransport] Not supported in this browser, falling back to WebSocket");
-    }
+  }
 
-    // --- WebSocket Fallback ---
+  /**
+   * Connect via WebSocket (fallback)
+   */
+  private async connectWebSocket(): Promise<boolean> {
     try {
-      const urlObj = new URL(website.webtransport);
-      // Ensure localhost uses ws:// because Hypercorn TCP isn't TLS encrypted
-      const isLocal = urlObj.hostname === "localhost" || urlObj.hostname === "127.0.0.1";
-      const wsProtocol = isLocal ? "ws:" : (urlObj.protocol === "https:" ? "wss:" : "ws:");
-      const wsUrl = `${wsProtocol}//${urlObj.host}/ws?token=${this.token}`;
-      
-      console.log(`[WebSocket] Attempting fallback connection to ${wsUrl}`);
-      
-      return await new Promise<boolean>((resolve) => {
-        this.ws = new WebSocket(wsUrl);
-        
-        this.ws.onopen = () => {
-          console.log("[WebSocket] Connection ready");
+      // Derive WebSocket URL from the webtransport config URL
+      // Note: The Hypercorn HTTP/WS server runs without TLS even though
+      // the QUIC/WebTransport server uses HTTPS. Always use ws:// for
+      // the HTTP-based WebSocket fallback.
+      const wtUrl = new URL(website.webtransport);
+      const wsUrl = `ws://${wtUrl.host}/ws?token=${this.token}`;
+
+      console.log(`[WebSocket] Connecting to ${wsUrl}`);
+
+      return new Promise<boolean>((resolve) => {
+        const ws = new WebSocket(wsUrl);
+        let resolved = false;
+
+        const timeout = setTimeout(() => {
+          if (!resolved) {
+            resolved = true;
+            console.error("[WebSocket] Connection timeout");
+            ws.close();
+            resolve(false);
+          }
+        }, 10000);
+
+        ws.onopen = () => {
+          if (resolved) return;
+          resolved = true;
+          clearTimeout(timeout);
+
+          console.log("[WebSocket] Connected successfully");
+          this.ws = ws;
+          this.mode = "websocket";
           this.updateStatus("connected");
           this.reconnectAttempts = 0;
+
           this.resendSubscriptions();
           resolve(true);
         };
-        
-        this.ws.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data);
-            this.handleMessage(data);
-          } catch (error) {
-            console.error("[WebSocket] Failed to parse message:", error);
+
+        ws.onmessage = (event) => {
+          this.handleWebSocketMessage(event.data);
+        };
+
+        ws.onerror = (error) => {
+          console.error("[WebSocket] Connection error:", error);
+          if (!resolved) {
+            resolved = true;
+            clearTimeout(timeout);
+            resolve(false);
           }
         };
-        
-        this.ws.onclose = () => {
-          console.log("[WebSocket] Connection closed");
-          this.updateStatus("disconnected");
-          this.scheduleReconnect();
-          resolve(false);
-        };
-        
-        this.ws.onerror = (err: any) => {
-          console.error("[WebSocket] Connection error:", err);
-          if (this.callbacks.onError) this.callbacks.onError(err);
+
+        ws.onclose = (event) => {
+          console.log(`[WebSocket] Connection closed: code=${event.code}, reason=${event.reason}`);
+          if (!resolved) {
+            resolved = true;
+            clearTimeout(timeout);
+            resolve(false);
+          } else if (this.mode === "websocket") {
+            this.handleDisconnect();
+          }
         };
       });
-    } catch (wsError) {
-      console.error("[WebSocket] Fallback connection failed:", wsError);
-      this.updateStatus("error");
-      this.scheduleReconnect();
+    } catch (error) {
+      console.error("[WebSocket] Failed to create connection:", error);
       return false;
+    }
+  }
+
+  /**
+   * Handle WebSocket incoming messages
+   */
+  private handleWebSocketMessage(data: string): void {
+    try {
+      // WebSocket messages don't need newline framing
+      const parsed = JSON.parse(data);
+      this.handleMessage(parsed);
+    } catch (error) {
+      console.error("[WebSocket] Failed to parse message:", error, data);
+    }
+  }
+
+  /**
+   * Handle disconnect from either transport
+   */
+  private handleDisconnect(): void {
+    this.updateStatus("disconnected");
+    this.mode = "none";
+    this.scheduleReconnect();
+  }
+
+  /**
+   * Clean up WebTransport resources
+   */
+  private cleanupWebTransport(): void {
+    try {
+      if (this.writer) {
+        this.writer.close().catch(() => {});
+        this.writer = null;
+      }
+    } catch (e) { /* ignore */ }
+
+    try {
+      if (this.reader) {
+        this.reader.cancel().catch(() => {});
+        this.reader = null;
+      }
+    } catch (e) { /* ignore */ }
+
+    try {
+      if (this.transport) {
+        this.transport.close();
+        this.transport = null;
+      }
+    } catch (e) { /* ignore */ }
+  }
+
+  /**
+   * Clean up WebSocket resources
+   */
+  private cleanupWebSocket(): void {
+    if (this.ws) {
+      try {
+        this.ws.onclose = null;
+        this.ws.onerror = null;
+        this.ws.onmessage = null;
+        this.ws.close();
+      } catch (e) { /* ignore */ }
+      this.ws = null;
     }
   }
 
@@ -226,42 +346,10 @@ export class WebTransportService {
     this.clearReconnectTimer();
     this.isReading = false;
 
-    try {
-      if (this.writer) {
-        await this.writer.close();
-        this.writer = null;
-      }
-    } catch (e) {
-      // Ignore errors during cleanup
-    }
+    this.cleanupWebTransport();
+    this.cleanupWebSocket();
 
-    try {
-      if (this.reader) {
-        await this.reader.cancel();
-        this.reader = null;
-      }
-    } catch (e) {
-      // Ignore errors during cleanup
-    }
-
-    try {
-      if (this.transport) {
-        await this.transport.close();
-        this.transport = null;
-      }
-    } catch (e) {
-      // Ignore errors during cleanup
-    }
-
-    try {
-      if (this.ws) {
-        this.ws.close();
-        this.ws = null;
-      }
-    } catch (e) {
-      // Ignore errors during cleanup
-    }
-
+    this.mode = "none";
     this.updateStatus("disconnected");
   }
 
@@ -270,25 +358,35 @@ export class WebTransportService {
    */
   async send(message: WebTransportMessage): Promise<boolean> {
     if (this.status !== "connected") {
-      console.warn("[WebTransport] Cannot send, not connected");
-      return false;
+      // If we're connecting, wait for it to finish
+      if (this.connectPromise || this.status === "connecting") {
+        console.log("[Transport] Send requested while connecting, waiting...");
+        const connected = await this.connect();
+        if (!connected) return false;
+      } else {
+        console.warn("[Transport] Cannot send, not connected. Status:", this.status, "Mode:", this.mode);
+        return false;
+      }
     }
 
     try {
       const json = JSON.stringify(message);
-      
-      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-        this.ws.send(json);
-        return true;
-      } else if (this.writer) {
+
+      if (this.mode === "webtransport" && this.writer) {
         const data = this.encoder.encode(json + '\n');
         await this.writer.write(data);
         return true;
       }
-      
+
+      if (this.mode === "websocket" && this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.ws.send(json);
+        return true;
+      }
+
+      console.warn("[Transport] No active transport to send on. Mode:", this.mode);
       return false;
     } catch (error) {
-      console.error("[WebTransport] Send failed:", error);
+      console.error("[Transport] Send failed:", error);
       this.scheduleReconnect();
       return false;
     }
@@ -376,9 +474,9 @@ export class WebTransportService {
   }
 
   /**
-   * Start reading messages from the stream
+   * Start reading messages from the WebTransport stream
    */
-  private async startReading(): Promise<void> {
+  private async startReadingWebTransport(): Promise<void> {
     if (!this.reader || this.isReading) return;
 
     this.isReading = true;
@@ -447,6 +545,7 @@ export class WebTransportService {
    */
   private updateStatus(status: ConnectionStatus): void {
     if (this.status !== status) {
+      console.log(`[Transport] Status: ${this.status} → ${status} (mode: ${this.mode})`);
       this.status = status;
       if (this.callbacks.onStatusChange) {
         this.callbacks.onStatusChange(status);
@@ -460,7 +559,7 @@ export class WebTransportService {
   private scheduleReconnect(): void {
     if (this.reconnectTimer !== null) return;
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error("[WebTransport] Max reconnection attempts reached");
+      console.error("[Transport] Max reconnection attempts reached");
       this.updateStatus("error");
       return;
     }
@@ -469,11 +568,15 @@ export class WebTransportService {
     this.reconnectAttempts++;
 
     console.log(
-      `[WebTransport] Reconnecting in ${this.reconnectDelay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`
+      `[Transport] Reconnecting in ${this.reconnectDelay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`
     );
 
     this.reconnectTimer = window.setTimeout(() => {
       this.reconnectTimer = null;
+      // Clean up old connections before reconnecting
+      this.cleanupWebTransport();
+      this.cleanupWebSocket();
+      this.mode = "none";
       this.connect();
     }, this.reconnectDelay);
   }

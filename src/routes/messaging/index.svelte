@@ -16,6 +16,7 @@
     getGroupDetails,
     createGroupMessage,
     getGroupMessages,
+    getGroupMessageByShortname,
     addUserToGroup,
     removeUserFromGroup,
     makeUserGroupAdmin,
@@ -118,7 +119,12 @@
 
   const MESSAGES_LIMIT = 100; // Increased limit since messages come from two sources
 
+  let isMounted = false;
+  let connectionAttempted = false;
+
   onMount(async () => {
+    console.log("[Lifecycle] onMount fired. $user:", $user?.shortname, "TOKEN:", TOKEN ? "present" : "missing");
+    isMounted = true;
     isRTL =
       document.documentElement.dir === "rtl" ||
       document.documentElement.getAttribute("dir") === "rtl";
@@ -127,11 +133,20 @@
 
   $effect(() => {
     if ($user && !currentUser) {
+      console.log("[Lifecycle] $effect: $user became available:", $user.shortname);
       currentUser = $user;
+    }
+    // If mount already happened but connection wasn't established (e.g. $user was null at mount time)
+    if ($user && $user.shortname && isMounted && !connectionAttempted && !isConnected) {
+      console.log("[Lifecycle] $effect: Triggering deferred connection for:", $user.shortname);
+      currentUser = $user;
+      connectionAttempted = true;
+      connectWebTransport();
     }
   });
 
   onDestroy(() => {
+    console.log("[Lifecycle] onDestroy fired. webTransport:", webTransport ? "exists" : "null");
     if (webTransport) {
       webTransport.disconnect();
       resetWebTransportService();
@@ -167,16 +182,19 @@
   async function initializeChat() {
     try {
       currentUser = $user;
+      console.log("[Lifecycle] initializeChat: currentUser:", currentUser?.shortname, "signedin:", currentUser?.signedin);
 
       if (!currentUser?.shortname) {
-        errorToastMessage($_("messaging.toast_user_not_logged_in"));
-        connectionStatus = $_("messaging.toast_user_not_logged_in");
+        console.warn("[Lifecycle] initializeChat: No user shortname yet, deferring connection to $effect");
+        connectionStatus = "Waiting for user...";
         return;
       }
       await Promise.all([loadUsers(), loadGroups()]);
 
+      connectionAttempted = true;
       await connectWebTransport();
     } catch (error) {
+      console.error("[Lifecycle] initializeChat error:", error);
       connectionStatus = $_("messaging.toast_failed_initialize");
     }
   }
@@ -289,15 +307,32 @@
       const response = await getGroupMessages(groupId, MESSAGES_LIMIT, 0);
 
       if (response && response.status === "success" && response.records) {
-        const newMessages = sortMessagesByTimestamp(
+        const apiMessages = sortMessagesByTimestamp(
           response.records.map((record: any) =>
             transformGroupMessageRecord(record, currentUser?.shortname)
           ) as MessageData[]
         );
 
-        groupMessages = newMessages;
-        groupConversationMessages.set(groupId, [...newMessages]);
-        cacheMessages(cacheKey, newMessages);
+        // Merge with any cached real-time group messages
+        const memoryCached = groupConversationMessages.get(groupId) || [];
+        const localCached = getCachedMessages(cacheKey);
+        const allCached = [...memoryCached, ...localCached];
+        const cachedById = new Map();
+        for (const msg of allCached) {
+          if (!cachedById.has(msg.id)) {
+            cachedById.set(msg.id, msg);
+          }
+        }
+
+        const apiMessageIds = new Set(apiMessages.map((m) => m.id));
+        const mergedMessages = sortMessagesByTimestamp([
+          ...apiMessages,
+          ...Array.from(cachedById.values()).filter((msg) => !apiMessageIds.has(msg.id)),
+        ]);
+
+        groupMessages = mergedMessages;
+        groupConversationMessages.set(groupId, [...mergedMessages]);
+        cacheMessages(cacheKey, mergedMessages);
 
         setTimeout(() => scrollToBottom(chatContainer), 100);
       }
@@ -387,41 +422,39 @@
 
             setTimeout(async () => {
               try {
-                const response = await getGroupMessages(
-                  selectedGroup.id,
-                  MESSAGES_LIMIT,
-                  0
+                const messageData = await getGroupMessageByShortname(
+                  persistedMessageId
                 );
 
-                if (
-                  response &&
-                  response.status === "success" &&
-                  response.records
-                ) {
-                  const updatedMessages = sortMessagesByTimestamp(
-                    response.records.map((record: any) =>
-                      transformGroupMessageRecord(
-                        record,
-                        currentUser?.shortname
-                      )
-                    ) as MessageData[]
-                  );
+                if (messageData) {
+                  const newMessage = {
+                    id: messageData.id,
+                    senderId: messageData.senderId,
+                    groupId: messageData.groupId,
+                    content: messageData.content,
+                    timestamp: new Date(messageData.timestamp),
+                    isOwn: true,
+                    hasAttachments: !!messageData.attachments,
+                    attachments: messageData.attachments,
+                  };
 
-                  groupMessages = updatedMessages;
+                  groupMessages = groupMessages.map((msg) =>
+                    msg.id === persistedMessageId ? newMessage : msg
+                  );
                   groupConversationMessages.set(selectedGroup.id, [
-                    ...updatedMessages,
+                    ...groupMessages,
                   ]);
 
                   const cacheKey = getGroupCacheKey(
                     currentUser?.shortname,
                     selectedGroup.id
                   );
-                  cacheMessages(cacheKey, updatedMessages);
+                  cacheMessages(cacheKey, groupMessages);
 
                   scrollToBottom(chatContainer);
                 }
               } catch (error) {
-                console.error("Error refreshing group messages:", error);
+                console.error("Error refreshing group message:", error);
               }
             }, 1500);
           } catch (attachmentError) {
@@ -611,48 +644,54 @@
 
   async function connectWebTransport() {
     try {
-      // Check if WebTransport is supported
-      if (!WebTransportService.isSupported()) {
-        connectionStatus = "Not Supported";
-        errorToastMessage($_("messaging.webtransport_not_supported") || 
-          "Your browser doesn't support WebTransport. Please use Chrome or Edge.");
-        return;
-      }
-
+      console.log("[Transport] connectWebTransport called. TOKEN:", TOKEN ? "present" : "missing", "currentUser:", currentUser?.shortname);
       connectionStatus = "Connecting...";
       
+      // Ensure any stale singleton is cleaned up before creating a new one
+      const existingService = getWebTransportService();
+      if (existingService) {
+        console.log("[Transport] Found existing service, updating callbacks");
+      }
+
       webTransport = getWebTransportService(TOKEN, {
         onMessage: (data) => {
           handleRealtimeMessage(data);
         },
         onStatusChange: (status: ConnectionStatus) => {
+          console.log("[Transport] Status changed:", status);
           isConnected = status === "connected";
           connectionStatus = status.charAt(0).toUpperCase() + status.slice(1);
         },
       });
 
       if (!webTransport) {
+        console.error("[Transport] getWebTransportService returned null. TOKEN was:", TOKEN ? "present" : "missing");
         connectionStatus = "Error";
         errorToastMessage($_("messaging.webtransport_init_failed") || 
-          "Failed to initialize WebTransport");
+          "Failed to initialize connection");
         return;
       }
 
+      console.log("[Transport] Calling connect()...");
       const connected = await webTransport.connect();
+      console.log("[Transport] connect() returned:", connected);
       
       if (connected && currentUser?.shortname) {
+        console.log("[Transport] Subscribing to personal channel for:", currentUser.shortname);
         // Subscribe to notifications in the current user's protected folder
         await webTransport.subscribe(
           "personal",
           `people/${currentUser.shortname}/protected`
         );
+        console.log("[Transport] Subscription sent successfully");
       } else if (!connected) {
+        console.error("[Transport] connect() failed");
         connectionStatus = "Failed";
         errorToastMessage($_("messaging.webtransport_connect_failed") || 
           "Failed to connect to messaging server");
       }
     } catch (error) {
-      console.error("❌ [WebTransport] Failed to create connection:", error);
+      console.error("❌ [Transport] Failed to create connection:", error);
       connectionStatus = "Error";
       errorToastMessage($_("messaging.webtransport_error") || 
         "Messaging connection error");
@@ -660,472 +699,345 @@
   }
 
   function handleRealtimeMessage(data) {
+    console.log("[RT] Received message:", JSON.stringify(data));
+
     if (data.type === "connection_response") {
+      console.log("[RT] Connection response, ignoring");
       return;
     }
 
-    if (data.type === "notification_subscription") {
-      if (data.message?.action_type === "create" && data.message?.shortname) {
-        fetchMessageByShortname(data.message.shortname);
-        return;
-      }
+    // Handle subscription confirmations (from channel_subscribe)
+    if (data.type === "notification_subscription" && data.message?.status === "success" && !data.message?.action_type) {
+      console.log("[RT] Subscription confirmed for channel:", data.message?.channel);
+      return;
     }
 
+    // Handle plugin broadcast notifications (new content created/updated)
+    if (data.type === "notification_subscription" && data.message?.action_type) {
+      console.log("[RT] Plugin notification:", data.message);
+      if (data.message.action_type === "create" && data.message.shortname) {
+        const ownerShortname = data.message.owner_shortname;
+        console.log("[RT] Fetching message by shortname:", data.message.shortname, "owner:", ownerShortname, "subpath:", data.message.subpath);
+        fetchMessageByShortname(data.message.shortname, ownerShortname, null, data.message.subpath);
+      }
+      return;
+    }
+
+    // Handle direct real-time messages (type: "message")
     if (data.type === "message") {
-      if (data.groupId) {
-        if (
-          selectedGroup &&
-          data.groupId === selectedGroup.id &&
-          chatMode === "group"
-        ) {
-          const isRelevant = isRelevantGroupMessage(
-            data,
-            selectedGroup.id,
-            currentUser?.shortname
-          );
+      console.log("[RT] Direct message. groupId:", data.groupId, "senderId:", data.senderId, "receiverId:", data.receiverId);
 
-          if (isRelevant) {
-            if (data.senderId === currentUser?.shortname) {
-              return;
-            }
-            const newGroupMessage = {
-              id: data.messageId || `ws_group_${Date.now()}`,
-              senderId: data.senderId,
-              groupId: data.groupId,
-              content: data.content || "",
-              timestamp: new Date(data.timestamp || Date.now()),
-              isOwn: false,
-              hasAttachments: data.hasAttachments || false,
-              attachments: data.attachments || null,
-            };
-
-            const messageExists = groupMessages.some(
-              (msg) => msg.id === newGroupMessage.id
-            );
-
-            if (!messageExists) {
-              addGroupMessageToConversation(newGroupMessage);
-
-              if (document.hidden || !selectedGroup) {
-                const senderName = getUserDisplayName(data.senderId);
-              }
-            } else {
-            }
-          } else {
-          }
-        } else if (data.groupId && !selectedGroup) {
-          const groupName =
-            getGroupDisplayName(data.groupId) || `Group ${data.groupId}`;
-          const senderName = getUserDisplayName(data.senderId);
-        } else {
-        }
+      // Skip messages sent by current user (already shown via optimistic UI)
+      if (data.senderId === currentUser?.shortname) {
+        console.log("[RT] Skipping own message");
         return;
       }
 
-      if (
-        selectedUser &&
-        data.senderId &&
-        data.receiverId &&
-        chatMode === "direct"
-      ) {
-        const isRelevant = isRelevantMessage(
+      // Group messages
+      if (data.groupId) {
+        console.log("[RT] Group message for group:", data.groupId, "selectedGroup:", selectedGroup?.id, "chatMode:", chatMode);
+        const isRelevant = isRelevantGroupMessage(
           data,
-          selectedUser.shortname,
+          data.groupId,
           currentUser?.shortname
         );
 
         if (isRelevant) {
-          if (data.senderId === currentUser?.shortname) {
-            return;
-          }
-
-          if (data.hasAttachments && data.messageId) {
-            const tempMessage = {
-              id: `temp_attachment_${data.messageId}`,
-              senderId: data.senderId,
-              receiverId: data.receiverId,
-              content: data.content || "📎 Attachment",
-              timestamp: new Date(data.timestamp || Date.now()),
-              isOwn: false,
-              hasAttachments: true,
-              attachments: null,
-              isUploading: true,
-            };
-
-            const messageExists = messages.some(
-              (msg) => msg.id === data.messageId || msg.id === tempMessage.id
-            );
-
-            if (!messageExists) {
-              addMessageToConversation(tempMessage);
-            }
-
-            setTimeout(async () => {
-              try {
-                const response = await getMessagesBetweenUsers(
-                  currentUser?.shortname,
-                  selectedUser.shortname
-                );
-
-                if (
-                  response &&
-                  response.status === "success" &&
-                  response.records
-                ) {
-                  const updatedMessages = sortMessagesByTimestamp(
-                    response.records.map((record) =>
-                      transformMessageRecord(record, currentUser?.shortname)
-                    )
-                  );
-
-                  const hasNewAttachmentData = updatedMessages.some(
-                    (msg) => msg.id === data.messageId && msg.attachments
-                  );
-
-                  if (hasNewAttachmentData) {
-                    messages = updatedMessages;
-
-                    conversationMessages.set(selectedUser.shortname, [
-                      ...messages,
-                    ]);
-
-                    const cacheKey = getCacheKey(
-                      currentUser?.shortname,
-                      selectedUser.shortname
-                    );
-                    cacheMessages(cacheKey, messages);
-
-                    scrollToBottom(chatContainer);
-                  }
-                }
-              } catch (error) {
-                console.error("Error fetching attachment message:", error);
-
-                messages = messages.filter((msg) => msg.id !== tempMessage.id);
-              }
-            }, 1000);
-
-            return;
-          }
-
-          const newMessage = {
-            id: data.messageId || `ws_${Date.now()}`,
+          const newGroupMessage = {
+            id: data.messageId || `msg_group_${Date.now()}`,
             senderId: data.senderId,
-            receiverId: data.receiverId,
+            groupId: data.groupId,
             content: data.content || "",
             timestamp: new Date(data.timestamp || Date.now()),
             isOwn: false,
-            hasAttachments: false,
-            attachments: null,
+            hasAttachments: data.hasAttachments || false,
+            attachments: data.attachments || null,
           };
 
-          const messageExists = messages.some(
-            (msg) => msg.id === newMessage.id
-          );
+          // Update cache for this group even if not currently selected
+          updateGroupMessageCache(data.groupId, newGroupMessage);
 
-          if (!messageExists) {
-            addMessageToConversation(newMessage);
-          }
-        }
-      }
-
-      if (
-        data.type === "group_message" ||
-        (data.groupId && chatMode === "group")
-      ) {
-        if (selectedGroup && data.groupId === selectedGroup.id) {
-          const isRelevant = isRelevantGroupMessage(
-            data,
-            selectedGroup.id,
-            currentUser?.shortname
-          );
-
-          if (isRelevant) {
-            if (data.senderId === currentUser?.shortname) {
-              return;
-            }
-
-            const newGroupMessage = {
-              id: data.messageId || `ws_group_${Date.now()}`,
-              senderId: data.senderId,
-              groupId: data.groupId,
-              content: data.content || "",
-              timestamp: new Date(data.timestamp || Date.now()),
-              isOwn: false,
-              hasAttachments: data.hasAttachments || false,
-              attachments: data.attachments || null,
-            };
-
+          // Update UI only if this group is currently selected
+          if (selectedGroup && data.groupId === selectedGroup.id && chatMode === "group") {
             const messageExists = groupMessages.some(
               (msg) => msg.id === newGroupMessage.id
             );
-
             if (!messageExists) {
-              addGroupMessageToConversation(newGroupMessage);
-
-              if (document.hidden || !selectedGroup) {
-                const senderName = getUserDisplayName(data.senderId);
-              }
+              console.log("[RT] Adding group message to conversation");
+              groupMessages = [...groupMessages, newGroupMessage];
+              scrollToBottom(chatContainer);
             }
           }
-        } else if (data.groupId && !selectedGroup) {
-          const groupName =
-            getGroupDisplayName(data.groupId) || `Group ${data.groupId}`;
-          const senderName = getUserDisplayName(data.senderId);
         }
+        return;
       }
 
-      if (data.type === "message" && !data.groupId) {
-      }
+      // Direct messages (no groupId)
+      if (data.senderId && data.receiverId) {
+        if (data.receiverId !== currentUser?.shortname && data.senderId !== currentUser?.shortname) {
+          console.log("[RT] Direct message not for current user");
+          return;
+        }
+        const partnerShortname = data.senderId;
+        console.log("[RT] Direct message from:", partnerShortname);
 
-      if (data.type === "message" && !data.groupId) {
-        if (
-          selectedUser &&
-          data.senderId &&
-          data.receiverId &&
-          chatMode === "direct"
-        ) {
-          const isRelevant = isRelevantMessage(
-            data,
-            selectedUser.shortname,
-            currentUser?.shortname
-          );
+        if (data.hasAttachments && data.messageId) {
+          const tempMessage = {
+            id: `temp_attachment_${data.messageId}`,
+            senderId: data.senderId,
+            receiverId: data.receiverId,
+            content: data.content || "📎 Attachment",
+            timestamp: new Date(data.timestamp || Date.now()),
+            isOwn: false,
+            hasAttachments: true,
+            attachments: null,
+            isUploading: true,
+          };
 
-          if (isRelevant) {
-            if (data.senderId === currentUser?.shortname) {
-              return;
+          // Update cache even if not currently selected
+          updateDirectMessageCache(partnerShortname, tempMessage);
+
+          // Update UI if currently viewing this conversation
+          if (selectedUser?.shortname === partnerShortname && chatMode === "direct") {
+            const messageExists = messages.some(
+              (msg) => msg.id === data.messageId || msg.id === tempMessage.id
+            );
+            if (!messageExists) {
+              messages = [...messages, tempMessage];
+              scrollToBottom(chatContainer);
             }
+          }
 
-            if (data.hasAttachments && data.messageId) {
-              const tempMessage = {
-                id: `temp_attachment_${data.messageId}`,
-                senderId: data.senderId,
-                receiverId: data.receiverId,
-                content: data.content || "📎 Attachment",
-                timestamp: new Date(data.timestamp || Date.now()),
-                isOwn: false,
-                hasAttachments: true,
-                attachments: null,
-                isUploading: true,
-              };
-
-              const messageExists = messages.some(
-                (msg) => msg.id === data.messageId || msg.id === tempMessage.id
+          setTimeout(async () => {
+            try {
+              const messageData = await getMessageByShortname(
+                data.messageId,
+                data.senderId,
+                currentUser?.shortname
               );
 
-              if (!messageExists) {
-                addMessageToConversation(tempMessage);
-              }
+              if (messageData) {
+                const newMessage = {
+                  id: messageData.id,
+                  senderId: messageData.senderId,
+                  receiverId: messageData.receiverId,
+                  content: messageData.content,
+                  timestamp: new Date(messageData.timestamp),
+                  isOwn: false,
+                  hasAttachments: !!messageData.attachments,
+                  attachments: messageData.attachments,
+                };
 
-              setTimeout(async () => {
-                try {
-                  const response = await getMessagesBetweenUsers(
-                    currentUser?.shortname,
-                    selectedUser.shortname
+                // Update cache for this conversation
+                updateDirectMessageCache(partnerShortname, newMessage);
+
+                // Update UI if currently viewing this conversation
+                if (selectedUser?.shortname === partnerShortname && chatMode === "direct") {
+                  messages = messages.map((msg) =>
+                    msg.id === tempMessage.id || msg.id === newMessage.id
+                      ? newMessage
+                      : msg
                   );
-
-                  if (
-                    response &&
-                    response.status === "success" &&
-                    response.records
-                  ) {
-                    const updatedMessages = sortMessagesByTimestamp(
-                      response.records.map((record) =>
-                        transformMessageRecord(record, currentUser?.shortname)
-                      )
-                    );
-
-                    const hasNewAttachmentData = updatedMessages.some(
-                      (msg) => msg.id === data.messageId && msg.attachments
-                    );
-
-                    if (hasNewAttachmentData) {
-                      messages = updatedMessages;
-
-                      conversationMessages.set(selectedUser.shortname, [
-                        ...messages,
-                      ]);
-
-                      const cacheKey = getCacheKey(
-                        currentUser?.shortname,
-                        selectedUser.shortname
-                      );
-                      cacheMessages(cacheKey, messages);
-
-                      scrollToBottom(chatContainer);
-                    }
-                  }
-                } catch (error) {
-                  console.error("Error fetching attachment message:", error);
-
-                  messages = messages.filter(
-                    (msg) => msg.id !== tempMessage.id
-                  );
+                  scrollToBottom(chatContainer);
                 }
-              }, 1000);
-
-              return;
+              }
+            } catch (error) {
+              console.error("Error fetching attachment message:", error);
+              if (selectedUser?.shortname === partnerShortname && chatMode === "direct") {
+                messages = messages.filter((msg) => msg.id !== tempMessage.id);
+              }
+              // Also remove from cache
+              const cached = conversationMessages.get(partnerShortname) || [];
+              conversationMessages.set(
+                partnerShortname,
+                cached.filter((msg) => msg.id !== tempMessage.id)
+              );
+              const cacheKey = getCacheKey(currentUser?.shortname, partnerShortname);
+              cacheMessages(cacheKey, conversationMessages.get(partnerShortname));
             }
+          }, 1000);
 
-            const newMessage = {
-              id: data.messageId || `ws_${Date.now()}`,
-              senderId: data.senderId,
-              receiverId: data.receiverId,
-              content: data.content || "",
-              timestamp: new Date(data.timestamp || Date.now()),
-              isOwn: false,
-              hasAttachments: false,
-              attachments: null,
-            };
+          return;
+        }
 
-            const messageExists = messages.some(
-              (msg) => msg.id === newMessage.id
-            );
+        const newMessage = {
+          id: data.messageId || `ws_${Date.now()}`,
+          senderId: data.senderId,
+          receiverId: data.receiverId,
+          content: data.content || "",
+          timestamp: new Date(data.timestamp || Date.now()),
+          isOwn: false,
+          hasAttachments: false,
+          attachments: null,
+        };
 
-            if (!messageExists) {
-              addMessageToConversation(newMessage);
-            }
+        // Update cache for this conversation even if not currently selected
+        updateDirectMessageCache(partnerShortname, newMessage);
+
+        // Update UI only if currently viewing this conversation
+        if (selectedUser?.shortname === partnerShortname && chatMode === "direct") {
+          const messageExists = messages.some(
+            (msg) => msg.id === newMessage.id
+          );
+          if (!messageExists) {
+            console.log("[RT] Adding direct message to conversation:", newMessage.content);
+            messages = [...messages, newMessage];
+            scrollToBottom(chatContainer);
           }
         }
       }
+      return;
+    }
+
+    // Handle group_message type (alternative format)
+    if (data.type === "group_message") {
+      console.log("[RT] group_message type for group:", data.groupId);
+      if (data.senderId === currentUser?.shortname) {
+        return;
+      }
+      const isRelevant = isRelevantGroupMessage(
+        data,
+        data.groupId,
+        currentUser?.shortname
+      );
+
+      if (isRelevant) {
+        const newGroupMessage = {
+          id: data.messageId || `msg_group_${Date.now()}`,
+          senderId: data.senderId,
+          groupId: data.groupId,
+          content: data.content || "",
+          timestamp: new Date(data.timestamp || Date.now()),
+          isOwn: false,
+          hasAttachments: data.hasAttachments || false,
+          attachments: data.attachments || null,
+        };
+
+        // Update cache for this group even if not currently selected
+        updateGroupMessageCache(data.groupId, newGroupMessage);
+
+        // Update UI only if this group is currently selected
+        if (selectedGroup && data.groupId === selectedGroup.id && chatMode === "group") {
+          const messageExists = groupMessages.some(
+            (msg) => msg.id === newGroupMessage.id
+          );
+          if (!messageExists) {
+            groupMessages = [...groupMessages, newGroupMessage];
+            scrollToBottom(chatContainer);
+          }
+        }
+      }
+      return;
+    }
+
+    console.log("[RT] Unhandled message type:", data.type);
+  }
+
+  function updateDirectMessageCache(partnerShortname, newMessage) {
+    const existingMessages = conversationMessages.get(partnerShortname) || [];
+    const messageExists = existingMessages.some((msg) => msg.id === newMessage.id);
+    if (!messageExists) {
+      const updatedMessages = sortMessagesByTimestamp([...existingMessages, newMessage]);
+      conversationMessages.set(partnerShortname, updatedMessages);
+      const cacheKey = getCacheKey(currentUser?.shortname, partnerShortname);
+      cacheMessages(cacheKey, updatedMessages);
     }
   }
 
-  async function fetchMessageByShortname(messageShortname, senderShortname?: string, receiverShortname?: string) {
+  function updateGroupMessageCache(groupId, newMessage) {
+    const existingMessages = groupConversationMessages.get(groupId) || [];
+    const messageExists = existingMessages.some((msg) => msg.id === newMessage.id);
+    if (!messageExists) {
+      const updatedMessages = sortMessagesByTimestamp([...existingMessages, newMessage]);
+      groupConversationMessages.set(groupId, updatedMessages);
+      const cacheKey = getGroupCacheKey(currentUser?.shortname, groupId);
+      cacheMessages(cacheKey, updatedMessages);
+    }
+  }
+
+  async function fetchMessageByShortname(messageShortname, senderShortname?: string, receiverShortname?: string, subpath?: string) {
     try {
-      // If sender/receiver not provided, try to determine from current context
-      const sender = senderShortname || (selectedUser?.shortname);
+      console.log("[FetchMsg] Fetching message:", messageShortname, "sender:", senderShortname, "receiver:", receiverShortname, "subpath:", subpath);
+
+      const sender = senderShortname;
       const receiver = receiverShortname || currentUser?.shortname;
-      
-      const messageData = await getMessageByShortname(messageShortname, sender, receiver);
+
+      const messageData = await getMessageByShortname(messageShortname, sender, receiver, subpath);
 
       if (!messageData) {
+        console.log("[FetchMsg] No message data returned");
         return;
       }
 
-      if (selectedGroup && chatMode === "group") {
-        if (messageData.groupId === selectedGroup.id) {
-          if (messageData.senderId === currentUser?.shortname) {
-            return;
+      console.log("[FetchMsg] Got message:", messageData.id, "from:", messageData.senderId, "to:", messageData.receiverId);
+
+      // Skip messages sent by current user (already shown via optimistic UI)
+      if (messageData.senderId === currentUser?.shortname) {
+        console.log("[FetchMsg] Skipping own message");
+        return;
+      }
+
+      // Handle group messages
+      if (messageData.groupId) {
+        const newGroupMessage = {
+          id: messageData.id,
+          senderId: messageData.senderId,
+          groupId: messageData.groupId,
+          content: messageData.content || "",
+          timestamp: new Date(messageData.timestamp || Date.now()),
+          isOwn: false,
+          hasAttachments: !!messageData.attachments,
+          attachments: messageData.attachments,
+        };
+
+        updateGroupMessageCache(messageData.groupId, newGroupMessage);
+
+        if (selectedGroup && messageData.groupId === selectedGroup.id && chatMode === "group") {
+          const messageExists = groupMessages.some(
+            (msg) => msg.id === newGroupMessage.id
+          );
+          if (!messageExists) {
+            console.log("[FetchMsg] Adding group message to UI:", newGroupMessage.id);
+            groupMessages = [...groupMessages, newGroupMessage];
+            scrollToBottom(chatContainer);
+          } else {
+            console.log("[FetchMsg] Group message already exists:", newGroupMessage.id);
           }
-
-          setTimeout(async () => {
-            try {
-              const response = await getGroupMessages(
-                selectedGroup.id,
-                MESSAGES_LIMIT,
-                0
-              );
-
-              if (
-                response &&
-                response.status === "success" &&
-                response.records
-              ) {
-                const updatedMessages = sortMessagesByTimestamp(
-                  response.records.map((record: any) =>
-                    transformGroupMessageRecord(record, currentUser?.shortname)
-                  ) as MessageData[]
-                );
-
-                const currentMessageCount = groupMessages.length;
-                const newMessageCount = updatedMessages.length;
-
-                if (
-                  newMessageCount > currentMessageCount ||
-                  updatedMessages.some((msg) => msg.id === messageData.id)
-                ) {
-                  groupMessages = updatedMessages;
-
-                  groupConversationMessages.set(selectedGroup.id, [
-                    ...updatedMessages,
-                  ]);
-
-                  const cacheKey = getGroupCacheKey(
-                    currentUser?.shortname,
-                    selectedGroup.id
-                  );
-                  cacheMessages(cacheKey, updatedMessages);
-
-                  scrollToBottom(chatContainer);
-                } else {
-                }
-              }
-            } catch (error) {
-              console.error(
-                "❌ [Fetch Message] Error refreshing group conversation:",
-                error
-              );
-            }
-          }, 1500);
-        } else {
         }
         return;
       }
 
-      if (selectedUser && chatMode === "direct") {
-        const isRelevant = isRelevantMessage(
-          messageData,
-          selectedUser.shortname,
-          currentUser?.shortname
+      // Handle direct messages
+      const partnerShortname = messageData.senderId;
+      const newMessage = {
+        id: messageData.id,
+        senderId: messageData.senderId,
+        receiverId: messageData.receiverId,
+        content: messageData.content || "",
+        timestamp: new Date(messageData.timestamp || Date.now()),
+        isOwn: false,
+        hasAttachments: !!messageData.attachments,
+        attachments: messageData.attachments,
+      };
+
+      updateDirectMessageCache(partnerShortname, newMessage);
+
+      if (selectedUser?.shortname === partnerShortname && chatMode === "direct") {
+        const messageExists = messages.some(
+          (msg) => msg.id === newMessage.id
         );
-
-        if (isRelevant) {
-          if (messageData.senderId === currentUser?.shortname) {
-            return;
-          }
-
-          setTimeout(async () => {
-            try {
-              const response = await getMessagesBetweenUsers(
-                currentUser?.shortname,
-                selectedUser.shortname
-              );
-
-              if (
-                response &&
-                response.status === "success" &&
-                response.records
-              ) {
-                const updatedMessages = sortMessagesByTimestamp(
-                  response.records.map((record) =>
-                    transformMessageRecord(record, currentUser?.shortname)
-                  )
-                );
-
-                const currentMessageCount = messages.length;
-                const newMessageCount = updatedMessages.length;
-
-                if (
-                  newMessageCount > currentMessageCount ||
-                  updatedMessages.some((msg) => msg.id === messageData.id)
-                ) {
-                  messages = updatedMessages;
-
-                  conversationMessages.set(selectedUser.shortname, [
-                    ...messages,
-                  ]);
-
-                  const cacheKey = getCacheKey(
-                    currentUser?.shortname,
-                    selectedUser.shortname
-                  );
-                  cacheMessages(cacheKey, messages);
-
-                  scrollToBottom(chatContainer);
-                }
-              }
-            } catch (error) {
-              console.error(
-                "❌ [Fetch Message] Error refreshing direct conversation:",
-                error
-              );
-            }
-          }, 1500);
+        if (!messageExists) {
+          console.log("[FetchMsg] Adding direct message to UI:", newMessage.id, "content:", newMessage.content);
+          messages = [...messages, newMessage];
+          scrollToBottom(chatContainer);
+        } else {
+          console.log("[FetchMsg] Direct message already exists:", newMessage.id);
         }
+      } else {
+        console.log("[FetchMsg] Message cached for conversation with:", partnerShortname, "selectedUser:", selectedUser?.shortname, "chatMode:", chatMode);
       }
     } catch (error) {
-      console.error("❌ [Fetch Message] Error fetching message:", error);
+      console.error("❌ [FetchMsg] Error fetching message:", error);
     }
   }
 
@@ -1195,21 +1107,43 @@
         0
       );
 
+      let apiMessages = [];
       if (response && response.status === "success" && response.records) {
-        messages = sortMessagesByTimestamp(
+        apiMessages = sortMessagesByTimestamp(
           response.records.map((record) =>
             transformMessageRecord(record, currentUser?.shortname)
           )
         );
 
-        if (messages.length < MESSAGES_LIMIT) {
+        if (apiMessages.length < MESSAGES_LIMIT) {
           hasMoreMessages = false;
         }
       } else {
-        messages = [];
         hasMoreMessages = false;
       }
 
+      // Merge with any cached real-time messages that may have arrived
+      const cachedMessages = conversationMessages.get(userShortname) || [];
+      const localCachedMessages = getCachedMessages(
+        getCacheKey(currentUser?.shortname, userShortname)
+      );
+
+      const allCached = [...cachedMessages, ...localCachedMessages];
+      const cachedById = new Map();
+      for (const msg of allCached) {
+        if (!cachedById.has(msg.id)) {
+          cachedById.set(msg.id, msg);
+        }
+      }
+
+      // API messages take precedence, but keep any cached messages not in API response
+      const apiMessageIds = new Set(apiMessages.map((m) => m.id));
+      const mergedMessages = sortMessagesByTimestamp([
+        ...apiMessages,
+        ...Array.from(cachedById.values()).filter((msg) => !apiMessageIds.has(msg.id)),
+      ]);
+
+      messages = mergedMessages;
       conversationMessages.set(userShortname, [...messages]);
 
       const cacheKey = getCacheKey(currentUser?.shortname, userShortname);
@@ -1302,23 +1236,27 @@
 
             setTimeout(async () => {
               try {
-                const response = await getMessagesBetweenUsers(
+                const messageData = await getMessageByShortname(
+                  persistedMessageId,
                   currentUser?.shortname,
                   selectedUser.shortname
                 );
 
-                if (
-                  response &&
-                  response.status === "success" &&
-                  response.records
-                ) {
-                  const updatedMessages = sortMessagesByTimestamp(
-                    response.records.map((record) =>
-                      transformMessageRecord(record, currentUser?.shortname)
-                    )
-                  );
+                if (messageData) {
+                  const newMessage = {
+                    id: messageData.id,
+                    senderId: messageData.senderId,
+                    receiverId: messageData.receiverId,
+                    content: messageData.content,
+                    timestamp: new Date(messageData.timestamp),
+                    isOwn: true,
+                    hasAttachments: !!messageData.attachments,
+                    attachments: messageData.attachments,
+                  };
 
-                  messages = updatedMessages;
+                  messages = messages.map((msg) =>
+                    msg.id === persistedMessageId ? newMessage : msg
+                  );
                   conversationMessages.set(selectedUser.shortname, [
                     ...messages,
                   ]);
@@ -1332,7 +1270,7 @@
                   scrollToBottom(chatContainer);
                 }
               } catch (error) {
-                console.error("Error refreshing messages:", error);
+                console.error("Error refreshing message:", error);
               }
             }, 1500);
           } catch (attachmentError) {
@@ -1359,7 +1297,11 @@
         };
 
         if (webTransport) {
-          await webTransport.send(wsMessage);
+          console.log("[SendMsg] Sending WS message:", JSON.stringify(wsMessage));
+          const sendResult = await webTransport.send(wsMessage);
+          console.log("[SendMsg] WS send result:", sendResult);
+        } else {
+          console.warn("[SendMsg] No webTransport instance, skipping WS send");
         }
       } else {
         messages = messages.filter((msg) => msg.id !== tempId);
