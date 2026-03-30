@@ -37,6 +37,9 @@
     successToastMessage,
   } from "@/lib/toasts_messages";
   import DeleteConfirmationDialog from "@/components/DeleteConfirmationDialog.svelte";
+  import ModalCSVUpload from "@/components/management/Modals/ModalCSVUpload.svelte";
+  import ModalCSVDownload from "@/components/management/Modals/ModalCSVDownload.svelte";
+  import { UploadOutline, DownloadOutline } from "flowbite-svelte-icons";
 
   $goto;
 
@@ -1116,6 +1119,14 @@
   let editingIndexAttributes = $state([]);
   let isSavingColumns = $state(false);
 
+  // CSV Import/Export
+  let isCSVUploadModalOpen = $state(false);
+  let isCSVDownloadModalOpen = $state(false);
+
+  // Computed permissions from folder metadata
+  let canUploadCSV = $derived((folderMetadata as any)?.payload?.body?.allow_upload_csv === true);
+  let canDownloadCSV = $derived((folderMetadata as any)?.payload?.body?.allow_csv === true);
+
   function handleOpenColumnSettings() {
     editingIndexAttributes = JSON.parse(JSON.stringify(indexAttributes));
     if (editingIndexAttributes.length === 0) {
@@ -1338,9 +1349,9 @@
   }
 </script>
 
-<div class="min-h-screen bg-gray-50 px-[21px]" class:rtl={$isRTL}>
+<div class="min-h-screen bg-gray-50" class:rtl={$isRTL}>
   <div class="bg-gray-50">
-    <div class="mx-auto py-8 max-w-[1200px]">
+    <div class="mx-auto py-8 max-w-[1500px]">
       <div
         class="flex flex-col md:flex-row md:items-center justify-between gap-4"
       >
@@ -1491,7 +1502,7 @@
     </div>
   </div>
 
-  <div class=" mx-auto pb-12 max-w-[1200px]">
+  <div class=" mx-auto pb-12 max-w-[1500px]">
     {#if $isLoading || isInitialLoad}
       <div class="flex justify-center py-16">
         <Diamonds color="#4f46e5" size="60" unit="px" />
@@ -1800,6 +1811,28 @@
                   ></path>
                 </svg>
               </button>
+
+              <!-- CSV Upload Button -->
+              {#if canUploadCSV}
+                <button
+                  onclick={() => isCSVUploadModalOpen = true}
+                  class="p-2.5 bg-gray-50 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all border border-transparent hover:border-emerald-100"
+                  title="Upload CSV"
+                >
+                  <UploadOutline class="w-5 h-5" />
+                </button>
+              {/if}
+
+              <!-- CSV Download Button -->
+              {#if canDownloadCSV}
+                <button
+                  onclick={() => isCSVDownloadModalOpen = true}
+                  class="p-2.5 bg-gray-50 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all border border-transparent hover:border-blue-100"
+                  title="Download CSV"
+                >
+                  <DownloadOutline class="w-5 h-5" />
+                </button>
+              {/if}
             </div>
           </div>
         </div>
@@ -3338,6 +3371,23 @@
   isDeleting={isDeletingItem}
   onConfirm={handleConfirmDelete}
   onCancel={closeDeleteDialog}
+/>
+
+<!-- CSV Import/Export Modals -->
+<ModalCSVUpload 
+  space_name={spaceName}
+  subpath={$actualSubpath || "/"} 
+  bind:isOpen={isCSVUploadModalOpen}
+  onUploadSuccess={() => loadContents(true)}
+/>
+
+<ModalCSVDownload 
+  space_name={spaceName}
+  subpath={$actualSubpath || "/"} 
+  bind:isOpen={isCSVDownloadModalOpen}
+  folderMetadata={folderMetadata}
+  indexAttributes={indexAttributes}
+  onUpdateFolder={() => loadContents(true)}
 />
 
 <style>

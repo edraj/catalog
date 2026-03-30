@@ -32,6 +32,7 @@
   import TemplateEditor from "@/components/editors/TemplateEditor.svelte";
   import JsonEditor from "@/components/editors/JsonEditor.svelte";
   import SchemaForm from "@/components/forms/SchemaForm.svelte";
+  import DynamicSchemaBasedForms from "@/components/forms/DynamicSchemaBasedForms.svelte";
   import SchemaViewer from "@/components/forms/SchemaViewer.svelte";
   import PostContent from "@/components/post/PostContent.svelte";
   import PlantUMLViewer from "@/components/PlantUMLViewer.svelte";
@@ -83,6 +84,41 @@
   let jsonEditorContent = $state({});
   let isSchemaBasedItem = $state(false);
   let schemaEditorContent = $state("");
+
+  let isDynamicSchemaItem = $state(false);
+  let selectedDynamicSchema: any = $state(null);
+  let dynamicSchemaFormData: any = $state({});
+  let loadingDynamicSchema = $state(false);
+
+  async function loadDynamicSchema(schemaShortname: string) {
+    loadingDynamicSchema = true;
+    try {
+      const response = await getEntity(
+        schemaShortname,
+        spaceNameValue,
+        "/schema",
+        ResourceType.content,
+        "managed",
+        true,
+        true
+      );
+      if (response) {
+        selectedDynamicSchema = {
+          shortname: response.shortname,
+          title: response.attributes?.displayname?.en || response.shortname,
+          schema: response.payload?.body,
+          description: response.attributes?.description?.en || "",
+        };
+        return true;
+      }
+    } catch (error) {
+      console.error("Error loading dynamic schema:", error);
+    } finally {
+      loadingDynamicSchema = false;
+    }
+    return false;
+  }
+
   const editForm = writable({
     displayname: { en: "", ar: "", ku: "" },
     description: { en: "", ar: "", ku: "" },
@@ -249,6 +285,17 @@
       if (isSchemaBasedItem) {
         return schemaEditorContent;
       }
+      if (isDynamicSchemaItem && selectedDynamicSchema) {
+        const originalContent = getItemContent(itemDataValue);
+        if (originalContent && typeof originalContent === "object" && originalContent.schema_data) {
+          return {
+            ...originalContent,
+            schema_data: dynamicSchemaFormData
+          };
+        } else {
+          return dynamicSchemaFormData;
+        }
+      }
       return jsonEditFormValue;
     }
 
@@ -384,6 +431,27 @@
         isSchemaBasedItem =
           response.payload?.schema_shortname === "meta_schema";
 
+        const schemaShortname = response.payload?.schema_shortname;
+        isDynamicSchemaItem = response.payload?.content_type === "json" &&
+          schemaShortname &&
+          schemaShortname !== "templates" &&
+          schemaShortname !== "meta_schema";
+
+        if (isDynamicSchemaItem) {
+          const schemaLoaded = await loadDynamicSchema(schemaShortname);
+          if (schemaLoaded) {
+            if (content && typeof content === "object") {
+              if (content.schema_data) {
+                dynamicSchemaFormData = content.schema_data;
+              } else {
+                dynamicSchemaFormData = content;
+              }
+            } else {
+              dynamicSchemaFormData = {};
+            }
+          }
+        }
+
         if (response.payload?.content_type === "json") {
           if (isSchemaBasedItem) {
             schemaEditorContent = content;
@@ -456,6 +524,8 @@
       if (itemDataValue?.payload?.content_type === "json") {
         if (isSchemaBasedItem) {
           htmlContent = JSON.stringify(schemaEditorContent);
+        } else if (isDynamicSchemaItem && selectedDynamicSchema) {
+          htmlContent = JSON.stringify(dynamicSchemaFormData);
         } else {
           htmlContent = JSON.stringify(jsonEditorContent);
         }
@@ -2514,6 +2584,24 @@
                     />
                   {:else if isSchemaBasedItem}
                     <SchemaForm bind:content={schemaEditorContent} />
+                  {:else if isDynamicSchemaItem}
+                    {#if loadingDynamicSchema}
+                      <div class="schema-loading p-4 text-center">
+                        <Diamonds size="40" color="#2563eb" unit="px" duration="1s" />
+                        <p class="mt-2">Loading schema...</p>
+                      </div>
+                    {:else if selectedDynamicSchema}
+                      <div class="schema-form-wrapper bg-white rounded-lg shadow-sm border border-gray-100 p-4 mb-4">
+                        <div class="schema-info-bar mb-4 pb-2 border-b border-gray-100">
+                          <span class="schema-label font-medium text-gray-500">Schema:</span>
+                          <span class="schema-name font-semibold text-gray-900 ml-2">{selectedDynamicSchema.title}</span>
+                        </div>
+                        <DynamicSchemaBasedForms
+                          bind:content={dynamicSchemaFormData}
+                          schema={selectedDynamicSchema.schema}
+                        />
+                      </div>
+                    {/if}
                   {:else if itemDataValue?.payload?.content_type === "json"}
                     <div class="json-editor-with-preview">
                       <div class="json-editor-pane">

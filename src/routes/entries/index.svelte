@@ -22,7 +22,11 @@
     SearchOutline,
     TagOutline,
     LayersSolid,
+    UploadOutline,
+    DownloadOutline,
   } from "flowbite-svelte-icons";
+  import ModalCSVUpload from "@/components/management/Modals/ModalCSVUpload.svelte";
+  import ModalCSVDownload from "@/components/management/Modals/ModalCSVDownload.svelte";
 
   $goto;
   let entities = $state([]);
@@ -35,6 +39,8 @@
   let spaceFilter = $state("all");
   let sortBy = $state("updated_at");
   let sortOrder = $state("desc");
+  let isCSVUploadModalOpen = $state(false);
+  let isCSVDownloadModalOpen = $state(false);
 
   const isRTL = derived(
     locale,
@@ -355,7 +361,7 @@
 </script>
 
 <div class="min-h-screen bg-gray-50/30" class:rtl={$isRTL}>
-  <div class=" mx-auto py-10 max-w-[1200px]">
+  <div class=" mx-auto py-10 max-w-[1500px]">
     <!-- Header -->
     <div
       class="mb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6"
@@ -369,14 +375,32 @@
             "Manage and track your content submissions"}
         </p>
       </div>
-      <button
-        aria-label={$_("my_entries.create_new") || "Create New Entry"}
-        onclick={createNewEntry}
-        class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-[14px] font-semibold flex items-center justify-center gap-2 transition-all shadow-sm shadow-indigo-200 text-sm"
-      >
-        <PlusOutline class="w-4 h-4" />
-        {$_("my_entries.create_new") || "Create New Entry"}
-      </button>
+      <div class="flex items-center gap-3">
+        <button
+          aria-label="Upload CSV"
+          onclick={() => isCSVUploadModalOpen = true}
+          class="bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 px-4 py-2.5 rounded-[14px] font-semibold flex items-center justify-center gap-2 transition-all shadow-sm text-sm"
+        >
+          <UploadOutline class="w-4 h-4" />
+          Import CSV
+        </button>
+        <button
+          aria-label="Download CSV"
+          onclick={() => isCSVDownloadModalOpen = true}
+          class="bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 px-4 py-2.5 rounded-[14px] font-semibold flex items-center justify-center gap-2 transition-all shadow-sm text-sm"
+        >
+          <DownloadOutline class="w-4 h-4" />
+          Export CSV
+        </button>
+        <button
+          aria-label={$_("my_entries.create_new") || "Create New Entry"}
+          onclick={createNewEntry}
+          class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-[14px] font-semibold flex items-center justify-center gap-2 transition-all shadow-sm shadow-indigo-200 text-sm"
+        >
+          <PlusOutline class="w-4 h-4" />
+          {$_("my_entries.create_new") || "Create New Entry"}
+        </button>
+      </div>
     </div>
 
     <!-- Top Bar (Search & Filters) -->
@@ -904,3 +928,19 @@
     {/if}
   </div>
 </div>
+
+<!-- CSV Import/Export Modals -->
+<ModalCSVUpload 
+  space_name={spaceFilter !== "all" ? spaceFilter : (availableSpaces[0]?.shortname || "catalog")}
+  subpath="/" 
+  bind:isOpen={isCSVUploadModalOpen}
+  onUploadSuccess={fetchEntities}
+  availableSpaces={availableSpaces.map(s => ({ shortname: s.shortname, displayname: getLocalizedSpaceName(s) }))}
+/>
+
+<ModalCSVDownload 
+  space_name={spaceFilter !== "all" ? spaceFilter : (availableSpaces[0]?.shortname || "catalog")}
+  subpath="/" 
+  bind:isOpen={isCSVDownloadModalOpen}
+  availableSpaces={availableSpaces.map(s => ({ shortname: s.shortname, displayname: getLocalizedSpaceName(s) }))}
+/>

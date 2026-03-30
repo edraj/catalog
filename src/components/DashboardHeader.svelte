@@ -146,7 +146,7 @@ $effect(() => {
 </script>
 
 <header
-  class={`sticky top-0 z-40 w-full  ${$user.signedin ? "pt-4 pb-2  max-w-[1200px]  mx-auto" : "border-b border-gray-200  backdrop-blur-md "}`}
+  class={`sticky top-0 z-40 w-full  ${$user.signedin ? "pt-4 pb-2  max-w-[1500px]  mx-auto" : "border-b border-gray-200  backdrop-blur-md "}`}
 >
   <div class={$user.signedin ? "" : "container mx-auto sm:px-6 "}>
     <div

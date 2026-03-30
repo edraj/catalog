@@ -1,11 +1,15 @@
 <script lang="ts">
     import {onMount} from "svelte";
     import {goto, params} from "@roxi/routify";
-    import {getAvatar, getSpaceContents} from "@/lib/dmart_services/dmart_services";
+    import {getAvatar, getSpaceContents, getEntity} from "@/lib/dmart_services/dmart_services";
     import {Diamonds} from "svelte-loading-spinners";
     import {_, locale} from "@/i18n";
     import Avatar from "@/components/Avatar.svelte";
     import {derived} from "svelte/store";
+    import {ResourceType} from "@edraj/tsdmart";
+    import {UploadOutline, DownloadOutline} from "flowbite-svelte-icons";
+    import ModalCSVUpload from "@/components/management/Modals/ModalCSVUpload.svelte";
+    import ModalCSVDownload from "@/components/management/Modals/ModalCSVDownload.svelte";
 
     $goto;
 
@@ -29,6 +33,15 @@
   let selectedTags = $state([]);
   let availableTags = $state([]);
   let showAllTags = $state(false);
+
+  // Folder metadata for CSV permissions
+  let folderMetadata = $state(null);
+  let isCSVUploadModalOpen = $state(false);
+  let isCSVDownloadModalOpen = $state(false);
+
+  // Computed permissions
+  let canUploadCSV = $derived(folderMetadata?.payload?.body?.allow_upload_csv === true);
+  let canDownloadCSV = $derived(folderMetadata?.payload?.body?.allow_csv === true);
 
   const isRTL = derived(
     locale,
@@ -77,6 +90,44 @@
 
     currentDisplayCount = itemsPerLoad;
     await loadContents();
+    await loadFolderMetadata();
+  }
+
+  async function loadFolderMetadata() {
+    // Only fetch folder metadata if we're in a subpath (not root)
+    if (!actualSubpath || actualSubpath === "" || actualSubpath === "/") {
+      folderMetadata = null;
+      return;
+    }
+
+    try {
+      // Get the parent path and folder shortname
+      const pathParts = actualSubpath.split("/").filter(p => p.length > 0);
+      if (pathParts.length === 0) {
+        folderMetadata = null;
+        return;
+      }
+
+      const folderShortname = pathParts[pathParts.length - 1];
+      const parentSubpath = pathParts.length > 1 
+        ? "/" + pathParts.slice(0, -1).join("/")
+        : "/";
+
+      const folder = await getEntity(
+        folderShortname,
+        spaceName,
+        parentSubpath,
+        ResourceType.folder,
+        "public",
+        true,
+        false
+      );
+
+      folderMetadata = folder;
+    } catch (err) {
+      console.error("Error fetching folder metadata:", err);
+      folderMetadata = null;
+    }
   }
 
   onMount(async () => {
@@ -532,6 +583,28 @@
               / <span class="subpath-name">{actualSubpath}</span>
             {/if}
           </p>
+        </div>
+        <div class="header-actions">
+          {#if canUploadCSV}
+            <button
+              aria-label="Upload CSV"
+              onclick={() => isCSVUploadModalOpen = true}
+              class="csv-button csv-button-upload"
+            >
+              <UploadOutline class="w-4 h-4" />
+              Import CSV
+            </button>
+          {/if}
+          {#if canDownloadCSV}
+            <button
+              aria-label="Download CSV"
+              onclick={() => isCSVDownloadModalOpen = true}
+              class="csv-button csv-button-download"
+            >
+              <DownloadOutline class="w-4 h-4" />
+              Export CSV
+            </button>
+          {/if}
         </div>
       </div>
     </div>
@@ -1184,6 +1257,20 @@
   </div>
 </div>
 
+<!-- CSV Import/Export Modals -->
+<ModalCSVUpload 
+  space_name={spaceName}
+  subpath={actualSubpath || "/"} 
+  bind:isOpen={isCSVUploadModalOpen}
+  onUploadSuccess={loadContents}
+/>
+
+<ModalCSVDownload 
+  space_name={spaceName}
+  subpath={actualSubpath || "/"} 
+  bind:isOpen={isCSVDownloadModalOpen}
+/>
+
 <style>
   .catalog-contents-page {
     min-height: 100vh;
@@ -1217,6 +1304,56 @@
 
   .header-info {
     flex: 1;
+  }
+
+  .header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+  }
+
+  .csv-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+    background-color: white;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  .csv-button:hover {
+    background-color: #f9fafb;
+    border-color: #d1d5db;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .csv-button-upload {
+    color: #059669;
+    border-color: #10b981;
+  }
+
+  .csv-button-upload:hover {
+    background-color: #ecfdf5;
+    border-color: #059669;
+  }
+
+  .csv-button-download {
+    color: #2563eb;
+    border-color: #3b82f6;
+  }
+
+  .csv-button-download:hover {
+    background-color: #eff6ff;
+    border-color: #2563eb;
   }
 
   .page-title {
@@ -2246,6 +2383,16 @@
 
     .rtl .selected-tags-header {
       align-items: flex-end;
+    }
+
+    .header-actions {
+      width: 100%;
+      justify-content: flex-start;
+    }
+
+    .csv-button {
+      flex: 1;
+      justify-content: center;
     }
   }
 </style>
