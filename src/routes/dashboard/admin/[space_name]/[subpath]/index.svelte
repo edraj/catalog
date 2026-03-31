@@ -40,6 +40,7 @@
   import ModalCSVUpload from "@/components/management/Modals/ModalCSVUpload.svelte";
   import ModalCSVDownload from "@/components/management/Modals/ModalCSVDownload.svelte";
   import { UploadOutline, DownloadOutline } from "flowbite-svelte-icons";
+  import DataTable from "@/components/DataTable.svelte";
 
   $goto;
 
@@ -1980,443 +1981,256 @@
             {/if}
           </div>
         {:else}
-          <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-              <thead>
-                <tr class="border-b border-gray-100">
-                  <th class="px-4 py-4 w-12">
-                    <input
-                      type="checkbox"
-                      checked={selectedItems.size > 0 &&
-                        selectedItems.size === displayedContents.length}
-                      indeterminate={selectedItems.size > 0 &&
-                        selectedItems.size < displayedContents.length}
-                      onchange={toggleAllItems}
-                      class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
-                      aria-label={$_("admin_content.bulk_actions.select_all")}
-                    />
-                  </th>
-                  {#if indexAttributes && indexAttributes.length > 0 && indexAttributes.some((attr) => attr && Object.keys(attr).length > 0)}
-                    {#each indexAttributes as attr}
-                      <th
-                        class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider"
-                      >
-                        {attr.name}
-                      </th>
-                    {/each}
+          <DataTable
+            items={displayedContents}
+            indexAttributes={indexAttributes}
+            selectable={true}
+            selectedItems={selectedItems}
+            onSelectAll={(checked) => {
+              if (checked) {
+                selectedItems = new Set(displayedContents.map((item) => item.shortname));
+              } else {
+                selectedItems = new Set();
+              }
+            }}
+            onSelectItem={(shortname) => toggleItemSelection(shortname)}
+            onRowClick={(item) => handleItemClick(item)}
+            loading={$isLoading || isInitialLoad}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItemsDerived}
+            itemsPerPage={itemsPerPage}
+            onPageChange={(page) => goToPage(page)}
+            onItemsPerPageChange={(count) => handleItemsPerPageChange(count)}
+            itemsPerPageOptions={itemsPerPageOptions}
+            rtl={$isRTL}
+          >
+            {#snippet cell({ item, attr })}
+              {#if attr.key === "displayname"}
+                <div class="flex flex-col">
+                  <span
+                    class="inline-flex w-fit items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mb-1.5 {getResourceTypeColor(
+                      item.resource_type,
+                    )}"
+                  >
+                    {item.resource_type}
+                  </span>
+                  <div class="flex items-center gap-2">
+                    <span class="text-lg text-gray-400"
+                      >{getItemIcon(item)}</span
+                    >
+                    <span
+                      class="text-sm font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors truncate max-w-xs"
+                      >{getDisplayName(item)}</span
+                    >
+                  </div>
+                </div>
+              {:else if attr.key === "status"}
+                <span
+                  class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium {item
+                    .attributes?.is_active
+                    ? 'bg-emerald-50 text-emerald-700'
+                    : 'bg-red-50 text-red-700'}"
+                >
+                  <span
+                    class="w-1.5 h-1.5 rounded-full {item.attributes
+                      ?.is_active
+                      ? 'bg-emerald-500'
+                      : 'bg-red-500'} mr-1.5"
+                  ></span>
+                  {item.attributes?.is_active
+                    ? $_("admin_content.status.active")
+                    : $_("admin_content.status.inactive")}
+                </span>
+              {:else if attr.key === "author"}
+                <div class="flex items-center gap-2">
+                  {#if item.attributes?.owner_shortname}
+                    <div
+                      class="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[10px] font-medium text-gray-600"
+                    >
+                      {item.attributes?.owner_shortname
+                        .charAt(0)
+                        .toUpperCase()}
+                    </div>
+                    <span class="text-sm font-medium text-gray-700"
+                      >{item.attributes?.owner_shortname}</span
+                    >
                   {:else}
-                    <th
-                      class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider"
-                      >Shortname</th
+                    <div
+                      class="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-[10px] font-medium text-gray-400"
                     >
-                    <th
-                      class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider"
-                      >Schema</th
-                    >
-                    <th
-                      class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider"
-                      >Status</th
-                    >
-                    <th
-                      class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider"
-                      >Created At</th
-                    >
-                    <th
-                      class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider"
-                      >Updated At</th
+                      ?
+                    </div>
+                    <span class="text-sm text-gray-500"
+                      >{$_("common.unknown")}</span
                     >
                   {/if}
-                  <th
-                    class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider"
-                    >Actions</th
-                  >
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-100 bg-white">
-                {#each displayedContents as item}
-                  <tr
-                    class="hover:bg-gray-50/50 transition-colors group cursor-pointer {selectedItems.has(
-                      item.shortname,
-                    )
-                      ? 'bg-indigo-50/30'
-                      : ''}"
-                    onclick={() => handleItemClick(item)}
-                  >
-                    <td class="px-4 py-8" onclick={(e) => e.stopPropagation()}>
-                      <input
-                        type="checkbox"
-                        checked={selectedItems.has(item.shortname)}
-                        onchange={() => toggleItemSelection(item.shortname)}
-                        class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
-                        aria-label={$_(
-                          "admin_content.bulk_actions.select_item",
-                          { name: getDisplayName(item) },
-                        )}
-                      />
-                    </td>
-                    {#if indexAttributes && indexAttributes.length > 0 && indexAttributes.some((attr) => attr && Object.keys(attr).length > 0)}
-                      {#each indexAttributes as attr}
-                        <td class="px-6 py-8">
-                          {#if attr.key === "displayname"}
-                            <div class="flex flex-col">
-                              <span
-                                class="inline-flex w-fit items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mb-1.5 {getResourceTypeColor(
-                                  item.resource_type,
-                                )}"
-                              >
-                                {item.resource_type}
-                              </span>
-                              <div class="flex items-center gap-2">
-                                <span class="text-lg text-gray-400"
-                                  >{getItemIcon(item)}</span
-                                >
-                                <span
-                                  class="text-sm font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors truncate max-w-xs"
-                                  >{getDisplayName(item)}</span
-                                >
-                              </div>
-                            </div>
-                          {:else if attr.key === "status"}
-                            <span
-                              class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium {item
-                                .attributes?.is_active
-                                ? 'bg-emerald-50 text-emerald-700'
-                                : 'bg-red-50 text-red-700'}"
-                            >
-                              <span
-                                class="w-1.5 h-1.5 rounded-full {item.attributes
-                                  ?.is_active
-                                  ? 'bg-emerald-500'
-                                  : 'bg-red-500'} mr-1.5"
-                              ></span>
-                              {item.attributes?.is_active
-                                ? $_("admin_content.status.active")
-                                : $_("admin_content.status.inactive")}
-                            </span>
-                          {:else if attr.key === "author"}
-                            <div class="flex items-center gap-2">
-                              {#if item.attributes?.owner_shortname}
-                                <div
-                                  class="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[10px] font-medium text-gray-600"
-                                >
-                                  {item.attributes?.owner_shortname
-                                    .charAt(0)
-                                    .toUpperCase()}
-                                </div>
-                                <span class="text-sm font-medium text-gray-700"
-                                  >{item.attributes?.owner_shortname}</span
-                                >
-                              {:else}
-                                <div
-                                  class="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-[10px] font-medium text-gray-400"
-                                >
-                                  ?
-                                </div>
-                                <span class="text-sm text-gray-500"
-                                  >{$_("common.unknown")}</span
-                                >
-                              {/if}
-                            </div>
-                          {:else}
-                            <span class="text-sm text-gray-500 font-medium"
-                              >{getAttributeValue(item, attr.key)}</span
-                            >
-                          {/if}
-                        </td>
-                      {/each}
-                    {:else}
-                      <td class="px-6 py-8">
-                        <div class="flex flex-col">
-                          <span
-                            class="inline-flex w-fit items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mb-1.5 {getResourceTypeColor(
-                              item.resource_type,
-                            )}"
-                          >
-                            {item.resource_type}
-                          </span>
-                          <div class="flex items-center gap-2">
-                            <span class="text-lg text-gray-400"
-                              >{getItemIcon(item)}</span
-                            >
-                            <span
-                              class="text-sm font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors truncate max-w-xs"
-                              >{item.shortname}</span
-                            >
-                          </div>
-                        </div>
-                      </td>
-                      <td class="px-6 py-8">
-                        <span class="text-sm text-gray-500 font-medium"
-                          >{item.attributes?.schema_shortname || "-"}</span
-                        >
-                      </td>
-                      <td class="px-6 py-8">
-                        <span
-                          class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium {item
-                            .attributes?.is_active
-                            ? 'bg-emerald-50 text-emerald-700'
-                            : 'bg-red-50 text-red-700'}"
-                        >
-                          <span
-                            class="w-1.5 h-1.5 rounded-full {item.attributes
-                              ?.is_active
-                              ? 'bg-emerald-500'
-                              : 'bg-red-500'} mr-1.5"
-                          ></span>
-                          {item.attributes?.is_active
-                            ? $_("admin_content.status.active")
-                            : $_("admin_content.status.inactive")}
-                        </span>
-                      </td>
-                      <td class="px-6 py-8">
-                        <span class="text-sm text-gray-500 font-medium"
-                          >{formatDate(item.attributes?.created_at)}</span
-                        >
-                      </td>
-                      <td class="px-6 py-8">
-                        <span class="text-sm text-gray-500 font-medium"
-                          >{formatDate(item.attributes?.updated_at)}</span
-                        >
-                      </td>
-                    {/if}
-                    <td class="px-6 py-8">
-                      <div
-                        class="flex items-center justify-end gap-4 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        {#if item.resource_type === "folder"}
-                          <button
-                            onclick={(e) => {
-                              e.stopPropagation();
-                              handleItemClick(item);
-                            }}
-                            class="text-[12px] font-semibold text-indigo-500 hover:text-indigo-700 flex items-center gap-1.5"
-                          >
-                            <svg
-                              class="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                              ><path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
-                              ></path></svg
-                            > Open
-                          </button>
-                        {:else}
-                          <button
-                            onclick={(e) => {
-                              e.stopPropagation();
-                              handleItemClick(item);
-                            }}
-                            class="text-[12px] font-semibold text-indigo-500 hover:text-indigo-700 flex items-center gap-1.5"
-                          >
-                            <svg
-                              class="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                              ><path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                              ></path><path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                              ></path></svg
-                            > View
-                          </button>
-                        {/if}
-                        <button
-                          onclick={(e) => openDeleteDialog(item, e)}
-                          class="text-[12px] font-semibold text-red-500 hover:text-red-700 flex items-center gap-1.5"
-                        >
-                          <svg
-                            class="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            ><path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            ></path></svg
-                          > Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                {/each}
-              </tbody>
-            </table>
-          </div>
-
-          {#if totalPages > 1}
-            <div class="p-4 border-t border-gray-100 bg-gray-50/50">
-              <div class="flex items-center justify-between gap-4">
-                <!-- Items per page selector -->
-                <div class="flex items-center gap-2">
-                  <span class="text-sm text-gray-500"
-                    >{$_("admin_content.pagination.items_per_page")}</span
-                  >
-                  <select
-                    bind:value={itemsPerPage}
-                    onchange={() => handleItemsPerPageChange(itemsPerPage)}
-                    class="bg-white border border-gray-200 text-sm font-medium text-gray-700 rounded-lg pl-3 pr-8 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer"
-                  >
-                    {#each itemsPerPageOptions as option}
-                      <option value={option}>{option}</option>
-                    {/each}
-                  </select>
                 </div>
+              {:else}
+                <span class="text-sm text-gray-500 font-medium"
+                  >{getAttributeValue(item, attr.key)}</span
+                >
+              {/if}
+            {/snippet}
 
-                <!-- Pagination info -->
-                <div class="text-sm text-gray-500 hidden sm:block">
-                  {$_("admin_content.pagination.showing", {
-                    values: {
-                      start: formatNumber(paginationInfoDerived.start, $locale),
-                      end: formatNumber(paginationInfoDerived.end, $locale),
-                      total: formatNumber(paginationInfoDerived.total, $locale),
-                    },
-                  })}
-                </div>
+            {#snippet actions({ item })}
+              {#if item.resource_type === "folder"}
+                <button
+                  onclick={(e) => {
+                    e.stopPropagation();
+                    handleItemClick(item);
+                  }}
+                  class="text-[12px] font-semibold text-indigo-500 hover:text-indigo-700 flex items-center gap-1.5"
+                >
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    ><path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+                    ></path></svg
+                  > Open
+                </button>
+              {:else}
+                <button
+                  onclick={(e) => {
+                    e.stopPropagation();
+                    handleItemClick(item);
+                  }}
+                  class="text-[12px] font-semibold text-indigo-500 hover:text-indigo-700 flex items-center gap-1.5"
+                >
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    ><path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    ></path><path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                    ></path></svg
+                  > View
+                </button>
+              {/if}
+              <button
+                onclick={(e) => openDeleteDialog(item, e)}
+                class="text-[12px] font-semibold text-red-500 hover:text-red-700 flex items-center gap-1.5"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  ><path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  ></path></svg
+                > Delete
+              </button>
+            {/snippet}
 
-                <!-- Pagination controls -->
-                <div class="flex items-center gap-2">
-                  <button
-                    onclick={previousPage}
-                    disabled={currentPage === 1}
-                    class="p-2 bg-white border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-indigo-600 hover:border-indigo-200 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                    aria-label={$_("admin_content.pagination.previous")}
+            {#snippet bulkActions({ selectedCount })}
+              <button
+                onclick={clearSelection}
+                class="bulk-btn bulk-btn-secondary"
+                disabled={isBulkDeleting}
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+                {$_("admin_content.bulk_actions.clear_selection")}
+              </button>
+              <button
+                onclick={() => openBulkEditModal()}
+                class="bulk-btn bulk-btn-primary"
+                disabled={isBulkDeleting}
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                  />
+                </svg>
+                {$_("admin_content.bulk_actions.edit")}
+              </button>
+              <button
+                onclick={() => (showBulkTrashConfirm = true)}
+                class="bulk-btn bulk-btn-warning"
+                disabled={isBulkDeleting}
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
+                </svg>
+                {$_("admin_content.bulk_actions.trash")}
+              </button>
+              <button
+                onclick={() => (showBulkDeleteConfirm = true)}
+                class="bulk-btn bulk-btn-danger"
+                disabled={isBulkDeleting}
+              >
+                {#if isBulkDeleting}
+                  <div
+                    class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
+                  ></div>
+                  {$_("admin_content.bulk_actions.deleting")}
+                {:else}
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    <svg
-                      class="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M15 19l-7-7 7-7"
-                      />
-                    </svg>
-                  </button>
-
-                  <div class="flex items-center gap-1">
-                    {#if totalPages <= 7}
-                      {#each Array(totalPages) as _, index}
-                        <button
-                          class="w-8 h-8 rounded-lg text-sm font-medium transition-all {currentPage ===
-                          index + 1
-                            ? 'bg-indigo-500 text-white'
-                            : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-indigo-600'}"
-                          onclick={() => goToPage(index + 1)}
-                        >
-                          {formatNumber(index + 1, $locale)}
-                        </button>
-                      {/each}
-                    {:else}
-                      <button
-                        class="w-8 h-8 rounded-lg text-sm font-medium transition-all {currentPage ===
-                        1
-                          ? 'bg-indigo-500 text-white'
-                          : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}"
-                        onclick={() => goToPage(1)}
-                      >
-                        {formatNumber(1, $locale)}
-                      </button>
-
-                      {#if currentPage > 3}
-                        <span class="px-1 text-gray-400">...</span>
-                      {/if}
-
-                      {#each Array(totalPages) as _, index}
-                        {#if index + 1 > 1 && index + 1 < totalPages && Math.abs(currentPage - (index + 1)) <= 1}
-                          <button
-                            class="w-8 h-8 rounded-lg text-sm font-medium transition-all {currentPage ===
-                            index + 1
-                              ? 'bg-indigo-500 text-white'
-                              : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}"
-                            onclick={() => goToPage(index + 1)}
-                          >
-                            {formatNumber(index + 1, $locale)}
-                          </button>
-                        {/if}
-                      {/each}
-
-                      {#if currentPage < totalPages - 2}
-                        <span class="px-1 text-gray-400">...</span>
-                      {/if}
-
-                      <button
-                        class="w-8 h-8 rounded-lg text-sm font-medium transition-all {currentPage ===
-                        totalPages
-                          ? 'bg-indigo-500 text-white'
-                          : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}"
-                        onclick={() => goToPage(totalPages)}
-                      >
-                        {formatNumber(totalPages, $locale)}
-                      </button>
-                    {/if}
-                  </div>
-
-                  <button
-                    onclick={nextPage}
-                    disabled={currentPage === totalPages}
-                    class="p-2 bg-white border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-indigo-600 hover:border-indigo-200 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                    aria-label={$_("admin_content.pagination.next")}
-                  >
-                    <svg
-                      class="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-          {:else if displayedContents.length > 0}
-            <div class="p-4 border-t border-gray-100 bg-gray-50/50">
-              <div class="flex items-center justify-between gap-4">
-                <!-- Items per page selector (single page) -->
-                <div class="flex items-center gap-2">
-                  <span class="text-sm text-gray-500"
-                    >{$_("admin_content.pagination.items_per_page")}</span
-                  >
-                  <select
-                    bind:value={itemsPerPage}
-                    onchange={() => handleItemsPerPageChange(itemsPerPage)}
-                    class="bg-white border border-gray-200 text-sm font-medium text-gray-700 rounded-lg pl-3 pr-8 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer"
-                  >
-                    {#each itemsPerPageOptions as option}
-                      <option value={option}>{option}</option>
-                    {/each}
-                  </select>
-                </div>
-
-                <div class="text-sm text-gray-500">
-                  {$_("admin_content.pagination.total_items", {
-                    values: { total: formatNumber(totalItemsDerived, $locale) },
-                  })}
-                </div>
-              </div>
-            </div>
-          {/if}
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                  {$_("admin_content.bulk_actions.delete")}
+                {/if}
+              </button>
+            {/snippet}
+          </DataTable>
         {/if}
       </div>
     {/if}
@@ -2976,6 +2790,7 @@
             bind:content={folderContent}
             space_name={spaceName}
             on:submit={handleSaveFolder}
+            fullWidth={true}
           />
         </div>
       </div>

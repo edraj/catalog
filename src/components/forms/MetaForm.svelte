@@ -396,6 +396,9 @@
   .form-card-full {
     max-width: 100%;
     margin: 0;
+    padding: 0;
+    border: none;
+    box-shadow: none;
   }
 
   .form-container {

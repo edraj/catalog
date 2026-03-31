@@ -171,6 +171,7 @@
     "_val": "Actions",
     "back_to_contents": "العودة إلى المحتويات",
     "go_back": "العودة",
+    "name": "Actions",
     "open": "فتح",
     "view": "عرض",
     "visit": "Visit"
@@ -291,6 +292,7 @@
       "placeholder": "Search by name, description or owner..."
     },
     "status": {
+      "name": "Status",
       "active": "Active",
       "inactive": "Inactive"
     },
@@ -1879,6 +1881,9 @@
   "user_management": "User Management",
   "user_permissions_management": "User Permissions Management",
   "users_overview": "Users Overview",
+  "create_user": "Create User",
+  "user_created_successfully": "User created successfully!",
+  "failed_to_create_user": "Failed to create user.",
   "users_without_roles": "Users Without Roles",
   "validation": {
     "index_attributes_required": "Index attributes is required",

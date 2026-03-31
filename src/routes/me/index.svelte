@@ -51,8 +51,8 @@
 
   onMount(async () => {
     isLoading.set(true);
-
-    user.set(await getProfile());
+    const u = await getProfile()
+    user.set(u);
     const currentUser = $user;
 
     displayname.set(currentUser?.attributes?.displayname?.[$locale] ?? "");
@@ -76,14 +76,19 @@
       const response = await getSpaceSchema("management", "managed");
 
       if (response?.status === "success" && response?.records) {
-        const userSchemaRecord = response.records.find(
-          (record) => record.shortname === "user",
-        );
+        const currentUser: any = $user;
+        const schemaShortname = currentUser?.attributes?.payload?.schema_shortname;
+
+        let userSchemaRecord;
+        if (schemaShortname) {
+          userSchemaRecord = response.records.find(
+            (record) => record.shortname === schemaShortname,
+          );
+        }
 
         if (userSchemaRecord && userSchemaRecord.attributes?.payload?.body) {
           userSchema.set(userSchemaRecord.attributes.payload.body);
 
-          const currentUser = $user;
           const existingProfileData =
             currentUser?.attributes?.payload?.body || {};
           profileData.set(existingProfileData);

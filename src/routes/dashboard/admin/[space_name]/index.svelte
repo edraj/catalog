@@ -977,6 +977,7 @@
       bind:formData={metaContent}
       bind:validateFn={validateMetaForm}
       isCreate={!isEditMode}
+      fullWidth={true}
     />
   </div>
 
@@ -993,6 +994,7 @@
       bind:content={folderContent}
       space_name={spaceName}
       on:foo={handleSaveFolder}
+      fullWidth={true}
     />
   </div>
 

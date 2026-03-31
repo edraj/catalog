@@ -171,6 +171,7 @@
     "_val": "الإجراءات",
     "back_to_contents": "العودة إلى المحتويات",
     "go_back": "العودة",
+    "name": "الإجراءات",
     "open": "فتح",
     "view": "عرض",
     "visit": "زيارة"
@@ -291,6 +292,7 @@
       "placeholder": "البحث بالاسم أو الوصف أو المالك..."
     },
     "status": {
+      "name": "الحالة",
       "active": "نشط",
       "inactive": "غير نشط"
     },
@@ -1675,6 +1677,7 @@
   "statistics": "الإحصائيات",
   "status": {
     "_val": "الحالة",
+    "name": "الحالة",
     "active": "نشط",
     "inactive": "غير نشط"
   },
@@ -1832,6 +1835,9 @@
   "user_management": "إدارة المستخدمين",
   "user_permissions_management": "إدارة صلاحيات المستخدمين",
   "users_overview": "نظرة عامة على المستخدمين",
+  "create_user": "إنشاء مستخدم",
+  "user_created_successfully": "تم إنشاء المستخدم بنجاح!",
+  "failed_to_create_user": "فشل إنشاء المستخدم.",
   "users_without_roles": "المستخدمون بدون أدوار",
   "validation": {
     "index_attributes_required": "سمات الفهرس مطلوبة",

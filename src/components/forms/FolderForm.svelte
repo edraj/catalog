@@ -8,9 +8,11 @@
   let {
     content = $bindable({}),
     space_name = $bindable(""),
+    fullWidth = false,
   }: {
     content: any;
     space_name: any;
+    fullWidth?: boolean;
   } = $props();
 
   content = {
@@ -152,7 +154,7 @@
   }
 </script>
 
-<div class="editor-card">
+<div class="editor-card" class:editor-card-full={fullWidth}>
   <h2 class="editor-title">{$_("editor.title")}</h2>
 
   <div class="editor-content">
@@ -295,6 +297,14 @@
     margin: 0.5rem auto;
     padding: 1.5rem;
     border: 1px solid #e5e7eb;
+  }
+
+  .editor-card-full {
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    border: none;
+    box-shadow: none;
   }
 
   .editor-title {

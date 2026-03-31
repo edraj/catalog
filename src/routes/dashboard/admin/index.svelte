@@ -1334,6 +1334,7 @@
     bind:formData={metaContent}
     bind:validateFn={validateMetaForm}
     isCreate={true}
+    fullWidth={true}
   />
 
   {#if createError}
@@ -1382,6 +1383,7 @@
     bind:formData={editMetaContent}
     bind:validateFn={validateEditMetaForm}
     isCreate={false}
+    fullWidth={true}
   />
 
   <div class="form-group mt-4">
