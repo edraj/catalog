@@ -103,39 +103,39 @@
                 {#if isTranslationsOpen}
                     <div class="accordion-content">
                         <!-- Display Names -->
-                        <div class="field-group">
-                            <label class="field-label">Display Name</label>
-                            <div class="translation-grid">
+                        <div class="field-group horizontal">
+                            <label class="field-label mini">Display Name</label>
+                            <div class="translation-grid flex">
                                 <div class="translation-item">
-                                    <label for="displayname-en" class="translation-label">English</label>
-                                    <input id="displayname-en" class="input-field" bind:value={formData.displayname.en} />
+                                    <span class="lang-badge">EN</span>
+                                    <input id="displayname-en" class="input-field compact" bind:value={formData.displayname.en} />
                                 </div>
                                 <div class="translation-item">
-                                    <label for="displayname-ar" class="translation-label">Arabic</label>
-                                    <input id="displayname-ar" class="input-field" bind:value={formData.displayname.ar} />
+                                    <span class="lang-badge">AR</span>
+                                    <input id="displayname-ar" class="input-field compact" bind:value={formData.displayname.ar} />
                                 </div>
                                 <div class="translation-item">
-                                    <label for="displayname-ku" class="translation-label">Kurdish</label>
-                                    <input id="displayname-ku" class="input-field" bind:value={formData.displayname.ku} />
+                                    <span class="lang-badge">KU</span>
+                                    <input id="displayname-ku" class="input-field compact" bind:value={formData.displayname.ku} />
                                 </div>
                             </div>
                         </div>
 
                         <!-- Descriptions -->
-                        <div class="field-group">
-                            <label class="field-label">Description</label>
-                            <div class="translation-grid">
+                        <div class="field-group horizontal">
+                            <label class="field-label mini">Description</label>
+                            <div class="translation-grid flex">
                                 <div class="translation-item">
-                                    <label for="description-en" class="translation-label">English</label>
-                                    <textarea id="description-en" class="textarea-field" bind:value={formData.description.en} rows="3"></textarea>
+                                    <span class="lang-badge">EN</span>
+                                    <textarea id="description-en" class="textarea-field compact" bind:value={formData.description.en} rows="1"></textarea>
                                 </div>
                                 <div class="translation-item">
-                                    <label for="description-ar" class="translation-label">Arabic</label>
-                                    <textarea id="description-ar" class="textarea-field" bind:value={formData.description.ar} rows="3"></textarea>
+                                    <span class="lang-badge">AR</span>
+                                    <textarea id="description-ar" class="textarea-field compact" bind:value={formData.description.ar} rows="1"></textarea>
                                 </div>
                                 <div class="translation-item">
-                                    <label for="description-ku" class="translation-label">Kurdish</label>
-                                    <textarea id="description-ku" class="textarea-field" bind:value={formData.description.ku} rows="3"></textarea>
+                                    <span class="lang-badge">KU</span>
+                                    <textarea id="description-ku" class="textarea-field compact" bind:value={formData.description.ku} rows="1"></textarea>
                                 </div>
                             </div>
                         </div>
@@ -173,7 +173,7 @@
     }
 
     .section-title {
-        font-size: 1.25rem;
+        font-size: 1.125rem;
         font-weight: 700;
         color: #111827;
         margin: 0;
@@ -182,13 +182,19 @@
     .form-body {
         display: flex;
         flex-direction: column;
-        gap: 1.25rem;
+        gap: 0.75rem;
     }
 
     .field-group {
         display: flex;
         flex-direction: column;
-        gap: 0.375rem;
+        gap: 0.25rem;
+    }
+
+    .field-group.horizontal {
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 1rem;
     }
 
     .field-label {
@@ -197,6 +203,12 @@
         color: #374151;
         display: flex;
         align-items: center;
+        min-width: 120px;
+    }
+
+    .field-label.mini {
+        min-width: 100px;
+        padding-top: 0.5rem;
     }
 
     .required {
@@ -207,13 +219,17 @@
 
     .input-field {
         width: 100%;
-        padding: 0.5rem 0.75rem;
+        padding: 0.375rem 0.625rem;
         border: 1.5px solid #e5e7eb;
-        border-radius: 8px;
-        font-size: 0.875rem;
+        border-radius: 6px;
+        font-size: 0.8125rem;
         background: #fdfdfd;
         color: #111827;
         transition: all 0.2s ease;
+    }
+
+    .input-field.compact {
+        padding: 0.25rem 0.5rem;
     }
 
     .input-field:focus {
@@ -241,14 +257,19 @@
 
     .textarea-field {
         width: 100%;
-        padding: 0.5rem 0.75rem;
+        padding: 0.375rem 0.625rem;
         border: 1.5px solid #e5e7eb;
-        border-radius: 8px;
-        font-size: 0.875rem;
+        border-radius: 6px;
+        font-size: 0.8125rem;
         background: #fdfdfd;
         color: #111827;
         resize: vertical;
-        min-height: 80px;
+        min-height: 40px;
+    }
+
+    .textarea-field.compact {
+        padding: 0.25rem 0.5rem;
+        min-height: 32px;
     }
 
     .textarea-field:focus {
@@ -259,7 +280,7 @@
     }
 
     .field-help {
-        font-size: 0.75rem;
+        font-size: 0.7125rem;
         color: #6b7280;
     }
 
@@ -267,18 +288,19 @@
         display: flex;
         align-items: center;
         gap: 0.5rem;
+        padding: 0.25rem 0;
     }
 
     .checkbox {
-        width: 1rem;
-        height: 1rem;
+        width: 0.875rem;
+        height: 0.875rem;
         border: 1.5px solid #d1d5db;
-        border-radius: 4px;
+        border-radius: 3px;
         cursor: pointer;
     }
 
     .checkbox-label {
-        font-size: 0.875rem;
+        font-size: 0.8125rem;
         color: #4b5563;
         font-weight: 500;
         cursor: pointer;
@@ -286,7 +308,7 @@
 
     .accordion {
         border: 1px solid #e5e7eb;
-        border-radius: 10px;
+        border-radius: 8px;
         overflow: hidden;
         margin-top: 0.25rem;
         background: #fafaf9;
@@ -294,7 +316,7 @@
 
     .accordion-header {
         width: 100%;
-        padding: 0.75rem 1rem;
+        padding: 0.5rem 0.75rem;
         background-color: transparent;
         border: none;
         display: flex;
@@ -311,12 +333,12 @@
     .accordion-title {
         font-weight: 600;
         color: #374151;
-        font-size: 0.875rem;
+        font-size: 0.8125rem;
     }
 
     .accordion-icon {
-        width: 1.125rem;
-        height: 1.125rem;
+        width: 1rem;
+        height: 1rem;
         color: #9ca3af;
         transition: transform 0.2s ease;
     }
@@ -327,35 +349,41 @@
     }
 
     .accordion-content {
-        padding: 1.25rem;
+        padding: 0.75rem 1rem;
         background-color: white;
         border-top: 1px solid #e5e7eb;
         display: flex;
         flex-direction: column;
-        gap: 1.25rem;
+        gap: 0.75rem;
     }
 
-    .translation-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
-
-    @media (min-width: 768px) {
-        .translation-grid {
-            grid-template-columns: repeat(3, 1fr);
-        }
+    .translation-grid.flex {
+        display: flex;
+        flex: 1;
+        gap: 0.75rem;
+        flex-wrap: wrap;
     }
 
     .translation-item {
         display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
+        align-items: center;
+        gap: 0.375rem;
+        flex: 1;
+        min-width: 150px;
     }
 
-    .translation-label {
-        font-size: 0.75rem;
+    .lang-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 28px;
+        height: 24px;
+        padding: 0 6px;
+        background: #f3f4f6;
         color: #6b7280;
-        font-weight: 500;
+        font-size: 10px;
+        font-weight: 700;
+        border-radius: 4px;
+        border: 1px solid #e5e7eb;
     }
 </style>

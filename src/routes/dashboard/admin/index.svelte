@@ -1140,7 +1140,7 @@
                 <tbody class="divide-y divide-gray-50">
                   {#each displayedSpaces as space}
                     <tr
-                      class="group cursor-pointer hover:bg-gray-50/50 transition-colors"
+                      class="group cursor-pointer hover:bg-yellow-50 transition-colors"
                       onclick={() => handleRecordClick(space)}
                       role="button"
                       tabindex="0"
@@ -1180,11 +1180,6 @@
                               class="text-[11px] text-gray-400 truncate mt-0.5"
                             >
                               {getDescription(space)}
-                            </div>
-                            <div
-                              class="text-[11px] text-indigo-500 truncate mt-0.5"
-                            >
-                              {space.shortname}
                             </div>
                           </div>
                         </div>

@@ -947,7 +947,7 @@
   placement="center"
   autoclose={false}
 >
-  <div class="space-y-4 max-h-[60vh] overflow-y-auto">
+  <div class="space-y-4 max-h-[75vh] overflow-y-auto p-4">
     <MetaForm
       bind:formData={metaContent}
       bind:validateFn={validateMetaForm}
@@ -1287,7 +1287,7 @@
 
   .header-cell,
   .cell {
-    padding: 16px;
+    padding: 10px 16px;
     display: flex;
     align-items: center;
   }

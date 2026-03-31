@@ -777,11 +777,10 @@
       indexAttributes.some((attr) => attr && Object.keys(attr).length > 0)
         ? indexAttributes
         : [
-            { key: "shortname", name: "Shortname" },
-            { key: "schema_shortname", name: "Schema" },
             { key: "status", name: "Status" },
             { key: "created_at", name: "Created At" },
             { key: "updated_at", name: "Updated At" },
+            { key: "author", name: "Author" },
           ];
 
     const initialData: Record<string, any> = {};
@@ -2428,26 +2427,7 @@
                   <tr class="bulk-edit-row">
                     {#each effectiveColumns as attr, colIndex (attr.key)}
                       <td class="bulk-edit-td">
-                        {#if attr.key === "shortname"}
-                          <!-- Shortname (editable) -->
-                          <div class="flex items-center gap-2">
-                            <span class="text-lg"
-                              >{item ? getItemIcon(item) : "📋"}</span
-                            >
-                            <input
-                              type="text"
-                              value={editData.new_shortname || shortname}
-                              oninput={(e) =>
-                                updateBulkEditField(
-                                  shortname,
-                                  "new_shortname",
-                                  e.currentTarget.value,
-                                )}
-                              class="bulk-edit-input"
-                              placeholder="Shortname"
-                            />
-                          </div>
-                        {:else if attr.key === "status"}
+                        {#if attr.key === "status"}
                           <!-- Status Toggle -->
                           <label class="status-toggle">
                             <input

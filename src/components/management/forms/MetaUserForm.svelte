@@ -266,10 +266,10 @@
                 />
             </div>
 
-            <div class="checkbox-row">
+            <div class="checkbox-row compact">
                 <div class="checkbox-group">
                     <input type="checkbox" id="force_password_change" class="checkbox" bind:checked={formData.force_password_change} />
-                    <label for="force_password_change" class="checkbox-label">Force Password Change</label>
+                    <label for="force_password_change" class="checkbox-label">Force Change</label>
                 </div>
                 <div class="checkbox-group">
                     <input type="checkbox" id="is_email_verified" class="checkbox" bind:checked={formData.is_email_verified} />
@@ -277,7 +277,7 @@
                 </div>
                 <div class="checkbox-group">
                     <input type="checkbox" id="is_msisdn_verified" class="checkbox" bind:checked={formData.is_msisdn_verified} />
-                    <label for="is_msisdn_verified" class="checkbox-label">Phone Number Verified</label>
+                    <label for="is_msisdn_verified" class="checkbox-label">Phone Verified</label>
                 </div>
             </div>
 
@@ -593,7 +593,7 @@
     }
 
     .checkbox-label {
-        font-size: 0.875rem;
+        font-size: 0.8125rem;
         color: #4b5563;
         font-weight: 500;
         cursor: pointer;

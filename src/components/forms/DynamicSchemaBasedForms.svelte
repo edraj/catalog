@@ -390,14 +390,8 @@
 
 <style>
   .form-container {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 24px;
-    background: #ffffff;
-    border-radius: 12px;
-    box-shadow:
-      0 4px 6px -1px rgba(0, 0, 0, 0.1),
-      0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    width: 100%;
+    padding: 24px 0;
   }
 
   .form-header {

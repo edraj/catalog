@@ -851,7 +851,7 @@
         <div class="flex items-center gap-3">
           <button
             onclick={() => showEditModal.set(true)}
-            class="bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 px-4 py-2 rounded-xl font-medium transition-colors shadow-sm flex items-center gap-2"
+            class="bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 px-3 py-1.5 rounded-xl font-medium transition-colors shadow-sm flex items-center gap-2"
           >
             <svg
               class="w-4 h-4 text-gray-500"
@@ -870,7 +870,7 @@
           </button>
           <button
             onclick={handleDeleteItem}
-            class="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-xl font-medium transition-colors shadow-sm flex items-center gap-2"
+            class="bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded-xl font-medium transition-colors shadow-sm flex items-center gap-2"
           >
             <svg
               class="w-4 h-4"
@@ -1116,7 +1116,7 @@
                 <div class="flex items-center gap-6 mb-6">
                   <button
                     onclick={handleReaction}
-                    class="flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-200 {userReactionEntry
+                    class="flex items-center gap-2 px-3 py-1.5 rounded-xl font-medium transition-all duration-200 {userReactionEntry
                       ? 'bg-red-50 text-red-600'
                       : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}"
                   >
@@ -1282,35 +1282,35 @@
                     <tbody class="bg-white divide-y divide-gray-100">
                       <tr>
                         <td
-                          class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50/50 w-1/4"
+                          class="px-3 py-1.5 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50/50 w-1/4"
                           class:text-right={$isRTL}
                           >{$_("admin_item_detail.fields.uuid")}</td
                         >
                         <td
-                          class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono"
+                          class="px-3 py-1.5 whitespace-nowrap text-sm text-gray-500 font-mono"
                           class:text-right={$isRTL}>{itemDataValue.uuid}</td
                         >
                       </tr>
                       <tr>
                         <td
-                          class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50/50"
+                          class="px-3 py-1.5 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50/50"
                           class:text-right={$isRTL}
                           >{$_("admin_item_detail.fields.shortname")}</td
                         >
                         <td
-                          class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                          class="px-3 py-1.5 whitespace-nowrap text-sm text-gray-500"
                           class:text-right={$isRTL}
                           >{itemDataValue.shortname}</td
                         >
                       </tr>
                       <tr>
                         <td
-                          class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50/50"
+                          class="px-3 py-1.5 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50/50"
                           class:text-right={$isRTL}
                           >{$_("admin_item_detail.fields.display_name")}</td
                         >
                         <td
-                          class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                          class="px-3 py-1.5 whitespace-nowrap text-sm text-gray-500"
                           class:text-right={$isRTL}
                         >
                           {#if itemDataValue.displayname}
@@ -1338,12 +1338,12 @@
                       </tr>
                       <tr>
                         <td
-                          class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50/50"
+                          class="px-3 py-1.5 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50/50"
                           class:text-right={$isRTL}
                           >{$_("admin_item_detail.fields.description")}</td
                         >
                         <td
-                          class="px-6 py-4 text-sm text-gray-500"
+                          class="px-3 py-1.5 text-sm text-gray-500"
                           class:text-right={$isRTL}
                         >
                           {#if itemDataValue.description}
@@ -1374,12 +1374,12 @@
                       </tr>
                       <tr>
                         <td
-                          class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50/50"
+                          class="px-3 py-1.5 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50/50"
                           class:text-right={$isRTL}
                           >{$_("admin_item_detail.fields.status")}</td
                         >
                         <td
-                          class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                          class="px-3 py-1.5 whitespace-nowrap text-sm text-gray-500"
                           class:text-right={$isRTL}
                         >
                           <span
@@ -1403,12 +1403,12 @@
                       </tr>
                       <tr>
                         <td
-                          class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50/50"
+                          class="px-3 py-1.5 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50/50"
                           class:text-right={$isRTL}
                           >{$_("admin_item_detail.fields.tags")}</td
                         >
                         <td
-                          class="px-6 py-4 text-sm text-gray-500"
+                          class="px-3 py-1.5 text-sm text-gray-500"
                           class:text-right={$isRTL}
                         >
                           {#if itemDataValue.tags && itemDataValue.tags.length > 0}
@@ -1434,36 +1434,36 @@
                       </tr>
                       <tr>
                         <td
-                          class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50/50"
+                          class="px-3 py-1.5 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50/50"
                           class:text-right={$isRTL}
                           >{$_("admin_item_detail.fields.owner")}</td
                         >
                         <td
-                          class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                          class="px-3 py-1.5 whitespace-nowrap text-sm text-gray-500"
                           class:text-right={$isRTL}
                           >{itemDataValue.owner_shortname}</td
                         >
                       </tr>
                       <tr>
                         <td
-                          class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50/50"
+                          class="px-3 py-1.5 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50/50"
                           class:text-right={$isRTL}
                           >{$_("admin_item_detail.fields.created")}</td
                         >
                         <td
-                          class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                          class="px-3 py-1.5 whitespace-nowrap text-sm text-gray-500"
                           class:text-right={$isRTL}
                           >{formatDate(itemDataValue.created_at)}</td
                         >
                       </tr>
                       <tr>
                         <td
-                          class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50/50"
+                          class="px-3 py-1.5 whitespace-nowrap text-sm font-medium text-gray-900 bg-gray-50/50"
                           class:text-right={$isRTL}
                           >{$_("admin_item_detail.fields.updated")}</td
                         >
                         <td
-                          class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                          class="px-3 py-1.5 whitespace-nowrap text-sm text-gray-500"
                           class:text-right={$isRTL}
                           >{formatDate(itemDataValue.updated_at)}</td
                         >
@@ -1489,7 +1489,7 @@
                 </h3>
                 <button
                   onclick={() => showRelationshipModal.set(true)}
-                  class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl font-medium transition-colors shadow-sm flex items-center gap-2"
+                  class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-xl font-medium transition-colors shadow-sm flex items-center gap-2"
                 >
                   <PlusOutline class="w-4 h-4" />
                   {$_("admin_item_detail.relationships.manage")}
@@ -1547,7 +1547,7 @@
                       {#each itemDataValue.relationships as relationship}
                         <tr>
                           <td
-                            class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
+                            class="px-3 py-1.5 whitespace-nowrap text-sm font-medium text-gray-900"
                             class:text-right={$isRTL}
                           >
                             <span
@@ -1558,14 +1558,14 @@
                             </span>
                           </td>
                           <td
-                            class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                            class="px-3 py-1.5 whitespace-nowrap text-sm text-gray-500"
                             class:text-right={$isRTL}
                           >
                             {relationship.related_to?.shortname ||
                               $_("common.not_available")}
                           </td>
                           <td
-                            class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                            class="px-3 py-1.5 whitespace-nowrap text-sm text-gray-500"
                             class:text-right={$isRTL}
                           >
                             <span
@@ -1577,14 +1577,14 @@
                             </span>
                           </td>
                           <td
-                            class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                            class="px-3 py-1.5 whitespace-nowrap text-sm text-gray-500"
                             class:text-right={$isRTL}
                           >
                             {relationship.related_to?.space_name ||
                               $_("common.not_available")}
                           </td>
                           <td
-                            class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono"
+                            class="px-3 py-1.5 whitespace-nowrap text-sm text-gray-500 font-mono"
                             class:text-right={$isRTL}
                           >
                             {relationship.related_to?.uuid ||
@@ -1639,7 +1639,7 @@
                 >
                   <button
                     onclick={() => showAttachmentModal.set(true)}
-                    class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl font-medium transition-colors shadow-sm flex items-center gap-2"
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-xl font-medium transition-colors shadow-sm flex items-center gap-2"
                   >
                     <PlusOutline class="w-4 h-4" />
                     {$_("admin_item_detail.attachments.upload")}
@@ -1655,7 +1655,7 @@
                       class="bg-white border border-gray-100 rounded-2xl overflow-hidden"
                     >
                       <div
-                        class="bg-gray-50/50 px-6 py-4 border-b border-gray-100"
+                        class="bg-gray-50/50 px-3 py-1.5 border-b border-gray-100"
                       >
                         <h4
                           class="text-md font-medium text-gray-800 capitalize flex items-center gap-2"
@@ -2167,25 +2167,25 @@
                       {#each authorRelatedEntriesValue as entry}
                         <tr>
                           <td
-                            class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
+                            class="px-3 py-1.5 whitespace-nowrap text-sm font-medium text-gray-900"
                             class:text-right={$isRTL}
                           >
                             {entry.shortname}
                           </td>
                           <td
-                            class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                            class="px-3 py-1.5 whitespace-nowrap text-sm text-gray-500"
                             class:text-right={$isRTL}
                           >
                             {getDisplayName(entry)}
                           </td>
                           <td
-                            class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                            class="px-3 py-1.5 whitespace-nowrap text-sm text-gray-500"
                             class:text-right={$isRTL}
                           >
                             {entry.space_name || $_("common.not_available")}
                           </td>
                           <td
-                            class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                            class="px-3 py-1.5 whitespace-nowrap text-sm text-gray-500"
                             class:text-right={$isRTL}
                           >
                             <span
@@ -2195,7 +2195,7 @@
                             </span>
                           </td>
                           <td
-                            class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                            class="px-3 py-1.5 whitespace-nowrap text-sm text-gray-500"
                             class:text-right={$isRTL}
                           >
                             <span
@@ -2217,7 +2217,7 @@
                             </span>
                           </td>
                           <td
-                            class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                            class="px-3 py-1.5 whitespace-nowrap text-sm text-gray-500"
                             class:text-right={$isRTL}
                           >
                             {formatDate(entry.created_at)}
@@ -2334,7 +2334,7 @@
       <div class="modal-content">
         <form class="modal-form" onsubmit={handleUpdateItem}>
           <div class="form-grid-vertical">
-            <!-- Display Name Section -->
+            <!-- Display Name Row: 3 columns (EN, AR, KU) -->
             <div class="form-section">
               <label class="form-label section-label" class:text-right={$isRTL}>
                 <svg
@@ -2352,8 +2352,8 @@
                 </svg>
                 {$_("admin_item_detail.edit_modal.fields.displayname")}
               </label>
-              <div class="localized-inputs">
-                <div class="localized-field">
+              <div class="localized-inputs-3col">
+                <div class="localized-field-col">
                   <span class="lang-badge">EN</span>
                   <input
                     type="text"
@@ -2362,7 +2362,7 @@
                     placeholder="English display name"
                   />
                 </div>
-                <div class="localized-field">
+                <div class="localized-field-col">
                   <span class="lang-badge">AR</span>
                   <input
                     type="text"
@@ -2371,7 +2371,7 @@
                     placeholder="Arabic display name"
                   />
                 </div>
-                <div class="localized-field">
+                <div class="localized-field-col">
                   <span class="lang-badge">KU</span>
                   <input
                     type="text"
@@ -2383,7 +2383,7 @@
               </div>
             </div>
 
-            <!-- Description Section -->
+            <!-- Description Row: 3 columns (EN, AR, KU) -->
             <div class="form-section">
               <label class="form-label section-label" class:text-right={$isRTL}>
                 <svg
@@ -2401,8 +2401,8 @@
                 </svg>
                 {$_("admin_item_detail.edit_modal.fields.description")}
               </label>
-              <div class="localized-inputs">
-                <div class="localized-field">
+              <div class="localized-inputs-3col">
+                <div class="localized-field-col">
                   <span class="lang-badge">EN</span>
                   <textarea
                     bind:value={editFormValue.description.en}
@@ -2411,7 +2411,7 @@
                     rows="2"
                   ></textarea>
                 </div>
-                <div class="localized-field">
+                <div class="localized-field-col">
                   <span class="lang-badge">AR</span>
                   <textarea
                     bind:value={editFormValue.description.ar}
@@ -2420,7 +2420,7 @@
                     rows="2"
                   ></textarea>
                 </div>
-                <div class="localized-field">
+                <div class="localized-field-col">
                   <span class="lang-badge">KU</span>
                   <textarea
                     bind:value={editFormValue.description.ku}
@@ -2591,7 +2591,7 @@
                         <p class="mt-2">Loading schema...</p>
                       </div>
                     {:else if selectedDynamicSchema}
-                      <div class="schema-form-wrapper bg-white rounded-lg shadow-sm border border-gray-100 p-4 mb-4">
+                      <div class="schema-form-wrapper">
                         <div class="schema-info-bar mb-4 pb-2 border-b border-gray-100">
                           <span class="schema-label font-medium text-gray-500">Schema:</span>
                           <span class="schema-name font-semibold text-gray-900 ml-2">{selectedDynamicSchema.title}</span>
@@ -2739,7 +2739,7 @@
       onclick={(e) => e.stopPropagation()}
     >
       <!-- Modal Header -->
-      <div class="bg-red-50 px-6 py-4 border-b border-red-100 rounded-t-2xl">
+      <div class="bg-red-50 px-3 py-1.5 border-b border-red-100 rounded-t-2xl">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
             <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2780,18 +2780,18 @@
       </div>
 
       <!-- Modal Footer -->
-      <div class="px-6 py-4 bg-gray-50 rounded-b-2xl flex justify-end gap-3">
+      <div class="px-3 py-1.5 bg-gray-50 rounded-b-2xl flex justify-end gap-3">
         <button
           onclick={() => showDeleteModal.set(false)}
           disabled={$isDeleting}
-          class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-xl font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+          class="px-3 py-1.5 text-gray-700 bg-white border border-gray-300 rounded-xl font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
         >
           {$_("common.cancel")}
         </button>
         <button
           onclick={confirmDeleteItem}
           disabled={$isDeleting}
-          class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50"
+          class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50"
         >
           {#if $isDeleting}
             <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -3050,7 +3050,7 @@
 
   .modal-header {
     background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-    padding: 2rem;
+    padding: 0.6rem 1.5rem;
     color: white;
   }
 
@@ -3061,7 +3061,7 @@
   }
 
   .modal-title {
-    font-size: 1.5rem;
+    font-size: 1.125rem;
     font-weight: 700;
     margin: 0;
   }
@@ -3071,7 +3071,7 @@
     border: none;
     color: rgba(255, 255, 255, 0.8);
     border-radius: 50%;
-    padding: 0.5rem;
+    padding: 0.35rem;
     cursor: pointer;
     transition: all 0.2s ease;
   }
@@ -3088,11 +3088,11 @@
 
   .modal-content {
     overflow-y: auto;
-    max-height: calc(90vh - 140px);
+    max-height: calc(90vh - 60px);
   }
 
   .modal-form {
-    padding: 2rem;
+    padding: 1.25rem 1.5rem;
   }
 
   .form-grid {
@@ -3263,13 +3263,11 @@
   .editor-container {
     border: 2px solid #e5e7eb;
     border-radius: 0.75rem;
-    overflow: hidden;
     background: white;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     transition: border-color 0.2s ease;
-    height: 500px; /* Increased from 600px with max-height 500px */
-    min-height: 500px;
-    overflow-y: auto;
+    min-height: 400px;
+    height: auto;
   }
 
   .editor-container:hover {
@@ -3427,7 +3425,7 @@
   }
 
   .json-editor-pane {
-    overflow: auto;
+    overflow: visible;
   }
 
   .plantuml-preview-pane {
@@ -3471,6 +3469,24 @@
     gap: 12px;
   }
 
+  .form-row-horizontal {
+    display: flex;
+    flex-direction: row;
+    gap: 24px;
+  }
+
+  .form-section-half {
+    flex: 1;
+    min-width: 0;
+  }
+
+  @media (max-width: 1024px) {
+    .form-row-horizontal {
+      flex-direction: column;
+      gap: 24px;
+    }
+  }
+
   .section-label {
     font-weight: 600;
     font-size: 14px;
@@ -3483,14 +3499,47 @@
 
   .localized-inputs {
     display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .localized-inputs-col {
+    display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
+  }
+
+  .localized-inputs-3col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+  }
+
+  @media (max-width: 768px) {
+    .localized-inputs-3col {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .localized-field-col {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .localized-field-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 
   .localized-field {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
+    flex: 1;
+    min-width: 200px;
   }
 
   .lang-badge {
@@ -3618,10 +3667,7 @@
 
   /* Status Toggle Simple */
   .status-section {
-    padding: 16px;
-    background: #f9fafb;
-    border-radius: 10px;
-    border: 1px solid #e5e7eb;
+    padding: 0;
   }
 
   .status-toggle-simple {

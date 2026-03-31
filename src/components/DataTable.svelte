@@ -262,11 +262,11 @@
             {#each items as item, index}
               {@const itemId = getItemId(item)}
               <tr
-                class="data-table-row hover:bg-gray-50/50 transition-colors group cursor-pointer {selectable && selectedItems.has(itemId) ? 'bg-indigo-50/30' : ''}"
+                class="data-table-row hover:bg-yellow-50/70 transition-colors group cursor-pointer {selectable && selectedItems.has(itemId) ? 'bg-indigo-50/30' : ''}"
                 onclick={(e) => handleRowClick(item, e)}
               >
                 {#if selectable}
-                  <td class="px-4 py-8" onclick={(e) => e.stopPropagation()}>
+                  <td class="px-3 py-1.5" onclick={(e) => e.stopPropagation()}>
                     <input
                       type="checkbox"
                       checked={selectedItems.has(itemId)}
@@ -277,11 +277,11 @@
                   </td>
                 {/if}
                 {#each effectiveIndexAttributes as attr}
-                  <td class="px-6 py-8">
+                  <td class="px-4 py-1.5">
                     {@render cell({ item, attr, index })}
                   </td>
                 {/each}
-                <td class="px-6 py-8">
+                <td class="px-4 py-1.5">
                   <div class="flex items-center justify-end gap-4">
                     {@render actions({ item, index })}
                   </div>
