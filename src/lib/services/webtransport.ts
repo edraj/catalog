@@ -5,7 +5,7 @@
  * for chat and notifications.
  */
 
-import { website } from "@/config";
+import { website, configReady } from "@/config";
 
 export type WebTransportMessage = {
   type: string;
@@ -98,6 +98,9 @@ export class WebTransportService {
         this.updateStatus("connecting");
         this.clearReconnectTimer();
 
+        // Ensure config.json is loaded before using website.webtransport
+        await configReady;
+
         if (!WebTransportService.isSupported()) {
           console.error("[WebTransport] Not supported in this browser");
           this.updateStatus("error");
@@ -124,7 +127,8 @@ export class WebTransportService {
    */
   private async connectWebTransport(): Promise<boolean> {
     try {
-      const url = `${website.webtransport}/${this.token}`;
+      const baseUrl = website.webtransport.replace(/\/+$/, "");
+      const url = `${baseUrl}/${this.token}`;
       let transportOptions: any = undefined;
 
       if (website.webtransport.includes("localhost") || website.webtransport.includes("127.0.0.1")) {

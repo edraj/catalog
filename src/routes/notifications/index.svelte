@@ -117,17 +117,7 @@
       return;
     }
 
-    if (data.type === "notification_subscription" && data.message) {
-      const message = data.message;
-
-      if (
-        (message.action_type === "create" ||
-          message.action_type === "update") &&
-        (message.space === "catalog" || message.space === "catalog")
-      ) {
-        $newNotificationType = message.action_type;
-        loadNotifications(true);
-      }
+    if (data.type === "notification_subscription") {
       return;
     }
   }
